@@ -61,11 +61,9 @@ main#app{padding:16px 16px calc(24px + var(--safe-b))!important;overflow:visible
 .cxcomp .dform{border-radius:22px;padding:var(--s-3) var(--s-3) 10px var(--s-4)}
 .cxcomp .dform textarea{min-height:40px}
 .cxcomp .tiny{display:none}
-.dic,.dchip{min-height:40px}.dic{width:40px;height:40px}
+.dchip{min-height:40px}
 .dsend{width:40px;height:40px}
-.dfiles{margin-bottom:var(--s-2)}
-.uver,.umrow{opacity:1!important}
-.thread article .umrow .uedit{opacity:1}
+.umrow{opacity:1!important}
 .dpen,.fb .gic,.gic{opacity:1}
 .fb.gact{flex-wrap:wrap}
 .gic{min-width:40px;min-height:40px}
@@ -79,7 +77,6 @@ main#app{padding:16px 16px calc(24px + var(--safe-b))!important;overflow:visible
 .cx.wide .cxside{height:88dvh}
 .cx.wide{padding:0!important;gap:0!important;background:var(--surface)!important}
 .cx.wide .cxmain,.cx.wide .cxside{border:0}
-.pvpdf{height:70dvh}
 
 /* ---- library ---- */
 .pg .libbar{flex-wrap:nowrap;gap:var(--s-2);padding:0!important;margin-bottom:var(--s-3)}
@@ -147,7 +144,7 @@ main#app{padding:16px 16px calc(24px + var(--safe-b))!important;overflow:visible
 .toast{bottom:calc(16px + var(--safe-b))}
 
 /* touch: no hover-only controls */
-.chedit,.lib.dpen,.atrm,.chr .lib{opacity:1!important}
+.chedit,.lib.dpen,.chr .lib{opacity:1!important}
 .lh-go{opacity:.5;transform:none}
 
 /* drawer: brand row left, profile pinned to the bottom */
@@ -188,7 +185,7 @@ body.navopen #surfaces .srec .surf{animation-delay:.16s}
 @keyframes pgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 main#app>*{animation:pgIn .34s var(--spring) both}
-.surf:active,.btn:active,.mbbtn:active,.att:active,.lh-sug:active,.cxs:active{transform:scale(.97);transition:transform .1s}
+.surf:active,.btn:active,.mbbtn:active,.lh-sug:active,.cxs:active{transform:scale(.97);transition:transform .1s}
 /* sheets: spring up, dim the page behind */
 .cx .cxside{transition:transform .42s var(--spring),visibility 0s}
 .cx.closed .cxside{transition:transform .3s var(--ease-in),visibility 0s .3s}
