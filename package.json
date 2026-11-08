@@ -5,7 +5,7 @@
   "scripts": {
     "types": "node tools/types.mjs",
     "check": "tsc -p tsconfig.json && tsc -p tools/tsconfig.json && node tools/check.mjs",
-    "test:unit": "node --test tests/unit/",
+    "test:unit": "node --test \"tests/unit/**/*.test.mjs\"",
     "test:e2e": "playwright test"
   },
   "devDependencies": {

@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "types": []
   },
-  "include": ["types.d.ts", "globals.d.ts"]
+  "include": ["types.d.ts", "globals.d.ts", "api.js"]
 }
