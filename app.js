@@ -472,8 +472,7 @@ function renderChatList() {
   if (!rec) return;
   const c = S.chats;
   const current = S.route.surface === 'ask' ? S.route.params.id : null;
-  const before = rec.scrollHeight, top = rec.scrollTop;
-  const firstPinned = rec.querySelectorAll('.surf.chat[data-pinned="1"]').length;
+  const top = rec.scrollTop; // the API lists pinned chats first, so pages only add below
   if (!c.loaded && c.loading) { rec.innerHTML = skeletonRows(6, 'surf chat skchat'); return; }
   if (c.error && !c.items.length) {
     rec.innerHTML = `<div class="sempty">${esc(problem(c.error))} <button type="button" class="link" id="chretry">Try again</button></div>`;
@@ -488,10 +487,7 @@ function renderChatList() {
   if (c.loading) h += skeletonRows(2, 'surf chat skchat');
   else if (c.error) h += `<div class="sempty">${esc(problem(c.error))} <button type="button" class="link" id="chmore">Try again</button></div>`;
   rec.innerHTML = h;
-  // Pinned chats from a later page land above the viewport: keep what is on screen still.
-  const pinnedNow = rec.querySelectorAll('.surf.chat[data-pinned="1"]').length;
-  if (top > 0 && pinnedNow > firstPinned) rec.scrollTop = top + (rec.scrollHeight - before);
-  else rec.scrollTop = top;
+  rec.scrollTop = top;
   const more = $('#chmore');
   if (more) more.onclick = () => loadChats(false);
   $$('[data-chat]', rec).forEach((b) => {

@@ -551,7 +551,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Conversations */
+        /**
+         * List Conversations
+         * @description Pinned conversations first, then the rest; each by last activity, newest first.
+         */
         get: operations["list_conversations_v1_conversations_get"];
         put?: never;
         /** Create Conversation */

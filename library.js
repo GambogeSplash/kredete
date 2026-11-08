@@ -33,7 +33,8 @@ function authorityTag(d) {
   return `<span class="tag warn">${d.authority === 'draft' ? 'Draft' : 'Not approved'}</span>`;
 }
 const domainLabel = (d) => (d.domain ? `<span class="llab"><i style="background:${domainCol(d.domain.slug)}"></i>${esc(d.domain.name)}</span>` : '');
-const subline = (d) => esc([B.systemName(d.system), d.domain && d.domain.name].filter(Boolean).join(' · '));
+/** Where the document sits in its source (readable names), else the source and domain. */
+const subline = (d) => esc(d.path || [B.systemName(d.system), d.domain && d.domain.name].filter(Boolean).join(' · '));
 
 function row(d) {
   return `<div class="lrow" data-open="${d.id}" role="button" tabindex="0"><span class="lst">${B.srcIcon(d.system, 18)}</span><span class="ltt"><span>${esc(d.title)}</span><small class="lpath">${subline(d)}</small></span><span class="lr">${authorityTag(d)}${domainLabel(d)}<span class="ldoc">${ICON(KIND_ICON[d.kind] || 'doc', 14)}${esc(kindName(d.kind))}</span>${d.owner ? AVATAR(d.owner.name, 'lav', 22) : '<span class="lavsp" aria-hidden="true"></span>'}<span class="ldt">${esc(d.last_verified_at ? B.fmtDate(d.last_verified_at) : '')}</span></span></div>`;
