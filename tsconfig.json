@@ -1,0 +1,15 @@
+{
+  // Type-checks the browser modules (JSDoc types over plain JavaScript; nothing is emitted).
+  // The tools have their own project in tools/tsconfig.json.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["types.d.ts", "globals.d.ts"]
+}
