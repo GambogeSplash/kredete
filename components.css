@@ -255,5 +255,53 @@ a.btn.si-btn{text-decoration:none}
 .promopts .obopt small{color:var(--mute);font-size:var(--fs-sm)}
 .modal.lineage{max-width:640px}
 .linmore{margin:var(--s-3) 0 0;font-size:var(--fs-sm)}
+
+/* ---- Governance (governance.js) ---- */
+.pgsub{margin:0 0 var(--s-4);max-width:640px}
+.govtabs{padding:0 0 var(--s-3)}
+.govlist.isempty{border:0;background:none}
+.govr{align-items:flex-start;flex-wrap:wrap}
+.govr .actt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;flex:1}
+.govdoc{font-weight:500;color:var(--ink);text-align:left;padding:0}
+.govdoc:hover{color:var(--brand-strong)}
+.govreason{font-size:var(--fs-sm);color:var(--ink-2);margin-top:var(--s-1)}
+.govr .actb{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap}
+
+/* ---- Admin and Audit (admin.js) ---- */
+.audf{display:flex;flex-wrap:wrap;gap:var(--s-3);margin:0 0 var(--s-4);align-items:flex-end}
+.audfl{display:flex;flex-direction:column;gap:var(--s-1)}
+.audfl .hsl{margin:0}
+.audfl .eminp{margin:0;padding:var(--s-1) var(--s-3)}
+.audfl .eminp,.audfl .ssel-btn{height:38px;box-sizing:border-box}
+.audwho{display:flex;align-items:center;gap:var(--s-2)}
+.audact{font-weight:500}
+.dt-r.dterr,.dt-r.dtempty{display:block}
+.mono{font-family:var(--mono,ui-monospace,monospace);font-size:var(--fs-xs)}
+
+/* ---- Connectors (connectors.js) ---- */
+.cnsec{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:var(--s-5);margin:0 0 var(--s-4);max-width:860px}
+.cnsec-h{display:flex;align-items:flex-start;gap:var(--s-3);margin-bottom:var(--s-4)}
+.cnsec-h h2{font-size:var(--fs-lg);margin:0 0 2px}
+.cnsec-h p{margin:0;font-size:var(--fs-sm)}
+.cnsec-h>div{flex:1;min-width:0}
+.cnsec-i{width:32px;height:32px;border-radius:var(--r-md);background:var(--fill-2);display:grid;place-items:center;flex:none;color:var(--ink-2)}
+.cnempty p{margin:0 0 var(--s-3)}
+.cnconn{border:1px solid var(--line2,var(--line));border-radius:var(--r-lg);padding:var(--s-3) var(--s-4);margin:0 0 var(--s-3)}
+.cnconn-h{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s-2)}
+.cnsync{font-size:var(--fs-sm)}
+.cnerr{margin:var(--s-3) 0 0}
+.cnacts{display:flex;flex-wrap:wrap;gap:var(--s-2);margin:var(--s-3) 0 0}
+.cnspaces{margin-top:var(--s-3)}
+.cnspaces .ssel{max-width:220px}
+.cnnone{margin:0;font-size:var(--fs-sm)}
+.cnadd{margin-top:var(--s-2)}
+.cnaddrow{display:flex;gap:var(--s-2);max-width:520px}
+.cnaddrow .eminp{margin:0;flex:1}
+.cncheck{margin:var(--s-3) 0 0;padding-left:var(--s-5);display:flex;flex-direction:column;gap:var(--s-3)}
+.cncheck li b{display:block;font-weight:500}
+.cncheck li span{font-size:var(--fs-sm);color:var(--mute)}
+.cncheck.off{opacity:.55}
+.cncreds{max-width:none}
 /* The breadcrumb stays hidden on every surface, as in the prototype. */
 body[data-sf=ask] #crumb,body[data-sf=governance] #crumb,body[data-sf=admin] #crumb,body[data-sf=setup] #crumb,body[data-sf=signin] #crumb{display:none}
+.cnsec.skcapp{min-height:180px;padding:var(--s-5)}

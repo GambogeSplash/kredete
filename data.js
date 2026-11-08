@@ -10,7 +10,7 @@ window.DOCS = {
   limits: {id:'limits', title:'Transfer Limits Policy', system:'Confluence', owner:'Priya Nair', ownerRole:'Payments domain owner',
     verified:'30 Sep 2026', authority:'Approved policy', domain:'Payments',
     text:()=>`Standard accounts can send up to <mark>$5,000</mark> per day. Limits rise after identity verification.`},
-  limits2: {id:'limits2', title:'Payments Handbook', system:'Internal file system', owner:'Priya Nair', ownerRole:'Payments domain owner',
+  limits2: {id:'limits2', title:'Payments Handbook', system:'Confluence', owner:'Priya Nair', ownerRole:'Payments domain owner',
     verified:'18 Aug 2026', authority:'Approved handbook', domain:'Payments',
     text:()=>`Verified business accounts can send up to <mark>$25,000</mark> per day.`},
   rates: {id:'rates', title:'Savings Rate Sheet', system:'Google Drive', owner:'Tomas Berg', ownerRole:'Savings domain owner',

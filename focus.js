@@ -1,13 +1,12 @@
 /* focus.js: return keyboard focus to the opener after any overlay closes, and make Escape close only the top-most overlay. */
 (function(){
-  var INTERACTIVE='button,a[href],[role=button],[role=menuitem],.surf,.capp,.pcard,[tabindex]:not([tabindex="-1"]),input,select,textarea,summary';
+  var INTERACTIVE='button,a[href],[role=button],[role=menuitem],.surf,.pcard,[tabindex]:not([tabindex="-1"]),input,select,textarea,summary';
   var last=null, stack=[], pending=false;
   var on=function(el){ return !!el && el.classList.contains('on'); };
   var DEFS=[
     {key:'modal',  sel:'#modal',  open:on, close:function(){ if(window.BRAIN&&BRAIN.closeModal) BRAIN.closeModal(); }},
     {key:'drawer', sel:'#drawer', open:on, close:function(){ if(window.BRAIN&&BRAIN.closeDrawer) BRAIN.closeDrawer(); }},
     {key:'cmdk',   sel:'#cmdk',   open:on, close:function(){ var x=document.getElementById('kx'); if(x) x.click(); }},
-    {key:'oauth',  sel:'#oauth',  open:function(el){ return !!el && !el.classList.contains('out'); }, close:function(el){ if(el&&el.onkeydown) el.onkeydown({key:'Escape',preventDefault:function(){},stopPropagation:function(){}}); }, },
     {key:'menu',   sel:'.pmenu,.cmenu', menu:true, open:function(){ return true; }},
     {key:'menu',   sel:'#lfmenu', menu:true, open:function(el){ return !el.hidden; }}
   ];
