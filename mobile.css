@@ -303,4 +303,8 @@ body.noauth .mainpanel{padding-top:var(--safe-t)!important}
 /* The panel holds the bar's padding inside its box: it must be a full viewport tall, or the
    page background shows below short pages (styles.css still subtracts the bar height). */
 body .mainpanel{min-height:100dvh}
-#obe:empty{display:none}
+/* Overlays cover the phone bar (z-index 50): the drawer is a full-screen sheet, and the bar
+   must not stay clickable behind a modal. */
+.scrim{z-index:55}
+.drawer{z-index:60}
+.modal-wrap{z-index:60}

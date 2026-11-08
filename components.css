@@ -172,7 +172,7 @@ svg[data-i=send],.dsend:hover svg,.exs:hover svg,.exi button:hover svg{animation
 .dt-r.skrow{flex-direction:row;align-items:center;gap:var(--s-4)}
 @keyframes skpulse{50%{opacity:.5}}
 .errstate h2{color:var(--ink-2)}
-.errstate .btn{margin-top:var(--s-3)}
+.errstate .btn{margin-top:var(--s-3);display:inline-flex}
 .surf.finish .sdot{width:7px;height:7px;border-radius:50%;background:var(--brand);margin-left:auto;flex:none}
 .pvfsk{display:inline-block;vertical-align:middle}
 .obnote{margin:var(--s-3) 0 0}
@@ -214,7 +214,8 @@ a.btn.si-btn{text-decoration:none}
 .suspin{width:18px;height:18px;border-radius:50%;border:2px solid var(--fill-3);border-top-color:var(--brand);animation:suspin .9s linear infinite;flex:none}
 @keyframes suspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion: reduce){.suspin{animation:none;border-color:var(--brand)}}
-#sue:empty{display:none}
+/* An empty error slot takes no room; a message appears in place when there is one. */
+.hse:empty{display:none}
 #suf .si-btn{margin-top:var(--s-4)}
 
 /* ---- Ask (ask.js) ---- */
@@ -234,5 +235,25 @@ a.btn.si-btn{text-decoration:none}
 .gmore{display:block;margin:var(--s-3) auto}
 .drawerbody{padding:0}
 .fu .gm-sugs{margin-top:14px}
+
+/* ---- Library (library.js) ---- */
+.libchips{padding:var(--s-3) var(--s-6) var(--s-2);align-items:center}
+.libchips[hidden]{display:none}
+.lchip svg{margin-left:var(--s-1)}
+.fgh{font-size:var(--fs-xs);color:var(--mute);padding:var(--s-2) 10px var(--s-1)}
+.fdot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.lavsp{width:22px;flex:none}
+.gcard.skcard{pointer-events:none;gap:var(--s-2)}
+.gcard.skcard .gc-p{background:var(--fill-2);min-height:96px}
+.svkv{margin-top:var(--s-4)}
+.svkv dd .link{text-align:left;padding:0}
+.sv-act{flex-wrap:wrap}
+.sv-act .btn{white-space:nowrap}
+.sv-act a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:var(--s-2)}
+.promopts{grid-template-columns:1fr;margin:var(--s-2) 0 var(--s-4)}
+.promopts .obopt{text-align:left;justify-items:start}
+.promopts .obopt small{color:var(--mute);font-size:var(--fs-sm)}
+.modal.lineage{max-width:640px}
+.linmore{margin:var(--s-3) 0 0;font-size:var(--fs-sm)}
 /* The breadcrumb stays hidden on every surface, as in the prototype. */
 body[data-sf=ask] #crumb,body[data-sf=governance] #crumb,body[data-sf=admin] #crumb,body[data-sf=setup] #crumb,body[data-sf=signin] #crumb{display:none}
