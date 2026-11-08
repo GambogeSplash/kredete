@@ -58,26 +58,9 @@ const P={
  send:'<path d="M12 19.5V5"/><path d="M5.5 11.5L12 5l6.5 6.5"/>',
  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>'
 };
-const PEOPLE={'aisha bello':'aisha-bello','daniel reyes':'daniel-reyes','amara okafor':'amara-okafor','priya nair':'priya-nair','tomas berg':'tomas-berg','leo marsh':'leo-marsh'};
 window.PERSON=(name,px,cls)=>`<span class="who">${window.AVATAR(name,cls||'lav',px||18)}<span>${String(name==null?'':name).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span></span>`;
-
-/* Avatar library: 16 generated avatars (8 shapes x 2 palettes). A user can also upload a photo. */
-(function(){
- const PAL=[['#5e6ad2','#b9c0ff'],['#d946a8','#ffc4e8'],['#0d9488','#a7f3ec'],['#f59e0b','#ffe2a0'],['#16a34a','#b7f0c8'],['#e5484d','#ffc6c8'],['#3b82f6','#bcd7ff'],['#8b5cf6','#d9caff']];
- const ART=[
-  b=>`<circle cx="32" cy="25" r="11" fill="${b}"/><path d="M11 58c2-13 11-19 21-19s19 6 21 19z" fill="${b}"/>`,
-  b=>`<circle cx="32" cy="32" r="18" fill="none" stroke="${b}" stroke-width="5"/><circle cx="32" cy="32" r="7" fill="${b}"/>`,
-  b=>`<circle cx="32" cy="34" r="12" fill="${b}"/>`+[0,1,2,3,4,5,6,7].map(i=>`<rect x="30.5" y="8" width="3" height="9" rx="1.5" fill="${b}" transform="rotate(${i*45} 32 34)"/>`).join(''),
-  b=>`<path d="M4 38c8-10 15-10 22 0s15 10 23 0 9-5 11-3v26H4z" fill="${b}"/><circle cx="46" cy="20" r="7" fill="${b}"/>`,
-  b=>`<path d="M42 10a22 22 0 1 0 12 32A17 17 0 0 1 42 10z" fill="${b}"/><circle cx="48" cy="18" r="2.5" fill="${b}"/>`,
-  b=>[[13,28,18],[24,18,28],[35,32,14],[46,22,24]].map(([x,y,h])=>`<rect x="${x}" y="${y+8}" width="8" height="${h}" rx="4" fill="${b}"/>`).join(''),
-  b=>`<path d="M32 10l19 33H13z" fill="${b}"/><circle cx="47" cy="48" r="6" fill="${b}" opacity=".75"/>`,
-  b=>[[20,22],[44,22],[32,38],[18,50],[46,50]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="5.5" fill="${b}"/>`).join('')
- ];
- window.AV_LIB=[]; ART.forEach((art,i)=>[0,1].forEach(j=>{ const pal=PAL[(i+j*3)%PAL.length]; const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${pal[0]}"/><stop offset="1" stop-color="${pal[0]}" stop-opacity=".78"/></linearGradient></defs><rect width="64" height="64" fill="url(#g)"/>${art(pal[1])}</svg>`; window.AV_LIB.push({id:'a'+(i*2+j+1),src:'data:image/svg+xml;utf8,'+encodeURIComponent(svg)}); }));
- window.avatarSrc=av=>{ if(!av) return ''; if(av.kind==='photo') return av.data||''; if(av.kind==='lib'){ const x=window.AV_LIB.find(a=>a.id===av.id); return x?x.src:''; } return ''; };
-})();
-window.AVATAR=(name,cls,px)=>{ { const me=window.BRAIN&&window.BRAIN.S&&window.BRAIN.S.user; const nm=String(name||'').replace(/\(.*\)/,'').trim().toLowerCase(); if(me&&me.avatar&&nm&&nm===String(me.name||'').toLowerCase()){ const src=window.avatarSrc(me.avatar); if(src) return `<img class="${cls||'avimg'}" src="${src}" alt="${me.name}" title="${me.name}" width="${px||24}" height="${px||24}" style="${px?`width:${px}px;height:${px}px`:''}">`; } } const n=String(name||'').replace(/\(.*\)/,'').trim(); const k=PEOPLE[n.toLowerCase()]; const ini=n.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase(); return k?`<img class="${cls||'avimg'}" src="assets/jpg/${k}.jpg" alt="${n}" title="${n}" width="${px||24}" height="${px||24}" style="${px?`width:${px}px;height:${px}px`:''}" loading="lazy">`:`<span class="${cls||'avimg'} avini" title="${n}" style="${px?`width:${px}px;height:${px}px;font-size:${Math.max(9,Math.round(px*.4))}px`:''}">${ini}</span>`; };
-window.SRCICON=(system,px)=>`<img src="assets/svg/${{'Notion':'src-notion','Google Cloud':'src-gcloud','Confluence':'src-confluence','Google Drive':'src-drive','Internal file system':'src-filesystem','Help centre':'src-help','Slack':'src-slack'}[system]||'src-filesystem'}.svg?v=3" alt="${system}" width="${px||20}" height="${px||20}" style="border-radius:5px;flex:none">`;
+/* Initials on a tinted tile: real people have no stored photo. */
+window.AVATAR=(name,cls,px)=>{ const n=String(name||'').replace(/\(.*\)/,'').trim(); const ini=n.split(/\s+/).map(x=>x[0]||'').join('').slice(0,2).toUpperCase(); const safe=n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); return `<span class="${cls||'avimg'} avini" title="${safe}" style="${px?`width:${px}px;height:${px}px;font-size:${Math.max(9,Math.round(px*0.4))}px`:''}" aria-hidden="true">${ini}</span>`; };
+window.SRCICON=(system,px)=>`<img src="/assets/svg/${{'Notion':'src-notion','Google Cloud':'src-gcloud','Confluence':'src-confluence','Google Drive':'src-drive','Internal file system':'src-filesystem','Help centre':'src-help','Slack':'src-slack'}[system]||'src-filesystem'}.svg?v=3" alt="${system}" width="${px||20}" height="${px||20}" style="border-radius:5px;flex:none">`;
 window.ICON=(n,s)=>`<svg class="ic-svg" data-i="${n}" width="${s||18}" height="${s||18}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||''}</svg>`;
 })();

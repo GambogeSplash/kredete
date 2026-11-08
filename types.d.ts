@@ -1639,6 +1639,11 @@ export interface components {
         PromotionOut: {
             /** Approved By */
             approved_by: string | null;
+            /**
+             * Can Decide
+             * @description The reader may approve, reject or revoke this promotion (its document's owner, a domain owner of its domain, or an admin); a requester never approves their own.
+             */
+            can_decide: boolean;
             /** Created At */
             created_at?: string | null;
             /** Decided At */
@@ -1810,6 +1815,11 @@ export interface components {
             ordinal: number;
             /** Question */
             question: string;
+            /**
+             * Reported
+             * @description The reader has reported this turn to its owners.
+             */
+            reported: boolean;
             status: components["schemas"]["TurnStatus"];
         };
         /**

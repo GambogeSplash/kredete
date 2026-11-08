@@ -214,3 +214,32 @@ svg[data-i=send],.dsend:hover svg,.exs:hover svg,.exi button:hover svg{animation
 
 /* Products: demo page link sits beside Copy snippet */
 .actions a.link{margin-left:12px;text-decoration:none;gap:4px}
+
+/* ---- client integration (sandbox spec 4): loading, empty and error states, boot ---- */
+.bootsplash{min-height:100vh;display:grid;place-items:center;background:var(--surface)}
+.bootsplash .pvk{animation:bootpulse 1.4s ease-in-out infinite}
+@keyframes bootpulse{50%{opacity:.45}}
+.skwrap{display:block}
+.skrow{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px}
+.skrow .pvsk{height:8px;margin:0;animation:skpulse 1.4s ease-in-out infinite}
+.skrow .pvsk.sksub{height:6px;opacity:.7}
+.surf.chat.skchat{display:flex;flex-direction:row;align-items:center;min-height:34px;pointer-events:none}
+.surf.chat.skchat .pvsk.sksub{display:none}
+.dt-r.skrow{flex-direction:row;align-items:center;gap:var(--s-4)}
+@keyframes skpulse{50%{opacity:.5}}
+.errstate h2{color:var(--ink-2)}
+.errstate .btn{margin-top:var(--s-3)}
+.surf.finish .sdot{width:7px;height:7px;border-radius:50%;background:var(--brand);margin-left:auto;flex:none}
+.pvfsk{display:inline-block;vertical-align:middle}
+.obnote{margin:var(--s-3) 0 0}
+.avchg.static{cursor:default}
+.chmore{display:flex;justify-content:center;margin:var(--s-4) 0}
+.si-btn[aria-disabled=true]{opacity:.5;pointer-events:none}
+a.btn.si-btn{text-decoration:none}
+@media (prefers-reduced-motion: reduce){.bootsplash .pvk,.skrow .pvsk{animation:none}}
+.acct-t{min-width:0;overflow:hidden}
+.acct-t b,.acct-t small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pq.pqgone{color:var(--mute);font-style:italic}
+.flipx{display:inline-flex;transform:scaleX(-1)}
+#obe{margin:var(--s-1) 0 0}
+#obe+.obnav{margin-top:var(--s-4)}

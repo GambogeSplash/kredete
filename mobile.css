@@ -300,3 +300,10 @@ header.top{padding:calc(var(--s-3) + var(--safe-t)) var(--s-3) calc(var(--s-3) +
 .pmenu{left:8px!important;right:auto!important;width:calc(min(86vw,320px) - 16px)!important}
 .pmenu{left:12px!important;width:calc(min(86vw,320px) - 24px)!important}
 .pmenu{left:8px!important;width:calc(min(86vw,320px) - 16px)!important}
+/* Signed out (sign-in, setup, welcome): no app chrome, so no phone bar either. */
+body.noauth .mbar{display:none!important}
+body.noauth .mainpanel{padding-top:var(--safe-t)!important}
+/* The panel holds the bar's padding inside its box: it must be a full viewport tall, or the
+   page background shows below short pages (styles.css still subtracts the bar height). */
+body .mainpanel{min-height:100dvh}
+#obe:empty{display:none}

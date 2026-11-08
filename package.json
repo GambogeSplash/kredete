@@ -4,7 +4,7 @@
   "description": "Kredete Brain web client. Served as plain files; this package only holds the developer tooling.",
   "scripts": {
     "types": "node tools/types.mjs",
-    "check": "tsc -p tsconfig.json && tsc -p tools/tsconfig.json && node tools/check.mjs",
+    "check": "tsc -p tsconfig.json && tsc -p tsconfig.ui.json && tsc -p tools/tsconfig.json && node tools/check.mjs",
     "test:unit": "node --test \"tests/unit/**/*.test.mjs\"",
     "test:e2e": "playwright test"
   },
