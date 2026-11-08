@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kredete Brain design system</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="styles.css">
+<style>
+/* Page chrome only. Everything inside the specimens uses the app's own classes. */
+body{background:var(--surface);color:var(--ink);font:400 var(--fs-md)/var(--lh-base) var(--font);margin:0}
+.ds{max-width:1040px;margin:0 auto;padding:var(--s-8) var(--s-6) 96px}
+.ds h1{font-size:var(--fs-display);font-weight:var(--fw-semi);letter-spacing:-.02em;margin:0 0 var(--s-1)}
+.ds .ds-lead{color:var(--mute);margin:0 0 var(--s-8);max-width:60ch}
+.ds h2{font-size:var(--fs-h2);font-weight:var(--fw-semi);margin:var(--s-9) 0 var(--s-1);letter-spacing:-.01em}
+.ds h2+p{color:var(--mute);margin:0 0 var(--s-5);max-width:70ch}
+.ds h3{font-size:var(--fs-xs);font-weight:var(--fw-medium);color:var(--mute);margin:var(--s-6) 0 var(--s-2)}
+.ds code,.ds .ds-tk{font-family:var(--mono);font-size:var(--fs-xs);color:var(--mute-2)}
+.ds-grid{display:grid;gap:var(--s-3);grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.ds-sw{border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--surface)}
+.ds-sw i{display:block;height:56px;border-bottom:1px solid var(--line2)}
+.ds-sw div{padding:var(--s-2) var(--s-3)}.ds-sw b{display:block;font-weight:var(--fw-medium);font-size:var(--fs-sm)}
+.ds-row{display:flex;flex-wrap:wrap;gap:var(--s-3);align-items:center}
+.ds-spec{border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s-5);background:var(--surface)}
+.ds-type{display:grid;grid-template-columns:120px 1fr;gap:var(--s-2) var(--s-4);align-items:baseline}
+.ds-sp{display:flex;align-items:center;gap:var(--s-3);margin:var(--s-1) 0}.ds-sp i{display:block;height:12px;background:var(--brand);border-radius:2px}
+.ds-rd{width:84px;height:56px;background:var(--brand-soft);border:1px solid var(--brand-line);display:grid;place-items:center;font-size:var(--fs-xs);color:var(--brand-strong)}
+.ds-sh{width:120px;height:72px;background:var(--surface);border-radius:var(--r-lg);display:grid;place-items:center;font-size:var(--fs-xs);color:var(--mute)}
+.ds-mo{display:inline-grid;place-items:center;width:112px;height:44px;border:1px solid var(--line);border-radius:var(--r-md);cursor:pointer;font-size:var(--fs-xs);color:var(--mute)}
+.ds-mo:hover{background:var(--brand-soft);border-color:var(--brand-line);transform:translateY(-3px)}
+.ds-top{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s-4)}
+.ds-note{background:var(--fill-1);border:1px solid var(--line2);border-radius:var(--r-lg);padding:var(--s-4);color:var(--ink-2);font-size:var(--fs-sm);margin-top:var(--s-4)}
+.ds-relwrap .cmenu{position:static;display:block}
+</style>
+</head>
+<body>
+<script>try{var m=localStorage.getItem('brain-theme')||'light';if(m==='dark'||(m==='system'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.mode='dark'}catch(e){}</script>
+<main class="ds">
+  <div class="ds-top"><h1>Kredete Brain design system</h1><button class="btn sm" id="dstheme" type="button">Dark mode</button></div>
+  <p class="ds-lead">Tokens first, components second, pages last. Every value you see on a screen comes from <code>tokens.css</code>. This page reads that file live, so it cannot drift from the app.</p>
+
+  <h2>Color</h2>
+  <p>Neutrals carry the interface. One brand color does the work. Status colors only appear for status.</p>
+  <div id="colors"></div>
+
+  <h2>Typography</h2>
+  <p>One family. Size sets hierarchy, weight stays at 400, 500 and 600.</p>
+  <div class="ds-spec"><div class="ds-type" id="type"></div></div>
+
+  <h2>Spacing</h2>
+  <p>4px grid. Padding and gaps use these steps and nothing in between.</p>
+  <div class="ds-spec" id="space"></div>
+
+  <h2>Radius</h2>
+  <p>Cards 12, controls 8, tags 6, sheets 16 and 20. Nest by subtracting the padding.</p>
+  <div class="ds-row" id="radius"></div>
+
+  <h2>Elevation and focus</h2>
+  <div class="ds-row" style="gap:var(--s-6);padding:var(--s-5);background:var(--wash);border-radius:var(--r-lg)">
+    <div class="ds-sh" style="box-shadow:var(--e1)">e1</div><div class="ds-sh" style="box-shadow:var(--e2)">e2</div><div class="ds-sh" style="box-shadow:var(--e3)">e3</div><div class="ds-sh" style="box-shadow:var(--ring);border:1px solid var(--brand-line)">ring</div>
+  </div>
+
+  <h2>Motion</h2>
+  <p>Hover a tile. Fast for feedback, base for state changes, slow for sheets. Decelerate on the way in, accelerate on the way out.</p>
+  <div class="ds-row" id="motion"></div>
+
+  <h2>Components</h2>
+  <p>Built only from tokens. Use these, do not restyle them. A new look is a named variant.</p>
+
+  <h3>Buttons</h3>
+  <div class="ds-row"><button class="btn primary">Primary</button><button class="btn">Default</button><button class="btn sm primary">Small primary</button><button class="btn sm">Small</button><button class="btn sm danger-o">Destructive</button></div>
+
+  <h3>Tags (status) and chips (filters, actions)</h3>
+  <div class="ds-row"><span class="tag ok">Connected</span><span class="tag warn">Past review</span><span class="tag blue">Pending</span><span class="tag">Neutral</span><span class="tag ok">This device</span></div>
+  <div class="ds-row" style="margin-top:var(--s-3)"><button class="lchip on">All <span>23</span></button><button class="lchip">Confluence <span>13</span></button><button class="lchip">Google Drive <span>10</span></button><button class="gpill">Share answer</button><button class="lchip">Filter</button></div>
+
+  <h3>Tabs and segmented control</h3>
+  <div class="ds-row"><div class="atabs"><button class="atab" aria-current="page">Updates</button><button class="atab" aria-current="false">Requests</button></div>
+  <div class="seg"><button class="segb on" aria-label="List">≡</button><button class="segb" aria-label="Grid">▦</button></div></div>
+
+  <h3>Group, row and table</h3>
+  <div class="fgroup" style="max-width:640px">
+    <div class="frow"><div class="frl"><b>Preferred name</b></div><div class="frv">Aisha</div><div class="fra"><button class="btn sm">Edit</button></div></div>
+    <div class="frow"><div class="frl"><b>Team</b></div><div class="frv">Support</div><div class="fra"></div></div>
+    <div class="frow"><div class="frl"><b>Roles</b></div><div class="frv"><span class="tag">Employee</span><span class="tag">Content owner</span><span class="tag">Admin</span></div><div class="fra"></div></div>
+  </div>
+
+  <h3>Attachment cards</h3>
+  <div class="dfiles" style="max-width:640px">
+    <span class="att"><button class="atb"><span class="athm atile" style="--c:#e5484d">PDF</span><span class="atx"><b>Q3 fee policy.pdf</b><small>PDF · 214 KB</small></span></button><button class="atrm" aria-label="Remove">×</button></span>
+    <span class="att"><button class="atb"><span class="athm atile" style="--c:#26a269">CSV</span><span class="atx"><b>people-export.csv</b><small>CSV · 23 B</small></span></button><button class="atrm" aria-label="Remove">×</button></span>
+    <span class="att"><button class="atb"><span class="athm" style="background:linear-gradient(135deg,var(--brand),#d946a8)"></span><span class="atx"><b>team-photo.png</b><small>Image · 17 KB</small></span></button><button class="atrm" aria-label="Remove">×</button></span>
+  </div>
+
+  <h3>Source card</h3>
+  <div style="max-width:380px"><div class="cxs best"><div class="cxs-h"><b>Transfer Limits Policy</b><span class="cite">1</span></div><div class="cxs-q">Standard accounts can send up to <mark>$5,000</mark> per day.</div><div class="cxs-f"><span class="tag ok">Best source</span><span>Priya Nair · 30 Sep 2026</span></div></div></div>
+
+  <h3>Avatars (squircle) and the avatar picker tile</h3>
+  <div class="ds-row"><img class="avimg" src="assets/jpg/aisha-bello.jpg" alt="" width="40" height="40"><img class="avimg" src="assets/jpg/daniel-reyes.jpg" alt="" width="32" height="32">
+  <div class="avgrid" style="width:240px;grid-template-columns:repeat(3,1fr)"><button type="button" class="avt on" aria-label="Selected"><img src="assets/jpg/aisha-bello.jpg" alt=""></button><button type="button" class="avt" aria-label="Photo"><img src="assets/jpg/amara-okafor.jpg" alt=""></button><button type="button" class="avt avup" aria-label="Upload a photo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Upload</span></button></div></div>
+
+  <h3>Product icon tile (.pico)</h3>
+  <div class="ds-row"><span class="pico" style="--c:#5e6ad2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"/></svg></span><span class="pico" style="--c:#1f7a4a"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h11a4 4 0 014 4v10H8a4 4 0 01-4-4V5z"/></svg></span><span class="pico" style="--c:#d23a30"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></span></div>
+
+  <h3>Account menu header</h3>
+  <div class="ds-relwrap" style="max-width:288px"><div class="pmenu" style="position:static"><div class="pm-head"><button type="button" class="pm-who"><img class="avimg" src="assets/jpg/aisha-bello.jpg" alt="" width="40" height="40"><span><b>Aisha Bello</b><small>aisha.bello@kredete.example</small><em>Support · Admin</em></span></button><button type="button" class="pm-th" aria-label="Switch to dark mode"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg></button><button type="button" class="pm-go" aria-label="Account settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div><button type="button" class="pm-i"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/></svg>Account settings</button><button type="button" class="pm-i danger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Sign out</button></div></div>
+
+  <h3>Menu</h3>
+  <div class="ds-relwrap" style="max-width:220px"><div class="cmenu" role="menu"><button role="menuitem">Rename</button><button role="menuitem">Pin to top</button><button role="menuitem">Copy link</button><div class="cm-sep"></div><button role="menuitem" class="cm-del">Delete chat</button></div></div>
+
+  <div class="ds-note"><b>Rules.</b> 1) Use a token, never a literal, for color, radius, space, type, shadow and motion. 2) One component per job: if two things look different, one is wrong. 3) States are part of the component: hover, focus-visible, active, disabled, loading. 4) Touch first: 40px targets, nothing hover-only. 5) Motion uses transform and opacity, under 320ms, and respects reduced motion.</div>
+</main>
+<script>
+(()=>{
+  const sheet=[...document.styleSheets].find(s=>(s.href||'').includes('tokens.css')); const vars={};
+  try{ for(const r of sheet.cssRules){ if(r.selectorText===':root'){ for(const p of r.style){ if(p.startsWith('--')) vars[p]=r.style.getPropertyValue(p).trim(); } } } }catch(e){}
+  const cs=getComputedStyle(document.documentElement); const val=n=>cs.getPropertyValue(n).trim();
+  const group=(title,names,el)=>{ el.insertAdjacentHTML('beforeend','<h3>'+title+'</h3><div class="ds-grid">'+names.map(n=>'<div class="ds-sw"><i style="background:var('+n+')"></i><div><b>'+n.replace('--','')+'</b><span class="ds-tk">'+val(n)+'</span></div></div>').join('')+'</div>'); };
+  const keys=Object.keys(vars); const c=document.getElementById('colors');
+  group('Surfaces and fills',['--surface','--shell','--wash','--fill-1','--fill-2','--fill-3'],c);
+  group('Lines',['--line','--line-strong','--line2'],c);
+  group('Text',['--ink','--ink-2','--mute','--mute-2','--mute-3'],c);
+  group('Brand',['--brand','--brand-strong','--brand-soft','--brand-wash','--brand-line'],c);
+  group('Status',['--ok','--ok-soft','--warn','--warn-soft','--danger','--danger-strong','--danger-soft','--danger-line'],c);
+  document.getElementById('type').innerHTML=keys.filter(k=>/^--fs-/.test(k)).map(k=>'<span class="ds-tk">'+k.replace('--','')+' · '+vars[k]+'</span><span style="font-size:var('+k+');line-height:1.3">Cited answers, owners notified</span>').join('');
+  document.getElementById('space').innerHTML=keys.filter(k=>/^--s-/.test(k)).map(k=>'<div class="ds-sp"><span class="ds-tk" style="width:90px">'+k.replace('--','')+' · '+vars[k]+'</span><i style="width:var('+k+')"></i></div>').join('');
+  document.getElementById('radius').innerHTML=keys.filter(k=>/^--r-/.test(k)).map(k=>'<div class="ds-rd" style="border-radius:var('+k+')">'+k.replace('--r-','')+'<br>'+vars[k]+'</div>').join('');
+  document.getElementById('motion').innerHTML=keys.filter(k=>/^--dur-/.test(k)).map(k=>'<div class="ds-mo" style="transition:transform var('+k+') var(--ease-out),background var('+k+'),border-color var('+k+')">'+k.replace('--dur-','')+' '+vars[k]+'</div>').join('');
+  const tb=document.getElementById('dstheme');const dk=()=>document.documentElement.dataset.mode==='dark';
+  const sync=()=>{tb.textContent=dk()?'Light mode':'Dark mode'};sync();
+  tb.onclick=()=>{ if(dk()){delete document.documentElement.dataset.mode;try{localStorage.setItem('brain-theme','light')}catch(e){}} else {document.documentElement.dataset.mode='dark';try{localStorage.setItem('brain-theme','dark')}catch(e){}} sync(); };
+})();
+</script>
+</body>
+</html>

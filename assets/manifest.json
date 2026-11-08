@@ -1,0 +1,317 @@
+[
+ {
+  "name": "conflict-report.gif",
+  "path": "assets/gif/conflict-report.gif",
+  "type": "GIF",
+  "size": 230649,
+  "group": "gif"
+ },
+ {
+  "name": "connect-source.gif",
+  "path": "assets/gif/connect-source.gif",
+  "type": "GIF",
+  "size": 287890,
+  "group": "gif"
+ },
+ {
+  "name": "inbox-fix.gif",
+  "path": "assets/gif/inbox-fix.gif",
+  "type": "GIF",
+  "size": 788057,
+  "group": "gif"
+ },
+ {
+  "name": "signin-to-ask.gif",
+  "path": "assets/gif/signin-to-ask.gif",
+  "type": "GIF",
+  "size": 334536,
+  "group": "gif"
+ },
+ {
+  "name": "aisha-bello.jpg",
+  "path": "assets/jpg/aisha-bello.jpg",
+  "type": "JPG",
+  "size": 24282,
+  "group": "jpg"
+ },
+ {
+  "name": "amara-okafor.jpg",
+  "path": "assets/jpg/amara-okafor.jpg",
+  "type": "JPG",
+  "size": 24220,
+  "group": "jpg"
+ },
+ {
+  "name": "daniel-reyes.jpg",
+  "path": "assets/jpg/daniel-reyes.jpg",
+  "type": "JPG",
+  "size": 24510,
+  "group": "jpg"
+ },
+ {
+  "name": "hero-city.jpg",
+  "path": "assets/jpg/hero-city.jpg",
+  "type": "JPG",
+  "size": 370239,
+  "group": "jpg"
+ },
+ {
+  "name": "hero-office.jpg",
+  "path": "assets/jpg/hero-office.jpg",
+  "type": "JPG",
+  "size": 186636,
+  "group": "jpg"
+ },
+ {
+  "name": "hero-team.jpg",
+  "path": "assets/jpg/hero-team.jpg",
+  "type": "JPG",
+  "size": 252852,
+  "group": "jpg"
+ },
+ {
+  "name": "leo-marsh.jpg",
+  "path": "assets/jpg/leo-marsh.jpg",
+  "type": "JPG",
+  "size": 30422,
+  "group": "jpg"
+ },
+ {
+  "name": "priya-nair.jpg",
+  "path": "assets/jpg/priya-nair.jpg",
+  "type": "JPG",
+  "size": 18300,
+  "group": "jpg"
+ },
+ {
+  "name": "tomas-berg.jpg",
+  "path": "assets/jpg/tomas-berg.jpg",
+  "type": "JPG",
+  "size": 27766,
+  "group": "jpg"
+ },
+ {
+  "name": "apple-touch-icon.png",
+  "path": "assets/png/apple-touch-icon.png",
+  "type": "PNG",
+  "size": 7354,
+  "group": "png"
+ },
+ {
+  "name": "icon-180.png",
+  "path": "assets/png/icon-180.png",
+  "type": "PNG",
+  "size": 11446,
+  "group": "png"
+ },
+ {
+  "name": "icon-192.png",
+  "path": "assets/png/icon-192.png",
+  "type": "PNG",
+  "size": 12318,
+  "group": "png"
+ },
+ {
+  "name": "icon-32.png",
+  "path": "assets/png/icon-32.png",
+  "type": "PNG",
+  "size": 1673,
+  "group": "png"
+ },
+ {
+  "name": "icon-512.png",
+  "path": "assets/png/icon-512.png",
+  "type": "PNG",
+  "size": 35105,
+  "group": "png"
+ },
+ {
+  "name": "icon-64.png",
+  "path": "assets/png/icon-64.png",
+  "type": "PNG",
+  "size": 3447,
+  "group": "png"
+ },
+ {
+  "name": "og-image.png",
+  "path": "assets/png/og-image.png",
+  "type": "PNG",
+  "size": 79730,
+  "group": "png"
+ },
+ {
+  "name": "screen-admin-overview.png",
+  "path": "assets/png/screen-admin-overview.png",
+  "type": "PNG",
+  "size": 253329,
+  "group": "png"
+ },
+ {
+  "name": "screen-ask-conflict.png",
+  "path": "assets/png/screen-ask-conflict.png",
+  "type": "PNG",
+  "size": 291136,
+  "group": "png"
+ },
+ {
+  "name": "screen-connect-drawer.png",
+  "path": "assets/png/screen-connect-drawer.png",
+  "type": "PNG",
+  "size": 225982,
+  "group": "png"
+ },
+ {
+  "name": "screen-inbox-list.png",
+  "path": "assets/png/screen-inbox-list.png",
+  "type": "PNG",
+  "size": 279778,
+  "group": "png"
+ },
+ {
+  "name": "video-poster.png",
+  "path": "assets/png/video-poster.png",
+  "type": "PNG",
+  "size": 241321,
+  "group": "png"
+ },
+ {
+  "name": "favicon.svg",
+  "path": "assets/svg/favicon.svg",
+  "type": "SVG",
+  "size": 406,
+  "group": "svg"
+ },
+ {
+  "name": "ill-404.svg",
+  "path": "assets/svg/ill-404.svg",
+  "type": "SVG",
+  "size": 676,
+  "group": "svg"
+ },
+ {
+  "name": "ill-empty-inbox.svg",
+  "path": "assets/svg/ill-empty-inbox.svg",
+  "type": "SVG",
+  "size": 737,
+  "group": "svg"
+ },
+ {
+  "name": "ill-no-results.svg",
+  "path": "assets/svg/ill-no-results.svg",
+  "type": "SVG",
+  "size": 739,
+  "group": "svg"
+ },
+ {
+  "name": "ill-offline.svg",
+  "path": "assets/svg/ill-offline.svg",
+  "type": "SVG",
+  "size": 653,
+  "group": "svg"
+ },
+ {
+  "name": "ill-onboard-ask.svg",
+  "path": "assets/svg/ill-onboard-ask.svg",
+  "type": "SVG",
+  "size": 1015,
+  "group": "svg"
+ },
+ {
+  "name": "ill-onboard-fix.svg",
+  "path": "assets/svg/ill-onboard-fix.svg",
+  "type": "SVG",
+  "size": 810,
+  "group": "svg"
+ },
+ {
+  "name": "ill-onboard-source.svg",
+  "path": "assets/svg/ill-onboard-source.svg",
+  "type": "SVG",
+  "size": 828,
+  "group": "svg"
+ },
+ {
+  "name": "ill-signin-hero.svg",
+  "path": "assets/svg/ill-signin-hero.svg",
+  "type": "SVG",
+  "size": 926,
+  "group": "svg"
+ },
+ {
+  "name": "logo.svg",
+  "path": "assets/svg/logo.svg",
+  "type": "SVG",
+  "size": 617,
+  "group": "svg"
+ },
+ {
+  "name": "logomark-mono.svg",
+  "path": "assets/svg/logomark-mono.svg",
+  "type": "SVG",
+  "size": 400,
+  "group": "svg"
+ },
+ {
+  "name": "logomark.svg",
+  "path": "assets/svg/logomark.svg",
+  "type": "SVG",
+  "size": 406,
+  "group": "svg"
+ },
+ {
+  "name": "pattern-dots.svg",
+  "path": "assets/svg/pattern-dots.svg",
+  "type": "SVG",
+  "size": 134,
+  "group": "svg"
+ },
+ {
+  "name": "src-confluence.svg",
+  "path": "assets/svg/src-confluence.svg",
+  "type": "SVG",
+  "size": 361,
+  "group": "svg"
+ },
+ {
+  "name": "src-drive.svg",
+  "path": "assets/svg/src-drive.svg",
+  "type": "SVG",
+  "size": 337,
+  "group": "svg"
+ },
+ {
+  "name": "src-filesystem.svg",
+  "path": "assets/svg/src-filesystem.svg",
+  "type": "SVG",
+  "size": 235,
+  "group": "svg"
+ },
+ {
+  "name": "src-help.svg",
+  "path": "assets/svg/src-help.svg",
+  "type": "SVG",
+  "size": 369,
+  "group": "svg"
+ },
+ {
+  "name": "src-slack.svg",
+  "path": "assets/svg/src-slack.svg",
+  "type": "SVG",
+  "size": 245,
+  "group": "svg"
+ },
+ {
+  "name": "product-tour.mp4",
+  "path": "assets/video/product-tour.mp4",
+  "type": "Video",
+  "size": 1292671,
+  "group": "video"
+ },
+ {
+  "name": "product-tour.webm",
+  "path": "assets/video/product-tour.webm",
+  "type": "Video",
+  "size": 1538885,
+  "group": "video"
+ }
+]
