@@ -2,15 +2,16 @@
 window.AUDIT=()=>{
  const lum=c=>{const [r,g,b]=c.map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*r+.7152*g+.0722*b};
  const parse=s=>{const m=s.match(/rgba?\(([^)]+)\)/); if(!m) return null; const p=m[1].split(',').map(x=>parseFloat(x)); return {c:p.slice(0,3),a:p[3]===undefined?1:p[3]};};
- const bgOf=el=>{ let e=el; while(e){ const p=parse(getComputedStyle(e).backgroundColor); if(p&&p.a>0.9) return p.c; e=e.parentElement;} return [255,255,255]; };
+ // Every color the text may sit on: each opaque stop of a gradient (then, if the gradient has see-through parts, what shows through), else the first opaque background color.
+ const bgsOf=el=>{ const out=[]; let e=el; while(e){ const cs=getComputedStyle(e); if(/gradient/.test(cs.backgroundImage)&&!/text/.test(cs.backgroundClip)){ const stops=(cs.backgroundImage.match(/rgba?\([^)]+\)/g)||[]).map(parse); stops.filter(p=>p.a>0.9).forEach(p=>out.push(p.c)); if(stops.length&&stops.every(p=>p.a>0.9)) return out; } const p=parse(cs.backgroundColor); if(p&&p.a>0.9){ out.push(p.c); return out; } e=e.parentElement;} out.push([255,255,255]); return out; };
  const vis=el=>{const r=el.getBoundingClientRect(); const cs=getComputedStyle(el); return r.width>0&&r.height>0&&cs.visibility!=='hidden'&&cs.display!=='none'&&parseFloat(cs.opacity)>0.05;};
  const out={fs:{},lowc:[],small:[],noalt:[],nolabel:[],noimgdim:[]};
  const sel=el=>el.tagName.toLowerCase()+(el.id?'#'+el.id:'')+(el.className&&typeof el.className==='string'?'.'+el.className.trim().split(/\s+/).slice(0,2).join('.'):'');
  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT); const seen=new Set();
  while(walker.nextNode()){ const n=walker.currentNode; if(!n.textContent.trim()) continue; const el=n.parentElement; if(!el||seen.has(el)||!vis(el)) continue; seen.add(el);
   const cs=getComputedStyle(el); const fs=Math.round(parseFloat(cs.fontSize)*2)/2; out.fs[fs]=(out.fs[fs]||0)+1;
-  const fg=parse(cs.color); if(!fg) continue; const bg=bgOf(el); const a=fg.a; const fgc=fg.c.map((v,i)=>Math.round(v*a+bg[i]*(1-a)));
-  const L1=lum(fgc),L2=lum(bg); const ratio=(Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05);
+  const fg=parse(cs.color); if(!fg||fg.a===0||!parseFloat(cs.fontSize)) continue; const a=fg.a; // text that is not drawn (zero size or transparent: an icon or a clipped gradient stands in) has no contrast to check
+  const ratio=Math.min(...bgsOf(el).map(bg=>{ const fgc=fg.c.map((v,i)=>Math.round(v*a+bg[i]*(1-a))); const L1=lum(fgc),L2=lum(bg); return (Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05); }));
   const large=fs>=24||(fs>=18.66&&parseInt(cs.fontWeight)>=700); const need=large?3:4.5;
   if(ratio<need) out.lowc.push([sel(el),ratio.toFixed(2),el.textContent.trim().slice(0,28),fs]); }
  document.querySelectorAll('button,a[href],input:not([type=hidden]),select,textarea,[role=button],[role=tab]').forEach(el=>{ if(!vis(el)) return; const r=el.getBoundingClientRect(); const isCk=/checkbox|radio/.test(el.type||''); if((r.width<24||r.height<24)&&!(isCk&&r.width>=16)) out.small.push([sel(el),Math.round(r.width)+'x'+Math.round(r.height),(el.textContent||el.getAttribute('aria-label')||'').trim().slice(0,20)]);

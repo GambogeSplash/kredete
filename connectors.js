@@ -82,7 +82,7 @@ function draw() {
 function connectionHtml(c) {
   const st = STATUS[c.status] || [c.status, ''];
   const spaces = data.containers.filter((x) => x.connection_id === c.id);
-  return `<div class="cnconn" data-conn="${c.id}"><div class="cnconn-h"><b>${esc(c.site)}</b><span class="tag ${st[1]}">${st[0]}</span>${c.system === 'confluence' && !c.authorized ? '<span class="tag warn">Not authorized</span>' : ''}<span class="lsp"></span><span class="amute cnsync">${c.last_sync_at ? 'Synced ' + esc(B.ago(c.last_sync_at)) : 'Not synced yet'}</span></div>
+  return `<div class="cnconn" data-conn="${c.id}"><div class="cnconn-h"><b>${esc(c.site)}</b><span class="tag ${st[1]}">${st[0]}</span>${c.system === 'confluence' && !c.authorized ? '<span class="tag warn">Not authorized</span>' : ''}<span class="lsp"></span><span class="amute cnsync">${c.last_sync_at ? 'Synced ' + B.when(c.last_sync_at, B.ago(c.last_sync_at)) : 'Not synced yet'}</span></div>
     ${c.last_error ? `<div class="banner bad cnerr">${esc(c.last_error)}</div>` : ''}
     <div class="cnacts">${c.system === 'confluence' && !c.authorized ? `<button type="button" class="btn sm primary" data-cact="authorize">Authorize with Atlassian</button>` : `<button type="button" class="btn sm" data-cact="verify">Find spaces</button><button type="button" class="btn sm" data-cact="sync">Sync now</button>`}<span class="lsp"></span><button type="button" class="btn sm" data-cact="disconnect">Disconnect</button></div>
     ${c.authorized || c.system === 'gdrive' ? `<div class="cnspaces">${spaces.length ? `<div class="dt" style="--cols:minmax(0,1.6fr) minmax(0,1.2fr) 64px"><div class="dt-r dt-h"><span>${c.system === 'gdrive' ? 'Shared drive' : 'Space'}</span><span>Owner</span><span>Included</span></div>${spaces.map((s) => spaceRow(s)).join('')}</div>` : '<p class="amute cnnone">No spaces found yet. Use Find spaces.</p>'}</div>` : ''}</div>`;
@@ -93,7 +93,7 @@ function spaceRow(s) {
 }
 function credentialRow(c) {
   const [title, sub] = CREDENTIALS[c.name] || [c.name, ''];
-  return `<div class="frow cnc" data-cred="${c.name}"><div class="frl"><b>${title}</b><small>${sub}</small></div><div class="frv">${c.configured ? `<span class="tag ok">Configured</span><span class="amute"> Client ID ends in ${esc(c.client_id_last4 || '')}${c.updated_at ? ' · ' + esc(B.ago(c.updated_at)) : ''}</span>` : '<span class="tag warn">Not configured</span>'}</div><div class="fra"><button type="button" class="btn sm" data-cedit="${c.name}">${c.configured ? 'Replace' : 'Add'}</button></div></div>`;
+  return `<div class="frow cnc" data-cred="${c.name}"><div class="frl"><b>${title}</b><small>${sub}</small></div><div class="frv">${c.configured ? `<span class="tag ok">Configured</span><span class="amute"> Client ID ends in ${esc(c.client_id_last4 || '')}${c.updated_at ? ' · ' + B.when(c.updated_at, B.ago(c.updated_at)) : ''}</span>` : '<span class="tag warn">Not configured</span>'}</div><div class="fra"><button type="button" class="btn sm" data-cedit="${c.name}">${c.configured ? 'Replace' : 'Add'}</button></div></div>`;
 }
 function wire() {
   const body = $('#cnbody');

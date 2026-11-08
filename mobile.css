@@ -209,7 +209,8 @@ main#app>*{animation:pgIn .34s var(--spring) both}
 
 
 /* page title lives in the top bar; do not repeat it in the page */
-.pg>h1,.pg>h1:first-child,.lcont-t,.aghd .lcont-t{display:none}
+/* The top bar shows the page title; the heading stays for screen readers. */
+.pg>h1,.pg>h1:first-child,.lcont-t,.aghd .lcont-t{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;margin:0}
 .aghd{justify-content:flex-end;margin-bottom:var(--s-3)}
 .aghd:not(:has(.btn,.tag)){display:none}
 .pg{padding-top:0}
@@ -296,3 +297,5 @@ body .mainpanel{min-height:100dvh}
 /* Table headers do not apply to the card layout ("tables become cards" forces every row
    to display:grid, which used to bring the header back). */
 .dt-r.dt-h{display:none!important}
+/* Group labels in the phone menu: --mute-2 on the shell was 3.7:1. */
+#surfaces .sgl{color:var(--mute)}

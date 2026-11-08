@@ -37,10 +37,10 @@ const domainLabel = (d) => (d.domain ? `<span class="llab"><i style="background:
 const subline = (d) => esc(d.path || [B.systemName(d.system), d.domain && d.domain.name].filter(Boolean).join(' · '));
 
 function row(d) {
-  return `<div class="lrow" data-open="${d.id}" role="button" tabindex="0"><span class="lst">${B.srcIcon(d.system, 18)}</span><span class="ltt"><span>${esc(d.title)}</span><small class="lpath">${subline(d)}</small></span><span class="lr">${authorityTag(d)}${domainLabel(d)}<span class="ldoc">${ICON(KIND_ICON[d.kind] || 'doc', 14)}${esc(kindName(d.kind))}</span>${d.owner ? AVATAR(d.owner.name, 'lav', 22) : '<span class="lavsp" aria-hidden="true"></span>'}<span class="ldt">${esc(d.last_verified_at ? B.fmtDate(d.last_verified_at) : '')}</span></span></div>`;
+  return `<div class="lrow" data-open="${d.id}" role="button" tabindex="0"><span class="lst">${B.srcIcon(d.system, 18)}</span><span class="ltt"><span>${esc(d.title)}</span><small class="lpath">${subline(d)}</small></span><span class="lr">${authorityTag(d)}${domainLabel(d)}<span class="ldoc">${ICON(KIND_ICON[d.kind] || 'doc', 14)}${esc(kindName(d.kind))}</span>${d.owner ? AVATAR(d.owner.name, 'lav', 22) : '<span class="lavsp" aria-hidden="true"></span>'}<span class="ldt">${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span></span></div>`;
 }
 function card(d) {
-  return `<button type="button" class="gcard" data-open="${d.id}"><span class="gc-p" style="background:${d.system === 'confluence' ? '#eef3ff' : '#eef8f2'}"><span class="gc-l"><i></i><i></i><i></i></span>${B.srcIcon(d.system, 30)}<span class="gc-k">${esc(kindName(d.kind))}</span></span><span class="gc-t">${esc(d.title)}</span><small>${subline(d)}</small><span class="gc-f">${d.owner ? AVATAR(d.owner.name, 'lav', 20) : ''}<span>${esc(d.owner ? d.owner.name : '')}</span><span class="lsp"></span><span>${esc(d.last_verified_at ? B.fmtDate(d.last_verified_at) : '')}</span></span></button>`;
+  return `<button type="button" class="gcard" data-open="${d.id}"><span class="gc-p" style="background:${d.system === 'confluence' ? '#eef3ff' : '#eef8f2'}"><span class="gc-l"><i></i><i></i><i></i></span>${B.srcIcon(d.system, 30)}<span class="gc-k">${esc(kindName(d.kind))}</span></span><span class="gc-t">${esc(d.title)}</span><small>${subline(d)}</small><span class="gc-f">${d.owner ? AVATAR(d.owner.name, 'lav', 20) : ''}<span>${esc(d.owner ? d.owner.name : '')}</span><span class="lsp"></span><span>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span></span></button>`;
 }
 
 /* ---------- the page ---------- */
@@ -48,7 +48,7 @@ function page() {
   const L = state();
   $('#app').innerHTML = `<div class="pg"><h1>Library</h1>
     <div class="libbar"><div class="libs"><span class="libs-i">${ICON('search', 15)}</span><input id="libq" type="search" placeholder="Search the library" aria-label="Search the library" value="${esc(L.q)}" autocomplete="off"></div>
-      <div class="fwrap"><button type="button" class="fbtn ${L.system || L.domain ? 'on' : ''}" id="lfbtn" aria-haspopup="true" aria-expanded="false">${ICON('filter', 15)}<span>Filter</span></button><div class="fmenu" id="lfmenu" hidden></div></div>
+      <div class="fwrap"><button type="button" class="fbtn ${L.system || L.domain ? 'on' : ''}" id="lfbtn" aria-label="Filter" aria-haspopup="true" aria-expanded="false">${ICON('filter', 15)}<span>Filter</span></button><div class="fmenu" id="lfmenu" hidden></div></div>
       <div class="seg" role="group" aria-label="View"><button type="button" class="segb ${L.view === 'list' ? 'on' : ''}" data-v="list" aria-label="List view" aria-pressed="${L.view === 'list'}">${ICON('rows', 15)}</button><button type="button" class="segb ${L.view === 'grid' ? 'on' : ''}" data-v="grid" aria-label="Grid view" aria-pressed="${L.view === 'grid'}">${ICON('grid', 15)}</button></div></div>
     <div class="libchips" id="libchips"></div>
     <div class="lbody ${L.view === 'grid' ? 'isgrid' : ''}" id="libbody"></div><div class="chmore" id="libmore"></div></div>`;
@@ -192,8 +192,8 @@ async function openDocument(id, opts) {
     <div class="sv-body"><h2>${esc(d.title)}</h2>
       <div class="sv-tags">${authorityTag(d) || '<span class="tag ok">Approved</span>'}<span class="tag ${scope[1]}">${esc(scope[0])}</span>${d.sensitivity !== 'internal' ? `<span class="tag">${esc(B.clearanceName(d.sensitivity))}</span>` : ''}${domainLabel(d)}</div>
       ${c && c.quote ? `<blockquote class="sv-q">${esc(c.quote)}</blockquote>` : ''}
-      ${d.owner ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b>${esc(d.owner.name)}</b><small>${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${esc(B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>` : ''}
-      <dl class="kv svkv">${d.path ? `<dt>Folder</dt><dd><button type="button" class="link" id="dfolder">${esc(d.path)}</button></dd>` : ''}<dt>Kind</dt><dd>${esc(kindName(d.kind))}</dd>${d.review_due_at ? `<dt>Review due</dt><dd>${esc(B.fmtDate(d.review_due_at, true))}</dd>` : ''}${!d.owner && d.last_verified_at ? `<dt>Verified</dt><dd>${esc(B.fmtDate(d.last_verified_at, true))}</dd>` : ''}</dl>
+      ${d.owner ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b>${esc(d.owner.name)}</b><small>${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>` : ''}
+      <dl class="kv svkv">${d.path ? `<dt>Folder</dt><dd><button type="button" class="link" id="dfolder">${esc(d.path)}</button></dd>` : ''}<dt>Kind</dt><dd>${esc(kindName(d.kind))}</dd>${d.review_due_at ? `<dt>Review due</dt><dd>${B.when(d.review_due_at, B.fmtDate(d.review_due_at, true))}</dd>` : ''}${!d.owner && d.last_verified_at ? `<dt>Verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}</dl>
     </div>
     <div class="sv-act"><a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${B.srcIcon(d.system, 16)}Open in ${esc(B.systemName(d.system))}${ICON('ext', 14)}</a>${canWiden ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}${lineage ? '<button type="button" class="btn" id="dlineage">Lineage</button>' : ''}</div></div>`;
   $('[data-close-drawer]', drawer).onclick = B.closeDrawer;
@@ -232,7 +232,7 @@ async function lineageModal(d) {
     const box = $('#lin');
     if (!box) return;
     box.innerHTML = page.items.length
-      ? `<div class="actl">${page.items.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${esc(B.dayLabel(e.ts, true))}${e.channel ? ' · ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' · ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
+      ? `<div class="actl">${page.items.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' · ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' · ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
       : '<p class="actn">Nothing yet. Answers that cite this document appear here.</p>';
   } catch (error) {
     const box = $('#lin');

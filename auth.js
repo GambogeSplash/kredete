@@ -84,7 +84,10 @@ window.SURFACES.signin = () => {
 
 /* ---------- boot error ---------- */
 AUTH.bootError = (error, retry) => {
-  shell(`${brand}<h1>Brain could not be reached</h1><p class="sub">${esc(B.problem(error))}</p><button type="button" class="btn primary si-btn" id="bootretry"><span class="spin" aria-hidden="true"></span><span>Try again</span></button>`, preview(null));
+  // Brain's own problem says what went wrong; without one, say what to do rather than repeat the heading.
+  const head = error && error.reached ? 'Brain could not start' : 'Brain could not be reached';
+  const body = error && error.reached ? B.problem(error) : 'Check your connection and try again. If it keeps happening, tell your Kredete admin.';
+  shell(`${brand}<h1>${head}</h1><p class="sub">${esc(body)}</p><button type="button" class="btn primary si-btn" id="bootretry"><span class="spin" aria-hidden="true"></span><span>Try again</span></button>`, preview(null));
   $('#bootretry').onclick = () => { $('#bootretry').classList.add('busy'); retry(); };
 };
 
@@ -214,7 +217,7 @@ function profileMenu(a) {
   const me = B.S.me;
   const current = B.S.route.surface;
   const item = (k, l, ic) => `<button type="button" class="pm-i" role="menuitem" data-pm="${k}" ${current === k ? 'aria-current="page"' : ''}>${ICON(ic, 18)}<span>${l}</span></button>`;
-  let h = `<div class="pm-head"><button type="button" class="pm-who" role="menuitem" data-pm="account">${AVATAR(me.name, 'avimg', 40)}<span><b>${esc(me.name)}</b><small>${esc(me.email)}</small><em>${esc(me.team || '')}</em></span></button><button type="button" class="pm-go" role="menuitem" data-pm="account" aria-label="Account settings">${ICON('chevr', 16)}</button></div>`;
+  let h = `<div class="pm-head"><button type="button" class="pm-who" role="menuitem" data-pm="account">${AVATAR(me.name, 'avimg', 40)}<span><b>${esc(me.name)}</b><small>${esc(me.email)}</small><em>${esc(me.team || '')}</em></span></button><span class="pm-go" data-pm="account" aria-hidden="true">${ICON('chevr', 16)}</span></div>`;
   h += '<div class="pm-s"></div>' + item('account', 'Account settings', 'user');
   if (B.hasRole('admin', 'compliance', 'developer')) h += item('bot', 'Support agent', 'headset');
   h += `<div class="pm-s"></div><button type="button" class="pm-i danger" role="menuitem" data-pm="out">${ICON('logout', 18)}<span>Sign out</span></button>`;
@@ -228,12 +231,12 @@ function profileMenu(a) {
   el.style.maxHeight = Math.max(200, r.top - 16) + 'px';
   pm = { el, a };
   a.setAttribute('aria-expanded', 'true');
-  const items = $$('.pm-i,.pm-who,.pm-go', el);
+  const items = $$('.pm-i,.pm-who', el); // the chevron repeats the profile card: pointer only
   let cur = -1;
   const hi = (n) => { cur = n; items[n].focus({ preventScroll: true }); };
   el.setAttribute('tabindex', '-1');
   el.focus({ preventScroll: true });
-  items.forEach((b) => {
+  $$('[data-pm]', el).forEach((b) => {
     b.onclick = () => {
       const k = b.dataset.pm;
       closeMenu(false);

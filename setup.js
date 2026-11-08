@@ -59,7 +59,7 @@ function checklist(current) {
   return `<div class="pvp sup" aria-hidden="true"><div class="pvw sucard"><div class="suh">${ICON('check', 14)}<b>Set up Kredete Brain</b></div><ol class="sul">${STEPS.map(([k, title, sub], i) => `<li class="${i < at ? 'done' : i === at ? 'on' : ''}"><i>${i < at ? ICON('check', 12) : i + 1}</i><span><b>${esc(title)}</b><small>${esc(sub)}</small></span></li>`).join('')}</ol></div><div class="pvcap">${current === 'done' ? 'All set' : `Step ${at + 1} of ${STEPS.length}`}</div></div>`;
 }
 function render(step, left) {
-  const leave = B.S.phase === 'app' ? `<button type="button" class="link suleave" id="suleave">Leave setup for now</button>` : '';
+  const leave = B.S.phase === 'app' && step !== 'done' ? `<button type="button" class="link suleave" id="suleave">Leave setup for now</button>` : '';
   A().shell(`${left}${leave}`, checklist(step), step === 'done' ? null : [index(step) + 1, STEPS.length]);
   const l = $('#suleave');
   if (l) l.onclick = () => B.go('/');
@@ -198,7 +198,7 @@ async function spacesStep(p) {
     list.innerHTML = `<p class="sub">Brain found no spaces it can read on ${esc(p.connection.site)}.</p>`;
     return;
   }
-  list.innerHTML = `<div class="glist suspaces">${containers.map((c) => `<label class="gsrc">${B.srcIcon('confluence', 22)}<span class="gt"><span>${esc(c.path)}</span><small>${esc(c.external_id)}</small></span><input type="checkbox" class="gck" data-space="${c.id}" checked aria-label="Include ${esc(c.path)}"></label>`).join('')}</div>`;
+  list.innerHTML = `<div class="glist suspaces">${containers.map((c) => `<label class="gsrc">${B.srcIcon('confluence', 22)}<span class="gt"><span>${esc(c.path)}</span></span><input type="checkbox" class="gck" data-space="${c.id}" checked aria-label="Include ${esc(c.path)}"></label>`).join('')}</div>`;
   const count = () => $$('[data-space]:checked').length;
   const label = () => { go.disabled = !count(); $('span:last-child', go).textContent = count() ? `Include ${count()} ${count() === 1 ? 'space' : 'spaces'}` : 'Pick at least one space'; };
   $$('[data-space]').forEach((c) => { c.onchange = label; });

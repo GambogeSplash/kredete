@@ -115,7 +115,7 @@ function draw() {
     return;
   }
   t.innerHTML = head + (a.items.length
-    ? a.items.map((e) => `<div class="dt-r"><span class="dtm">${esc(B.dayLabel(e.ts, true))}</span><span class="dtp"><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="dtm audwho">${actor(e.actor)}</span><span class="dtm">${target(e)}</span><span><span class="tag ${e.outcome === 'ok' || e.outcome === 'answered' ? 'ok' : ''}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('')
+    ? a.items.map((e) => `<div class="dt-r"><span class="dtm">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="dtp"><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="dtm audwho">${actor(e.actor)}</span><span class="dtm">${target(e)}</span><span><span class="tag ${e.outcome === 'ok' || e.outcome === 'answered' ? 'ok' : ''}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('')
     : '<div class="dt-r dtempty"><span class="amute">No events match.</span></div>');
   more.innerHTML = a.next ? `<button type="button" class="btn sm" id="audload" ${a.loading ? 'disabled' : ''}>${a.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#audload');

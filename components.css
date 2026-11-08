@@ -12,8 +12,8 @@
 .pcn small{font-size:var(--fs-xs);color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .padd{border-style:dashed;background:transparent;color:var(--mute)}
 .padd:hover{border-color:var(--brand-line);color:var(--ink);background:var(--fill-1)}
-.padd .pico.plus{background:var(--fill-2);color:var(--mute-2);box-shadow:none;font-size:var(--fs-h2);font-weight:var(--fw-regular)}
-.pkey{display:block;margin-top:var(--s-1);font:var(--fw-regular) var(--fs-xs) var(--mono);color:var(--mute-2)}
+.padd .pico.plus{background:var(--fill-2);color:var(--mute);box-shadow:none;font-size:var(--fs-h2);font-weight:var(--fw-regular)}
+.pkey{display:block;margin-top:var(--s-1);font:var(--fw-regular) var(--fs-xs) var(--mono);color:var(--mute)}
 @media(max-width:560px){.pgrid{grid-template-columns:1fr}}
 
 /* sidebar footer: profile button plus the light/dark switch */
@@ -235,7 +235,14 @@ a.btn.si-btn{text-decoration:none}
 .gmore{display:block;margin:var(--s-3) auto}
 .drawerbody{padding:0}
 .fu .gm-sugs{margin-top:14px}
+/* Source rows: a long title or path ends in an ellipsis, not mid-letter (.gt is a column, so each line clips). */
+.gsrc .gt>span,.gsrc .gt small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The send button while a new chat is being created for the question. */
+.dsend.busy .spin{display:inline-block}
+.dsend:disabled{cursor:default}
 
+/* Chats page rows: on phones the pin and actions stay on the row's right, unlike rows with real buttons. */
+@media (max-width:640px){.chr{flex-wrap:nowrap}.chr .actt{flex:1;min-width:0}.chr .actb{width:auto}}
 /* ---- Library (library.js) ---- */
 .libchips{padding:var(--s-3) var(--s-6) var(--s-2);align-items:center}
 .libchips[hidden]{display:none}
@@ -326,3 +333,17 @@ body[data-sf=ask] #crumb,body[data-sf=governance] #crumb,body[data-sf=admin] #cr
 .lnrow .actb{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;justify-content:flex-end}
 .lnrow .ssel{min-width:200px}
 .lnnone{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
+
+/* ---- accessibility (tools/audit.js: contrast of at least 4.5:1, targets of at least 24 px) ---- */
+/* A date or time reads as one unit: "8 Nov", "2 min ago" never break across lines. */
+time{white-space:nowrap}
+/* A link inside a tinted notice takes the notice's own color (brand on amber was 4.2:1). */
+.notice .link,.banner .link{color:inherit;text-decoration:underline;text-underline-offset:2px}
+/* Initials: white on --mute-2 was 4.1:1. */
+.lav.avini,.avini{background-color:var(--mute)}
+/* Quiet text that still carries meaning. */
+#surfaces .surf .skbd,.pvcap,.pvc{color:var(--mute)}
+/* The sidebar's "K" (collapse) button was 20 px. */
+.wsav{width:24px;height:24px;line-height:24px}
+/* Search inputs fill their field, so the whole field is the target. */
+.libs input{align-self:stretch;min-height:24px}

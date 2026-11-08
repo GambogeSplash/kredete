@@ -113,23 +113,49 @@ function onEvent(turn, event) {
   paint(turn);
 }
 
+/** A new chat is being created for a question: until it exists, nothing else is sent. */
+let creating = false;
+function sending(on) {
+  const b = sendButton();
+  if (!b) return;
+  b.disabled = on;
+  b.classList.toggle('busy', on);
+  if (on) { b.setAttribute('aria-busy', 'true'); b.innerHTML = '<span class="spin" aria-hidden="true"></span>'; }
+  else { b.removeAttribute('aria-busy'); b.innerHTML = ICON('send', 16); }
+}
+/** Puts a question that could not be sent back in the composer, unless something new was typed. */
+function giveBack(question) {
+  const ta = $('#askin');
+  if (!ta || ta.value.trim()) return;
+  ta.value = question;
+  ta.dispatchEvent(new Event('input'));
+}
+
 /** Asks `question` in the open conversation, creating one first on the home page. */
 async function ask(question) {
   const q = String(question || '').trim();
-  if (!q) return;
+  if (!q || creating) return;
   stop();
   let conv = S().conv;
   if (!conv || !S().route.params.id) {
     let created;
+    creating = true;
+    sending(true);
     try { created = await B.api.post('/conversations', {}); }
-    catch (error) { B.toast(B.problem(error)); return; }
+    catch (error) { B.toast(B.problem(error)); giveBack(q); return; }
+    finally { creating = false; sending(false); }
     conv = S().conv = Object.assign({}, created, { turns: [], loaded: true });
     B.touchChat(created);
   }
   const turn = { id: null, question: q, created_at: new Date().toISOString(), status: 'streaming', text: '', stage: 'searching', searched: 0, answer: null, error: null, feedback: null, reported: false };
   conv.turns.push(turn);
   if (S().route.params.id === conv.id) appendTurn(turn);
-  else { history.pushState({}, '', '/c/' + conv.id); B.route(); }
+  else {
+    const draft = $('#askin') ? $('#askin').value : ''; // typed while the chat was being created
+    history.pushState({}, '', '/c/' + conv.id);
+    B.route();
+    if (draft) giveBack(draft);
+  }
   const first = conv.turns.length === 1;
   await run(turn, (opts) => B.api.ask(conv.id, Object.assign({ question: q }, filtersBody()), opts));
   if (S().conv === conv) refreshMeta(conv, first);
@@ -192,8 +218,8 @@ function sourcesLabel() {
   const narrowed = askState().filters.system || askState().filters.domain || askState().filters.when;
   return `${narrowed ? 'Filtered · ' : ''}${n} ${n === 1 ? 'source' : 'sources'}`;
 }
-function composer(home, placeholder) {
-  return `<form class="dform" id="askform"><textarea id="askin" rows="${home ? 3 : 1}" placeholder="${placeholder}" aria-label="Ask a question" autocomplete="off" maxlength="4000"></textarea><div class="drow"><button type="button" class="dchip" id="cxsrc">${ICON('stack', 14)}<span>${esc(sourcesLabel())}</span>${B.CARET}</button><span class="lsp"></span><button class="dsend" type="submit" aria-label="Ask">${ICON('send', 16)}</button></div></form>`;
+function composer(home, placeholder, convId) {
+  return `<form class="dform" id="askform"><textarea id="askin" rows="${home ? 3 : 1}" placeholder="${placeholder}" aria-label="Ask a question" autocomplete="off" maxlength="4000" ${convId ? `data-conv="${esc(convId)}"` : ''}></textarea><div class="drow"><button type="button" class="dchip" id="cxsrc">${ICON('stack', 14)}<span>${esc(sourcesLabel())}</span>${B.CARET}</button><span class="lsp"></span><button class="dsend" type="submit" aria-label="Ask">${ICON('send', 16)}</button></div></form>`;
 }
 function feedHtml() {
   const sys = systems();
@@ -229,11 +255,26 @@ function refreshRecent() {
   wireHome();
 }
 
+/** What is being typed in this conversation's composer, to carry over a re-render. */
+function takeDraft(convId) {
+  const ta = $('#askin');
+  if (!ta || ta.dataset.conv !== convId || !ta.value) return null;
+  return { value: ta.value, focused: document.activeElement === ta, start: ta.selectionStart, end: ta.selectionEnd };
+}
+function putDraft(draft) {
+  const ta = $('#askin');
+  if (!draft || !ta) return;
+  ta.value = draft.value;
+  ta.dispatchEvent(new Event('input'));
+  if (draft.focused) { ta.focus({ preventScroll: true }); ta.setSelectionRange(draft.start, draft.end); }
+}
+
 function renderConversation(conv) {
   greetingText = '';
+  const draft = takeDraft(conv.id); // the view re-renders when the chat loads or is renamed
   const a = askState();
   $('#app').className = 'cxapp';
-  $('#app').innerHTML = `<div class="cx ${a.panel ? '' : 'closed'}"><section class="cxmain"><div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(B.chatTitle(conv))}</b><button type="button" class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more', 16)}</button><span class="lsp"></span><button type="button" class="lib ctog" id="cxtog" aria-label="Sources" title="Sources" aria-expanded="${a.panel}">${togInner()}</button></div><div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div><div class="cxcomp">${composer(false, 'Ask a follow-up')}<p class="cxcap">Brain can be inaccurate. Check the sources.</p></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
+  $('#app').innerHTML = `<div class="cx ${a.panel ? '' : 'closed'}"><section class="cxmain"><div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(B.chatTitle(conv))}</b><button type="button" class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more', 16)}</button><span class="lsp"></span><button type="button" class="lib ctog" id="cxtog" aria-label="Sources" title="Sources" aria-expanded="${a.panel}">${togInner()}</button></div><div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div><div class="cxcomp">${composer(false, 'Ask a follow-up', conv.id)}<p class="cxcap">Brain can be inaccurate. Check the sources.</p></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
   const thread = $('#thread');
   if (!conv.loaded) {
     thread.innerHTML = conv.error ? B.errorBlock(conv.error, 'convretry') : `<div class="skwrap" role="status"><span class="sr">Loading the conversation</span>${skeletonTurn()}${skeletonTurn()}</div>`;
@@ -253,6 +294,7 @@ function renderConversation(conv) {
   $('#cxmore').onclick = (e) => { e.stopPropagation(); B.chatMenu($('#cxmore'), conv, { rename }); };
   $('#cxtog').onclick = () => setPanel(!askState().panel);
   wireComposer(false);
+  putDraft(draft);
   renderPanel();
   const chat = $('#chat');
   if (chat) chat.scrollTop = chat.scrollHeight;
@@ -285,7 +327,7 @@ function wireComposer(home) {
   ta.oninput = () => { ta.style.height = 'auto'; ta.style.height = Math.min(160, ta.scrollHeight) + 'px'; };
   form.onsubmit = (e) => {
     e.preventDefault();
-    if (active) return;
+    if (active || creating) return;
     const v = ta.value.trim();
     if (!v) return;
     ta.value = '';
@@ -325,7 +367,7 @@ function turnEl(turn, index) {
   const conv = S().conv;
   const prev = conv.turns[index - 1];
   const dayKey = (iso) => new Date(iso).toDateString();
-  const chip = !prev || dayKey(prev.created_at) !== dayKey(turn.created_at) ? `<div class="dday"><span>${esc(B.dayLabel(turn.created_at, !prev))}</span></div>` : '';
+  const chip = !prev || dayKey(prev.created_at) !== dayKey(turn.created_at) ? `<div class="dday"><span>${B.when(turn.created_at, B.dayLabel(turn.created_at, !prev))}</span></div>` : '';
   el.innerHTML = `${chip}<div class="umsg" title="${esc(new Date(turn.created_at).toLocaleString())}"><span>${esc(turn.question)}</span></div><div class="umrow"><div class="umt"><time datetime="${esc(turn.created_at)}">${esc(B.fmtTime(turn.created_at))}</time></div></div><div class="ans"></div><div class="extra"></div>`;
   fill(el, turn, index);
   return el;
@@ -418,7 +460,7 @@ function conflictHtml(turn, index) {
   const sides = (a.conflict && a.conflict.sides) || [];
   const cite = (n) => a.citations.find((c) => c.n === n);
   return `<div class="conflict"><div class="cfh">${esc((a.conflict && a.conflict.summary) || 'Sources disagree')}</div>
-    ${sides.map((s) => { const c = cite(s.n); return `<button type="button" class="cfrow" ${c ? `data-cite="${keyOf(index)}:${s.n}"` : 'disabled'}>${c ? B.srcIcon(c.system, 22) : ''}<span class="cft"><b>${esc(c ? c.title : 'Source ' + s.n)}</b><small>${c ? esc([B.systemName(c.system), c.last_verified_at ? 'verified ' + B.fmtDate(c.last_verified_at) : ''].filter(Boolean).join(' · ')) : ''}</small></span><span class="cfv">${esc(s.value)}</span>${c ? authorityTag(c.authority) : ''}</button>`; }).join('')}
+    ${sides.map((s) => { const c = cite(s.n); return `<button type="button" class="cfrow" ${c ? `data-cite="${keyOf(index)}:${s.n}"` : 'disabled'}>${c ? B.srcIcon(c.system, 22) : ''}<span class="cft"><b>${esc(c ? c.title : 'Source ' + s.n)}</b><small>${c ? esc(B.systemName(c.system)) + (c.last_verified_at ? ` · verified ${B.when(c.last_verified_at, B.fmtDate(c.last_verified_at))}` : '') : ''}</small></span><span class="cfv">${esc(s.value)}</span>${c ? authorityTag(c.authority) : ''}</button>`; }).join('')}
     <div class="cff"><button type="button" class="btn sm" data-report="1" ${turn.reported ? 'disabled' : ''}>${turn.reported ? `${ICON('check', 14)} Sent` : 'Report to owner'}</button>${turn.reported ? '<span class="cfsent">The owners can fix it at the source.</span>' : ''}</div></div>`;
 }
 function authorityTag(authority) {
@@ -510,7 +552,7 @@ function panelTurn() {
 }
 function citationRows(turn) {
   const cites = turn.answer.citations;
-  return `<div class="cxh">${cites.length} ${cites.length === 1 ? 'source' : 'sources'} used</div>${cites.map((c) => `<div class="cxs" data-n="${c.n}" data-doc="${c.document_id}" tabindex="0" role="button"><div class="cxs-h">${B.srcIcon(c.system, 20)}<b>${esc(c.title)}</b><span class="cite">${c.n}</span></div><div class="cxs-q">${c.quote ? esc(c.quote) : '<span class="amute">This passage is no longer available.</span>'}</div><div class="cxs-f">${authorityTag(c.authority)}<span>${c.owner ? PERSON(c.owner.name, 16) : ''}${c.last_verified_at ? ` · ${esc(B.fmtDate(c.last_verified_at))}` : ''}</span><span class="cxs-go">${ICON('chevr', 14)}</span></div></div>`).join('')}`;
+  return `<div class="cxh">${cites.length} ${cites.length === 1 ? 'source' : 'sources'} used</div>${cites.map((c) => `<div class="cxs" data-n="${c.n}" data-doc="${c.document_id}" tabindex="0" role="button"><div class="cxs-h">${B.srcIcon(c.system, 20)}<b>${esc(c.title)}</b><span class="cite">${c.n}</span></div><div class="cxs-q">${c.quote ? esc(c.quote) : '<span class="amute">This passage is no longer available.</span>'}</div><div class="cxs-f">${authorityTag(c.authority)}<span>${c.owner ? PERSON(c.owner.name, 16) : ''}${c.last_verified_at ? ` · ${B.when(c.last_verified_at, B.fmtDate(c.last_verified_at))}` : ''}</span><span class="cxs-go">${ICON('chevr', 14)}</span></div></div>`).join('')}`;
 }
 function answerTab() {
   const turn = panelTurn();
@@ -685,11 +727,12 @@ function askFresh(question) {
 
 /** The home page's source line, once facets arrive. */
 function refreshFeed() {
+  // The composer's source count shows in a chat too, not only on the home page.
+  $$('#cxsrc span').forEach((x) => { if (!x.querySelector('svg')) x.textContent = sourcesLabel(); });
   const f = $('#lhfeed');
   if (!f) return;
   f.outerHTML = feedHtml();
   wireHome();
-  $$('#cxsrc span').forEach((x) => { if (!x.querySelector('svg')) x.textContent = sourcesLabel(); });
 }
 
 window.ASK = { stop, ask, askFresh, citation, refreshRecent, refreshFeed };

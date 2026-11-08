@@ -62,8 +62,10 @@
      * @param {number | null} [fields.retryAfter] seconds to wait before retrying
      * @param {boolean} [fields.retryable]
      * @param {string | null} [fields.turnId] for streams: the turn that had started
+     * @param {boolean} [fields.reached] whether Brain itself answered (not a network failure, or a
+     *   page without a problem document from something in between, such as a proxy's 502)
      */
-    constructor({ status, title, detail = '', code = '', retryAfter = null, retryable, turnId = null }) {
+    constructor({ status, title, detail = '', code = '', retryAfter = null, retryable, turnId = null, reached }) {
       super(title);
       this.name = 'ApiError';
       this.status = status;
@@ -73,11 +75,15 @@
       this.retryAfter = retryAfter;
       this.retryable = retryable ?? (status === 0 || status === 429 || status >= 500);
       this.turnId = turnId;
+      this.reached = reached ?? status !== 0;
     }
   }
 
   /** @param {unknown} error */
   const isAbort = (error) => error instanceof Error && error.name === 'AbortError';
+  /** Methods that write a resource in place, so the order of two writes decides what is stored. */
+  const ORDERED = new Set(['PUT', 'PATCH', 'DELETE']);
+  const settled = () => undefined;
 
   /**
    * Seconds until a Retry-After value (delta seconds or an HTTP date), or null.
@@ -105,9 +111,11 @@
       response.status === 429 || response.status === 503
         ? parseRetryAfter(response.headers.get('retry-after'), now)
         : null;
+    const reached = typeof body.title === 'string' && !!body.title;
     return new ApiError({
       status: response.status,
-      title: typeof body.title === 'string' && body.title ? body.title : UNREACHABLE,
+      reached,
+      title: reached ? /** @type {string} */ (body.title) : UNREACHABLE,
       detail: typeof body.detail === 'string' ? body.detail : '',
       code: typeof body.code === 'string' ? body.code : '',
       retryAfter,
@@ -189,6 +197,8 @@
     let ended = false;
     /** @type {Set<() => void>} */
     const signedOutListeners = new Set();
+    /** The last write still in flight for each resource path. @type {Map<string, Promise<unknown>>} */
+    const writes = new Map();
 
     /**
      * @param {string} path
@@ -289,7 +299,25 @@
      * @param {{ query?: Query, body?: unknown } & RequestOptions} [options]
      * @returns {Promise<any>}
      */
-    async function request(method, path, options = {}) {
+    function request(method, path, options = {}) {
+      if (!ORDERED.has(method)) return exchange(method, path, options);
+      // Writes to one resource go out one at a time, in the order they were made: two in flight
+      // at once can reach the server in either order and leave it holding the older one.
+      const previous = writes.get(path);
+      const mine = (previous ? previous.then(settled, settled) : Promise.resolve()).then(() => exchange(method, path, options));
+      writes.set(path, mine);
+      const forget = () => { if (writes.get(path) === mine) writes.delete(path); };
+      mine.then(forget, forget);
+      return mine;
+    }
+
+    /**
+     * @param {string} method
+     * @param {string} path
+     * @param {{ query?: Query, body?: unknown } & RequestOptions} [options]
+     * @returns {Promise<any>}
+     */
+    async function exchange(method, path, options = {}) {
       /** @type {RequestInit} */
       const init = { method, signal: options.signal, headers: { accept: 'application/json' } };
       if (options.body !== undefined) {

@@ -588,7 +588,7 @@ body.noauth #crumb{display:none}
 body.noauth main#app{padding:0}
 .si{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);height:100%;min-height:100vh}
 .si-l{display:flex;align-items:center;justify-content:center;padding:var(--s-8);background:var(--surface)}
-.si-in{width:100%;max-width:380px}
+.si-in{width:100%;max-width:380px;min-width:0}
 .si-r{background-size:cover;background-position:center;position:relative;display:flex;align-items:flex-end}
 .si-ov{padding:var(--s-9);color:var(--surface);max-width:520px}
 .si-q{font-size:var(--fs-display);font-weight:600;letter-spacing:-.02em;line-height:1.25}
@@ -1189,7 +1189,7 @@ html[data-mode=dark] :is(.fc-art,.fsvg,.fh-i){filter:invert(1) hue-rotate(180deg
 .pvf{display:flex;align-items:center;gap:var(--s-2);font-size:var(--fs-2xs);color:var(--mute)}.pvf img{width:14px;height:14px}
 .pvl{display:inline-flex;align-items:center;gap:var(--s-2);border:1px solid var(--line);border-radius:var(--r-full);padding:var(--s-1) var(--s-3);font-size:var(--fs-2xs);animation:sinin var(--dur-slow) ease-out}.pvl i{width:7px;height:7px;border-radius:50%}
 .pvcap{font-size:var(--fs-xs);color:var(--mute-3);padding-left:var(--s-1)}
-@media (max-width:900px){.si.v2{grid-template-columns:1fr}.si-l{padding:var(--s-6) var(--s-5);align-items:flex-start}.obopts{grid-template-columns:1fr 1fr 1fr}}
+@media (max-width:900px){.si.v2{grid-template-columns:minmax(0,1fr)}.si-l{padding:var(--s-6) var(--s-5);align-items:flex-start}.obopts{grid-template-columns:1fr 1fr 1fr}}
 @media (prefers-reduced-motion:reduce){.si-in.in,.pvl{animation:none}.stp i,.obopt,.obcard{transition:none}}
 
 /* ---- chat date and time ---- */
@@ -1215,8 +1215,8 @@ html[data-mode=dark] :is(.fc-art,.fsvg,.fh-i){filter:invert(1) hue-rotate(180deg
 .lhome .dform{box-shadow:0 1px 2px rgba(0,0,0,.04),0 18px 44px -16px rgba(94,106,210,.35)}
 .lh-sug svg{transition:color var(--dur-fast)}.lh-sug:hover svg{color:var(--brand)}
 /* buttons with a little depth */
-.btn.primary,.btn.blue,.dsend{background:linear-gradient(180deg,#6b77dd,#5662cb);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(60,70,160,.35)}
-.btn.primary:hover,.btn.blue:hover,.dsend:hover{background:linear-gradient(180deg,#7580e3,var(--brand));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 16px -6px rgba(94,106,210,.6)}
+.btn.primary,.btn.blue,.dsend{background:linear-gradient(180deg,#5f6bd4,#4f5bc4);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(60,70,160,.35)}
+.btn.primary:hover,.btn.blue:hover,.dsend:hover{background:linear-gradient(180deg,#5f6bd4,#5662cb);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 16px -6px rgba(94,106,210,.6)}
 /* Library: each app group wears its own tint */
 /* Connectors: connected cards glow in their app colour */
 /* Activity: the next step and the unread dot have presence */
@@ -1411,7 +1411,7 @@ html[data-mode=dark] #cmdk .box{background:var(--surface)}
 .ttin{font:inherit;font-weight:500;font-size:var(--fs-md);border:1px solid var(--brand-line);border-radius:var(--r-sm);padding:2px var(--s-2);outline:0;box-shadow:var(--ring);background:var(--surface);color:var(--ink);min-width:0;width:min(420px,60%)}
 .surf.chat .ttin{width:100%;font-size:var(--fs-sm);padding:2px var(--s-2)}
 .surf.chat{position:relative}.surf.chat .chn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
-.surf.chat .chedit{display:none;place-items:center;width:22px;height:22px;border-radius:var(--r-sm);color:var(--mute-2);flex:none}
+.surf.chat .chedit{display:none;place-items:center;width:24px;height:24px;border-radius:var(--r-sm);color:var(--mute-2);flex:none}
 @media(hover:hover){.surf.chat:hover .chedit{display:grid}}.surf.chat .chedit:hover{background:var(--fill-3);color:var(--ink)}.surf.chat .chedit:focus-visible{display:grid;box-shadow:0 0 0 2px var(--brand-line)}
 
 /* chat menu */
@@ -1419,7 +1419,7 @@ html[data-mode=dark] #cmdk .box{background:var(--surface)}
 .cmenu button{display:flex;align-items:center;gap:var(--s-3);width:100%;border:0;background:none;padding:var(--s-2) 10px;border-radius:var(--r-md);font-size:var(--fs-md);color:var(--ink);text-align:left;cursor:pointer}
 .cmenu button svg{color:var(--mute-2);flex:none}.cmenu button:hover,.cmenu button:focus-visible{background:var(--wash);outline:0}
 .cm-sep{height:1px;background:var(--line2,var(--line2));margin:5px var(--s-1)}
-.cmenu .cm-del,.cmenu .cm-del svg{color:var(--danger)}.cmenu .cm-del:hover{background:var(--danger-soft)}
+.cmenu .cm-del,.cmenu .cm-del svg{color:var(--danger)}.cmenu .cm-del:hover{background:var(--danger-soft);color:var(--danger-strong)}.cmenu .cm-del:hover svg{color:var(--danger-strong)}
 .chpin{display:inline-flex;color:var(--mute-3);margin-right:var(--s-2);flex:none}
 .dpen{opacity:1!important}
 
@@ -1562,7 +1562,7 @@ html[data-mode=dark] #cmdk .box{background:var(--surface)}
 .lrail .tab{min-height:32px;display:flex;align-items:center;font-size:var(--fs-md);border-radius:var(--r-md)}
 .lrail-sep{height:1px;background:var(--line2,var(--line2));margin:var(--s-2) 10px}
 .lrail-f{margin-top:auto;padding:var(--s-2) 0 0;border-top:0}
-.lrail .tab.out{color:var(--mute);width:100%}.lrail .tab.out:hover{background:var(--danger-soft);color:var(--danger)}
+.lrail .tab.out{color:var(--mute);width:100%}.lrail .tab.out:hover{background:var(--danger-soft);color:var(--danger-strong)}
 .lrail{padding-top:var(--s-5)}
 
 /* account pages: one grid for every row, one edge for everything */
@@ -1692,7 +1692,7 @@ pre.code{background:var(--fill-1);color:var(--ink-2);border:1px solid var(--line
 .pm-ap{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);padding:var(--s-3) var(--s-2) var(--s-1);font-size:var(--fs-sm);color:var(--ink-2)}
 .pm-ap .seg{height:30px}.pm-ap .segb{width:auto;height:28px;padding:0 var(--s-3);font-size:var(--fs-xs);color:var(--mute)}
 .pm-ap .segb.on{background:var(--fill-3);color:var(--ink)}
-.pm-i.danger,.pm-i.danger svg{color:var(--danger)}.pm-i.danger:hover{background:var(--danger-soft)}
+.pm-i.danger,.pm-i.danger svg{color:var(--danger)}.pm-i.danger:hover{background:var(--danger-soft)}.pm-i.danger:hover,.pm-i.danger:hover svg{color:var(--danger-strong)}
 .pm-i{min-height:36px}
 .pmenu{width:304px}
 .pm-card:focus-visible{box-shadow:none}

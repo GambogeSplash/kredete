@@ -48,14 +48,14 @@ async function drawChats() {
       if (c.error) $('#chretry2').onclick = () => B.loadChats(true);
       return;
     }
-    items = [...c.items].sort((a, b) => Number(b.pinned) - Number(a.pinned));
+    items = [...c.items]; // already in the API's order: pinned first, then the latest activity
     if (c.next || c.loading) {
       more.innerHTML = `<button type="button" class="btn sm" id="chload" ${c.loading ? 'disabled' : ''}>${c.loading ? 'Loading' : 'Show more'}</button>`;
       $('#chload').onclick = () => B.loadChats(false);
     }
   }
   list.innerHTML = items.length
-    ? items.map((c, i) => `<div class="actr chr" data-o="${i}" role="button" tabindex="0"><span class="actic">${ICON('chat', 16)}</span><span class="actt"><b>${esc(B.chatTitle(c))}</b><small>${esc(B.ago(c.updated_at))}</small></span><span class="actb">${c.pinned ? `<span class="chpin" aria-label="Pinned">${ICON('pin', 13)}</span>` : ''}<button type="button" class="lib" data-m="${i}" aria-label="Chat actions" aria-haspopup="menu">${ICON('more', 16)}</button></span></div>`).join('')
+    ? items.map((c, i) => `<div class="actr chr" data-o="${i}" role="button" tabindex="0"><span class="actic">${ICON('chat', 16)}</span><span class="actt"><b>${esc(B.chatTitle(c))}</b><small>${B.when(c.updated_at, B.ago(c.updated_at))}</small></span><span class="actb">${c.pinned ? `<span class="chpin" aria-label="Pinned">${ICON('pin', 13)}</span>` : ''}<button type="button" class="lib" data-m="${i}" aria-label="Chat actions" aria-haspopup="menu">${ICON('more', 16)}</button></span></div>`).join('')
     : `<p class="actn">${q ? 'No chats match.' : 'No chats yet. Ask Brain a question to start one.'}</p>`;
   $$('[data-o]', list).forEach((r) => {
     const open = () => B.go('/c/' + items[+r.dataset.o].id);
@@ -143,7 +143,7 @@ async function sessions() {
   }
   const others = list.filter((s) => !s.current);
   el.innerHTML = `<div class="fgroup">${frow('Sign-in', 'Google', '<span class="tag ok">Single sign-on</span>')}</div>
-   <h3 class="ach">Signed in on ${list.length} ${list.length === 1 ? 'device' : 'devices'}</h3><div class="dt sesdt" style="--cols:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) 110px"><div class="dt-r dt-h"><span>Device</span><span>Signed in</span><span>Last active</span><span></span></div>${list.map((s) => `<div class="dt-r"><span class="dtp"><i class="devic" aria-hidden="true">${deviceIcon(s.user_agent)}</i><b style="font-weight:500">${esc(device(s.user_agent))}</b>${s.current ? '<span class="tag ok">This device</span>' : ''}</span><span class="dtm">${esc(B.fmtDate(s.created_at))}</span><span class="dtm">${esc(B.ago(s.last_used_at))}</span><span>${s.current ? '' : `<button type="button" class="btn sm" data-so="${s.id}">Sign out</button>`}</span></div>`).join('')}</div>
+   <h3 class="ach">Signed in on ${list.length} ${list.length === 1 ? 'device' : 'devices'}</h3><div class="dt sesdt" style="--cols:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) 110px"><div class="dt-r dt-h"><span>Device</span><span>Signed in</span><span>Last active</span><span></span></div>${list.map((s) => `<div class="dt-r"><span class="dtp"><i class="devic" aria-hidden="true">${deviceIcon(s.user_agent)}</i><b style="font-weight:500">${esc(device(s.user_agent))}</b>${s.current ? '<span class="tag ok">This device</span>' : ''}</span><span class="dtm">${B.when(s.created_at, B.fmtDate(s.created_at))}</span><span class="dtm">${B.when(s.last_used_at, B.ago(s.last_used_at))}</span><span>${s.current ? '' : `<button type="button" class="btn sm" data-so="${s.id}">Sign out</button>`}</span></div>`).join('')}</div>
    ${others.length ? '<div class="actions" style="margin-top:14px"><button type="button" class="btn" id="soall">Sign out of all other devices</button></div>' : ''}`;
   $$('[data-so]', el).forEach((b) => {
     b.onclick = () => B.busy(b, async () => {

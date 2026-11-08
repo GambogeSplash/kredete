@@ -96,6 +96,8 @@ function ago(iso) {
   if (m < 10080) return Math.round(m / 1440) + ' d ago';
   return fmtDate(iso);
 }
+/** A rendered date or time, marked up as one so it is machine-readable. */
+function when(iso, text) { return iso ? `<time datetime="${esc(iso)}">${esc(text)}</time>` : ''; }
 function dayLabel(iso, withTime) {
   const d = new Date(iso), n = new Date();
   const diff = Math.round((new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime() - new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()) / DAY);
@@ -124,6 +126,12 @@ async function busy(button, task, onError) {
   catch (error) { if (!isAbort(error)) (onError || ((e) => toast(problem(e))))(error); return undefined; }
   finally { if (button && button.isConnected) { button.disabled = false; button.classList.remove('busy'); button.removeAttribute('aria-busy'); } }
 }
+/* A form's error is about what was entered: it goes as soon as the person changes that. */
+document.addEventListener('input', (e) => {
+  const scope = /** @type {any} */ (e.target).closest && /** @type {any} */ (e.target).closest('form, .modal, .fgroup');
+  const slot = scope && scope.querySelector('.hse[role=alert]');
+  if (slot && slot.textContent) slot.textContent = '';
+});
 
 /* ---------- roles ---------- */
 const roles = () => (S.me ? S.me.roles : []);
@@ -310,7 +318,7 @@ async function loadChats(reset) {
   if (reset) renderChatList();
   try {
     const page = await API.get('/conversations', { limit: PAGE, cursor: reset ? null : c.next });
-    c.items = reset ? page.items : c.items.concat(page.items.filter((x) => !c.items.some((y) => y.id === x.id)));
+    c.items = reset ? page.items : c.items.concat(page.items.filter((x) => !c.items.some((y) => y.id === x.id))).sort(byActivity);
     c.next = page.next_cursor || null;
     c.loaded = true;
   } catch (error) {
@@ -322,15 +330,24 @@ async function loadChats(reset) {
   if (window.ASK) window.ASK.refreshRecent();
   if (S.route.surface === 'chats' && window.SURFACES.chats) window.SURFACES.chats.refresh();
 }
-/** Inserts or moves a conversation to the top (the API orders by last activity). */
-function touchChat(conv) {
-  const c = S.chats;
-  c.items = [conv, ...c.items.filter((x) => x.id !== conv.id)];
+/** The order of GET /v1/conversations: pinned first, then the latest activity, then id. */
+function byActivity(a, b) {
+  return Number(b.pinned) - Number(a.pinned) || Date.parse(b.updated_at) - Date.parse(a.updated_at) || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0);
+}
+/** The chat list changed: keep the API's order, so a reload shows the same list, and redraw it. */
+function chatsChanged() {
+  S.chats.items.sort(byActivity);
   renderChatList();
+  if (S.route.surface === 'chats' && window.SURFACES.chats) window.SURFACES.chats.refresh();
+}
+/** Inserts a conversation or updates it after activity. */
+function touchChat(conv) {
+  S.chats.items = [conv, ...S.chats.items.filter((x) => x.id !== conv.id)];
+  chatsChanged();
 }
 function forgetChat(id) {
   S.chats.items = S.chats.items.filter((x) => x.id !== id);
-  renderChatList();
+  chatsChanged();
 }
 const chatTitle = (c) => (c && c.title) || 'Untitled chat';
 
@@ -350,13 +367,12 @@ async function deleteChat(id) {
   forgetChat(id);
   toast('Chat deleted');
   if (S.conv && S.conv.id === id) { S.conv = null; go('/', { replace: true }); }
-  else if (S.route.surface === 'chats') window.SURFACES.chats();
 }
 function replaceChat(updated) {
   const i = S.chats.items.findIndex((x) => x.id === updated.id);
   if (i >= 0) S.chats.items[i] = updated;
   if (S.conv && S.conv.id === updated.id) Object.assign(S.conv, { title: updated.title, pinned: updated.pinned });
-  renderChatList();
+  chatsChanged();
 }
 
 /** Inline rename of a title element; `onDone` runs after saving or cancelling. */
@@ -558,7 +574,7 @@ window.BRAIN = {
   openDrawer, closeDrawer, openModal, closeModal,
   loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,
   systemName, srcIcon, SYSTEMS, ROLE_NAMES, CLEARANCES, clearanceName,
-  fmtDate, fmtTime, ago, dayLabel,
+  fmtDate, fmtTime, ago, dayLabel, when,
   skeletonRows, loadingBlock, errorBlock, emptyBlock, CARET, setCrumb, mbTitle,
   start() { cleanStorage(); boot(); },
 };

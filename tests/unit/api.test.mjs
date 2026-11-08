@@ -196,6 +196,91 @@ describe('requests and sessions', () => {
   });
 });
 
+describe('writes to one resource', () => {
+  /** A promise the test resolves by hand. */
+  const gate = () => {
+    let open;
+    const opened = new Promise((resolve) => { open = resolve; });
+    return { opened, open };
+  };
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const bodies = (calls, key) => calls.filter((c) => c.key === key).map((c) => JSON.parse(c.init.body));
+
+  it('sends the next write to a resource only after the previous one has been answered', async () => {
+    const first = gate();
+    let n = 0;
+    const { fetch, calls } = stubFetch({
+      'PUT /v1/turns/t1/feedback': async () => { n += 1; if (n === 1) await first.opened; return json(204); },
+    });
+    const api = createApi({ fetch });
+    api.setToken('t');
+    const a = api.put('/turns/t1/feedback', { vote: 'down' });
+    const b = api.put('/turns/t1/feedback', { vote: 'down', reason: 'outdated' });
+    await settle();
+    assert.deepEqual(bodies(calls, 'PUT /v1/turns/t1/feedback'), [{ vote: 'down' }]);
+    first.open();
+    await Promise.all([a, b]);
+    assert.deepEqual(bodies(calls, 'PUT /v1/turns/t1/feedback'), [{ vote: 'down' }, { vote: 'down', reason: 'outdated' }]);
+  });
+
+  it('keeps the order across methods: a PATCH, then a DELETE, then another PATCH', async () => {
+    const first = gate();
+    let n = 0;
+    const order = [];
+    const handler = async ({ init }) => { n += 1; const mine = n; if (mine === 1) await first.opened; order.push(init.method); return json(204); };
+    const { fetch } = stubFetch({ 'PATCH /v1/conversations/c1': handler, 'DELETE /v1/conversations/c1': handler });
+    const api = createApi({ fetch });
+    api.setToken('t');
+    const done = Promise.all([
+      api.patch('/conversations/c1', { pinned: true }),
+      api.del('/conversations/c1'),
+      api.patch('/conversations/c1', { title: 'Later' }),
+    ]);
+    await settle();
+    assert.deepEqual(order, []);
+    first.open();
+    await done;
+    assert.deepEqual(order, ['PATCH', 'DELETE', 'PATCH']);
+  });
+
+  it('still sends the next write when the previous one failed, and each caller sees its own result', async () => {
+    const { fetch, calls } = stubFetch({
+      'PATCH /v1/me': ({ init }) => (JSON.parse(init.body).nickname === 'bad' ? problem(422, 'Nickname is too long') : json(200, { nickname: 'Ok' })),
+    });
+    const api = createApi({ fetch });
+    api.setToken('t');
+    const a = api.patch('/me', { nickname: 'bad' });
+    const b = api.patch('/me', { nickname: 'Ok' });
+    await assert.rejects(a, (error) => error instanceof ApiError && error.status === 422);
+    assert.deepEqual(await b, { nickname: 'Ok' });
+    assert.equal(calls.length, 2);
+  });
+
+  it('does not hold back writes to other resources, or reads', async () => {
+    const first = gate();
+    const { fetch, calls } = stubFetch({
+      'PUT /v1/turns/t1/feedback': async () => { await first.opened; return json(204); },
+      'PUT /v1/turns/t2/feedback': () => json(204),
+      'GET /v1/turns/t1/feedback': () => json(200, { vote: 'up', reason: null }),
+      'POST /v1/turns/t1/reports': () => json(201, { id: 'r1' }),
+    });
+    const api = createApi({ fetch });
+    api.setToken('t');
+    const held = api.put('/turns/t1/feedback', { vote: 'up' });
+    await api.put('/turns/t2/feedback', { vote: 'down' });
+    await api.get('/turns/t1/feedback');
+    await api.post('/turns/t1/reports', {});
+    assert.deepEqual(calls.map((c) => c.key), [
+      'PUT /v1/turns/t1/feedback',
+      'PUT /v1/turns/t2/feedback',
+      'GET /v1/turns/t1/feedback',
+      'POST /v1/turns/t1/reports',
+    ]);
+    first.open();
+    await held;
+  });
+});
+
 describe('problems', () => {
   it('turns problem details into an ApiError with status, title, detail and code', async () => {
     const { fetch } = stubFetch({
@@ -212,6 +297,23 @@ describe('problems', () => {
     assert.equal(error.detail, 'a@b.test is a user');
     assert.equal(error.code, 'invalid_state');
     assert.equal(error.retryable, false);
+    assert.equal(error.reached, true);
+  });
+
+  it('says whether Brain itself answered: not for a network failure or a page from something in between', async () => {
+    const { fetch } = stubFetch({
+      'GET /v1/me': () => new Response('<html>Bad gateway</html>', { status: 502, headers: { 'content-type': 'text/html' } }),
+      'GET /v1/facets': () => { throw new TypeError('Failed to fetch'); },
+      'GET /v1/documents': () => problem(503, 'Brain is updating its index', {}, { 'retry-after': '5' }),
+    });
+    const api = createApi({ fetch });
+    api.setToken('t1');
+    const proxy = await api.get('/me').catch((e) => e);
+    const offline = await api.get('/facets').catch((e) => e);
+    const busy = await api.get('/documents').catch((e) => e);
+    assert.deepEqual([proxy.status, proxy.reached], [502, false]);
+    assert.deepEqual([offline.status, offline.reached], [0, false]);
+    assert.deepEqual([busy.status, busy.reached, busy.title], [503, true, 'Brain is updating its index']);
   });
 
   it('honors Retry-After in seconds for 429 and as an HTTP date for 503', async () => {
