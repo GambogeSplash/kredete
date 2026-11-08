@@ -305,3 +305,24 @@ a.btn.si-btn{text-decoration:none}
 /* The breadcrumb stays hidden on every surface, as in the prototype. */
 body[data-sf=ask] #crumb,body[data-sf=governance] #crumb,body[data-sf=admin] #crumb,body[data-sf=setup] #crumb,body[data-sf=signin] #crumb{display:none}
 .cnsec.skcapp{min-height:180px;padding:var(--s-5)}
+
+/* ---- People (people.js) ---- */
+.pphead{display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;margin:0 0 var(--s-3)}
+.pphead .govtabs{padding:0;flex:1}
+.ppsearch{margin:0 0 var(--s-3);max-width:420px}
+.ppwho{display:flex;align-items:center;gap:var(--s-3);min-width:0}
+.ppwho>span{display:flex;flex-direction:column;min-width:0}
+.ppwho b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ppwho small{color:var(--mute);font-size:var(--fs-xs);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pphero{margin:0 0 var(--s-4)}
+.ppfs{border:0;padding:0;margin:0 0 var(--s-3);display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-4)}
+.ppfs legend{width:100%;margin-bottom:var(--s-2)}
+.ppck{display:inline-flex;align-items:center;gap:var(--s-2);min-height:32px;font-size:var(--fs-md);cursor:pointer}
+.ppck input{width:18px;height:18px;accent-color:var(--brand)}
+.ppnote{width:100%;margin:0}
+.ppmodal{max-width:520px}
+.ppmodal .actions{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap}
+.ppintro{max-width:640px;margin:0 0 var(--s-2)}
+.lnrow .actb{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;justify-content:flex-end}
+.lnrow .ssel{min-width:200px}
+.lnnone{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
