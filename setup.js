@@ -1,0 +1,268 @@
+/* setup.js: the setup wizard (sandbox spec 4.1, plan C3).
+ *
+ * Steps: setup code and email; Google OAuth client; sign in with Google; Confluence OAuth
+ * client; connect Confluence; pick spaces; first sync. The current step is always derived
+ * from API state, never stored in the browser:
+ * - before sign-in, from GET /v1/setup/status;
+ * - after sign-in (an admin), from /v1/admin/credentials, /connections and /containers.
+ * An admin can leave the wizard; Finish setup stays in the sidebar until a Confluence
+ * connection is serving.
+ */
+(() => {
+'use strict';
+const B = window.BRAIN;
+const A = () => window.AUTH;
+/** @type {(s: string, r?: ParentNode) => any} */
+const $ = (s, r = document) => r.querySelector(s);
+/** @type {(s: string, r?: ParentNode) => any[]} */
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = B.esc;
+
+const STEPS = [
+  ['claim', 'Claim this workspace', 'Setup code and your email'],
+  ['google', 'Connect Google sign-in', 'Your Google OAuth client'],
+  ['signin', 'Sign in', 'As the first admin'],
+  ['confluence', 'Add the Confluence app', 'Your Atlassian OAuth client'],
+  ['connect', 'Connect Confluence', 'Authorize your site'],
+  ['spaces', 'Pick spaces', 'What Brain reads'],
+  ['sync', 'First sync', 'Brain reads the pages'],
+];
+const index = (key) => STEPS.findIndex((s) => s[0] === key);
+
+/** Where setup stands, from the API. */
+async function progress() {
+  if (B.S.phase === 'setup') {
+    const status = await B.api.get('/setup/status', undefined, { auth: false });
+    B.S.setup = status;
+    if (!status.needs_setup) return { step: 'signin' };
+    if (!status.setup_session) return { step: 'claim' };
+    return { step: status.google_configured ? 'signin' : 'google' };
+  }
+  const [credentials, connections] = await Promise.all([
+    B.api.get('/admin/credentials'),
+    B.api.get('/admin/connections'),
+  ]);
+  const confluence = credentials.items.find((c) => c.name === 'confluence_oauth');
+  if (!confluence || !confluence.configured) return { step: 'confluence', credentials: credentials.items };
+  const sites = connections.items.filter((c) => c.system === 'confluence' && c.status !== 'disconnected');
+  const connection = sites.find((c) => c.authorized) || sites[0] || null;
+  if (!connection || !connection.authorized) return { step: 'connect', connection };
+  const containers = (await B.api.get('/admin/containers', { connection_id: connection.id })).items;
+  if (!containers.some((c) => c.included)) return { step: 'spaces', connection, containers };
+  if (!connection.last_sync_at) return { step: 'sync', connection, containers };
+  return { step: 'done', connection, containers };
+}
+
+/* ---------- the shell around every step ---------- */
+function checklist(current) {
+  const at = current === 'done' ? STEPS.length : index(current);
+  return `<div class="pvp sup" aria-hidden="true"><div class="pvw sucard"><div class="suh">${ICON('check', 14)}<b>Set up Kredete Brain</b></div><ol class="sul">${STEPS.map(([k, title, sub], i) => `<li class="${i < at ? 'done' : i === at ? 'on' : ''}"><i>${i < at ? ICON('check', 12) : i + 1}</i><span><b>${esc(title)}</b><small>${esc(sub)}</small></span></li>`).join('')}</ol></div><div class="pvcap">${current === 'done' ? 'All set' : `Step ${at + 1} of ${STEPS.length}`}</div></div>`;
+}
+function render(step, left) {
+  const leave = B.S.phase === 'app' ? `<button type="button" class="link suleave" id="suleave">Leave setup for now</button>` : '';
+  A().shell(`${left}${leave}`, checklist(step), step === 'done' ? null : [index(step) + 1, STEPS.length]);
+  const l = $('#suleave');
+  if (l) l.onclick = () => B.go('/');
+}
+const field = (id, label, attrs, hint) => `<label class="emlab" for="${id}">${label}</label><input id="${id}" class="eminp" ${attrs || ''}>${hint ? `<p class="suhint">${hint}</p>` : ''}`;
+const errorSlot = '<div class="hse" id="sue" role="alert"></div>';
+const primary = (id, label) => `<button type="submit" class="btn primary si-btn" id="${id}"><span class="spin" aria-hidden="true"></span><span>${label}</span></button>`;
+function showError(error) {
+  const e = $('#sue');
+  if (!e) return;
+  e.textContent = B.problem(error);
+  const wait = error && error.retryAfter;
+  const button = $('#sin .si-btn');
+  if (wait && button) {
+    let left = wait;
+    button.disabled = true;
+    const tick = () => {
+      if (!button.isConnected) return;
+      if (left <= 0) { button.disabled = false; e.textContent = ''; return; }
+      e.textContent = `${B.problem(error)}. Try again in ${left} s.`;
+      left -= 1;
+      setTimeout(tick, 1000);
+    };
+    tick();
+  }
+}
+function copyButton(text) {
+  return `<span class="sucopy"><code>${esc(text)}</code><button type="button" class="lib" data-copy="${esc(text)}" aria-label="Copy ${esc(text)}">${ICON('copy', 14)}</button></span>`;
+}
+function wireCopies() {
+  $$('[data-copy]').forEach((b) => {
+    b.onclick = async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copy); B.toast('Copied'); } catch (e) { B.toast('Copy it by hand'); }
+    };
+  });
+}
+
+/* ---------- steps ---------- */
+function claimStep() {
+  render('claim', `<h1>Set up Kredete Brain</h1><p class="sub">You are the first person here, so you become its admin. Enter the setup code from the server, and the Google account you will sign in with.</p>
+    <form id="suf" novalidate>${field('sucode', 'Setup code', 'autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX" class="eminp mono"')}${field('suemail', 'Your Google account', 'type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"')}${errorSlot}${primary('sugo', 'Continue')}</form>
+    <p class="disc">Lost the code, or it expired? Run <code>make sandbox-setup-code</code> on the server for a new one.</p>`);
+  $('#sucode').focus();
+  $('#suf').onsubmit = (e) => {
+    e.preventDefault();
+    const code = $('#sucode').value.trim(), email = $('#suemail').value.trim();
+    if (!code || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showError({ title: !code ? 'Enter the setup code' : 'Enter the email of your Google account' });
+      return;
+    }
+    B.busy($('#sugo'), async () => {
+      await B.api.post('/setup/claim', { code, email }, { auth: false });
+      await show();
+    }, showError);
+  };
+}
+function googleStep() {
+  const redirect = `${location.origin}/v1/auth/google/callback`;
+  render('google', `<h1>Connect Google sign-in</h1><p class="sub">Create an OAuth client (web application) in your Google Cloud project and add this redirect URI:</p>${copyButton(redirect)}
+    <form id="suf" novalidate>${field('suid', 'Client ID', 'autocomplete="off" spellcheck="false" placeholder="1234.apps.googleusercontent.com"')}${field('susecret', 'Client secret', 'type="password" autocomplete="off" spellcheck="false"', 'Stored encrypted. It is never shown again.')}${errorSlot}${primary('sugo', 'Save')}</form>`);
+  wireCopies();
+  $('#suid').focus();
+  $('#suf').onsubmit = (e) => {
+    e.preventDefault();
+    const client_id = $('#suid').value.trim(), client_secret = $('#susecret').value.trim();
+    if (!client_id || !client_secret) { showError({ title: 'Enter the client ID and the client secret' }); return; }
+    B.busy($('#sugo'), async () => {
+      await B.api.put('/setup/credentials/google_oauth', { client_id, client_secret }, { auth: false });
+      await show();
+    }, showError);
+  };
+}
+function signinStep() {
+  render('signin', `<h1>Sign in as the first admin</h1><p class="sub">Use the Google account you entered with the setup code. Setup continues after you sign in.</p><a class="btn primary si-btn" id="sugoogle" href="${B.api.signInUrl}"><span class="spin" aria-hidden="true"></span><span>Continue with Google</span></a>`);
+  const b = $('#sugoogle');
+  b.onclick = () => b.classList.add('busy');
+}
+function confluenceStep() {
+  const callback = `${location.origin}/v1/admin/connections/oauth/callback`;
+  render('confluence', `<h1>Add the Confluence app</h1><p class="sub">Create an OAuth 2.0 (3LO) app in the Atlassian developer console with the Confluence read scopes and offline access, and this callback URL:</p>${copyButton(callback)}
+    <form id="suf" novalidate>${field('suid', 'Client ID', 'autocomplete="off" spellcheck="false"')}${field('susecret', 'Secret', 'type="password" autocomplete="off" spellcheck="false"', 'Stored encrypted. It is never shown again.')}${errorSlot}${primary('sugo', 'Save')}</form>`);
+  wireCopies();
+  $('#suid').focus();
+  $('#suf').onsubmit = (e) => {
+    e.preventDefault();
+    const client_id = $('#suid').value.trim(), client_secret = $('#susecret').value.trim();
+    if (!client_id || !client_secret) { showError({ title: 'Enter the client ID and the secret' }); return; }
+    B.busy($('#sugo'), async () => {
+      await B.api.put('/admin/credentials/confluence_oauth', { client_id, client_secret });
+      await show();
+    }, showError);
+  };
+}
+async function authorize(connectionId) {
+  const started = await B.api.post(`/admin/connections/${connectionId}/oauth/start`);
+  location.assign(started.authorization_url);
+}
+function connectStep(p) {
+  const c = p.connection;
+  render('connect', c
+    ? `<h1>Authorize ${esc(c.site)}</h1><p class="sub">Atlassian asks you to allow Brain to read Confluence. You come back here afterwards.</p>${c.last_error ? `<div class="banner bad">${esc(c.last_error)}</div>` : ''}<form id="suf" novalidate>${errorSlot}${primary('sugo', 'Authorize with Atlassian')}</form><p class="disc">Wrong site? Remove it in Admin, Connectors.</p>`
+    : `<h1>Connect your Confluence site</h1><p class="sub">The address of the Confluence site Brain reads.</p><form id="suf" novalidate>${field('susite', 'Site', 'autocomplete="off" spellcheck="false" inputmode="url" placeholder="yourteam.atlassian.net"')}${errorSlot}${primary('sugo', 'Continue to Atlassian')}</form>`);
+  const site = $('#susite');
+  if (site) site.focus();
+  $('#suf').onsubmit = (e) => {
+    e.preventDefault();
+    B.busy($('#sugo'), async () => {
+      let id = c && c.id;
+      if (!id) {
+        const value = site.value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+        if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(value)) { showError({ title: 'Enter the site address, like yourteam.atlassian.net' }); return; }
+        id = (await B.api.post('/admin/connections', { system: 'confluence', site: value })).id;
+      }
+      $('#sugo').classList.add('busy');
+      await authorize(id);
+    }, showError);
+  };
+}
+async function spacesStep(p) {
+  let containers = p.containers;
+  render('spaces', `<h1>Pick the spaces Brain reads</h1><p class="sub">People still only see the pages they can open in Confluence.</p><div id="suspaces">${B.skeletonRows(3, 'gsrc')}</div><form id="suf" novalidate>${errorSlot}${primary('sugo', 'Include spaces')}</form><p class="disc">You own these spaces in Brain for now. Change owners in Admin, Connectors.</p>`);
+  const list = $('#suspaces');
+  const go = $('#sugo');
+  go.disabled = true;
+  try {
+    if (!containers.length) {
+      await B.api.post(`/admin/connections/${p.connection.id}/verify`);
+      containers = (await B.api.get('/admin/containers', { connection_id: p.connection.id })).items;
+    }
+  } catch (error) {
+    list.innerHTML = '';
+    showError(error);
+    return;
+  }
+  if (!containers.length) {
+    list.innerHTML = `<p class="sub">Brain found no spaces it can read on ${esc(p.connection.site)}.</p>`;
+    return;
+  }
+  list.innerHTML = `<div class="glist suspaces">${containers.map((c) => `<label class="gsrc">${B.srcIcon('confluence', 22)}<span class="gt"><span>${esc(c.path)}</span><small>${esc(c.external_id)}</small></span><input type="checkbox" class="gck" data-space="${c.id}" checked aria-label="Include ${esc(c.path)}"></label>`).join('')}</div>`;
+  const count = () => $$('[data-space]:checked').length;
+  const label = () => { go.disabled = !count(); $('span:last-child', go).textContent = count() ? `Include ${count()} ${count() === 1 ? 'space' : 'spaces'}` : 'Pick at least one space'; };
+  $$('[data-space]').forEach((c) => { c.onchange = label; });
+  label();
+  $('#suf').onsubmit = (e) => {
+    e.preventDefault();
+    const picked = $$('[data-space]:checked').map((c) => c.dataset.space);
+    B.busy(go, async () => {
+      for (const id of picked) await B.api.patch(`/admin/containers/${id}`, { included: true, owner_user_id: B.S.me.id });
+      await show();
+    }, showError);
+  };
+}
+let polling = 0;
+function syncStep(p) {
+  render('sync', `<h1>Brain is reading your spaces</h1><p class="sub">The first sync takes a few minutes. You can leave this page; it carries on.</p><div class="susync" role="status"><span class="suspin" aria-hidden="true"></span><span id="susyncl">Waiting for the first pages</span></div>${p.connection.last_error ? `<div class="banner bad" id="suerr">${esc(p.connection.last_error)}</div>` : ''}<form id="suf" novalidate>${errorSlot}<button type="submit" class="btn si-btn" id="sugo"><span class="spin" aria-hidden="true"></span><span>Sync now</span></button></form>`);
+  $('#suf').onsubmit = (e) => {
+    e.preventDefault();
+    B.busy($('#sugo'), async () => { await B.api.post(`/admin/connections/${p.connection.id}/sync`); B.toast('Sync started'); }, showError);
+  };
+  const mine = ++polling;
+  const tick = async () => {
+    if (mine !== polling || B.S.route.surface !== 'setup') return;
+    try {
+      const now = await progress();
+      if (mine !== polling || B.S.route.surface !== 'setup') return;
+      if (now.step !== 'sync') { await show(now); return; }
+      const facets = await B.api.get('/facets');
+      const n = facets.systems.reduce((sum, s) => sum + s.count, 0);
+      const l = $('#susyncl');
+      if (l) l.textContent = n ? `${n} ${n === 1 ? 'page' : 'pages'} read so far` : 'Waiting for the first pages';
+    } catch (error) { /* keep polling; the page shows the last state */ }
+    setTimeout(tick, 4000);
+  };
+  setTimeout(tick, 4000);
+}
+async function doneStep() {
+  await B.refreshSetupProgress();
+  let n = 0;
+  try { n = (await B.loadFacets()).systems.reduce((sum, s) => sum + s.count, 0); } catch (e) { /* counts are a nicety */ }
+  render('done', `<h1>Brain is ready</h1><p class="sub">${n ? `${n} ${n === 1 ? 'page is' : 'pages are'} in the library. ` : ''}Invite the people who should use it; they sign in with Google.</p><div class="obnav"><button type="button" class="btn si-btn" id="supeople">Invite people</button><button type="button" class="btn primary si-btn" id="suask">Start asking</button></div>`);
+  $('#supeople').onclick = () => B.go('/admin/people');
+  $('#suask').onclick = () => B.go('/');
+}
+
+async function show(known) {
+  polling += 1;
+  let p = known;
+  if (!p) {
+    try { p = await progress(); }
+    catch (error) {
+      render('claim', `<h1>Setup could not load</h1><p class="sub">${esc(B.problem(error))}</p><button type="button" class="btn primary si-btn" id="suretry">Try again</button>`);
+      $('#suretry').onclick = () => show();
+      return;
+    }
+  }
+  if (B.S.route.surface !== 'setup') return;
+  if (B.S.phase === 'setup' && B.S.setup && !B.S.setup.needs_setup) { B.boot(); return; }
+  ({ claim: claimStep, google: googleStep, signin: signinStep, confluence: confluenceStep, connect: connectStep, spaces: spacesStep, sync: syncStep, done: doneStep })[p.step](p);
+}
+
+window.SURFACES.setup = () => {
+  render(B.S.phase === 'setup' ? 'claim' : 'confluence', `<div class="skwrap" role="status"><span class="sr">Loading setup</span><i class="pvsk" style="width:60%;height:22px"></i><i class="pvsk" style="width:90%"></i><i class="pvsk" style="width:70%"></i></div>`);
+  show();
+};
+window.SETUP = { progress, authorize };
+})();

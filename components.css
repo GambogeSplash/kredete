@@ -243,3 +243,32 @@ a.btn.si-btn{text-decoration:none}
 .flipx{display:inline-flex;transform:scaleX(-1)}
 #obe{margin:var(--s-1) 0 0}
 #obe+.obnav{margin-top:var(--s-4)}
+
+/* ---- setup wizard (setup.js) ---- */
+.pvw.sucard{display:block;padding:var(--s-5) var(--s-5) var(--s-4);max-width:420px}
+.suh{display:flex;align-items:center;gap:var(--s-2);font-size:var(--fs-md);margin-bottom:var(--s-4);color:var(--ink)}
+.suh svg{color:var(--brand)}
+.sul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s-1)}
+.sul li{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-2) var(--s-2);border-radius:var(--r-md);color:var(--mute)}
+.sul li i{width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;font:500 11px/1 var(--font);font-style:normal;background:var(--fill-2);color:var(--mute)}
+.sul li span{display:flex;flex-direction:column;min-width:0}
+.sul li b{font-weight:500;font-size:var(--fs-sm);color:inherit}
+.sul li small{font-size:var(--fs-xs);color:var(--mute)}
+.sul li.on{background:var(--brand-wash);color:var(--ink)}
+.sul li.on i{background:var(--brand);color:#fff}
+.sul li.done{color:var(--ink-2)}
+.sul li.done i{background:var(--ok-soft);color:var(--ok)}
+.suhint{margin:calc(-1 * var(--s-2)) 0 var(--s-3);font-size:var(--fs-xs);color:var(--mute)}
+.eminp.mono{font-family:var(--mono,ui-monospace,monospace);letter-spacing:.04em;text-transform:uppercase}
+.eminp.mono::placeholder{text-transform:none;letter-spacing:.02em}
+.sucopy{display:flex;align-items:center;gap:var(--s-2);border:1px solid var(--line);background:var(--wash);border-radius:var(--r-md);padding:var(--s-1) var(--s-1) var(--s-1) var(--s-3);margin:0 0 var(--s-5);min-width:0}
+.sucopy code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs);color:var(--ink-2)}
+.sucopy .lib{width:32px;height:32px;flex:none}
+.suleave{display:block;margin:var(--s-5) 0 0;padding:var(--s-2) 0;min-height:32px}
+.suspaces{max-height:320px;overflow:auto;margin:0 0 var(--s-2);border:1px solid var(--line);border-radius:var(--r-lg)}
+.susync{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-4);border:1px solid var(--line);border-radius:var(--r-lg);margin:0 0 var(--s-4);color:var(--ink-2);font-size:var(--fs-md)}
+.suspin{width:18px;height:18px;border-radius:50%;border:2px solid var(--fill-3);border-top-color:var(--brand);animation:suspin .9s linear infinite;flex:none}
+@keyframes suspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.suspin{animation:none;border-color:var(--brand)}}
+#sue:empty{display:none}
+#suf .si-btn{margin-top:var(--s-4)}

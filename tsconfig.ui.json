@@ -8,5 +8,5 @@
     "noImplicitAny": false,
     "noImplicitThis": false
   },
-  "include": ["types.d.ts", "globals.d.ts", "api.js", "app.js", "auth.js", "extras.js"]
+  "include": ["types.d.ts", "globals.d.ts", "api.js", "app.js", "auth.js", "extras.js", "setup.js"]
 }
