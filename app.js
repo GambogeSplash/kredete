@@ -273,10 +273,9 @@ async function loadMe() {
 }
 async function loadFacets() {
   try { S.facets = await API.get('/facets'); } catch (e) { S.facets = null; }
-  if (S.route.surface === 'ask' && !S.route.params.id && window.SURFACES.ask) refreshAskHomeFeed();
+  if (window.ASK) window.ASK.refreshFeed();
   return S.facets;
 }
-function refreshAskHomeFeed() { const f = $('#lhfeed'); if (f && window.ASK) f.outerHTML = window.ASK.feedHtml(); }
 
 /** Admin, sandbox: whether a Confluence connection is serving (spec 4.1 "Finish setup"). */
 async function refreshSetupProgress() {
@@ -320,6 +319,7 @@ async function loadChats(reset) {
     c.loading = false;
   }
   renderChatList();
+  if (window.ASK) window.ASK.refreshRecent();
   if (S.route.surface === 'chats' && window.SURFACES.chats) window.SURFACES.chats.refresh();
 }
 /** Inserts or moves a conversation to the top (the API orders by last activity). */
@@ -332,7 +332,7 @@ function forgetChat(id) {
   S.chats.items = S.chats.items.filter((x) => x.id !== id);
   renderChatList();
 }
-const chatTitle = (c) => (c && c.title) || 'New chat';
+const chatTitle = (c) => (c && c.title) || 'Untitled chat';
 
 async function renameChat(id, title) {
   const updated = await API.patch(`/conversations/${id}`, { title });

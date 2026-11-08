@@ -340,7 +340,7 @@
         if (error instanceof ApiError) throw error;
         throw new ApiError({
           status: 0,
-          title: 'The answer was cut off. Try again.',
+          title: 'The answer was cut off.',
           code: 'stream_incomplete',
           retryable: true,
           turnId,
@@ -354,7 +354,7 @@
       }
       throw new ApiError({
         status: 0,
-        title: 'The answer was cut off. Try again.',
+        title: 'The answer was cut off.',
         code: 'stream_incomplete',
         retryable: true,
         turnId,

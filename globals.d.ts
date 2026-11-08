@@ -11,6 +11,8 @@ declare global {
   var AUTH: any;
   var ASK: any;
   var SETUP: any;
+  var LIBRARY: any;
+  var ADMIN: any;
   var DOCS: Record<string, any>;
   var LEVELS: string[];
   var LEVEL_COL: string[];
