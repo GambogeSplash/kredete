@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/v1/:path*",
-      "destination": "https://tunnel.invalid/v1/:path*"
+      "destination": "https://api-dev-9032.up.railway.app/v1/:path*"
     },
     {
       "source": "/((?!v1/)[^.]*)",
