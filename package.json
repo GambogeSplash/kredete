@@ -1,0 +1,17 @@
+{
+  "name": "kredete-brain-client",
+  "private": true,
+  "description": "Kredete Brain web client. Served as plain files; this package only holds the developer tooling.",
+  "scripts": {
+    "types": "node tools/types.mjs",
+    "check": "tsc -p tsconfig.json && tsc -p tsconfig.ui.json && tsc -p tools/tsconfig.json && node tools/check.mjs",
+    "test:unit": "node --test \"tests/unit/**/*.test.mjs\"",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.10.1",
+    "openapi-typescript": "7.4.4",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,5 +1,10 @@
-_t
-reference
-tools
 .vercel
 *.md
+tools
+tests
+node_modules
+package.json
+package-lock.json
+types.d.ts
+tsconfig.json
+playwright.config.mjs

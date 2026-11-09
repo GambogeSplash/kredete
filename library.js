@@ -1,116 +1,244 @@
-/* Library: everything you can open across the apps that feed the Brain. Connectors: which apps are connected. */
+/* library.js: the Library (sandbox spec 4.3, plan C6) and the document drawer.
+ *
+ * GET /v1/documents with the system, domain, path and title filters (all combinable),
+ * /v1/facets for the filter counts, and /v1/documents/{id} for the drawer. "Open in source"
+ * replaces "Request access": people ask for access in Confluence or Drive. A document can be
+ * proposed for wider sharing (a promotion); admins and compliance see its lineage.
+ */
 (() => {
-const B=window.BRAIN; const $=(s,r=document)=>r.querySelector(s); const $$=(s,r=document)=>[...r.querySelectorAll(s)]; const esc=B.esc;
-const APPS=[['Confluence'],['Google Drive'],['Notion']];
-const SOON=[['Google Cloud Storage','Google Cloud'],['Slack','Slack'],['SharePoint',null]];
-const KIND_IC={Page:'doc',Doc:'doc',Sheet:'analytics',Slides:'panel',Database:'stack'};
-const isAdmin=()=>{ const u=B.S.user; return !!(u&&(u.roles||[]).includes("admin")); };
-const itemsOf=app=>{ let l=Object.values(B.D).filter(d=>d.system===app&&d.kind); const pk=B.S.picked&&B.S.picked[app]; if(pk&&pk.length) l=l.filter(d=>pk.includes(d.id)); return l; };
-const short=v=>{ const [dd,mm]=String(v).split(' '); return mm+' '+dd; };
-const TEAM=id=>(window.DOC_TEAM||{})[id]||'';
+'use strict';
+const B = window.BRAIN;
+/** @type {(s: string, r?: ParentNode) => any} */
+const $ = (s, r = document) => r.querySelector(s);
+/** @type {(s: string, r?: ParentNode) => any[]} */
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = B.esc;
+const S = () => B.S;
 
-const row=d=>`<div class="lrow" data-open="${d.id}" role="button" tabindex="0"><span class="lst">${SRCICON(d.system,18)}</span><span class="ltt"><span>${esc(d.title)}</span><small class="lpath">${esc(d.path||'')}</small></span><span class="lr"><span class="llab"><i style="background:${window.LEVEL_COL[d.level||0]}"></i>${esc(TEAM(d.id))}</span><span class="ldoc">${ICON(KIND_IC[d.kind]||'doc',14)}${esc(d.kind)}</span>${AVATAR(d.owner,'lav',22)}<span class="ldt">${short(d.verified)}</span></span></div>`;
-const TINT={Confluence:'#eef3ff','Google Drive':'#eef8f2',Notion:'#f4f4f5'};
-const card=d=>`<button type="button" class="gcard" data-open="${d.id}"><span class="gc-p" style="background:${TINT[d.system]||'#f4f4f5'}"><span class="gc-l"><i></i><i></i><i></i></span>${SRCICON(d.system,30)}<span class="gc-k">${esc(d.kind)}</span></span><span class="gc-t">${esc(d.title)}</span><small>${esc(d.path||'')}</small><span class="gc-f">${AVATAR(d.owner,'lav',20)}<span>${esc(TEAM(d.id))}</span><span class="lsp"></span><span>${short(d.verified)}</span></span></button>`;
-const topOf=d=>String(d.path||'').split(' / ')[0];
-const split=items=>{ const by={}; items.forEach(d=>{ const k=topOf(d); (by[k]=by[k]||[]).push(d); }); const folders=[],loose=[]; Object.entries(by).forEach(([k,g])=>{ if(k&&g.length>=2) folders.push({name:k,items:g}); else loose.push(...g); }); folders.sort((a,b)=>a.name.localeCompare(b.name)); return {folders,loose}; };
-const FCOL={Design:'#d946a8',Engineering:'#3b82f6',Product:'#5e6ad2',Support:'#16a34a',Compliance:'#e5484d',Cards:'#8b5cf6',Payments:'#0ea5a4',Savings:'#e2a600',Partnerships:'#f97316',Leadership:'#64748b',Legal:'#64748b',People:'#ec4899',Company:'#5e6ad2'};
-const PAL=['#5e6ad2','#16a34a','#f97316','#0ea5a4','#d946a8','#3b82f6'];
-const fcol=n=>FCOL[n]||PAL[[...String(n)].reduce((a,c)=>a+c.charCodeAt(0),0)%PAL.length];
-const MON={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-const tsOf=d=>{ const [dd,mm,yy]=String(d.verified).split(' '); return new Date(+yy,MON[mm],+dd).getTime(); };
-const fnew=f=>short([...f.items].sort((a,b)=>tsOf(b)-tsOf(a))[0].verified);
-const owners=f=>[...new Set(f.items.map(d=>d.owner))];
-const fsvg=(c,px)=>`<svg class="fsvg" width="${px}" height="${px}" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 9a3 3 0 0 1 3-3h4.2a2 2 0 0 1 1.5.7l1.3 1.5H22a3 3 0 0 1 3 3v1H3V9z" fill="${c}" opacity=".55"/><rect x="3" y="11" width="22" height="12" rx="3" fill="${c}"/><rect x="3" y="11" width="22" height="3" rx="1.5" fill="#fff" opacity=".22"/></svg>`;
-const frow=(app,f)=>{ const c=fcol(f.name); const o=owners(f); return `<div class="lrow lfold" style="--c:${c}" data-folder="${app}|${esc(f.name)}" role="button" tabindex="0"><span class="lst lfi">${fsvg(c,26)}</span><span class="ltt"><span class="lfn">${esc(f.name)}</span><small class="lpath">${f.items.length} items · Updated ${fnew(f)}</small></span><span class="lr"><span class="avst">${o.slice(0,3).map(n=>AVATAR(n,'lav',22)).join('')}${o.length>3?`<span class="avm">+${o.length-3}</span>`:''}</span><span class="ldoc">${SRCICON(app,14)}${esc(app)}</span><span class="ldt lchev">${ICON('chevr',14)}</span></span></div>`; };
-const fcard=(app,f)=>{ const c=fcol(f.name); const o=owners(f); const names=f.items.slice(0,3).map(d=>d.title); return `<button type="button" class="gcard fcard" style="--c:${c}" data-folder="${app}|${esc(f.name)}" aria-label="${esc(f.name)}, ${f.items.length} items"><span class="fc-art"><span class="fc-back"></span><span class="fc-sheet s1"><i></i><i></i><i></i></span><span class="fc-sheet s2"><i></i><i></i></span><span class="fc-sheet s3"><i></i><i></i><i></i></span><span class="fc-front"><span class="fc-count">${f.items.length}</span><span class="fc-app">${SRCICON(app,18)}</span></span></span><span class="gc-t">${esc(f.name)}</span><small>${o.length} ${o.length===1?'owner':'owners'} · Updated ${fnew(f)}</small></button>`; };
-const fhead=(app,name,n)=>{ const c=fcol(name); return `<div class="fhead" style="--c:${c}"><span class="fh-i">${fsvg(c,44)}</span><div class="fh-t"><h2>${esc(name)}</h2><small>${n} items in ${esc(app)}</small></div></div>`; };
-const grp=(app,n)=>`<div class="lgrp lgapp" data-app="${app}"><span class="lst">${SRCICON(app,16)}</span><b>${esc(app)}</b><span class="lcount">${n}</span></div>`;
+function state() {
+  const s = S();
+  if (!s.lib) s.lib = { q: '', system: '', domain: '', path: '', view: 'list', items: [], next: null, loaded: false, loading: false, error: null, seq: 0 };
+  return s.lib;
+}
+const KIND_ICON = { confluence_page: 'doc', page: 'doc', blogpost: 'doc', gdoc: 'doc', sheet: 'analytics', slides: 'panel' };
+const KIND_NAME = { confluence_page: 'Page', page: 'Page', blogpost: 'Post', gdoc: 'Doc', sheet: 'Sheet', slides: 'Slides', pdf: 'PDF' };
+const kindName = (k) => KIND_NAME[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ') : 'Document');
+const DOMAIN_COL = ['#5e6ad2', '#16a34a', '#f97316', '#0ea5a4', '#d946a8', '#3b82f6', '#e2a600'];
+const domainCol = (slug) => DOMAIN_COL[[...String(slug)].reduce((a, c) => a + c.charCodeAt(0), 0) % DOMAIN_COL.length];
+const SCOPE = { public: ['Public', 'ok'], internal: ['Everyone at Kredete', 'blue'], granular: ['Limited access', ''] };
+function authorityTag(d) {
+  if (d.authority === 'approved') {
+    return d.review_due_at && new Date(d.review_due_at) < new Date() ? '<span class="tag warn">Past review date</span>' : '';
+  }
+  return `<span class="tag warn">${d.authority === 'draft' ? 'Draft' : 'Not approved'}</span>`;
+}
+const domainLabel = (d) => (d.domain ? `<span class="llab"><i style="background:${domainCol(d.domain.slug)}"></i>${esc(d.domain.name)}</span>` : '');
+/** Where the document sits in its source (readable names), else the source and domain. */
+const subline = (d) => esc(d.path || [B.systemName(d.system), d.domain && d.domain.name].filter(Boolean).join(' · '));
 
-window.SURFACES.library=()=>{ const S=B.S; const on=B.appsOn(); const f=S.libApp&&on.includes(S.libApp)?S.libApp:'all';
- const all=on.flatMap(itemsOf); const mine=all.filter(B.canSee); const locked=all.length-mine.length; const view=S.libView==='grid'?'grid':'list';
- $('#app').className='';
- $('#app').innerHTML=`<div class="pg"><h1>Library</h1>
-  <div class="libbar"><div class="libs"><span class="libs-i">${ICON('search',15)}</span><input id="libq" type="search" placeholder="Search the library" aria-label="Search the library" value="${esc(S.libQ||'')}" autocomplete="off"></div>
-   <div class="fwrap"><button class="fbtn ${f==='all'?'':'on'}" id="lfbtn" aria-haspopup="true" aria-expanded="false">${ICON('filter',15)}<span>${f==='all'?'Filter':esc(f)}</span></button>
-    <div class="fmenu" id="lfmenu" hidden><button class="fopt ${f==='all'?'on':''}" data-f="all"><span>All</span><em>${mine.length}</em></button>${on.map(a=>`<button class="fopt ${f===a?'on':''}" data-f="${a}">${SRCICON(a,16)}<span>${a}</span><em>${mine.filter(d=>d.system===a).length}</em></button>`).join('')}</div></div>
-   <div class="seg" role="group" aria-label="View"><button class="segb ${view==='list'?'on':''}" data-v="list" aria-label="List view" aria-pressed="${view==='list'}">${ICON('rows',15)}</button><button class="segb ${view==='grid'?'on':''}" data-v="grid" aria-label="Grid view" aria-pressed="${view==='grid'}">${ICON('grid',15)}</button></div></div>
-  <div class="lbody ${view==='grid'?'isgrid':''}" id="libbody"></div></div>`;
- const draw=()=>{ const q=(S.libQ||'').toLowerCase().trim(); const m=d=>!q||(d.title+' '+(d.path||'')+' '+d.owner+' '+TEAM(d.id)).toLowerCase().includes(q);
-  const shown=mine.filter(d=>(f==='all'||d.system===f)&&m(d));
-  let h=''; const R=view==='grid'?(g=>`<div class="ggrid">${g.map(card).join('')}</div>`):(g=>g.map(row).join(''));
-  const fold=S.libFolder; const inF=fold&&on.includes(fold.app)?fold:null;
-  if(inF){ const g=shown.filter(d=>d.system===inF.app&&topOf(d)===inF.name); h=`<div class="libcrumb"><button class="link" data-up="all">Library</button><i>›</i><button class="link" data-up="app">${esc(inF.app)}</button><i>›</i><b>${esc(inF.name)}</b></div>`+fhead(inF.app,inF.name,g.length)+R(g); shown.length=0; shown.push(...g); }
-  else if(q){ if(f==='all'){ on.forEach(a=>{ const g=shown.filter(d=>d.system===a); if(g.length) h+=grp(a,g.length)+R(g); }); } else h=R(shown); }
-  else { const part=a=>{ const sp=split(shown.filter(d=>d.system===a)); const fs=sp.folders; let o=''; if(view==='grid'){ o=`<div class="ggrid">${fs.map(x=>fcard(a,x)).join('')}${sp.loose.map(card).join('')}</div>`; } else o=fs.map(x=>frow(a,x)).join('')+sp.loose.map(row).join(''); return [o,fs.length+sp.loose.length]; };
-    if(f==='all'){ on.forEach(a=>{ const [o,n2]=part(a); if(n2) h+=grp(a,shown.filter(d=>d.system===a).length)+o; }); } else h=part(f)[0]; }
-  if(!shown.length) h=`<div class="empty"><h2>${q?'Nothing matches':'Nothing here yet'}</h2><p>${q?'Try a different word.':'Connect an app to fill the library.'}</p></div>`;
-  $('#libbody').innerHTML=h;
-  $$('#libbody [data-open]').forEach(r=>{ const go=()=>B.openSource(r.dataset.open); r.onclick=go; r.onkeydown=e=>{ if(e.key==='Enter') go(); }; });
-  $$('#libbody .gcard,#libbody .lrow').forEach((x,i)=>x.style.setProperty('--i',i)); { const bd=$('#libbody'); if(S._pop){ bd.classList.add('fin'); S._pop=false; } }
-  $$('#libbody [data-folder]').forEach(r=>{ const go=()=>{ const [a2,n2]=r.dataset.folder.split('|'); S.libFolder={app:a2,name:n2}; S._pop=true; B.save(); draw(); window.scrollTo(0,0); }; r.onclick=go; r.onkeydown=e=>{ if(e.key==='Enter') go(); }; });
-  $$('#libbody [data-up]').forEach(b=>b.onclick=()=>{ if(b.dataset.up==='app'&&S.libFolder) S.libApp=S.libFolder.app; S.libFolder=null; B.save(); window.SURFACES.library(); }); };
- draw(); $('#libq').oninput=e=>{ S.libQ=e.target.value; draw(); };
- $$('[data-v]').forEach(b=>b.onclick=()=>{ S.libView=b.dataset.v; B.save(); window.SURFACES.library(); });
- const fb=$('#lfbtn'), fm=$('#lfmenu'); const closeF=()=>{ fm.hidden=true; fb.setAttribute('aria-expanded','false'); document.removeEventListener('mousedown',outF); };
- const outF=e=>{ if(!e.target.closest('.fwrap')) closeF(); };
- fb.onclick=()=>{ if(fm.hidden){ fm.hidden=false; fb.setAttribute('aria-expanded','true'); document.addEventListener('mousedown',outF); } else closeF(); };
- fm.onkeydown=e=>{ if(e.key==='Escape'){ closeF(); fb.focus(); } };
- $$('[data-f]').forEach(b=>b.onclick=()=>{ S.libFolder=null; S.libApp=b.dataset.f==='all'?null:b.dataset.f; B.save(); window.SURFACES.library(); });
-};
+function row(d) {
+  return `<div class="lrow" data-open="${d.id}" role="button" tabindex="0"><span class="lst">${B.srcIcon(d.system, 18)}</span><span class="ltt"><span>${esc(d.title)}</span><small class="lpath">${subline(d)}</small></span><span class="lr">${authorityTag(d)}${domainLabel(d)}<span class="ldoc">${ICON(KIND_ICON[d.kind] || 'doc', 14)}${esc(kindName(d.kind))}</span>${d.owner ? AVATAR(d.owner.name, 'lav', 22) : '<span class="lavsp" aria-hidden="true"></span>'}<span class="ldt">${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span></span></div>`;
+}
+function card(d) {
+  return `<button type="button" class="gcard" data-open="${d.id}"><span class="gc-p" style="background:${d.system === 'confluence' ? '#eef3ff' : '#eef8f2'}"><span class="gc-l"><i></i><i></i><i></i></span>${B.srcIcon(d.system, 30)}<span class="gc-k">${esc(kindName(d.kind))}</span></span><span class="gc-t">${esc(d.title)}</span><small>${subline(d)}</small><span class="gc-f">${d.owner ? AVATAR(d.owner.name, 'lav', 20) : ''}<span>${esc(d.owner ? d.owner.name : '')}</span><span class="lsp"></span><span>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span></span></button>`;
+}
 
-const CONN={
- 'Google Drive':{host:'accounts.google.com',who:'Google',tag:'Find answers in your team files',desc:'Brain searches your Docs, Sheets, Slides and PDFs and reads them with the same access the person asking already has.',can:['Search files','Read file contents','List recent files','See who can open each file'],never:['Create','Edit','Share','Delete'],by:'Google',cat:'Files and documents',sign:'Google account',added:'November 2026',links:[['Documentation','https://developers.google.com/drive'],['Privacy','https://policies.google.com/privacy']],scopes:[['See and download your Drive files','Brain reads file text to answer questions. It never changes a file.'],['See who can open each file','Brain uses this to respect each person\'s access level.']]},
- 'Confluence':{host:'auth.atlassian.com',who:'Atlassian',tag:'Find answers in your wiki',desc:'Brain searches your Confluence pages and spaces and reads them with the same access the person asking already has.',can:['Search pages and spaces','Read page content','See space permissions'],never:['Create','Edit','Comment','Delete'],by:'Atlassian',cat:'Wiki and knowledge',sign:'Atlassian account',added:'November 2026',links:[['Documentation','https://support.atlassian.com/confluence-cloud/'],['Privacy','https://www.atlassian.com/legal/privacy-policy']],sites:['kredete.atlassian.net','kredete-labs.atlassian.net'],scopes:[['Read pages and spaces you can view','Brain reads page text to answer questions. It never edits a page.'],['See who can view each space','Brain uses this to respect each person\'s access level.']]},
- 'Notion':{host:'notion.so',who:'Notion',tag:'Find answers in your notes',desc:'Brain reads only the pages you choose to share, and answers from them with the same access the person asking already has.',can:['Read the pages you share','Search shared pages','See page sharing'],never:['Create','Edit','Comment','Delete'],by:'Notion Labs',cat:'Notes and docs',sign:'Notion account',added:'November 2026',links:[['Documentation','https://developers.notion.com'],['Privacy','https://www.notion.so/notion/Privacy-Policy-3468d120cf614d4c9014c09f6adc9091']],pick:true,scopes:[['Read content','Brain reads the pages you pick. Nothing else in your workspace.']]}
-};
-window.CONN_INFO=CONN;
-const infoSide=c=>`<dl class="cnm"><dt>Made by</dt><dd>${esc(c.by)}</dd><dt>Category</dt><dd>${esc(c.cat)}</dd><dt>Sign-in</dt><dd>${esc(c.sign)}</dd><dt>Added</dt><dd>${esc(c.added)}</dd><dt>More info</dt><dd class="cnlk">${c.links.map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener">${l}</a>`).join('')}</dd></dl>`;
-const canChips=c=>`<div class="cnh">Brain can</div><div class="cnchips">${c.can.map(x=>`<span class="cnchip">${esc(x)}</span>`).join('')}</div><div class="cnh">Brain never</div><div class="cnchips">${c.never.map(x=>`<span class="cnchip no">${esc(x)}</span>`).join('')}</div>`;
-function connectModal(app){ const c=CONN[app]; const m=$('#modal'); if(!c) return;
- m.innerHTML=`<div class="modal cnw" role="dialog" aria-modal="true" aria-label="Connect ${esc(app)}"><button class="xbtn" id="mclose" type="button" aria-label="Close">${B.ICON('x',16)}</button><div class="body cn-body"><div class="cdh">${SRCICON(app,48)}<div><h2>${esc(app)}</h2><small class="cntag">${esc(c.tag)}</small></div></div>
-  <div class="cncols"><div class="cnmain"><p class="cnd">${esc(c.desc)}</p>${canChips(c)}</div>${infoSide(c)}</div>
-  <div class="actions"><button class="btn primary" id="cngo">Continue to ${esc(c.who)}</button><button class="btn" id="cncl">Cancel</button></div></div></div>`;
- m.classList.add('on'); m.setAttribute('aria-hidden','false'); $('#mclose').onclick=$('#cncl').onclick=B.closeModal;
- $('#cngo').onclick=()=>{ B.closeModal(); openOAuth(app); }; }
-/* The provider's own sign-in and consent pages, shown full screen like a real hand-off. */
-function openOAuth(app){ const c=CONN[app]; const S=B.S; const u=S.user||{}; const email=u.email||'aisha.bello@kredete.example'; document.querySelectorAll('#oauth').forEach(x=>x.remove());
- const ov=document.createElement('div'); ov.id='oauth'; ov.className='oauth'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label',c.who+' sign-in'); document.body.appendChild(ov);
- const prevFocus=document.activeElement; const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
- const close=(msg)=>{ ov.classList.add('out'); setTimeout(()=>{ ov.remove(); if(prevFocus&&prevFocus.focus) try{prevFocus.focus({preventScroll:true});}catch(e){} if(msg) B.toast(msg); },calm?0:180); };
- const shell=(inner)=>{ ov.innerHTML=`<div class="oa-top"><span class="oa-lock">${B.ICON('lock',13)}<span>${esc(c.host)}</span></span></div><div class="oa-card" tabindex="-1">${inner}</div><div class="oa-foot"><a href="${c.links[1][1]}" target="_blank" rel="noopener">Privacy</a><a href="${c.links[0][1]}" target="_blank" rel="noopener">Help</a></div>`; const card=ov.querySelector('.oa-card'); if(card.animate&&!calm) card.animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:260,easing:'cubic-bezier(.2,.8,.2,1)'}); card.focus({preventScroll:true}); };
- const mark=`<div class="oa-pair">${SRCICON(app,40)}<i>${B.ICON('chevr',16)}</i><span class="oa-brain">K</span></div>`;
- const account=()=>{ shell(`${mark}<h1>Choose an account</h1><p class="oa-s">to continue to Kredete Brain</p><button class="oa-acc" id="oaacc">${window.AVATAR(u.name||'Aisha Bello','lav',34)}<span><b>${esc(u.name||'Aisha Bello')}</b><small>${esc(email)}</small></span></button><p class="oa-n">Brain will see your name, email and picture.</p><div class="oa-act"><button class="link" id="oacancel">Cancel</button></div>`);
-  $('#oaacc',ov).onclick=()=>{ const b=$('#oaacc',ov); b.classList.add('busy'); b.disabled=true; setTimeout(()=>{ (S.provAuth=S.provAuth||{})[app]=email; B.save(); consent(); },calm?0:650); };
-  $('#oacancel',ov).onclick=()=>close(app+' was not connected.'); };
- const consent=()=>{ const pickList=c.pick?itemsOf(app).filter(()=>true).map(d=>d.id):[]; const state={site:(c.sites||[])[0],sel:new Set(pickList)};
-  const draw=()=>{ shell(`${mark}<h1>Kredete Brain wants access to your ${esc(c.who)} account</h1><div class="oa-as">${window.AVATAR(u.name||'Aisha Bello','lav',20)}<span>${esc(email)}</span></div>
-   ${c.sites?`<label class="oa-l" for="oasite">Use on site</label><select id="oasite">${c.sites.map(x=>`<option ${x===state.site?'selected':''}>${esc(x)}</option>`).join('')}</select>`:''}
-   ${c.pick?`<div class="oa-l">Pages to share <button class="link" id="oaall">${state.sel.size===pickList.length?'Clear all':'Select all'}</button></div><div class="oa-pick">${itemsOf(app).map(d=>`<label class="oa-pg"><input type="checkbox" data-pg="${d.id}" ${state.sel.has(d.id)?'checked':''}><span>${B.ICON('doc',15)}${esc(d.title)}</span></label>`).join('')}</div>`:''}
-   <div class="oa-l">This will let Brain</div><ul class="oa-sc">${c.scopes.map(([t,d])=>`<li><i>${B.ICON('check',14)}</i><span><b>${esc(t)}</b><small>${esc(d)}</small></span></li>`).join('')}</ul>
-   <p class="oa-n">Only use apps you trust. You can remove access any time in your ${esc(c.who)} settings.</p>
-   <div class="oa-act"><button class="link" id="oacancel">Cancel</button><button class="oa-allow" id="oaallow" ${c.pick&&!state.sel.size?'aria-disabled="true"':''}><span class="spin" aria-hidden="true"></span><span id="oalab">Allow access</span></button></div>`);
-   const sel=$('#oasite',ov); if(sel) sel.onchange=()=>{ state.site=sel.value; };
-   $$('[data-pg]',ov).forEach(i=>i.onchange=()=>{ i.checked?state.sel.add(i.dataset.pg):state.sel.delete(i.dataset.pg); const al=$('#oaallow',ov); if(state.sel.size) al.removeAttribute('aria-disabled'); else al.setAttribute('aria-disabled','true'); const aa=$('#oaall',ov); if(aa) aa.textContent=state.sel.size===pickList.length?'Clear all':'Select all'; });
-   const aa=$('#oaall',ov); if(aa) aa.onclick=()=>{ if(state.sel.size===pickList.length) state.sel.clear(); else pickList.forEach(x=>state.sel.add(x)); draw(); };
-   $('#oacancel',ov).onclick=()=>close(app+' was not connected.');
-   $('#oaallow',ov).onclick=()=>{ const b=$('#oaallow',ov); if(b.getAttribute('aria-disabled')==='true'){ B.toast('Pick at least one page to share'); return; } b.classList.add('busy'); b.disabled=true; $('#oalab',ov).textContent='Allowing'; setTimeout(()=>{ if(c.pick) (S.picked=S.picked||{})[app]=[...state.sel]; (S.apps=S.apps||{})[app]=true; S.surface='connectors'; B.save(); done(); },calm?0:800); }; };
-  draw(); };
- const done=()=>{ const n=itemsOf(app).filter(B.canSee).length; shell(`<div class="oa-ok"><span class="oa-tick">${B.ICON('check',26)}</span></div><h1>You're connected</h1><p class="oa-s">Returning to Brain</p>`); setTimeout(()=>{ close(app+' connected. '+n+' item'+(n===1?'':'s')+' you can open '+(n===1?'is':'are')+' in the Library.'); B.route(); },calm?200:1100); };
- ov.onkeydown=e=>{ if(e.key==='Escape') close(app+' was not connected.'); };
- if(S.provAuth&&S.provAuth[app]) consent(); else account(); }
-window.OPEN_OAUTH=openOAuth;
-window.CONNECT_APP=connectModal;
-window.SURFACES.connectors=()=>{ const S=B.S; const on=B.appsOn(); const adm=isAdmin(); const admin=window.DIRECTORY?Object.values(window.DIRECTORY).find(p=>p.roles.includes('admin')):null;
- $('#app').className='';
- $('#app').innerHTML=`<div class="pg"><h1>Connectors</h1><div class="cngrid">
-  ${APPS.map(([n,d])=>{ const isOn=on.includes(n); const all=itemsOf(n); const mine=all.filter(B.canSee);
-   return `<section class="capp ${isOn?'':'off'}" data-app="${n}"><div class="capp-h">${SRCICON(n,36)}<span class="tag ${isOn?'ok':''}">${isOn?'Connected':'Not connected'}</span></div><h2>${n}</h2>
-   <div class="capp-a">${isOn?`<button class="btn sm primary" data-lib="${n}">Open library</button>${adm?`<button class="btn sm" data-dis="${n}">Disconnect</button>`:''}`:(adm?`<button class="btn sm primary" data-con="${n}">Connect</button>`:`<span class="amute">Admin only</span>`)}</div></section>`; }).join('')}
-  ${SOON.map(([n,ic])=>`<section class="capp soon"><div class="capp-h">${ic?SRCICON(ic,36):`<span class="capp-g">${ICON('plug',18)}</span>`}<span class="tag">Soon</span></div><h2>${n}</h2><p class="capp-d">Coming soon.</p></section>`).join('')}</div></div>`;
+/* ---------- the page ---------- */
+function page() {
+  const L = state();
+  $('#app').innerHTML = `<div class="pg"><h1>Library</h1>
+    <div class="libbar"><div class="libs"><span class="libs-i">${ICON('search', 15)}</span><input id="libq" type="search" placeholder="Search the library" aria-label="Search the library" value="${esc(L.q)}" autocomplete="off"></div>
+      <div class="fwrap"><button type="button" class="fbtn ${L.system || L.domain ? 'on' : ''}" id="lfbtn" aria-label="Filter" aria-haspopup="true" aria-expanded="false">${ICON('filter', 15)}<span>Filter</span></button><div class="fmenu" id="lfmenu" hidden></div></div>
+      <div class="seg" role="group" aria-label="View"><button type="button" class="segb ${L.view === 'list' ? 'on' : ''}" data-v="list" aria-label="List view" aria-pressed="${L.view === 'list'}">${ICON('rows', 15)}</button><button type="button" class="segb ${L.view === 'grid' ? 'on' : ''}" data-v="grid" aria-label="Grid view" aria-pressed="${L.view === 'grid'}">${ICON('grid', 15)}</button></div></div>
+    <div class="libchips" id="libchips"></div>
+    <div class="lbody ${L.view === 'grid' ? 'isgrid' : ''}" id="libbody"></div><div class="chmore" id="libmore"></div></div>`;
+  let timer = 0;
+  $('#libq').oninput = (e) => { clearTimeout(timer); timer = setTimeout(() => { L.q = e.target.value.trim(); load(true); }, 220); };
+  $$('[data-v]').forEach((b) => { b.onclick = () => { L.view = b.dataset.v; page(); }; });
+  wireFilterMenu();
+  chips();
+  if (!L.loaded || L.error) load(true); else draw();
+  const panel = $('.mainpanel');
+  const onScroll = () => { if (S().route.surface !== 'library') return; const m = $('#app'); if (m && m.scrollTop + m.clientHeight > m.scrollHeight - 300) load(false); };
+  $('#app').onscroll = onScroll;
+  if (panel) panel.onscroll = onScroll;
+}
+function wireFilterMenu() {
+  const L = state();
+  const button = $('#lfbtn'), menu = $('#lfmenu');
+  const close = () => { menu.hidden = true; button.setAttribute('aria-expanded', 'false'); document.removeEventListener('mousedown', outside); };
+  const outside = (e) => { if (!e.target.closest('.fwrap')) close(); };
+  const open = () => {
+    const f = S().facets || { systems: [], domains: [] };
+    const opt = (key, value, label, n, icon) => `<button type="button" class="fopt ${L[key] === value ? 'on' : ''}" data-fk="${key}" data-fv="${esc(value)}">${icon || ''}<span>${esc(label)}</span>${n != null ? `<em>${n}</em>` : ''}</button>`;
+    const total = f.systems.reduce((n, s) => n + s.count, 0);
+    menu.innerHTML = `<div class="fgh">Source</div>${opt('system', '', 'All sources', total)}${f.systems.map((s) => opt('system', s.value, B.systemName(s.value), s.count, B.srcIcon(s.value, 16))).join('')}${f.domains.length ? `<div class="fgh">Domain</div>${opt('domain', '', 'All domains', null)}${f.domains.map((d) => opt('domain', d.value, d.label, d.count, `<i class="fdot" style="background:${domainCol(d.value)}"></i>`)).join('')}` : ''}`;
+    menu.hidden = false;
+    button.setAttribute('aria-expanded', 'true');
+    document.addEventListener('mousedown', outside);
+    $$('[data-fk]', menu).forEach((b) => { b.onclick = () => { L[b.dataset.fk] = b.dataset.fv; close(); page(); load(true); }; });
+    const first = $('.fopt', menu);
+    if (first) first.focus();
+  };
+  button.onclick = () => (menu.hidden ? open() : close());
+  menu.onkeydown = (e) => { if (e.key === 'Escape') { close(); button.focus(); } };
+}
+function chips() {
+  const L = state();
+  const f = S().facets || { domains: [] };
+  const list = [];
+  if (L.system) list.push(['system', B.systemName(L.system)]);
+  if (L.domain) list.push(['domain', (f.domains.find((d) => d.value === L.domain) || { label: L.domain }).label]);
+  if (L.path) list.push(['path', `Folder: ${L.path}`]);
+  const box = $('#libchips');
+  box.innerHTML = list.map(([k, label]) => `<button type="button" class="lchip on" data-clear="${k}" aria-label="Remove filter ${esc(label)}">${esc(label)}${ICON('x', 12)}</button>`).join('') + (list.length > 1 ? '<button type="button" class="link" data-clear="all">Clear all</button>' : '');
+  box.hidden = !list.length;
+  $$('[data-clear]', box).forEach((b) => {
+    b.onclick = () => {
+      if (b.dataset.clear === 'all') { L.system = ''; L.domain = ''; L.path = ''; } else L[b.dataset.clear] = '';
+      page(); load(true);
+    };
+  });
+}
+async function load(reset) {
+  const L = state();
+  if (!reset && (L.loading || !L.next)) return;
+  const mine = ++L.seq;
+  L.loading = true;
+  L.error = null;
+  if (reset) { L.items = []; L.next = null; L.loaded = false; draw(); }
+  else drawMore();
+  try {
+    const result = await B.api.get('/documents', { q: L.q || null, system: L.system || null, domain: L.domain || null, path: L.path || null, limit: 40, cursor: reset ? null : L.next });
+    if (mine !== L.seq) return;
+    L.items = reset ? result.items : L.items.concat(result.items);
+    L.next = result.next_cursor || null;
+    L.loaded = true;
+  } catch (error) {
+    if (mine !== L.seq) return;
+    L.error = error;
+  } finally {
+    if (mine === L.seq) L.loading = false;
+  }
+  if (S().route.surface === 'library' && mine === L.seq) draw();
+}
+function draw() {
+  const L = state();
+  const body = $('#libbody');
+  if (!body) return;
+  if (!L.loaded && L.error) {
+    body.innerHTML = B.errorBlock(L.error, 'libretry');
+    $('#libretry').onclick = () => load(true);
+    drawMore();
+    return;
+  }
+  if (!L.loaded) {
+    body.innerHTML = L.view === 'grid'
+      ? `<div class="ggrid" aria-hidden="true">${Array.from({ length: 6 }, () => '<span class="gcard skcard"><span class="gc-p"></span><i class="pvsk" style="width:70%"></i><i class="pvsk" style="width:45%"></i></span>').join('')}</div>`
+      : `<div class="skwrap" role="status"><span class="sr">Loading the library</span>${B.skeletonRows(8, 'lrow')}</div>`;
+    drawMore();
+    return;
+  }
+  if (!L.items.length) {
+    const filtered = L.q || L.system || L.domain || L.path;
+    body.innerHTML = B.emptyBlock(filtered ? 'Nothing matches' : 'Nothing here yet', filtered ? 'Try other words or clear a filter.' : B.isAdmin() ? 'Connect a source in Admin, Connectors.' : 'Documents you can open appear here once your admin connects a source.');
+    drawMore();
+    return;
+  }
+  body.innerHTML = L.view === 'grid' ? `<div class="ggrid">${L.items.map(card).join('')}</div>` : L.items.map(row).join('');
+  $$('[data-open]', body).forEach((r, i) => {
+    r.style.setProperty('--i', String(Math.min(i, 12)));
+    const go = () => openDocument(r.dataset.open);
+    r.onclick = go;
+    r.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
+  });
+  drawMore();
+}
+function drawMore() {
+  const L = state();
+  const box = $('#libmore');
+  if (!box) return;
+  if (L.loaded && L.error) {
+    box.innerHTML = `<span class="amute">${esc(B.problem(L.error))}</span> <button type="button" class="link" id="libmoreretry">Try again</button>`;
+    $('#libmoreretry').onclick = () => { L.error = null; load(false); };
+  } else if (L.loaded && L.next) {
+    box.innerHTML = `<button type="button" class="btn sm" id="libmorebtn" ${L.loading ? 'disabled' : ''}>${L.loading ? 'Loading' : 'Show more'}</button>`;
+    $('#libmorebtn').onclick = () => load(false);
+  } else box.innerHTML = '';
+}
+window.SURFACES.library = page;
 
- $$('[data-lib]').forEach(b=>b.onclick=()=>{ S.libApp=b.dataset.lib; S.surface='library'; B.save(); B.route(); });
- $$('[data-con]').forEach(b=>b.onclick=()=>connectModal(b.dataset.con));
- $$('[data-dis]').forEach(b=>b.onclick=()=>{ if(b.dataset.arm){ (S.apps=S.apps||{})[b.dataset.dis]=false; if(S.libApp===b.dataset.dis) S.libApp=null; B.save(); B.toast(b.dataset.dis+' disconnected'); B.route(); return; } b.dataset.arm='1'; b.textContent='Confirm disconnect'; b.classList.add('danger'); setTimeout(()=>{ if(b.isConnected){ delete b.dataset.arm; b.textContent='Disconnect'; b.classList.remove('danger'); } },4000); });
-};
+/* ---------- the document drawer ---------- */
+async function openDocument(id, opts) {
+  const o = opts || {};
+  const c = o.citation;
+  B.openDrawer(`<div class="sv"><div class="sv-top"><span class="sv-sys">${c ? `${B.srcIcon(c.system, 20)}${esc(B.systemName(c.system))}` : '<i class="pvsk" style="width:90px"></i>'}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div><div class="sv-body" id="svbody">${c ? `<h2>${esc(c.title)}</h2>` : ''}<div class="skwrap" role="status"><span class="sr">Loading the document</span><i class="pvsk" style="width:80%;height:14px"></i><i class="pvsk" style="width:55%"></i><i class="pvsk" style="width:65%"></i></div></div></div>`);
+  let d;
+  try {
+    d = await B.api.get('/documents/' + id);
+  } catch (error) {
+    const body = $('#svbody');
+    if (body) body.innerHTML = error.status === 404 ? B.emptyBlock('Not available', 'This document is not available to you. It may have moved, or its access changed.') : B.errorBlock(error, 'docretry');
+    const r = $('#docretry');
+    if (r) r.onclick = () => openDocument(id, o);
+    return;
+  }
+  const drawer = $('#drawer');
+  if (!drawer.classList.contains('on')) return;
+  const scope = SCOPE[d.scope] || SCOPE.granular;
+  const lineage = B.hasRole('admin', 'compliance');
+  const canWiden = d.scope !== 'public';
+  drawer.innerHTML = `<div class="sv"><div class="sv-top"><span class="sv-sys">${B.srcIcon(d.system, 20)}${esc(B.systemName(d.system))}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div>
+    <div class="sv-body"><h2>${esc(d.title)}</h2>
+      <div class="sv-tags">${authorityTag(d) || '<span class="tag ok">Approved</span>'}<span class="tag ${scope[1]}">${esc(scope[0])}</span>${d.sensitivity !== 'internal' ? `<span class="tag">${esc(B.clearanceName(d.sensitivity))}</span>` : ''}${domainLabel(d)}</div>
+      ${c && c.quote ? `<blockquote class="sv-q">${esc(c.quote)}</blockquote>` : ''}
+      ${d.owner ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b>${esc(d.owner.name)}</b><small>${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>` : ''}
+      <dl class="kv svkv">${d.path ? `<dt>Folder</dt><dd><button type="button" class="link" id="dfolder">${esc(d.path)}</button></dd>` : ''}<dt>Kind</dt><dd>${esc(kindName(d.kind))}</dd>${d.review_due_at ? `<dt>Review due</dt><dd>${B.when(d.review_due_at, B.fmtDate(d.review_due_at, true))}</dd>` : ''}${!d.owner && d.last_verified_at ? `<dt>Verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}</dl>
+    </div>
+    <div class="sv-act"><a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${B.srcIcon(d.system, 16)}Open in ${esc(B.systemName(d.system))}${ICON('ext', 14)}</a>${canWiden ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}${lineage ? '<button type="button" class="btn" id="dlineage">Lineage</button>' : ''}</div></div>`;
+  $('[data-close-drawer]', drawer).onclick = B.closeDrawer;
+  const folder = $('#dfolder');
+  if (folder) folder.onclick = () => { const L = state(); L.path = d.path; L.q = ''; B.closeDrawer(); if (S().route.surface === 'library') { page(); load(true); } else { L.loaded = false; B.go('/library'); } };
+  const share = $('#dshare');
+  if (share) share.onclick = () => shareModal(d);
+  const lin = $('#dlineage');
+  if (lin) lin.onclick = () => lineageModal(d);
+}
+
+function shareModal(d) {
+  const options = [];
+  if (d.scope === 'granular') options.push(['internal', 'Everyone at Kredete', 'Every employee can find it and get answers from it.']);
+  options.push(['public', 'Public', 'Customers can see it through the support agent. Only for content that is safe to publish.']);
+  B.openModal(`<div class="modal" role="dialog" aria-label="Share more widely"><div class="bar"><span>Share more widely</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(d.title)}</h2><p class="sub">An owner or admin approves the request. Until then, nothing changes.</p>
+    <div class="obopts promopts" role="radiogroup" aria-label="Who can see it">${options.map(([k, l, t], i) => `<button type="button" class="obopt ${i ? '' : 'on'}" role="radio" aria-checked="${!i}" data-scope="${k}"><b>${l}</b><small>${t}</small></button>`).join('')}</div>
+    <label class="hsl" for="preason">Why</label><textarea id="preason" class="eminp" rows="3" maxlength="500" placeholder="For example: every support agent needs this."></textarea><div class="hse" id="pre" role="alert"></div>
+    <div class="actions"><button type="button" class="btn primary" id="psend">Send request</button><button type="button" class="btn" data-close-modal>Cancel</button></div></div></div>`);
+  let scope = options[0][0];
+  $$('[data-scope]').forEach((b) => {
+    b.onclick = () => { scope = b.dataset.scope; $$('[data-scope]').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); }); };
+  });
+  $('#psend').onclick = () => B.busy($('#psend'), async () => {
+    await B.api.post(`/documents/${d.id}/promotions`, { to_scope: scope, reason: $('#preason').value.trim() || null });
+    B.closeModal();
+    B.toast('Request sent. Follow it in Governance.');
+  }, (error) => { $('#pre').textContent = B.problem(error); });
+}
+
+const ACTIONS = { 'answer.served': 'Cited in an answer', 'promotion.requested': 'Wider sharing requested', 'promotion.approved': 'Sharing approved', 'promotion.rejected': 'Sharing rejected', 'promotion.revoked': 'Sharing revoked', 'promotion.needs_review': 'Sharing needs review' };
+async function lineageModal(d) {
+  B.openModal(`<div class="modal lineage" role="dialog" aria-label="Lineage"><div class="bar"><span>Lineage</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(d.title)}</h2><p class="sub">Answers that cited this document, and changes to how widely it is shared. Only admins and compliance see this.</p><div id="lin">${B.loadingBlock('Loading lineage', 3, 'actr')}</div></div></div>`);
+  try {
+    const page = await B.api.get('/admin/audit', { document_id: d.id, limit: 50 });
+    const box = $('#lin');
+    if (!box) return;
+    box.innerHTML = page.items.length
+      ? `<div class="actl">${page.items.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' · ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' · ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
+      : '<p class="actn">Nothing yet. Answers that cite this document appear here.</p>';
+  } catch (error) {
+    const box = $('#lin');
+    if (box) box.innerHTML = B.errorBlock(error);
+  }
+}
+
+window.LIBRARY = { openDocument };
 })();

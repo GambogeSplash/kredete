@@ -280,8 +280,8 @@
   "group": "svg"
  },
  {
-  "name": "src-filesystem.svg",
-  "path": "assets/svg/src-filesystem.svg",
+  "name": "src-file.svg",
+  "path": "assets/svg/src-file.svg",
   "type": "SVG",
   "size": 235,
   "group": "svg"
@@ -291,13 +291,6 @@
   "path": "assets/svg/src-help.svg",
   "type": "SVG",
   "size": 369,
-  "group": "svg"
- },
- {
-  "name": "src-slack.svg",
-  "path": "assets/svg/src-slack.svg",
-  "type": "SVG",
-  "size": 245,
   "group": "svg"
  },
  {

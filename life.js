@@ -7,7 +7,7 @@ const EASE=[.22,1,.36,1]; const SPRING={type:'spring',stiffness:420,damping:30};
 const app=$('#app'); if(!app) return;
 
 /* 1. entrances: new cards, rows and groups rise in with a stagger (not while typing, not inside folders) */
-const NEW='.actr,.gcard,.lrow,.capp,.dt-r:not(.dt-h),.frow,.acid,.astat,.agstep,.hcb,.hrel,.fhead,.lvs,.agr,.acard,.obcard,.obopt,.obapp,.obid,.lh-sug,.dday,.libs,.atabs,.libchips,.stkl-main';
+const NEW='.actr,.gcard,.lrow,.dt-r:not(.dt-h),.frow,.acid,.astat,.agstep,.hcb,.hrel,.fhead,.lvs,.agr,.acard,.obcard,.obopt,.obapp,.obid,.lh-sug,.dday,.libs,.atabs,.libchips,.stkl-main';
 let pending=[], raf=0, lastBatch=0;
 function flush(){ raf=0; const els=pending.filter(e=>e.isConnected); pending=[]; if(!els.length) return;
   const set=new Set(els); const leaf=els.filter(e=>![...set].some(o=>o!==e&&e.contains(o))).slice(0,50);
@@ -51,7 +51,7 @@ new MutationObserver(ms=>{ const added=[]; ms.forEach(m=>m.addedNodes.forEach(n=
 orb([app]);
 
 /* 7. press feel for the newer controls, and rows leave gracefully when you act on them */
-const PRESS='.dsend,.dic,.dchip,.lchip,.hcard,.capp,.gcard,.obcard,.obopt,.hrel,.acct,.lh-sug,.emchip,.atab,.segb,.pm-i,.ssel-btn';
+const PRESS='.dsend,.dic,.dchip,.lchip,.hcard,.gcard,.obcard,.obopt,.hrel,.acct,.lh-sug,.emchip,.atab,.segb,.pm-i,.ssel-btn';
 document.addEventListener('pointerdown',e=>{ if(RM) return; const t=e.target.closest&&e.target.closest(PRESS); if(!t||t.disabled) return; animate(t,{scale:.965},{duration:.1}); const up=()=>{ animate(t,{scale:1},{type:'spring',stiffness:560,damping:18}); removeEventListener('pointerup',up); removeEventListener('pointercancel',up); }; addEventListener('pointerup',up); addEventListener('pointercancel',up); });
 document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('[data-ia],[data-cn]'); if(!b||b.dataset.done||RM) return; const row=b.closest('.actr'); if(!row) return;
   e.stopImmediatePropagation(); e.preventDefault(); b.dataset.done='1'; animate(row,{opacity:[1,0],x:[0,28]},{duration:.24,ease:EASE}).finished.then(()=>b.click()).catch(()=>b.click()); },true);

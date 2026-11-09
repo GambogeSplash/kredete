@@ -61,11 +61,9 @@ main#app{padding:16px 16px calc(24px + var(--safe-b))!important;overflow:visible
 .cxcomp .dform{border-radius:22px;padding:var(--s-3) var(--s-3) 10px var(--s-4)}
 .cxcomp .dform textarea{min-height:40px}
 .cxcomp .tiny{display:none}
-.dic,.dchip{min-height:40px}.dic{width:40px;height:40px}
+.dchip{min-height:40px}
 .dsend{width:40px;height:40px}
-.dfiles{margin-bottom:var(--s-2)}
-.uver,.umrow{opacity:1!important}
-.thread article .umrow .uedit{opacity:1}
+.umrow{opacity:1!important}
 .dpen,.fb .gic,.gic{opacity:1}
 .fb.gact{flex-wrap:wrap}
 .gic{min-width:40px;min-height:40px}
@@ -79,7 +77,6 @@ main#app{padding:16px 16px calc(24px + var(--safe-b))!important;overflow:visible
 .cx.wide .cxside{height:88dvh}
 .cx.wide{padding:0!important;gap:0!important;background:var(--surface)!important}
 .cx.wide .cxmain,.cx.wide .cxside{border:0}
-.pvpdf{height:70dvh}
 
 /* ---- library ---- */
 .pg .libbar{flex-wrap:nowrap;gap:var(--s-2);padding:0!important;margin-bottom:var(--s-3)}
@@ -89,14 +86,11 @@ main#app{padding:16px 16px calc(24px + var(--safe-b))!important;overflow:visible
 .lrow{padding:10px var(--s-1);min-height:60px}
 .lrow .llab,.lrow .ldoc{display:none}
 .lrow .ltt small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lgrp,.lgrp.lgapp{border-radius:var(--r-lg)}
 .ggrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;padding:var(--s-3) 0 var(--s-2)!important;gap:var(--s-3)}
 .gcard small,.gc-t{overflow:hidden;text-overflow:ellipsis}
 .fmenu{right:0;left:auto;min-width:min(260px,calc(100vw - 32px))}
 
 /* ---- connectors ---- */
-.cngrid{grid-template-columns:1fr!important}
-.capp .capp-a .btn{min-height:40px}
 
 /* ---- chats page ---- */
 .chl .actr{padding:var(--s-3) var(--s-1)}
@@ -126,9 +120,7 @@ main#app{padding:16px 16px calc(24px + var(--safe-b))!important;overflow:visible
 .modal-wrap{align-items:flex-end!important;padding:0!important}
 .modal-wrap .modal{width:100%!important;max-width:none!important;border-radius:var(--r-2xl) var(--r-2xl) 0 0!important;max-height:92dvh;overflow:auto;padding-bottom:var(--safe-b);animation:sheetUp var(--dur-slow) var(--ease-out) both}
 @keyframes sheetUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
-.cncols{grid-template-columns:1fr!important;gap:var(--s-4)}
-.cnw .actions,.modal .actions{flex-wrap:wrap}
-.cnw .actions .btn{flex:1;min-height:44px}
+.modal .actions{flex-wrap:wrap}
 
 /* ---- search palette ---- */
 #cmdk{padding:0!important;align-items:flex-start}
@@ -138,8 +130,6 @@ main#app{padding:16px 16px calc(24px + var(--safe-b))!important;overflow:visible
 .kr{min-height:48px}
 
 /* ---- connect hand-off pages ---- */
-.oa-card{margin:2vh auto 16px!important;padding:var(--s-6) 18px 18px!important}
-.oa-allow{height:44px}
 
 /* ---- menus ---- */
 .cmenu{min-width:220px}
@@ -147,7 +137,7 @@ main#app{padding:16px 16px calc(24px + var(--safe-b))!important;overflow:visible
 .toast{bottom:calc(16px + var(--safe-b))}
 
 /* touch: no hover-only controls */
-.chedit,.lib.dpen,.atrm,.chr .lib{opacity:1!important}
+.chedit,.lib.dpen,.chr .lib{opacity:1!important}
 .lh-go{opacity:.5;transform:none}
 
 /* drawer: brand row left, profile pinned to the bottom */
@@ -161,14 +151,6 @@ header.top{align-items:stretch!important}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2)}
 .btn.sm{min-height:40px;padding:0 var(--s-4)}
 /* connect sheet: compact info table, buttons pinned */
-.cnm{grid-template-columns:96px 1fr!important;gap:0 var(--s-3)!important;align-content:start}
-.cnm dt{margin:0!important;padding:var(--s-2) 0;border-top:1px solid var(--line2,var(--line2))}
-.cnm dd{margin:0!important;padding:var(--s-2) 0;border-top:1px solid var(--line2,var(--line2))}
-.cnm dt:first-child,.cnm dt:first-child+dd{border-top:0}
-.cnlk{flex-direction:row;gap:var(--s-4)}
-.cnw .body{padding-bottom:0}
-.cnw .actions{position:sticky;bottom:0;background:var(--surface);margin:var(--s-3) -24px 0!important;padding:12px 24px calc(12px + var(--safe-b));border-top:1px solid var(--line2,var(--line2));z-index:2}
-.cnw .actions .btn.primary{flex:2}
 
 
 /* ================= motion: how things open ================= */
@@ -188,7 +170,7 @@ body.navopen #surfaces .srec .surf{animation-delay:.16s}
 @keyframes pgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 main#app>*{animation:pgIn .34s var(--spring) both}
-.surf:active,.btn:active,.mbbtn:active,.att:active,.lh-sug:active,.cxs:active{transform:scale(.97);transition:transform .1s}
+.surf:active,.btn:active,.mbbtn:active,.lh-sug:active,.cxs:active{transform:scale(.97);transition:transform .1s}
 /* sheets: spring up, dim the page behind */
 .cx .cxside{transition:transform .42s var(--spring),visibility 0s}
 .cx.closed .cxside{transition:transform .3s var(--ease-in),visibility 0s .3s}
@@ -227,7 +209,8 @@ main#app>*{animation:pgIn .34s var(--spring) both}
 
 
 /* page title lives in the top bar; do not repeat it in the page */
-.pg>h1,.pg>h1:first-child,.lcont-t,.aghd .lcont-t{display:none}
+/* The top bar shows the page title; the heading stays for screen readers. */
+.pg>h1,.pg>h1:first-child,.lcont-t,.aghd .lcont-t{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;margin:0}
 .aghd{justify-content:flex-end;margin-bottom:var(--s-3)}
 .aghd:not(:has(.btn,.tag)){display:none}
 .pg{padding-top:0}
@@ -300,3 +283,19 @@ header.top{padding:calc(var(--s-3) + var(--safe-t)) var(--s-3) calc(var(--s-3) +
 .pmenu{left:8px!important;right:auto!important;width:calc(min(86vw,320px) - 16px)!important}
 .pmenu{left:12px!important;width:calc(min(86vw,320px) - 24px)!important}
 .pmenu{left:8px!important;width:calc(min(86vw,320px) - 16px)!important}
+/* Signed out (sign-in, setup, welcome): no app chrome, so no phone bar either. */
+body.noauth .mbar{display:none!important}
+body.noauth .mainpanel{padding-top:var(--safe-t)!important}
+/* The panel holds the bar's padding inside its box: it must be a full viewport tall, or the
+   page background shows below short pages (styles.css still subtracts the bar height). */
+body .mainpanel{min-height:100dvh}
+/* Overlays cover the phone bar (z-index 50): the drawer is a full-screen sheet, and the bar
+   must not stay clickable behind a modal. */
+.scrim{z-index:55}
+.drawer{z-index:60}
+.modal-wrap{z-index:60}
+/* Table headers do not apply to the card layout ("tables become cards" forces every row
+   to display:grid, which used to bring the header back). */
+.dt-r.dt-h{display:none!important}
+/* Group labels in the phone menu: --mute-2 on the shell was 3.7:1. */
+#surfaces .sgl{color:var(--mute)}

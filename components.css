@@ -12,8 +12,8 @@
 .pcn small{font-size:var(--fs-xs);color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .padd{border-style:dashed;background:transparent;color:var(--mute)}
 .padd:hover{border-color:var(--brand-line);color:var(--ink);background:var(--fill-1)}
-.padd .pico.plus{background:var(--fill-2);color:var(--mute-2);box-shadow:none;font-size:var(--fs-h2);font-weight:var(--fw-regular)}
-.pkey{display:block;margin-top:var(--s-1);font:var(--fw-regular) var(--fs-xs) var(--mono);color:var(--mute-2)}
+.padd .pico.plus{background:var(--fill-2);color:var(--mute);box-shadow:none;font-size:var(--fs-h2);font-weight:var(--fw-regular)}
+.pkey{display:block;margin-top:var(--s-1);font:var(--fw-regular) var(--fs-xs) var(--mono);color:var(--mute)}
 @media(max-width:560px){.pgrid{grid-template-columns:1fr}}
 
 /* sidebar footer: profile button plus the light/dark switch */
@@ -116,62 +116,6 @@ svg.ic-svg{transform-origin:50% 50%}
 @keyframes ik-dots{to{transform:rotate(90deg)}}
 @keyframes ik-tiltdown{0%{transform:none}35%{transform:translateY(3px) rotate(10deg)}to{transform:none}}
 @media (hover:hover) and (prefers-reduced-motion:no-preference){
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=refresh]{animation:ik-spin180 .55s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=x],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=plus]{animation:ik-spin90 .48s var(--ease-out) forwards}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=settings],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=sun],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=moon],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=globe],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=cube],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=tune]{animation:ik-spinfull .7s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=clip],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=link],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=pin],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=palette],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=filter],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=sliders],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=apps],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=grid],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=bot],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=hash],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=search],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=compose]{animation:ik-wiggle .48s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=bell]{animation:ik-ring .6s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=home],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=folder],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=user],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=inbox],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=doc],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=image],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=stack],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=library],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=book],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=rows],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=panel],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=shield],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=cal],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=analytics],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=headset],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=lock],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=thumbup],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=copy],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=share]{animation:ik-bounce .48s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=chat],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=helpc],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=check]{animation:ik-pop .48s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=chevr],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=arrow],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=ext],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=logout],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=plug],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=flow]{animation:ik-nudger .48s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=chevd]{animation:ik-nudged .48s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=send]{animation:ik-fly .48s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=mic]{animation:ik-pulse .48s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=kebab],
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=more]{animation:ik-dots .48s var(--ease-out)}
-:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=thumbdown]{animation:ik-tiltdown .48s var(--ease-out)}
 .pm-go:hover svg[data-i=chevr]{animation:ik-nudger .4s var(--ease-out)}
 .padd:hover .plus{transform:rotate(90deg)}
 }
@@ -214,3 +158,192 @@ svg[data-i=send],.dsend:hover svg,.exs:hover svg,.exi button:hover svg{animation
 
 /* Products: demo page link sits beside Copy snippet */
 .actions a.link{margin-left:12px;text-decoration:none;gap:4px}
+
+/* ---- client integration (sandbox spec 4): loading, empty and error states, boot ---- */
+.bootsplash{min-height:100vh;display:grid;place-items:center;background:var(--surface)}
+.bootsplash .pvk{animation:bootpulse 1.4s ease-in-out infinite}
+@keyframes bootpulse{50%{opacity:.45}}
+.skwrap{display:block}
+.skrow{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px}
+.skrow .pvsk{height:8px;margin:0;animation:skpulse 1.4s ease-in-out infinite}
+.skrow .pvsk.sksub{height:6px;opacity:.7}
+.surf.chat.skchat{display:flex;flex-direction:row;align-items:center;min-height:34px;pointer-events:none}
+.surf.chat.skchat .pvsk.sksub{display:none}
+.dt-r.skrow{flex-direction:row;align-items:center;gap:var(--s-4)}
+@keyframes skpulse{50%{opacity:.5}}
+.errstate h2{color:var(--ink-2)}
+.errstate .btn{margin-top:var(--s-3);display:inline-flex}
+.surf.finish .sdot{width:7px;height:7px;border-radius:50%;background:var(--brand);margin-left:auto;flex:none}
+.pvfsk{display:inline-block;vertical-align:middle}
+.obnote{margin:var(--s-3) 0 0}
+.avchg.static{cursor:default}
+.chmore{display:flex;justify-content:center;margin:var(--s-4) 0}
+.si-btn[aria-disabled=true]{opacity:.5;pointer-events:none}
+a.btn.si-btn{text-decoration:none}
+@media (prefers-reduced-motion: reduce){.bootsplash .pvk,.skrow .pvsk{animation:none}}
+.acct-t{min-width:0;overflow:hidden}
+.acct-t b,.acct-t small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pq.pqgone{color:var(--mute);font-style:italic}
+.flipx{display:inline-flex;transform:scaleX(-1)}
+#obe{margin:var(--s-1) 0 0}
+#obe+.obnav{margin-top:var(--s-4)}
+
+/* ---- setup wizard (setup.js) ---- */
+.pvw.sucard{display:block;padding:var(--s-5) var(--s-5) var(--s-4);max-width:420px}
+.suh{display:flex;align-items:center;gap:var(--s-2);font-size:var(--fs-md);margin-bottom:var(--s-4);color:var(--ink)}
+.suh svg{color:var(--brand)}
+.sul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s-1)}
+.sul li{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-2) var(--s-2);border-radius:var(--r-md);color:var(--mute)}
+.sul li i{width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;font:500 11px/1 var(--font);font-style:normal;background:var(--fill-2);color:var(--mute)}
+.sul li span{display:flex;flex-direction:column;min-width:0}
+.sul li b{font-weight:500;font-size:var(--fs-sm);color:inherit}
+.sul li small{font-size:var(--fs-xs);color:var(--mute)}
+.sul li.on{background:var(--brand-wash);color:var(--ink)}
+.sul li.on i{background:var(--brand);color:#fff}
+.sul li.done{color:var(--ink-2)}
+.sul li.done i{background:var(--ok-soft);color:var(--ok)}
+.suhint{margin:calc(-1 * var(--s-2)) 0 var(--s-3);font-size:var(--fs-xs);color:var(--mute)}
+.eminp.mono{font-family:var(--mono,ui-monospace,monospace);letter-spacing:.04em;text-transform:uppercase}
+.eminp.mono::placeholder{text-transform:none;letter-spacing:.02em}
+.sucopy{display:flex;align-items:center;gap:var(--s-2);border:1px solid var(--line);background:var(--wash);border-radius:var(--r-md);padding:var(--s-1) var(--s-1) var(--s-1) var(--s-3);margin:0 0 var(--s-5);min-width:0}
+.sucopy code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs);color:var(--ink-2)}
+.sucopy .lib{width:32px;height:32px;flex:none}
+.suleave{display:block;margin:var(--s-5) 0 0;padding:var(--s-2) 0;min-height:32px}
+.suspaces{max-height:320px;overflow:auto;margin:0 0 var(--s-2);border:1px solid var(--line);border-radius:var(--r-lg)}
+.susync{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-4);border:1px solid var(--line);border-radius:var(--r-lg);margin:0 0 var(--s-4);color:var(--ink-2);font-size:var(--fs-md)}
+.suspin{width:18px;height:18px;border-radius:50%;border:2px solid var(--fill-3);border-top-color:var(--brand);animation:suspin .9s linear infinite;flex:none}
+@keyframes suspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.suspin{animation:none;border-color:var(--brand)}}
+/* An empty error slot takes no room; a message appears in place when there is one. */
+.hse:empty{display:none}
+#suf .si-btn{margin-top:var(--s-4)}
+
+/* ---- Ask (ask.js) ---- */
+.lh-recent{margin-top:var(--s-4)}
+.lh-rh{font-size:var(--fs-xs);color:var(--mute);margin:0 0 var(--s-2) var(--s-1)}
+.lh-sug.sksug{pointer-events:none;min-height:60px}
+.cite.pending{opacity:.55;cursor:default}
+.ans.partial{color:var(--ink-2)}
+.partial-note{color:var(--mute)}
+.cfsent{font-size:var(--fs-xs);color:var(--mute);margin-left:var(--s-2)}
+.cff{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s-2)}
+.thempty{border:0}
+.sktturn{pointer-events:none}
+.sktturn .umsg.skumsg{background:none;padding:0;margin-left:auto}
+.sktturn .ans .pvsk{height:10px;margin:var(--s-2) 0}
+.gsrc.skgsrc{pointer-events:none;min-height:52px}
+.gmore{display:block;margin:var(--s-3) auto}
+.drawerbody{padding:0}
+.fu .gm-sugs{margin-top:14px}
+/* Source rows: a long title or path ends in an ellipsis, not mid-letter (.gt is a column, so each line clips). */
+.gsrc .gt>span,.gsrc .gt small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The send button while a new chat is being created for the question. */
+.dsend.busy .spin{display:inline-block}
+.dsend:disabled{cursor:default}
+
+/* Chats page rows: on phones the pin and actions stay on the row's right, unlike rows with real buttons. */
+@media (max-width:640px){.chr{flex-wrap:nowrap}.chr .actt{flex:1;min-width:0}.chr .actb{width:auto}}
+/* ---- Library (library.js) ---- */
+.libchips{padding:var(--s-3) var(--s-6) var(--s-2);align-items:center}
+.libchips[hidden]{display:none}
+.lchip svg{margin-left:var(--s-1)}
+.fgh{font-size:var(--fs-xs);color:var(--mute);padding:var(--s-2) 10px var(--s-1)}
+.fdot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.lavsp{width:22px;flex:none}
+.gcard.skcard{pointer-events:none;gap:var(--s-2)}
+.gcard.skcard .gc-p{background:var(--fill-2);min-height:96px}
+.svkv{margin-top:var(--s-4)}
+.svkv dd .link{text-align:left;padding:0}
+.sv-act{flex-wrap:wrap}
+.sv-act .btn{white-space:nowrap}
+.sv-act a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:var(--s-2)}
+.promopts{grid-template-columns:1fr;margin:var(--s-2) 0 var(--s-4)}
+.promopts .obopt{text-align:left;justify-items:start}
+.promopts .obopt small{color:var(--mute);font-size:var(--fs-sm)}
+.modal.lineage{max-width:640px}
+.linmore{margin:var(--s-3) 0 0;font-size:var(--fs-sm)}
+
+/* ---- Governance (governance.js) ---- */
+.pgsub{margin:0 0 var(--s-4);max-width:640px}
+.govtabs{padding:0 0 var(--s-3)}
+.govlist.isempty{border:0;background:none}
+.govr{align-items:flex-start;flex-wrap:wrap}
+.govr .actt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;flex:1}
+.govdoc{font-weight:500;color:var(--ink);text-align:left;padding:0}
+.govdoc:hover{color:var(--brand-strong)}
+.govreason{font-size:var(--fs-sm);color:var(--ink-2);margin-top:var(--s-1)}
+.govr .actb{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap}
+
+/* ---- Admin and Audit (admin.js) ---- */
+.audf{display:flex;flex-wrap:wrap;gap:var(--s-3);margin:0 0 var(--s-4);align-items:flex-end}
+.audfl{display:flex;flex-direction:column;gap:var(--s-1)}
+.audfl .hsl{margin:0}
+.audfl .eminp{margin:0;padding:var(--s-1) var(--s-3)}
+.audfl .eminp,.audfl .ssel-btn{height:38px;box-sizing:border-box}
+.audwho{display:flex;align-items:center;gap:var(--s-2)}
+.audact{font-weight:500}
+.dt-r.dterr,.dt-r.dtempty{display:block}
+.mono{font-family:var(--mono,ui-monospace,monospace);font-size:var(--fs-xs)}
+
+/* ---- Connectors (connectors.js) ---- */
+.cnsec{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:var(--s-5);margin:0 0 var(--s-4);max-width:860px}
+.cnsec-h{display:flex;align-items:flex-start;gap:var(--s-3);margin-bottom:var(--s-4)}
+.cnsec-h h2{font-size:var(--fs-lg);margin:0 0 2px}
+.cnsec-h p{margin:0;font-size:var(--fs-sm)}
+.cnsec-h>div{flex:1;min-width:0}
+.cnsec-i{width:32px;height:32px;border-radius:var(--r-md);background:var(--fill-2);display:grid;place-items:center;flex:none;color:var(--ink-2)}
+.cnempty p{margin:0 0 var(--s-3)}
+.cnconn{border:1px solid var(--line2,var(--line));border-radius:var(--r-lg);padding:var(--s-3) var(--s-4);margin:0 0 var(--s-3)}
+.cnconn-h{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s-2)}
+.cnsync{font-size:var(--fs-sm)}
+.cnerr{margin:var(--s-3) 0 0}
+.cnacts{display:flex;flex-wrap:wrap;gap:var(--s-2);margin:var(--s-3) 0 0}
+.cnspaces{margin-top:var(--s-3)}
+.cnspaces .ssel{max-width:220px}
+.cnnone{margin:0;font-size:var(--fs-sm)}
+.cnadd{margin-top:var(--s-2)}
+.cnaddrow{display:flex;gap:var(--s-2);max-width:520px}
+.cnaddrow .eminp{margin:0;flex:1}
+.cncheck{margin:var(--s-3) 0 0;padding-left:var(--s-5);display:flex;flex-direction:column;gap:var(--s-3)}
+.cncheck li b{display:block;font-weight:500}
+.cncheck li span{font-size:var(--fs-sm);color:var(--mute)}
+.cncheck.off{opacity:.55}
+.cncreds{max-width:none}
+/* The breadcrumb stays hidden on every surface, as in the prototype. */
+body[data-sf=ask] #crumb,body[data-sf=governance] #crumb,body[data-sf=admin] #crumb,body[data-sf=setup] #crumb,body[data-sf=signin] #crumb{display:none}
+.cnsec.skcapp{min-height:180px;padding:var(--s-5)}
+
+/* ---- People (people.js) ---- */
+.pphead{display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;margin:0 0 var(--s-3)}
+.pphead .govtabs{padding:0;flex:1}
+.ppsearch{margin:0 0 var(--s-3);max-width:420px}
+.ppwho{display:flex;align-items:center;gap:var(--s-3);min-width:0}
+.ppwho>span{display:flex;flex-direction:column;min-width:0}
+.ppwho b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ppwho small{color:var(--mute);font-size:var(--fs-xs);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pphero{margin:0 0 var(--s-4)}
+.ppfs{border:0;padding:0;margin:0 0 var(--s-3);display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-4)}
+.ppfs legend{width:100%;margin-bottom:var(--s-2)}
+.ppck{display:inline-flex;align-items:center;gap:var(--s-2);min-height:32px;font-size:var(--fs-md);cursor:pointer}
+.ppck input{width:18px;height:18px;accent-color:var(--brand)}
+.ppnote{width:100%;margin:0}
+.ppmodal{max-width:520px}
+.ppmodal .actions{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap}
+.ppintro{max-width:640px;margin:0 0 var(--s-2)}
+.lnrow .actb{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;justify-content:flex-end}
+.lnrow .ssel{min-width:200px}
+.lnnone{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
+
+/* ---- accessibility (tools/audit.js: contrast of at least 4.5:1, targets of at least 24 px) ---- */
+/* A date or time reads as one unit: "8 Nov", "2 min ago" never break across lines. */
+time{white-space:nowrap}
+/* A link inside a tinted notice takes the notice's own color (brand on amber was 4.2:1). */
+.notice .link,.banner .link{color:inherit;text-decoration:underline;text-underline-offset:2px}
+/* Initials: white on --mute-2 was 4.1:1. */
+.lav.avini,.avini{background-color:var(--mute)}
+/* Quiet text that still carries meaning. */
+#surfaces .surf .skbd,.pvcap,.pvc{color:var(--mute)}
+/* The sidebar's "K" (collapse) button was 20 px. */
+.wsav{width:24px;height:24px;line-height:24px}
+/* Search inputs fill their field, so the whole field is the target. */
+.libs input{align-self:stretch;min-height:24px}

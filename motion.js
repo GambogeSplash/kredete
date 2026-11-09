@@ -8,7 +8,7 @@ const app=$('#app');
 
 /* ---------- entrance system ---------- */
 const SEL='h1,.sub,.stat,.cell,.panel,.card,.audrow,.optcard,.tgl,tbody tr,table tr,.chunk,.stg,.banner,.notice,.conflict,.tour,.entry button,.dnav button,.thread>article,.state-list li,.hist button,.cellm,.detail,.slack .sm,.phone,.doc>p,.doc>h2,.doc>ul,.doc>pre,.doc>table,.toolbar,.askbox,.form,.side,.step,.swatch,.docs-side,.empty,.flt,.chips,.ans';
-const viewKey=()=>{ const S=B.S; return [S.surface,S.mode,S.user?1:0].join('|'); };
+const viewKey=()=>{ const S=B.S; return [S.route.surface,S.route.params.id||'',S.me?1:0].join('|'); };
 let lastKey='', seen=new Set();
 const sig=el=>{ if(el.matches('.m,.ans')) return el.tagName+'.'+el.className.replace(/\s*cursor/,'')+'|'+[...el.parentNode.children].indexOf(el); return el.tagName+'.'+(el.className||'')+'|'+(el.textContent||'').trim().slice(0,70); };
 function enter(nodes, full){
@@ -68,13 +68,13 @@ document.addEventListener('mouseout',e=>{ if(RM) return; const t=e.target.closes
 document.addEventListener('pointermove',e=>{ if(RM) return; const p=e.target.closest&&e.target.closest('.phone'); if(!p||e.pointerType==='touch') return; const r=p.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5; p.style.transform=`perspective(900px) rotateY(${x*7}deg) rotateX(${-y*5}deg)`; });
 document.addEventListener('pointerout',e=>{ const p=e.target.closest&&e.target.closest('.phone'); if(p&&!p.contains(e.relatedTarget)&&!RM) animate(p,{transform:'perspective(900px) rotateY(0deg) rotateX(0deg)'},{type:'spring',stiffness:200,damping:18}); });
 
-/* ---------- citation hover card ---------- */
+/* ---------- citation hover card: the quote, its source and its owner ---------- */
 let pop=null;
-document.addEventListener('mouseover',e=>{ const c=e.target.closest('.cite[data-src]'); if(!c||c.contains(e.relatedTarget)) return; const d=B.D[c.dataset.src]; if(!d) return; closePop(); pop=document.createElement('div'); pop.className='pop';
-  const v=(d.id==='cards_faq'||d.id==='fee_schedule')?d.value:null; pop.innerHTML=`<div class="pt">${window.SRCICON(d.system,18)}<b>${B.esc(d.title)}</b></div><div class="pq">${d.text(v)}</div><div class="pf">${window.AVATAR(d.owner,'lav',22)}<span class="pw"><b>${B.esc(d.owner)}</b><small>Verified ${d.verified}</small></span></div>`;
+document.addEventListener('mouseover',e=>{ const c=e.target.closest('.cite[data-cite]'); if(!c||c.contains(e.relatedTarget)||!window.ASK) return; const d=window.ASK.citation(c); if(!d) return; closePop(); pop=document.createElement('div'); pop.className='pop';
+  pop.innerHTML=`<div class="pt">${B.srcIcon(d.system,18)}<b>${B.esc(d.title)}</b></div>${d.quote?`<div class="pq">${B.esc(d.quote)}</div>`:'<div class="pq pqgone">This passage is no longer available.</div>'}<div class="pf">${d.owner?window.AVATAR(d.owner.name,'lav',22):''}<span class="pw"><b>${B.esc(d.owner?d.owner.name:B.systemName(d.system))}</b><small>${d.last_verified_at?'Verified '+B.when(d.last_verified_at,B.fmtDate(d.last_verified_at)):''}</small></span></div>`;
   document.body.appendChild(pop); const r=c.getBoundingClientRect(); pop.style.left=Math.max(8,Math.min(innerWidth-296,r.left-20))+'px'; const below=r.bottom+pop.offsetHeight+12<innerHeight; pop.style.top=(below?r.bottom+8:r.top-pop.offsetHeight-8)+'px';
   if(!RM) animate(pop,{opacity:[0,1],y:[below?8:-8,0],scale:[.96,1]},{type:'spring',stiffness:500,damping:30}); });
-document.addEventListener('mouseout',e=>{ const c=e.target.closest('.cite[data-src]'); if(c&&!c.contains(e.relatedTarget)) closePop(); });
+document.addEventListener('mouseout',e=>{ const c=e.target.closest('.cite[data-cite]'); if(c&&!c.contains(e.relatedTarget)) closePop(); });
 function closePop(){ if(pop){pop.remove();pop=null;} }
 
 /* ---------- scroll progress ---------- */
@@ -93,33 +93,33 @@ app.addEventListener('click',e=>{ const n=e.target.closest('svg.graph .n'); if(n
 app.addEventListener('mouseover',e=>{ const n=e.target.closest('svg.graph .n'); if(!n) return; const id=n.dataset.n; const near=new Set([id]); $$('svg.graph line[data-e]').forEach(l=>{ const [a,b]=l.dataset.e.split('-'); if(a===id)near.add(b); if(b===id)near.add(a); animate(l,{opacity:(a===id||b===id)?1:.15},{duration:.2}); }); $$('svg.graph .n').forEach(x=>animate(x,{opacity:near.has(x.dataset.n)?1:.25},{duration:.2})); });
 app.addEventListener('mouseout',e=>{ const n=e.target.closest('svg.graph .n'); if(!n||n.contains(e.relatedTarget)) return; $$('svg.graph .n,svg.graph line').forEach(x=>animate(x,{opacity:1},{duration:.2})); });
 
-/* ---------- search palette ---------- */
-const S=()=>B.S; const esc=B.esc;
-const nav=(f)=>{ f(); B.save(); B.route(); window.scrollTo(0,0); };
-const newChat=()=>nav(()=>{ const s=S(); s.surface='app'; s.mode='ask'; s.thread=[]; s.ask.stack=null; s.ask.off={}; s.ask.open=false; });
-const PAGES=[['New chat','compose',newChat],['Chats','chat',()=>nav(()=>{S().surface='chats';})],['Library','library',()=>nav(()=>{S().surface='library';S().libApp=null;S().libFolder=null;})],['Connectors','plug',()=>nav(()=>{S().surface='connectors';})],['Account','user',()=>nav(()=>{S().surface='account';})]];
+/* ---------- search palette: pages, recent chats, and the API's search ---------- */
+const esc=B.esc;
+const pages=()=>{ const p=[['New chat','compose',()=>B.newChat()],['Chats','chat',()=>B.go('/chats')],['Library','library',()=>B.go('/library')],['Governance','shield',()=>B.go('/governance')],['Account','user',()=>B.go('/account')]];
+  if(B.hasRole('admin')) p.push(['Connectors','plug',()=>B.go('/admin/connectors')],['People','user',()=>B.go('/admin/people')]);
+  if(B.hasRole('admin','compliance')) p.push(['Audit','book',()=>B.go('/admin/audit')]);
+  if(B.setupPending()) p.push(['Finish setup','check',()=>B.go('/setup')]);
+  return p; };
+let found={q:'',conversations:[],documents:[]}; let timer=0, seq=0;
+const build=()=>{ const raw=$('#kq').value.trim(); const q=raw.toLowerCase(); const g=[];
+  if(raw) g.push(['Ask',[{ic:B.ICON('arrow',16),t:'Ask Brain: '+raw,ask:true,f:()=>window.ASK&&window.ASK.askFresh(raw)}]]);
+  const chats=(raw?(found.q===raw?found.conversations:[]):B.S.chats.items).slice(0,raw?6:4).map(c=>({ic:B.ICON('chat',16),t:B.chatTitle(c),f:()=>B.go('/c/'+c.id)}));
+  if(chats.length) g.push([raw?'Chats':'Recent chats',chats]);
+  const docs=(raw&&found.q===raw?found.documents:[]).slice(0,6).map(d=>({ic:B.srcIcon(d.system,18),t:d.title,s:B.systemName(d.system),f:()=>window.LIBRARY&&window.LIBRARY.openDocument(d.id)}));
+  if(docs.length) g.push(['Documents',docs]);
+  const pg=pages().filter(p=>!q||p[0].toLowerCase().includes(q)).map(p=>({ic:B.ICON(p[1],16),t:p[0],f:p[2]})); if(pg.length) g.push(['Go to',pg]);
+  return g; };
+const search=()=>{ const raw=$('#kq').value.trim(); clearTimeout(timer); draw(); if(!raw||!B.S.me) return;
+  timer=setTimeout(async()=>{ const mine=++seq; let r={conversations:[],documents:[]}; try{ r=await B.api.get('/search',{q:raw}); }catch(e){ /* the palette still offers pages and asking */ } if(mine!==seq) return; found={q:raw,conversations:r.conversations,documents:r.documents}; draw(); },180); };
 const k=document.createElement('div'); k.id='cmdk'; k.innerHTML='<div class="box" role="dialog" aria-modal="true" aria-label="Search"><div class="kin">'+B.ICON('search',16)+'<input id="kq" placeholder="Search or ask" aria-label="Search" autocomplete="off"><button type="button" class="kx" id="kx" aria-label="Close search">'+B.ICON('x',16)+'</button></div><div id="kl" role="listbox"></div><div class="kfoot"><span><kbd>↑</kbd><kbd>↓</kbd> Move</span><span><kbd>↵</kbd> Open</span><span><kbd>esc</kbd> Close</span></div></div>'; document.body.appendChild(k);
 let sel=0, list=[];
-const bodyOf=d=>{ try{ return typeof d.text==='function'?String(d.text(d.value)).replace(/<[^>]+>/g,''):''; }catch(e){ return ''; } };
-const docsAll=()=>Object.values(B.D).filter(d=>d.kind&&B.appsOn().includes(d.system)&&B.canSee(d));
-const build=()=>{ const q=$('#kq').value.toLowerCase().trim(); const words=q.split(/\s+/).filter(Boolean); const m=t=>!words.length||words.every(w=>t.toLowerCase().includes(w)); const g=[];
-  const T=h=>(S().titles&&S().titles[h])||B.qOf(h); const chats=(S().history||[]).filter(h=>m(T(h)+' '+B.qOf(h))).slice(0,4).map(h=>({ic:B.ICON('chat',16),t:T(h),f:()=>{ nav(()=>{S().surface='app';S().mode='ask';S().thread=[];}); B.openChat?B.openChat(h):B.ask(B.qOf(h)); }}));
-  if(chats.length) g.push(['Recent chats',chats]);
-  const docs=docsAll().filter(d=>m(d.title+' '+(d.owner||'')+' '+(d.domain||'')+' '+bodyOf(d))).slice(0,words.length?6:4).map(d=>({ic:window.SRCICON(d.system,18),t:d.title,s:d.system,f:()=>B.openSource(d.id)}));
-  const docsG=docs.length?[words.length?'Documents':'Library',docs]:null;
-  if(words.length){ const ppl=Object.values(window.DIRECTORY||{}).filter(p=>m(p.name+' '+p.title+' '+p.team)).slice(0,4).map(p=>({ic:window.AVATAR(p.name,'lav',22),t:p.name,s:p.title,f:()=>nav(()=>{ S().surface='library'; S().libApp=null; S().libFolder=null; S().libQ=p.name; })})); if(ppl.length) g.push(['People',ppl]); if(docsG) g.push(docsG);
-    const cn=['Confluence','Google Drive','Notion'].filter(m).map(n=>({ic:window.SRCICON(n,18),t:n,s:B.appsOn().includes(n)?'Connected':'Not connected',f:()=>{ nav(()=>{S().surface='connectors';}); setTimeout(()=>{ const c=document.querySelector('.capp[data-app="'+n+'"]'); if(c) c.click(); },120); }})); if(cn.length) g.push(['Connectors',cn]); }
-  if(!words.length&&docsG) g.push(docsG);
-  const pg=PAGES.filter(p=>m(p[0])).map(p=>({ic:B.ICON(p[1],16),t:p[0],f:p[2]})); if(pg.length) g.push(['Go to',pg]);
-  if(words.length) g.unshift(['Ask',[{ic:B.ICON('arrow',16),t:'Ask Brain: '+$('#kq').value.trim(),ask:true,f:()=>{ nav(()=>{S().surface='app';S().mode='ask';S().thread=[];}); B.ask($('#kq').dataset.last||$('#kq').value.trim()); }}]]);
-  return g; };
 const draw=()=>{ const g=build(); list=g.flatMap(x=>x[1]); sel=Math.min(sel,Math.max(0,list.length-1)); let n=0;
   $('#kl').innerHTML=list.length?g.map(([h,items])=>`<div class="kg"><div class="kh">${h}</div>${items.map(i=>{ const idx=n++; return `<div class="kr ${i.ask?'kask':''}" role="option" aria-selected="${idx===sel}" data-n="${idx}"><span class="ki">${i.ic}</span><span class="kt">${esc(i.t)}</span>${i.s?`<small>${esc(i.s)}</small>`:''}</div>`; }).join('')}</div>`).join(''):'<div class="kempty">Nothing found</div>';
   $$('#kl .kr').forEach(li=>{ li.onclick=()=>run(+li.dataset.n); li.onmousemove=()=>{ if(sel===+li.dataset.n) return; sel=+li.dataset.n; $$('#kl .kr').forEach((x,i)=>x.setAttribute('aria-selected',i===sel)); }; }); };
-const open=()=>{ k._op=document.activeElement; k.classList.add('on'); $('#kq').value=''; sel=0; draw(); $('#kq').focus(); if(!RM){ animate($('.box',k),{opacity:[0,1],scale:[.96,1],y:[-8,0]},{duration:.18,ease:[.2,.8,.2,1]}); animate(k,{opacity:[0,1]},{duration:.14}); } };
+const open=()=>{ if(!B.S.me) return; found={q:'',conversations:[],documents:[]}; k._op=document.activeElement; k.classList.add('on'); $('#kq').value=''; sel=0; draw(); $('#kq').focus(); if(!RM){ animate($('.box',k),{opacity:[0,1],scale:[.96,1],y:[-8,0]},{duration:.18,ease:[.2,.8,.2,1]}); animate(k,{opacity:[0,1]},{duration:.14}); } };
 const close=()=>{ k.classList.remove('on'); const o=k._op; if(o&&o!==document.body&&document.contains(o)&&o.focus) o.focus({preventScroll:true}); };
 const run=n=>{ const i=list[n]; if(!i) return; const typed=$('#kq').value.trim(); $('#kq').dataset.last=typed; close(); i.f(); };
-$('#kq').oninput=()=>{sel=0;draw();}; $('#kx').onclick=close;
+$('#kq').oninput=()=>{sel=0;search();}; $('#kx').onclick=close;
 $('#kq').onkeydown=e=>{ if(e.key==='Tab'){ e.preventDefault(); return; } if(e.key==='ArrowDown'){sel=Math.min(list.length-1,sel+1);e.preventDefault();} else if(e.key==='ArrowUp'){sel=Math.max(0,sel-1);e.preventDefault();} else if(e.key==='Enter'){ e.preventDefault(); run(sel); return;} else if(e.key==='Escape'){close();return;} else return; $$('#kl .kr').forEach((x,n)=>x.setAttribute('aria-selected',n===sel)); const a=$('#kl .kr[aria-selected=true]'); if(a) a.scrollIntoView({block:'nearest'}); };
 k.addEventListener('click',e=>{ if(e.target===k) close(); });
 document.addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); k.classList.contains('on')?close():open(); } else if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){ e.preventDefault(); open(); } });

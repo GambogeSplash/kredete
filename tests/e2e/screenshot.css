@@ -1,0 +1,5 @@
+/* Applied only while comparing screenshots. Toasts come and go with timing; the tests that
+   raise them assert their text instead. */
+#toast {
+  visibility: hidden !important;
+}
