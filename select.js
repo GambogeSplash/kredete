@@ -5,15 +5,19 @@ const CARET='<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke=
 const CHECK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const valDesc=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value');
 let menu=null, openFor=null, typed='', typedT=0;
-const label=s=>{ const o=s.options[s.selectedIndex]; return o?o.textContent:''; };
+/* What the closed select shows: an option's data-label (such as a domain's full path) or its text. */
+const label=s=>{ const o=s.options[s.selectedIndex]; return o?(o.dataset.label||o.textContent):''; };
+/* Option text is plain text: it is escaped before it goes into the list's HTML. */
+const esc=t=>String(t).replace(/[&<>"']/g,c=>`&#${c.charCodeAt(0)};`);
 function closeMenu(refocus){ if(!menu) return; const m=menu, f=openFor; menu=null; openFor=null; m.remove(); if(f){ f.btn.setAttribute('aria-expanded','false'); if(refocus) f.btn.focus({preventScroll:true}); } document.removeEventListener('pointerdown',outside,true); window.removeEventListener('resize',onWin); document.removeEventListener('scroll',onWin,true); }
 const outside=e=>{ if(menu&&!menu.contains(e.target)&&!(openFor&&openFor.btn.contains(e.target))) closeMenu(false); };
 const onWin=e=>{ if(menu&&e&&menu.contains(e.target)) return; closeMenu(false); };
 function choose(f,i){ const s=f.sel; if(s.options[i].disabled) return; const changed=s.selectedIndex!==i; s.selectedIndex=i; sync(f); closeMenu(true); if(changed){ s.dispatchEvent(new Event('input',{bubbles:true})); s.dispatchEvent(new Event('change',{bubbles:true})); } }
 function openMenu(f){ if(openFor===f){ closeMenu(true); return; } closeMenu(false); const s=f.sel; if(s.disabled) return;
   const m=document.createElement('div'); m.className='ssel-menu'; m.setAttribute('role','listbox'); m.tabIndex=-1; if(s.getAttribute('aria-label')) m.setAttribute('aria-label',s.getAttribute('aria-label'));
-  let h=''; let grp=null; [...s.children].forEach(c=>{ if(c.tagName==='OPTGROUP'){ h+=`<div class="ssel-g">${c.label}</div>`; [...c.children].forEach(o=>h+=item(s,o)); } else h+=item(s,c); }); m.innerHTML=h;
-  function item(s,o){ const i=[...s.options].indexOf(o); return `<button type="button" class="ssel-o" role="option" data-i="${i}" aria-selected="${s.selectedIndex===i}" ${o.disabled?'aria-disabled="true"':''}><span>${o.textContent}</span>${s.selectedIndex===i?CHECK:''}</button>`; }
+  let h=''; let grp=null; [...s.children].forEach(c=>{ if(c.tagName==='OPTGROUP'){ h+=`<div class="ssel-g">${esc(c.label)}</div>`; [...c.children].forEach(o=>h+=item(s,o)); } else h+=item(s,c); }); m.innerHTML=h;
+  /* data-depth indents an option under its parent, as a nested domain sits under its own. */
+  function item(s,o){ const i=[...s.options].indexOf(o); const d=+o.dataset.depth||0; return `<button type="button" class="ssel-o" role="option" data-i="${i}" aria-selected="${s.selectedIndex===i}" ${o.disabled?'aria-disabled="true"':''}${d?` style="--depth:${d}"`:''}><span>${esc(o.textContent)}</span>${s.selectedIndex===i?CHECK:''}</button>`; }
   document.body.appendChild(m); menu=m; openFor=f; f.btn.setAttribute('aria-expanded','true');
   const r=f.btn.getBoundingClientRect(); m.style.minWidth=Math.max(r.width,160)+'px'; m.style.maxWidth=Math.min(360,innerWidth-16)+'px';
   const mh=Math.min(m.scrollHeight,300); const below=innerHeight-r.bottom; const up=below<mh+12&&r.top>below;

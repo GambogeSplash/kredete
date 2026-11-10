@@ -208,6 +208,10 @@ a.btn.si-btn{text-decoration:none}
 .sul li.done i{background:var(--ok-soft);color:var(--ok)}
 .surefresh{margin:var(--s-2) 0 var(--s-4);font-size:var(--fs-xs);color:var(--mute)}
 .suhint{margin:calc(-1 * var(--s-2)) 0 var(--s-3);font-size:var(--fs-xs);color:var(--mute)}
+/* A select styled as a form field keeps the field's width and spacing once select.js wraps it,
+   so a hint under it sits where it does under a text field. */
+.ssel:has(>select.eminp){display:block;width:100%;margin-bottom:var(--s-3)}
+.ssel:has(>select.eminp) .ssel-btn{width:100%}
 .eminp.mono{font-family:var(--mono,ui-monospace,monospace);letter-spacing:.04em;text-transform:uppercase}
 .eminp.mono::placeholder{text-transform:none;letter-spacing:.02em}
 .sucopy{display:flex;align-items:center;gap:var(--s-2);border:1px solid var(--line);background:var(--wash);border-radius:var(--r-md);padding:var(--s-1) var(--s-1) var(--s-1) var(--s-3);margin:0 0 var(--s-5);min-width:0}
@@ -406,7 +410,17 @@ body[data-sf=ask] #crumb,body[data-sf=governance] #crumb,body[data-sf=admin] #cr
 .ppck{display:inline-flex;align-items:center;gap:var(--s-2);min-height:32px;font-size:var(--fs-md);cursor:pointer}
 .ppck input{width:18px;height:18px;accent-color:var(--brand)}
 .ppnote{width:100%;margin:0}
+/* A grant that a domain above already makes: ticked, not changeable here, and says why. */
+.ppck:has(input:disabled){cursor:default}
+.ppck span:has(.ppthru){display:flex;flex-direction:column;line-height:1.25}
+.ppthru{font-size:var(--fs-xs);color:var(--mute)}
 .ppmodal{max-width:520px}
+/* Admin > Domains as a tree (nested domains spec 4.5). */
+.dmname{display:flex;align-items:center;gap:var(--s-2);padding-left:calc(var(--depth,0) * 22px)}
+.dt-r:not([data-depth="0"]) .dmname::before{content:'';flex:none;width:9px;height:9px;margin-top:-6px;border-left:1.5px solid var(--line-strong);border-bottom:1.5px solid var(--line-strong);border-bottom-left-radius:3px}
+.dmpages{display:flex;flex-direction:column;line-height:1.3}
+.dmtotal{font-size:var(--fs-xs);color:var(--mute)}
+.tag.dminh{background:transparent;border-style:dashed;color:var(--mute)}
 .ppmodal .actions{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap}
 .ppintro{max-width:640px;margin:0 0 var(--s-2)}
 .lnrow .actb{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;justify-content:flex-end}

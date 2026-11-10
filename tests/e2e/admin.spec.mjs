@@ -79,6 +79,9 @@ test.describe('surfaces follow roles', () => {
    in parallel, and what the client sends is what these tests check (the API side is covered
    by broth-service's integration tests). */
 test.describe('domains', () => {
+  // The seeded tree (nested domains plan N6.2): Cards and Engineering at the top level, and
+  // Payments holding Collections and Payouts, which holds Cross-border. Dami Bello owns Payments.
+  // Writes are answered here, so the shared tree stays as every other test expects.
   const DOMAINS = '**/v1/admin/domains';
   const captured = (page, pattern, method, reply) => {
     const bodies = [];
@@ -88,53 +91,110 @@ test.describe('domains', () => {
       return route.fulfill(await reply(route, bodies));
     }).then(() => bodies);
   };
+  const row = (page, name) => page.locator('[data-domain]').filter({ has: page.locator('.dmname b', { hasText: new RegExp(`^${name}$`) }) });
+  const idOf = (page, name) => row(page, name).getAttribute('data-domain');
+  /** A DomainOut the API would send back. */
+  const domainOut = (fields) => ({ parent_id: null, document_count: 0, total_count: 0, owners: [], inherited_owners: [], ...fields });
+  const problem = (detail) => ({
+    status: 422,
+    contentType: 'application/problem+json',
+    json: { type: 'urn:broth:problem:validation_error', title: 'Validation error', status: 422, code: 'validation_error', detail },
+  });
 
-  test('lists each domain with the label to use, its owners and page count', async ({ open, check }) => {
+  test('lists the domains as a tree, with their labels, owners and pages', async ({ open, check }) => {
     const page = await open('admin', '/admin/domains');
-    const payments = page.locator('[data-domain]').filter({ hasText: 'Payments' });
+    await expect(page.locator('[data-domain] .dmname b')).toHaveText(['Cards', 'Engineering', 'Payments', 'Collections', 'Payouts', 'Cross-border']);
+    expect(await page.locator('[data-domain]').evaluateAll((rows) => rows.map((r) => r.dataset.depth))).toEqual(['0', '0', '0', '1', '1', '2']);
+    const payments = row(page, 'Payments');
     await expect(payments.locator('code')).toHaveText('broth-domain-payments');
     await expect(payments.locator('.tag')).toHaveText(['Dami Bello']);
+    await expect(payments.locator('.dmpages')).toHaveText(/^2.*4 in total$/);
+    await expect(row(page, 'Payouts').locator('.dmpages')).toHaveText(/^0.*1 in total$/);
+    await expect(row(page, 'Cards').locator('.dmtotal')).toHaveCount(0); // no sub-domains, no total
+    const inherited = row(page, 'Cross-border').locator('.tag.dminh');
+    await expect(inherited).toHaveText('Dami Bello, owns Payments');
+    await expect(inherited).toHaveAttribute('title', 'Owns Payments');
     await check(page, 'domains');
   });
 
-  test('a new domain suggests its label from the name', async ({ open, check }) => {
+  test('a new domain suggests its label from the name, and can go inside another', async ({ open, check }) => {
     const page = await open('admin', '/admin/domains');
+    const payouts = await idOf(page, 'Payouts');
     const created = await captured(page, DOMAINS, 'POST', (route) => ({
       status: 201,
-      json: { id: '00000000-0000-4000-8000-0000000000d1', slug: 'card-disputes', name: 'Card Disputes', document_count: 0, owners: [] },
+      json: domainOut({ id: '00000000-0000-4000-8000-0000000000d1', slug: 'card-disputes', name: 'Card Disputes', ...route.request().postDataJSON() }),
     }));
     await page.getByRole('button', { name: 'New domain' }).click();
     await page.getByRole('textbox', { name: 'Name' }).fill('Card Disputes');
     await expect(page.getByRole('textbox', { name: 'Label' })).toHaveValue('card-disputes');
+    await expect(page.locator('#dmparent')).toHaveValue(''); // the top level unless chosen
     await check(page, 'domains-new');
+    await page.locator('#dmparent').selectOption(payouts);
     await page.getByRole('button', { name: 'Create' }).click();
-    await expect(page.locator('[data-domain]').filter({ hasText: 'Card Disputes' }).locator('code')).toHaveText('broth-domain-card-disputes');
-    expect(created.map((c) => c.body)).toEqual([{ name: 'Card Disputes', slug: 'card-disputes' }]);
+    const added = row(page, 'Card Disputes');
+    await expect(added.locator('code')).toHaveText('broth-domain-card-disputes');
+    await expect(added).toHaveAttribute('data-depth', '2'); // under Payouts, under Payments
+    expect(created.map((c) => c.body)).toEqual([{ name: 'Card Disputes', slug: 'card-disputes', parent_id: payouts }]);
+    const names = await page.locator('[data-domain] .dmname b').allTextContents();
+    expect(names.indexOf('Card Disputes')).toBe(names.indexOf('Payouts') + 1); // listed inside Payouts, before Cross-border
   });
 
-  test('an edited label is kept, and a taken one is explained', async ({ open }) => {
+  test('the Parent picker shows the tree and never the domain itself or anything inside it', async ({ open }) => {
     const page = await open('admin', '/admin/domains');
-    const sent = await captured(page, DOMAINS, 'POST', () => ({
-      status: 409,
-      contentType: 'application/problem+json',
-      json: { type: 'urn:broth:problem:invalid_state', title: 'Invalid state', status: 409, code: 'invalid_state', detail: 'a domain with this slug already exists' },
-    }));
-    await page.getByRole('button', { name: 'New domain' }).click();
-    await page.getByRole('textbox', { name: 'Label' }).fill('payments');
-    await page.getByRole('textbox', { name: 'Name' }).fill('Payments Two');
-    await expect(page.getByRole('textbox', { name: 'Label' })).toHaveValue('payments');
-    await page.getByRole('button', { name: 'Create' }).click();
-    await expect(page.getByRole('alert')).toHaveText('A domain with this slug already exists');
-    expect(sent.map((c) => c.body.slug)).toEqual(['payments']);
+    await row(page, 'Payouts').getByRole('button', { name: 'Edit' }).click();
+    const options = page.locator('#dmparent option');
+    await expect(options).toHaveText(['None (top level)', 'Cards', 'Engineering', 'Payments', 'Collections']);
+    await expect(page.locator('#dmparent')).toHaveValue(await idOf(page, 'Payments'));
+    await expect(page.getByRole('dialog').locator('.ssel-btn')).toHaveText('Payments');
+    await page.locator('[data-close-modal]').first().click();
+
+    await row(page, 'Cross-border').getByRole('button', { name: 'Edit' }).click();
+    await expect(page.getByRole('dialog').locator('.ssel-btn')).toHaveText('Payments / Payouts'); // the full path, once chosen
+    await page.getByRole('dialog').locator('.ssel-btn').click();
+    await expect(page.locator('.ssel-menu .ssel-o')).toHaveText(['None (top level)', 'Cards', 'Engineering', 'Payments', 'Collections', 'Payouts']);
+    await expect(page.locator('.ssel-menu .ssel-o').filter({ hasText: 'Collections' })).toHaveAttribute('style', '--depth:1');
+  });
+
+  test('a move the server refuses says why, and moving saves only the parent', async ({ open }) => {
+    const page = await open('admin', '/admin/domains');
+    const cards = await idOf(page, 'Cards');
+    const moves = await captured(page, `${DOMAINS}/*`, 'PATCH', (route, bodies) => (bodies.length === 1
+      ? problem('domains can be nested up to 6 levels')
+      : { json: domainOut({ id: route.request().url().split('/').pop(), slug: 'payouts', name: 'Payouts', parent_id: cards }) }));
+    await row(page, 'Payouts').getByRole('button', { name: 'Edit' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Edit Payouts' });
+    await dialog.locator('#dmparent').selectOption(cards);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(dialog.getByRole('alert')).toHaveText('Domains can be nested up to 6 levels');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('#toast')).toContainText('Saved');
+    expect(moves.map((c) => c.body)).toEqual([{ parent_id: cards }, { parent_id: cards }]);
+  });
+
+  test("an inherited owner is ticked and fixed in the domain's owners, and never granted again", async ({ open }) => {
+    const page = await open('admin', '/admin/domains');
+    const roles = await captured(page, '**/v1/admin/users/*/roles', 'PUT', () => ({ json: {} }));
+    const renamed = await captured(page, `${DOMAINS}/*`, 'PATCH', (route) => ({ json: domainOut({ id: route.request().url().split('/').pop(), slug: 'cross-border', name: 'Cross-border payouts' }) }));
+    await row(page, 'Cross-border').getByRole('button', { name: 'Edit' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Edit Cross-border' });
+    const dami = dialog.getByRole('checkbox', { name: /Dami Bello/ });
+    await expect(dami).toBeChecked();
+    await expect(dami).toBeDisabled();
+    await expect(dialog.locator('.ppck').filter({ hasText: 'Dami Bello' })).toContainText('Owns Payments');
+    await dialog.getByRole('textbox', { name: 'Name' }).fill('Cross-border payouts');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('#toast')).toContainText('Saved');
+    expect(renamed.map((c) => c.body)).toEqual([{ name: 'Cross-border payouts' }]); // the parent stays
+    expect(roles).toEqual([]);
   });
 
   test('renaming and changing owners keeps everyone\'s other roles', async ({ open, check }) => {
     const page = await open('admin', '/admin/domains');
     const renamed = await captured(page, `${DOMAINS}/*`, 'PATCH', (route) => ({
-      json: { id: route.request().url().split('/').pop(), slug: 'payments', name: 'Payments and Transfers', document_count: 0, owners: [] },
+      json: domainOut({ id: route.request().url().split('/').pop(), slug: 'payments', name: 'Payments and Transfers' }),
     }));
     const roles = await captured(page, '**/v1/admin/users/*/roles', 'PUT', () => ({ json: {} }));
-    await page.locator('[data-domain]').filter({ hasText: 'Payments' }).getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Payments').getByRole('button', { name: 'Edit' }).click();
     const dialog = page.getByRole('dialog', { name: 'Edit Payments' });
     await expect(dialog.getByRole('checkbox', { name: 'Dami Bello' })).toBeChecked();
     await check(page, 'domains-edit');
@@ -147,6 +207,33 @@ test.describe('domains', () => {
     const byRoles = roles.map((c) => c.body.roles.map((r) => r.role).sort());
     // Kofi keeps Developer and gains Payments; Dami loses Payments and keeps nothing else.
     expect(byRoles.sort()).toEqual([[], ['developer', 'domain_owner']]);
+  });
+
+  test('a move shows in the Library straight away, with no reload', async ({ open }) => {
+    // After a save the tab reads the facets again; here they answer as the server would once
+    // Cross-border moved from inside Payouts to directly inside Payments.
+    let moved = false;
+    const page = await open('admin', '/admin/domains', {
+      before: (p) => p.route('**/v1/facets', async (route) => {
+        const response = await route.fetch().catch(() => null); // a read can outlive the test
+        if (!response) return undefined;
+        const body = await response.json();
+        if (!moved) return route.fulfill({ response, json: body });
+        const payments = body.domains.find((d) => d.value === 'payments');
+        const domains = body.domains.filter((d) => d.value !== 'payouts').map((d) => (d.value === 'cross-border' ? { ...d, parent_id: payments.id } : d));
+        return route.fulfill({ response, json: { ...body, domains } });
+      }),
+    });
+    const payments = await idOf(page, 'Payments');
+    await captured(page, `${DOMAINS}/*`, 'PATCH', (route) => ({ json: domainOut({ id: route.request().url().split('/').pop(), slug: 'cross-border', name: 'Cross-border', parent_id: payments }) }));
+    await row(page, 'Cross-border').getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('dialog').locator('#dmparent').selectOption(payments);
+    moved = true;
+    const reread = page.waitForResponse('**/v1/facets');
+    await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
+    await reread;
+    await page.evaluate(() => window.BRAIN.go('/library/payments'));
+    await expect(page.locator('#libbody [data-folder] .ltt > span')).toHaveText(['Cross-border']);
   });
 
   test('with no domains, the tab explains what they are for', async ({ open, check }) => {

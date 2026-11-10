@@ -953,6 +953,7 @@ body[data-sf=bot] #crumb{display:none}
 .ssel-menu{position:fixed;z-index:100000;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s-1);overflow:auto;box-shadow:0 4px 8px rgba(28,28,50,.05),0 12px 28px -6px rgba(28,28,50,.18);outline:0;font:13px/1.4 var(--font);animation:sselin .12s ease-out}
 .ssel-o{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);width:100%;border:0;background:none;border-radius:var(--r-sm);padding:0 var(--s-2);min-height:30px;text-align:left;color:var(--ink);cursor:pointer;font:inherit}
 .ssel-o.hi{background:var(--wash)}
+.ssel-o[style*="--depth"]>span{padding-left:calc(var(--depth) * 16px)}
 .ssel-o[aria-selected=true]{font-weight:500}.ssel-o[aria-selected=true] svg{color:var(--brand);flex:none}
 .ssel-o[aria-disabled=true]{opacity:.45;cursor:default}
 .ssel-g{font-size:var(--fs-2xs);color:var(--mute);padding:6px var(--s-2) 2px}

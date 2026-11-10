@@ -1,10 +1,12 @@
-/* domains.js: the Admin > Domains tab (labelling spec 4.5).
+/* domains.js: the Admin > Domains tab (labelling spec 4.5; nested domains spec 4.5).
  *
- * Domains from /v1/admin/domains with their page count and owners. An admin creates a domain
- * (the slug is suggested from the name), renames it, and adds or removes owners; owners are
- * written through /v1/admin/users/{id}/roles with the person's other roles kept. The slug is
- * never edited here: Confluence labels name it (broth-domain-<slug>), so changing it would
- * break every label that uses it.
+ * Domains from /v1/admin/domains as a tree, each with its page count and owners, including
+ * the owners it inherits from the domains above it. An admin creates a domain (the slug is
+ * suggested from the name) inside another or at the top level, renames or moves it, and adds or
+ * removes owners; owners are written through /v1/admin/users/{id}/roles with the person's other
+ * roles kept. The slug is never edited here: Confluence labels name it (broth-domain-<slug>),
+ * so changing it would break every label that uses it. The server decides whether a move is
+ * allowed (no cycles, at most six levels); its message shows in the modal.
  */
 (() => {
 'use strict';
@@ -15,6 +17,7 @@ const $ = (s, r = document) => r.querySelector(s);
 /** @type {(s: string, r?: ParentNode) => any[]} */
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
+const T = window.DOMAIN_TREE;
 
 function state() {
   const c = B.S.cache;
@@ -38,7 +41,7 @@ function forgetCaches() {
 }
 
 function render(el) {
-  el.innerHTML = `<p class="sub dmintro">A domain groups pages by subject, such as Payments or Cards. Give a page its domain with the label shown next to each one, or set a space's default domain in Connectors. ${window.DOCS.link('domains')}</p><div class="pphead"><span class="lsp"></span><button type="button" class="btn primary sm" id="dmnew">New domain</button></div><div class="dt dmdt" style="--cols:minmax(0,1.3fr) minmax(0,1.5fr) minmax(0,1.3fr) 64px 76px" id="dmlist"></div>`;
+  el.innerHTML = `<p class="sub dmintro">A domain groups pages by subject, such as Payments or Cards. Give a page its domain with the label shown next to each one, or set a space's default domain in Connectors. ${window.DOCS.link('domains')}</p><div class="pphead"><span class="lsp"></span><button type="button" class="btn primary sm" id="dmnew">New domain</button></div><div class="dt dmdt" style="--cols:minmax(0,1.3fr) minmax(0,1.5fr) minmax(0,1.3fr) 88px 76px" id="dmlist"></div>`;
   $('#dmnew').onclick = () => createModal();
   const s = state();
   if (!s.loaded || s.error) load(); else draw();
@@ -69,11 +72,29 @@ function draw() {
     list.innerHTML = `<div class="dt-r dtempty">${B.emptyBlock('No domains yet', 'Create one for each subject your pages cover, such as Payments, Cards or Compliance. Each domain can have owners who keep its pages current.')}</div>`;
     return;
   }
-  list.innerHTML = head + s.items.map((d) => `<div class="dt-r" data-domain="${d.id}"><span class="dtp"><b style="font-weight:500">${esc(d.name)}</b></span><span class="dmlabel"><code>${esc(labelOf(d))}</code><button type="button" class="lib dmcopy" data-copy="${esc(labelOf(d))}" aria-label="Copy the label ${esc(labelOf(d))}">${ICON('copy', 14)}</button></span><span class="dtm acchips">${d.owners.length ? d.owners.map((o) => `<span class="tag">${esc(o.name)}</span>`).join('') : '<span class="amute">No owner</span>'}</span><span class="dtm">${d.document_count}<span class="dmunit"> ${d.document_count === 1 ? 'page' : 'pages'}</span></span><span><button type="button" class="btn sm" data-dedit="${d.id}">Edit</button></span></div>`).join('');
+  // The tree: each domain under its parent, siblings by name, indented by depth.
+  list.innerHTML = head + T.options(T.tree(s.items)).map(({ item: d, depth }) => `<div class="dt-r" data-domain="${d.id}" data-depth="${depth}"><span class="dtp dmname" style="--depth:${depth}"><b style="font-weight:500">${esc(d.name)}</b></span><span class="dmlabel"><code>${esc(labelOf(d))}</code><button type="button" class="lib dmcopy" data-copy="${esc(labelOf(d))}" aria-label="Copy the label ${esc(labelOf(d))}">${ICON('copy', 14)}</button></span><span class="dtm acchips">${owners(d)}</span><span class="dtm dmpages">${pages(d)}</span><span><button type="button" class="btn sm" data-dedit="${d.id}">Edit</button></span></div>`).join('');
   $$('[data-copy]', list).forEach((b) => {
     b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); } catch (e) { /* clipboard blocked */ } B.toast('Label copied'); };
   });
   $$('[data-dedit]', list).forEach((b) => { b.onclick = () => editModal(s.items.find((d) => d.id === b.dataset.dedit)); });
+}
+
+/** Its own owners, then, muted, those it inherits from the domains above it. */
+function owners(d) {
+  const own = d.owners.map((o) => `<span class="tag">${esc(o.name)}</span>`);
+  const inherited = d.inherited_owners.map((o) => `<span class="tag dminh" title="Owns ${esc(o.from_domain.name)}">${esc(o.name)}<span class="sr">, owns ${esc(o.from_domain.name)}</span></span>`);
+  return own.length || inherited.length ? own.concat(inherited).join('') : '<span class="amute">No owner</span>';
+}
+/** Pages filed directly in the domain, and, when its sub-domains hold more, the total. */
+function pages(d) {
+  const unit = (n) => `<span class="dmunit"> ${n === 1 ? 'page' : 'pages'}</span>`;
+  return `<span>${d.document_count}${unit(d.document_count)}</span>${d.total_count !== d.document_count ? `<small class="dmtotal">${d.total_count} in total</small>` : ''}`;
+}
+/** The Parent select: the top level, then the tree; never the domain itself or anything under it. */
+function parentSelect(domain) {
+  return `<label class="hsl" for="dmparent">Parent</label><select id="dmparent" class="eminp" aria-describedby="dmparenthint"><option value="">None (top level)</option>${T.optionTags(T.tree(state().items), { selected: domain ? domain.parent_id : null, exclude: domain ? domain.id : null })}</select>
+    <p class="suhint" id="dmparenthint">Its pages show inside the parent's folder in the Library, and the parent's owners own it too.</p>`;
 }
 
 function createModal() {
@@ -81,6 +102,7 @@ function createModal() {
     <form id="dmf" novalidate><label class="hsl" for="dmname">Name</label><input id="dmname" class="eminp" autocomplete="off" maxlength="120" placeholder="Payments">
     <label class="hsl" for="dmslug">Label</label><div class="dmslug"><span class="dmpre">broth-domain-</span><input id="dmslug" class="eminp" autocomplete="off" maxlength="41" spellcheck="false" placeholder="payments" aria-describedby="dmslughint"></div>
     <p class="suhint" id="dmslughint">Lowercase letters, digits and dashes. Pages use it in their label, so it cannot be changed later.</p>
+    ${parentSelect(null)}
     <div class="hse" id="dme" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="dmgo">Create</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
   const name = $('#dmname'), slug = $('#dmslug');
   let typed = false;
@@ -92,9 +114,9 @@ function createModal() {
     if (!name.value.trim()) { $('#dme').textContent = 'Give the domain a name'; return; }
     if (!slug.value.trim()) { $('#dme').textContent = 'Give the domain a label'; return; }
     B.busy($('#dmgo'), async () => {
-      const created = await B.api.post('/admin/domains', { name: name.value.trim(), slug: slug.value.trim() });
+      const created = await B.api.post('/admin/domains', { name: name.value.trim(), slug: slug.value.trim(), parent_id: $('#dmparent').value || null });
       const s = state();
-      s.items = s.items.concat(created).sort((a, b) => a.slug.localeCompare(b.slug));
+      s.items = s.items.concat(created).sort((a, b) => a.slug.localeCompare(b.slug)); // the reply carries its inherited owners
       forgetCaches();
       B.closeModal();
       B.toast(`Created. Pages join it with ${labelOf(created)}`);
@@ -107,18 +129,28 @@ async function editModal(domain) {
   let users = [];
   try { users = (await B.api.get('/admin/users', { limit: 200 })).items.filter((u) => u.status === 'active'); } catch (error) { B.toast(B.problem(error)); return; }
   const owns = (u) => u.roles.some((r) => r.role === 'domain_owner' && r.domain_id === domain.id);
+  // Owners of a domain above already own this one: shown ticked, and not granted twice.
+  const through = new Map(domain.inherited_owners.map((o) => [o.user_id, o.from_domain.name]));
+  const owner = (u) => (through.has(u.id) && !owns(u)
+    ? `<label class="ppck"><input type="checkbox" data-owner="${u.id}" checked disabled><span>${esc(u.name)}<small class="ppthru">Owns ${esc(through.get(u.id))}</small></span></label>`
+    : `<label class="ppck"><input type="checkbox" data-owner="${u.id}" ${owns(u) ? 'checked' : ''}><span>${esc(u.name)}</span></label>`);
   B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="Edit ${esc(domain.name)}"><div class="bar"><span>${esc(domain.name)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
     <label class="hsl" for="dmname">Name</label><input id="dmname" class="eminp" autocomplete="off" maxlength="120" value="${esc(domain.name)}">
     <p class="hsl">Label</p><p class="dmfixed"><code>${esc(labelOf(domain))}</code><span class="suhint">Pages use this label, so it stays as it is.</span></p>
-    <fieldset class="ppfs"><legend class="hsl">Owners</legend>${users.length ? users.map((u) => `<label class="ppck"><input type="checkbox" data-owner="${u.id}" ${owns(u) ? 'checked' : ''}><span>${esc(u.name)}</span></label>`).join('') : '<p class="amute">Nobody has signed in yet.</p>'}<p class="suhint ppnote">Owners keep this domain's pages current and see their label problems.</p></fieldset>
+    ${parentSelect(domain)}
+    <fieldset class="ppfs"><legend class="hsl">Owners</legend>${users.length ? users.map(owner).join('') : '<p class="amute">Nobody has signed in yet.</p>'}<p class="suhint ppnote">Owners keep this domain's pages, and those of the domains inside it, current and see their label problems.</p></fieldset>
     <div class="hse" id="dme" role="alert"></div><div class="actions"><button type="button" class="btn primary" id="dmsave">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></div></div>`);
   $('#dmsave').onclick = () => B.busy($('#dmsave'), async () => {
     let updated = domain;
     const name = $('#dmname').value.trim();
     if (!name) { $('#dme').textContent = 'Give the domain a name'; return; }
-    if (name !== domain.name) updated = await B.api.patch(`/admin/domains/${domain.id}`, { name });
+    const parent = $('#dmparent').value || null;
+    const change = { ...(name !== domain.name ? { name } : {}), ...(parent !== domain.parent_id ? { parent_id: parent } : {}) };
+    if (Object.keys(change).length) updated = await B.api.patch(`/admin/domains/${domain.id}`, change);
     for (const u of users) {
-      const want = $(`[data-owner="${u.id}"]`).checked;
+      const box = $(`[data-owner="${u.id}"]`);
+      if (box.disabled) continue; // owned through a domain above: nothing to grant here
+      const want = box.checked;
       if (want === owns(u)) continue;
       const others = u.roles.filter((r) => !(r.role === 'domain_owner' && r.domain_id === domain.id)).map((r) => ({ role: r.role, domain_id: r.domain_id || null }));
       const roles = want ? others.concat({ role: 'domain_owner', domain_id: domain.id }) : others;

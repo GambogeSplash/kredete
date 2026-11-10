@@ -127,5 +127,28 @@
     return out;
   }
 
-  return { tree, children, path, subtree, options };
+  /** @param {string} text */
+  const escape = (text) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+  /**
+   * The <option>s of a domain select, in tree order. Each is indented by its depth in the open
+   * list (data-depth) and shows its full path once chosen (data-label), since names repeat
+   * across the tree. Values are ids unless `value` picks another field, such as the slug.
+   * @template {{ id: string, parent_id: string | null, name: string }} T
+   * @param {Tree<T>} t
+   * @param {{ selected?: string | null, exclude?: string | null, value?: (item: T) => string }} [opts]
+   * @returns {string}
+   */
+  function optionTags(t, opts = {}) {
+    const value = opts.value || ((item) => item.id);
+    return options(t, { exclude: opts.exclude })
+      .map(({ item, depth }) => {
+        const v = value(item);
+        const full = path(t, item.id).map((n) => n.name).join(' / ');
+        return `<option value="${escape(v)}" data-depth="${depth}" data-label="${escape(full)}"${v === opts.selected ? ' selected' : ''}>${escape(item.name)}</option>`;
+      })
+      .join('');
+  }
+
+  return { tree, children, path, subtree, options, optionTags };
 });
