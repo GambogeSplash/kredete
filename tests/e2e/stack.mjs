@@ -27,7 +27,8 @@ export function seed(state = 'ready', sessions = SESSIONS) {
 
 /** Restarts the API so nothing it cached (OAuth client credentials, five minutes) outlives a reseed. */
 export async function restartApi() {
-  execFileSync('docker', ['compose', '--profile', 'e2e', 'restart', 'e2e-api'], { cwd: SERVICE, stdio: 'ignore', timeout: 120_000 });
+  // Through make, so the service checkout's stack.env (its stack name and ports) applies.
+  execFileSync('make', ['-s', '-C', SERVICE, 'e2e-restart'], { stdio: 'ignore', timeout: 120_000 });
   const deadline = Date.now() + 90_000;
   while (Date.now() < deadline) {
     try {

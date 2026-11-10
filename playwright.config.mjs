@@ -1,6 +1,8 @@
 // Browser suite (sandbox spec 6.2, plan C9). Runs against the broth-service e2e stack:
 //   make -C ../broth-service e2e-up     # API with fake models, serving this checkout on :8766
 //   npm run test:e2e
+// From a worktree whose service checkout has its own stack.env, point at that stack:
+//   BROTH_SERVICE_DIR=../broth-service-wt BROTH_E2E_URL=http://localhost:8776 npm run test:e2e
 //
 // Projects run one after another, each on a freshly seeded database: the setup wizard states
 // first, then every scenario at 1440 px and 390 px, light and dark. Inside a project the
