@@ -178,8 +178,9 @@ svg[data-i=send],.dsend:hover svg,.exs:hover svg,.exi button:hover svg{animation
 .obnote{margin:var(--s-3) 0 0}
 .avchg.static{cursor:default}
 .chmore{display:flex;justify-content:center;margin:var(--s-4) 0}
-/* A link that looks like a button sizes and reads like one, wherever it is. */
-a.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);width:auto;text-decoration:none}
+/* A link that looks like a button reads like one, wherever it is. No specificity, so a
+   button's own layout (such as a full-width sign-in button) always wins. */
+:where(a.btn){display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);text-decoration:none}
 /* The Library's folders could not load: one line above the pages, which still do. */
 .libferr{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s-2);padding:var(--s-2) 0 var(--s-3);font-size:var(--fs-sm);color:var(--ink-2)}
 .si-btn[aria-disabled=true]{opacity:.5;pointer-events:none}
