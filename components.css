@@ -503,3 +503,7 @@ time{white-space:nowrap}
 .dmintro .dclink{margin-left:var(--s-1);white-space:nowrap}
 #libchips .dclink{margin-left:var(--s-2)}
 .dc a.btn,.dctop a.btn{display:inline-flex;align-items:center;justify-content:center;align-self:center;width:auto;text-decoration:none}
+/* The section a link opened: a soft band that fades, so the eye finds it. */
+.dcprose .dchit{border-radius:var(--r-sm);animation:dchit 2.4s var(--ease-out) both}
+@keyframes dchit{0%,35%{background:var(--brand-wash);box-shadow:0 0 0 6px var(--brand-wash)}100%{background:transparent;box-shadow:0 0 0 6px transparent}}
+@media (prefers-reduced-motion:reduce){.dcprose .dchit{animation:none;background:var(--brand-wash);box-shadow:0 0 0 6px var(--brand-wash)}}

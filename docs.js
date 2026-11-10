@@ -197,6 +197,10 @@ function reveal(anchor, record) {
     if (record) history.replaceState(history.state, '', `#${anchor}`);
     target.setAttribute('tabindex', '-1');
     target.focus({ preventScroll: true });
+    // Mark the section the link opened, so the eye finds it even when it sits low on the page.
+    $$('.dcprose .dchit').forEach((h) => h.classList.remove('dchit'));
+    void target.offsetWidth;
+    target.classList.add('dchit');
   } else {
     const app = $('#app');
     app.scrollTop = 0;
