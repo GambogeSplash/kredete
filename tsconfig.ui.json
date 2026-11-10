@@ -1,12 +1,12 @@
 {
   // Type-checks the UI modules: plain JavaScript that builds DOM from strings. Not strict
   // (DOM lookups are untyped), but undefined names, wrong calls and typos on the typed API
-  // module are errors. The network module is checked strictly in tsconfig.json.
+  // module are errors. The network and sync-run modules are checked strictly in tsconfig.json.
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "strict": false,
     "noImplicitAny": false,
     "noImplicitThis": false
   },
-  "include": ["types.d.ts", "globals.d.ts", "api.js", "app.js", "auth.js", "extras.js", "setup.js", "ask.js", "library.js", "governance.js", "admin.js", "connectors.js", "people.js", "domains.js"]
+  "include": ["types.d.ts", "globals.d.ts", "api.js", "sync.js", "app.js", "auth.js", "extras.js", "setup.js", "ask.js", "library.js", "governance.js", "admin.js", "connectors.js", "people.js", "domains.js"]
 }

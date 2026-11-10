@@ -4,6 +4,8 @@ type ApiModule = typeof import('./api.js');
 declare global {
   /** The network module (api.js). */
   var API: ReturnType<ApiModule['createApi']>;
+  /** How sync runs read in the UI (sync.js). */
+  var SYNC: typeof import('./sync.js');
   /** The shell (app.js). */
   var BRAIN: any;
   /** Surfaces by name; the router renders them into #app. */
