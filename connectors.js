@@ -1,7 +1,10 @@
 /* connectors.js: Admin, Connectors (sandbox spec 4.3, plan C7.1).
  *
  * Confluence: the connections from /v1/admin/connections with authorize (OAuth), verify,
- * sync and disconnect, and their spaces from /v1/admin/containers with include and owner.
+ * sync and disconnect, and their spaces from /v1/admin/containers with include and owner, and
+ * a Settings drawer for each space's defaults (labelling spec 4.3): pages start from them and
+ * labels can only make a page more cautious. A connection shows its warnings, such as the
+ * indexer group check (labelling spec 4.4).
  * Google Drive: a setup checklist; in sandbox mode it explains that Drive needs a Google
  * Workspace account. In sandbox mode the OAuth clients are managed here too. The Confluence
  * authorization returns to /admin/connectors?connected=<id> or ?error=<reason>.
@@ -22,17 +25,28 @@ const OAUTH_ERRORS = {
 };
 const CREDENTIALS = { google_oauth: ['Google sign-in', 'The OAuth client people sign in with.'], confluence_oauth: ['Confluence app', 'The Atlassian OAuth app Brain reads Confluence with.'] };
 
-let data = null; // { connections, containers, credentials, users }
+let data = null; // { connections, containers, credentials, users, domains }
+const AUTHORITIES = [['approved', 'Approved'], ['unapproved', 'Unapproved'], ['draft', 'Draft']];
+/* Public is not offered: a page becomes public only through a Public promotion. */
+const SENSITIVITIES = [['internal', 'Internal'], ['confidential', 'Confidential'], ['restricted', 'Restricted']];
+const SETTINGS_HELP = {
+  owner: 'Pages without an owner of their own are owned by this person.',
+  authority: 'The most a page in this space is trusted. Page labels can only lower it.',
+  sensitivity: 'The least protection a page in this space gets. Page labels can only raise it.',
+  domain: 'Pages without a domain label of their own belong to this domain.',
+  review: 'How long a verified page stays current before it is due for review.',
+};
 let banner = null;
 
 async function fetchAll() {
-  const [connections, containers, credentials, users] = await Promise.all([
+  const [connections, containers, credentials, users, domains] = await Promise.all([
     B.api.get('/admin/connections'),
     B.api.get('/admin/containers'),
     B.sandbox() ? B.api.get('/admin/credentials') : Promise.resolve({ items: [] }),
     B.api.get('/admin/users', { limit: 200 }),
+    B.api.get('/admin/domains'),
   ]);
-  return { connections: connections.items, containers: containers.items, credentials: credentials.items, users: users.items };
+  return { connections: connections.items, containers: containers.items, credentials: credentials.items, users: users.items, domains: domains.items };
 }
 
 /** Handles the return from Atlassian, then drops the query so a reload starts clean. */
@@ -84,13 +98,14 @@ function connectionHtml(c) {
   const spaces = data.containers.filter((x) => x.connection_id === c.id);
   return `<div class="cnconn" data-conn="${c.id}"><div class="cnconn-h"><b>${esc(c.site)}</b><span class="tag ${st[1]}">${st[0]}</span>${c.system === 'confluence' && !c.authorized ? '<span class="tag warn">Not authorized</span>' : ''}<span class="lsp"></span><span class="amute cnsync">${c.last_sync_at ? 'Synced ' + B.when(c.last_sync_at, B.ago(c.last_sync_at)) : 'Not synced yet'}</span></div>
     ${c.last_error ? `<div class="banner bad cnerr">${esc(c.last_error)}</div>` : ''}
+    ${warningsHtml(c.warnings || {})}
     <div class="cnacts">${c.system === 'confluence' && !c.authorized ? `<button type="button" class="btn sm primary" data-cact="authorize">Authorize with Atlassian</button>` : `<button type="button" class="btn sm" data-cact="verify">Find spaces</button><button type="button" class="btn sm" data-cact="sync">Sync now</button>${c.system === 'confluence' ? '<button type="button" class="btn sm" data-cact="authorize">Re-authorize</button>' : ''}`}<span class="lsp"></span><button type="button" class="btn sm" data-cact="disconnect">Disconnect</button></div>
-    ${c.authorized || c.system === 'gdrive' ? `<div class="cnspaces">${spaces.length ? `<div class="dt" style="--cols:minmax(0,1.6fr) minmax(0,1.2fr) 64px"><div class="dt-r dt-h"><span>${c.system === 'gdrive' ? 'Shared drive' : 'Space'}</span><span>Owner</span><span>Included</span></div>${spaces.map((s) => spaceRow(s)).join('')}</div>` : '<p class="amute cnnone">No spaces found yet. Use Find spaces.</p>'}</div>` : ''}</div>`;
+    ${c.authorized || c.system === 'gdrive' ? `<div class="cnspaces">${spaces.length ? `<div class="dt" style="--cols:minmax(0,1.6fr) minmax(0,1.2fr) 64px 84px"><div class="dt-r dt-h"><span>${c.system === 'gdrive' ? 'Shared drive' : 'Space'}</span><span>Owner</span><span>Included</span><span></span></div>${spaces.map((s) => spaceRow(s)).join('')}</div>` : '<p class="amute cnnone">No spaces found yet. Use Find spaces.</p>'}</div>` : ''}</div>`;
 }
 function spaceRow(s) {
   const options = data.users.filter((u) => u.status === 'active').map((u) => `<option value="${u.id}" ${s.owner_user_id === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
   const name = B.containerName(s.path);
-  return `<div class="dt-r" data-space="${s.id}"><span class="dtp"><b style="font-weight:500">${esc(name)}</b></span><span><select data-owner aria-label="Owner of ${esc(name)}"><option value="" ${s.owner_user_id ? '' : 'selected'}>No owner</option>${options}</select></span><span><input type="checkbox" class="sw" data-include ${s.included ? 'checked' : ''} aria-label="Include ${esc(name)}"></span></div>`;
+  return `<div class="dt-r" data-space="${s.id}"><span class="dtp"><b style="font-weight:500">${esc(name)}</b></span><span class="cnown"><select data-owner aria-label="Owner of ${esc(name)}"><option value="" ${s.owner_user_id ? '' : 'selected'}>No owner</option>${options}</select></span><span class="cninc"><input type="checkbox" class="sw" data-include ${s.included ? 'checked' : ''} aria-label="Include ${esc(name)}"></span><span><button type="button" class="btn sm" data-settings aria-label="Settings for ${esc(name)}">Settings</button></span></div>`;
 }
 function credentialRow(c) {
   const [title, sub] = CREDENTIALS[c.name] || [c.name, ''];
@@ -135,6 +150,7 @@ function wire() {
       if (!owner.value && space.included) { B.toast('An included space needs an owner'); owner.value = space.owner_user_id || ''; return; }
       patchSpace(id, { owner_user_id: owner.value || null }, () => { owner.value = space.owner_user_id || ''; });
     };
+    $('[data-settings]', row).onclick = () => settingsDrawer(data.containers.find((x) => x.id === id));
   });
   $$('[data-cedit]', body).forEach((b) => { b.onclick = () => credentialForm(b.dataset.cedit); });
 }
@@ -151,6 +167,57 @@ async function patchSpace(id, change, undo) {
     B.toast(B.problem(error));
   }
 }
+/** What an admin must fix on a connection, in plain words. */
+function warningsHtml(warnings) {
+  const lines = [];
+  const missing = warnings.indexer_group_missing, members = warnings.indexer_group_members;
+  if (missing) lines.push(`Create a ${esc(missing.group)} group containing only the indexer account, so restricted pages can opt in.`);
+  if (members) lines.push(`Only the indexer account should be in ${esc(members.group)}. Also in it: ${members.members.map(esc).join(', ')}.`);
+  return lines.map((l) => `<div class="notice low cnwarn" role="status"><span>${l}</span></div>`).join('');
+}
+
+const options = (list, value) => list.map(([k, l]) => `<option value="${k}" ${k === value ? 'selected' : ''}>${esc(l)}</option>`).join('');
+const field = (id, label, control, help) => `<div class="cnfield"><label class="hsl" for="${id}">${label}</label>${control}<p class="suhint" id="${id}h">${help}</p></div>`;
+function settingsDrawer(space) {
+  const name = B.containerName(space.path);
+  const people = data.users.filter((u) => u.status === 'active');
+  const authority = space.default_authority || 'unapproved';
+  const sensitivity = space.default_sensitivity && space.default_sensitivity !== 'public' ? space.default_sensitivity : 'internal';
+  B.openDrawer(`<div class="sv" role="dialog" aria-label="Settings for ${esc(name)}"><div class="sv-top"><span class="sv-sys">${B.srcIcon('confluence', 20)}${esc(name)}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div><form class="sv-body cnsettings" id="cnsf" novalidate>
+    <h2>Space settings</h2><p class="sub">Every page in this space starts from these. A page's labels can only make it more cautious.</p>
+    ${field('cnsowner', 'Owner', `<select id="cnsowner" aria-describedby="cnsownerh"><option value="">No owner</option>${options(people.map((u) => [u.id, u.name]), space.owner_user_id)}</select>`, SETTINGS_HELP.owner)}
+    ${field('cnsauth', 'Default authority', `<select id="cnsauth" aria-describedby="cnsauthh">${options(AUTHORITIES, authority)}</select>`, SETTINGS_HELP.authority)}
+    ${field('cnssens', 'Default sensitivity', `<select id="cnssens" aria-describedby="cnssensh">${options(SENSITIVITIES, sensitivity)}</select>`, SETTINGS_HELP.sensitivity)}
+    ${field('cnsdom', 'Default domain', `<select id="cnsdom" aria-describedby="cnsdomh"><option value="">No domain</option>${options(data.domains.map((d) => [d.id, d.name]), space.default_domain_id)}</select>`, SETTINGS_HELP.domain)}
+    ${field('cnsrev', 'Review interval in months', `<input id="cnsrev" class="eminp" type="number" inputmode="numeric" min="1" max="120" step="1" value="${space.review_interval_months}" aria-describedby="cnsrevh">`, SETTINGS_HELP.review)}
+    <div class="hse" id="cnse" role="alert"></div>
+    <div class="actions"><button type="submit" class="btn primary" id="cnsgo">Save</button><button type="button" class="btn" data-close-drawer>Cancel</button></div></form></div>`);
+  $('#cnsf').onsubmit = (e) => {
+    e.preventDefault();
+    const months = Number($('#cnsrev').value);
+    if (!Number.isInteger(months) || months < 1 || months > 120) { $('#cnse').textContent = 'The review interval is a whole number of months, from 1 to 120'; return; }
+    const owner = $('#cnsowner').value || null;
+    if (!owner && space.included) { $('#cnse').textContent = 'An included space needs an owner'; return; }
+    const wanted = {
+      owner_user_id: owner,
+      default_authority: $('#cnsauth').value,
+      default_sensitivity: $('#cnssens').value,
+      default_domain_id: $('#cnsdom').value || null,
+      review_interval_months: months,
+    };
+    const current = { owner_user_id: space.owner_user_id || null, default_authority: authority, default_sensitivity: sensitivity, default_domain_id: space.default_domain_id || null, review_interval_months: space.review_interval_months };
+    const change = Object.fromEntries(Object.entries(wanted).filter(([k, v]) => v !== current[k]));
+    if (!Object.keys(change).length) { B.closeDrawer(); return; }
+    B.busy($('#cnsgo'), async () => {
+      const updated = await B.api.patch(`/admin/containers/${space.id}`, change);
+      data.containers[data.containers.findIndex((x) => x.id === space.id)] = updated;
+      B.closeDrawer();
+      B.toast(updated.included ? 'Saved. Brain re-reads this space now.' : 'Saved');
+      draw();
+    }, (error) => { $('#cnse').textContent = (error && error.detail) || B.problem(error); });
+  };
+}
+
 function credentialForm(name) {
   const [title] = CREDENTIALS[name] || [name];
   B.openModal(`<div class="modal" role="dialog" aria-label="${esc(title)}"><div class="bar"><span>${esc(title)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(title)}</h2><p class="sub">The new client replaces the current one right away.</p><form id="credf" novalidate><label class="hsl" for="credid">Client ID</label><input id="credid" class="eminp" autocomplete="off" spellcheck="false"><label class="hsl" for="credsecret">Client secret</label><input id="credsecret" class="eminp" type="password" autocomplete="off" spellcheck="false"><div class="hse" id="crede" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="credgo">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);

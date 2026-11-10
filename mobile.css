@@ -304,3 +304,8 @@ body .mainpanel{min-height:100dvh}
    and page count each take a full row. */
 .dt-r>.dmlabel{grid-column:1/-1;grid-row:auto}
 .dmunit{display:inline}
+
+/* Connectors on phones: a space's name and Settings on the first row, owner and Included on the
+   second. */
+.cnspaces .dt-r>.cnown{grid-column:1;grid-row:2}
+.cnspaces .dt-r>.cninc{grid-column:2;grid-row:2;justify-self:end}

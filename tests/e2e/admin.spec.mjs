@@ -184,6 +184,77 @@ test.describe('connectors', () => {
     await expect(connection.getByText(/~5f1e2d3c/)).toHaveCount(0);
   });
 
+  test("a space's settings save only what changed, and Brain re-reads it", async ({ open, check }) => {
+    const sent = [];
+    const page = await open('admin', '/admin/connectors', {
+      before: (p) => p.route('**/v1/admin/containers/*', async (route) => {
+        if (route.request().method() !== 'PATCH') return route.fallback();
+        const change = route.request().postDataJSON();
+        sent.push(change);
+        const listed = await (await route.fetch({ method: 'GET', url: route.request().url().replace(/\/[^/]+$/, '') })).json();
+        const space = listed.items.find((s) => route.request().url().endsWith(s.id));
+        return route.fulfill({ json: { ...space, ...change } });
+      }),
+    });
+    await page.getByRole('button', { name: 'Settings for Payments (PAY)' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Settings for Payments (PAY)' });
+    await expect(drawer.getByRole('button', { name: 'Default authority' })).toBeVisible();
+    await check(page, 'space-settings');
+    await drawer.getByRole('button', { name: 'Default authority' }).click();
+    await page.getByRole('option', { name: 'Draft' }).click();
+    await drawer.getByRole('spinbutton', { name: 'Review interval in months' }).fill('7');
+    await drawer.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('#toast')).toContainText('Saved. Brain re-reads this space now.');
+    expect(sent).toEqual([{ default_authority: 'draft', review_interval_months: 7 }]);
+  });
+
+  test("a space's settings explain what they cannot save", async ({ open }) => {
+    const sent = [];
+    const page = await open('admin', '/admin/connectors', {
+      before: (p) => p.route('**/v1/admin/containers/*', (route) => {
+        if (route.request().method() !== 'PATCH') return route.fallback();
+        sent.push(route.request().postDataJSON());
+        return route.fulfill({ status: 422, contentType: 'application/problem+json', json: { type: 'urn:broth:problem:validation_error', title: 'Validation error', status: 422, code: 'validation_error', detail: 'the default domain does not exist' } });
+      }),
+    });
+    await page.getByRole('button', { name: 'Settings for Cards (CARD)' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Settings for Cards (CARD)' });
+    await drawer.getByRole('spinbutton', { name: 'Review interval in months' }).fill('0');
+    await drawer.getByRole('button', { name: 'Save' }).click();
+    await expect(drawer.getByRole('alert')).toHaveText('The review interval is a whole number of months, from 1 to 120');
+    expect(sent).toEqual([]);
+    await drawer.getByRole('spinbutton', { name: 'Review interval in months' }).fill('3');
+    await drawer.getByRole('button', { name: 'Save' }).click();
+    await expect(drawer.getByRole('alert')).toHaveText('the default domain does not exist');
+  });
+
+  test('a connection says what to fix about the indexer group', async ({ open, check }) => {
+    const page = await open('admin', '/admin/connectors', {
+      before: (p) => p.route('**/v1/admin/connections', async (route) => {
+        if (route.request().method() !== 'GET') return route.fallback();
+        const response = await route.fetch();
+        const body = await response.json();
+        body.items = body.items.map((c) => (c.system === 'confluence' ? { ...c, warnings: { indexer_group_members: { group: 'broth-indexer', members: ['Kofi Asante', 'Eve Mensah'] } } } : c));
+        return route.fulfill({ response, json: body });
+      }),
+    });
+    await expect(page.locator('.cnwarn')).toHaveText('Only the indexer account should be in broth-indexer. Also in it: Kofi Asante, Eve Mensah.');
+    await check(page, 'connection-warnings');
+  });
+
+  test('a connection says when the indexer group is missing', async ({ open }) => {
+    const page = await open('admin', '/admin/connectors', {
+      before: (p) => p.route('**/v1/admin/connections', async (route) => {
+        if (route.request().method() !== 'GET') return route.fallback();
+        const response = await route.fetch();
+        const body = await response.json();
+        body.items = body.items.map((c) => (c.system === 'confluence' ? { ...c, warnings: { indexer_group_missing: { group: 'broth-indexer' } } } : c));
+        return route.fulfill({ response, json: body });
+      }),
+    });
+    await expect(page.locator('.cnwarn')).toHaveText('Create a broth-indexer group containing only the indexer account, so restricted pages can opt in.');
+  });
+
   test('a failed Confluence authorization says what to do', async ({ open, check }) => {
     const page = await open('admin', '/admin/connectors?error=invalid_state');
     await expect(page.getByRole('alert')).toHaveText('The Confluence authorization expired or was started in another browser. Authorize again.');

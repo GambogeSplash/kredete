@@ -360,3 +360,17 @@ time{white-space:nowrap}
 .dmfixed{display:flex;flex-direction:column;gap:var(--s-1);margin:0 0 var(--s-3)}
 .dmfixed code{align-self:flex-start;max-width:100%}
 .dmunit{display:none}
+
+/* Connectors: space settings drawer and connection warnings */
+.cnwarn{margin-top:var(--s-3)}
+.cnsettings .sub{margin:0 0 var(--s-4)}
+.cnfield{margin:0 0 var(--s-4)}
+.cnfield select,.cnfield .eminp{width:100%;margin-bottom:0}
+.cnfield .suhint{margin:var(--s-1) 0 0}
+
+/* Library: label problems on a document (library.js) */
+.svwarn{background:var(--amber-w);color:var(--amber);border-radius:var(--r-md);padding:var(--s-3) 14px;margin:var(--s-3) 0 var(--s-4);font-size:var(--fs-sm)}
+.svwarn b{display:block;font-weight:600;margin:0 0 var(--s-1)}
+.svwarn ul{margin:0;padding-left:18px}
+.svwarn li{margin:2px 0}
+.svwarn p{margin:var(--s-2) 0 0;opacity:.9}

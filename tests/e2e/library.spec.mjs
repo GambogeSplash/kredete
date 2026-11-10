@@ -77,3 +77,57 @@ test('when the Library cannot load, it says so and retries', async ({ open, chec
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(rows(page)).toHaveCount(7);
 });
+
+/* Label problems (labelling spec 4.1 and 4.2). The warnings and counts are answered here, so the
+   shared corpus stays as every other test expects; broth-service's tests cover how they arise. */
+const WARNINGS = ['Unknown Broth label "broth-domian-cards".', "Labels can't lower sensitivity below the space's Confidential."];
+async function withWarnings(p, title) {
+  await p.route('**/v1/documents/*', async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({ response, json: body.title === title ? { ...body, label_warnings: WARNINGS } : body });
+  });
+}
+
+test("a document's label problems say what to fix, and other documents show none", async ({ open, check }) => {
+  const page = await open('employee', '/library', { before: (p) => withWarnings(p, 'Cards FAQ') });
+  await rows(page).filter({ hasText: 'Cards FAQ' }).click();
+  const drawer = page.locator('#drawer');
+  const box = drawer.getByRole('note');
+  await expect(box.getByText('Label problems')).toBeVisible();
+  await expect(box.locator('li')).toHaveText(WARNINGS);
+  await expect(box).toContainText('Fix the labels in Confluence');
+  await check(page, 'document-label-problems');
+
+  await page.locator('[data-close-drawer]').first().click();
+  await rows(page).filter({ hasText: 'Card replacement fees' }).click();
+  await expect(drawer.getByRole('heading', { name: 'Card replacement fees' })).toBeVisible();
+  await expect(drawer.getByRole('note')).toHaveCount(0);
+});
+
+test('admins can filter the Library to label problems', async ({ open, check }) => {
+  const requests = [];
+  const page = await open('admin', '/library', {
+    before: async (p) => {
+      await p.route('**/v1/facets', async (route) => {
+        const response = await route.fetch();
+        await route.fulfill({ response, json: { ...(await response.json()), label_problems: 2 } });
+      });
+      p.on('request', (r) => { if (r.url().includes('/v1/documents?')) requests.push(new URL(r.url()).searchParams.get('label_problems')); });
+    },
+  });
+  await page.getByRole('button', { name: 'Filter', exact: true }).click();
+  await expect(page.locator('#lfmenu').getByRole('button', { name: /^Label problems/ })).toContainText('2');
+  await check(page, 'library-label-filter');
+  await page.locator('#lfmenu').getByRole('button', { name: /^Label problems/ }).click();
+  await expect(page.getByRole('button', { name: 'Remove filter Label problems' })).toBeVisible();
+  await expect.poll(() => requests.at(-1)).toBe('true');
+  await page.getByRole('button', { name: 'Remove filter Label problems' }).click();
+  await expect.poll(() => requests.at(-1)).toBe(null);
+});
+
+test('people who review nothing see no label problems filter', async ({ open }) => {
+  const page = await open('employee', '/library');
+  await page.getByRole('button', { name: 'Filter', exact: true }).click();
+  await expect(page.locator('#lfmenu').getByText('Labels')).toHaveCount(0);
+});

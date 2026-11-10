@@ -3,7 +3,9 @@
  * GET /v1/documents with the system, domain, path and title filters (all combinable),
  * /v1/facets for the filter counts, and /v1/documents/{id} for the drawer. "Open in source"
  * replaces "Request access": people ask for access in Confluence or Drive. A document can be
- * proposed for wider sharing (a promotion); admins and compliance see its lineage.
+ * proposed for wider sharing (a promotion); admins and compliance see its lineage. Labels that
+ * Brain ignored or adjusted show as Label problems on the document, and admins and domain owners
+ * can filter the Library to them (labelling spec 4.1 and 4.2).
  */
 (() => {
 'use strict';
@@ -17,7 +19,7 @@ const S = () => B.S;
 
 function state() {
   const s = S();
-  if (!s.lib) s.lib = { q: '', system: '', domain: '', path: '', view: 'list', items: [], next: null, loaded: false, loading: false, error: null, seq: 0 };
+  if (!s.lib) s.lib = { q: '', system: '', domain: '', path: '', problems: '', view: 'list', items: [], next: null, loaded: false, loading: false, error: null, seq: 0 };
   return s.lib;
 }
 const KIND_ICON = { confluence_page: 'doc', page: 'doc', blogpost: 'doc', gdoc: 'doc', sheet: 'analytics', slides: 'panel' };
@@ -48,7 +50,7 @@ function page() {
   const L = state();
   $('#app').innerHTML = `<div class="pg"><h1>Library</h1>
     <div class="libbar"><div class="libs"><span class="libs-i">${ICON('search', 15)}</span><input id="libq" type="search" placeholder="Search the library" aria-label="Search the library" value="${esc(L.q)}" autocomplete="off"></div>
-      <div class="fwrap"><button type="button" class="fbtn ${L.system || L.domain ? 'on' : ''}" id="lfbtn" aria-label="Filter" aria-haspopup="true" aria-expanded="false">${ICON('filter', 15)}<span>Filter</span></button><div class="fmenu" id="lfmenu" hidden></div></div>
+      <div class="fwrap"><button type="button" class="fbtn ${L.system || L.domain || L.problems ? 'on' : ''}" id="lfbtn" aria-label="Filter" aria-haspopup="true" aria-expanded="false">${ICON('filter', 15)}<span>Filter</span></button><div class="fmenu" id="lfmenu" hidden></div></div>
       <div class="seg" role="group" aria-label="View"><button type="button" class="segb ${L.view === 'list' ? 'on' : ''}" data-v="list" aria-label="List view" aria-pressed="${L.view === 'list'}">${ICON('rows', 15)}</button><button type="button" class="segb ${L.view === 'grid' ? 'on' : ''}" data-v="grid" aria-label="Grid view" aria-pressed="${L.view === 'grid'}">${ICON('grid', 15)}</button></div></div>
     <div class="libchips" id="libchips"></div>
     <div class="lbody ${L.view === 'grid' ? 'isgrid' : ''}" id="libbody"></div><div class="chmore" id="libmore"></div></div>`;
@@ -72,7 +74,7 @@ function wireFilterMenu() {
     const f = S().facets || { systems: [], domains: [] };
     const opt = (key, value, label, n, icon) => `<button type="button" class="fopt ${L[key] === value ? 'on' : ''}" data-fk="${key}" data-fv="${esc(value)}">${icon || ''}<span>${esc(label)}</span>${n != null ? `<em>${n}</em>` : ''}</button>`;
     const total = f.systems.reduce((n, s) => n + s.count, 0);
-    menu.innerHTML = `<div class="fgh">Source</div>${opt('system', '', 'All sources', total)}${f.systems.map((s) => opt('system', s.value, B.systemName(s.value), s.count, B.srcIcon(s.value, 16))).join('')}${f.domains.length ? `<div class="fgh">Domain</div>${opt('domain', '', 'All domains', null)}${f.domains.map((d) => opt('domain', d.value, d.label, d.count, `<i class="fdot" style="background:${domainCol(d.value)}"></i>`)).join('')}` : ''}`;
+    menu.innerHTML = `<div class="fgh">Source</div>${opt('system', '', 'All sources', total)}${f.systems.map((s) => opt('system', s.value, B.systemName(s.value), s.count, B.srcIcon(s.value, 16))).join('')}${f.domains.length ? `<div class="fgh">Domain</div>${opt('domain', '', 'All domains', null)}${f.domains.map((d) => opt('domain', d.value, d.label, d.count, `<i class="fdot" style="background:${domainCol(d.value)}"></i>`)).join('')}` : ''}${typeof f.label_problems === 'number' ? `<div class="fgh">Labels</div>${opt('problems', '', 'Any labels', null)}${opt('problems', '1', 'Label problems', f.label_problems)}` : ''}`;
     menu.hidden = false;
     button.setAttribute('aria-expanded', 'true');
     document.addEventListener('mousedown', outside);
@@ -90,12 +92,13 @@ function chips() {
   if (L.system) list.push(['system', B.systemName(L.system)]);
   if (L.domain) list.push(['domain', (f.domains.find((d) => d.value === L.domain) || { label: L.domain }).label]);
   if (L.path) list.push(['path', `Folder: ${L.path}`]);
+  if (L.problems) list.push(['problems', 'Label problems']);
   const box = $('#libchips');
   box.innerHTML = list.map(([k, label]) => `<button type="button" class="lchip on" data-clear="${k}" aria-label="Remove filter ${esc(label)}">${esc(label)}${ICON('x', 12)}</button>`).join('') + (list.length > 1 ? '<button type="button" class="link" data-clear="all">Clear all</button>' : '');
   box.hidden = !list.length;
   $$('[data-clear]', box).forEach((b) => {
     b.onclick = () => {
-      if (b.dataset.clear === 'all') { L.system = ''; L.domain = ''; L.path = ''; } else L[b.dataset.clear] = '';
+      if (b.dataset.clear === 'all') { L.system = ''; L.domain = ''; L.path = ''; L.problems = ''; } else L[b.dataset.clear] = '';
       page(); load(true);
     };
   });
@@ -109,7 +112,7 @@ async function load(reset) {
   if (reset) { L.items = []; L.next = null; L.loaded = false; draw(); }
   else drawMore();
   try {
-    const result = await B.api.get('/documents', { q: L.q || null, system: L.system || null, domain: L.domain || null, path: L.path || null, limit: 40, cursor: reset ? null : L.next });
+    const result = await B.api.get('/documents', { q: L.q || null, system: L.system || null, domain: L.domain || null, path: L.path || null, label_problems: L.problems ? true : null, limit: 40, cursor: reset ? null : L.next });
     if (mine !== L.seq) return;
     L.items = reset ? result.items : L.items.concat(result.items);
     L.next = result.next_cursor || null;
@@ -191,6 +194,7 @@ async function openDocument(id, opts) {
   drawer.innerHTML = `<div class="sv"><div class="sv-top"><span class="sv-sys">${B.srcIcon(d.system, 20)}${esc(B.systemName(d.system))}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div>
     <div class="sv-body"><h2>${esc(d.title)}</h2>
       <div class="sv-tags">${authorityTag(d) || '<span class="tag ok">Approved</span>'}<span class="tag ${scope[1]}">${esc(scope[0])}</span>${d.sensitivity !== 'internal' ? `<span class="tag">${esc(B.clearanceName(d.sensitivity))}</span>` : ''}${domainLabel(d)}</div>
+      ${labelProblems(d)}
       ${c && c.quote ? `<blockquote class="sv-q">${esc(c.quote)}</blockquote>` : ''}
       ${d.owner ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b>${esc(d.owner.name)}</b><small>${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>` : ''}
       <dl class="kv svkv">${d.path ? `<dt>Folder</dt><dd><button type="button" class="link" id="dfolder">${esc(d.path)}</button></dd>` : ''}<dt>Kind</dt><dd>${esc(kindName(d.kind))}</dd>${d.review_due_at ? `<dt>Review due</dt><dd>${B.when(d.review_due_at, B.fmtDate(d.review_due_at, true))}</dd>` : ''}${!d.owner && d.last_verified_at ? `<dt>Verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}</dl>
@@ -203,6 +207,13 @@ async function openDocument(id, opts) {
   if (share) share.onclick = () => shareModal(d);
   const lin = $('#dlineage');
   if (lin) lin.onclick = () => lineageModal(d);
+}
+
+/** Labels Brain ignored or adjusted on this page, for its author to fix in the source. */
+function labelProblems(d) {
+  const warnings = d.label_warnings || [];
+  if (!warnings.length) return '';
+  return `<div class="svwarn" role="note"><b>Label problems</b><ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul><p>Fix the labels in ${esc(B.systemName(d.system))}. Brain reads them again on its next sync.</p></div>`;
 }
 
 function shareModal(d) {
