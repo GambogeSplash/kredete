@@ -81,6 +81,21 @@ test.describe('connectors', () => {
     await check(page, 'connectors-credentials');
   });
 
+  test('an authorized connection can be authorized again, and personal spaces read as such', async ({ open }) => {
+    const page = await open('admin', '/admin/connectors', {
+      before: (p) => p.route('**/v1/admin/containers', async (route) => {
+        const response = await route.fetch();
+        const body = await response.json();
+        const personal = { ...body.items[0], id: '00000000-0000-4000-8000-0000000000b1', external_id: 'me', path: 'Ada Okafor (~5f1e2d3c4b5a69788796a5b4)', included: false, owner_user_id: null };
+        await route.fulfill({ response, json: { ...body, items: [...body.items, personal] } });
+      }),
+    });
+    const connection = page.locator('.cnconn').first();
+    await expect(connection.getByRole('button', { name: 'Re-authorize' })).toBeVisible();
+    await expect(connection.getByText('Ada Okafor (personal space)')).toBeVisible();
+    await expect(connection.getByText(/~5f1e2d3c/)).toHaveCount(0);
+  });
+
   test('a failed Confluence authorization says what to do', async ({ open, check }) => {
     const page = await open('admin', '/admin/connectors?error=invalid_state');
     await expect(page.getByRole('alert')).toHaveText('The Confluence authorization expired or was started in another browser. Authorize again.');

@@ -3,3 +3,12 @@
 #toast {
   visibility: hidden !important;
 }
+
+/* The home greeting is picked at random and by the hour, so its length varies and a long one
+   wraps. It is hidden and held to one line, so the composer under it never moves; a drawer
+   partly covering it would otherwise let the text show past the mask. */
+.lhome .lh-t {
+  visibility: hidden !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}

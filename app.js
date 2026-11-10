@@ -75,6 +75,11 @@ const isAbort = (error) => error && error.name === 'AbortError';
 const SYSTEMS = { confluence: 'Confluence', gdrive: 'Google Drive' };
 const systemName = (s) => SYSTEMS[s] || s || '';
 const srcIcon = (system, px) => window.SRCICON(systemName(system), px);
+/* Confluence names a personal space after its owner, with a key like "~712020cc...". The server
+   keeps the key in the stored name (the audit feed matches on it); people see "personal space". */
+const PERSONAL_SPACE = /^(.*) \(~[^()]+\)$/;
+const isPersonalSpace = (path) => PERSONAL_SPACE.test(path || '');
+const containerName = (path) => (path || '').replace(PERSONAL_SPACE, '$1 (personal space)');
 const ROLE_NAMES = { admin: 'Admin', compliance: 'Compliance', domain_owner: 'Domain owner', developer: 'Developer' };
 const CLEARANCES = [['public', 'Public'], ['internal', 'Internal'], ['confidential', 'Confidential'], ['restricted', 'Restricted']];
 const clearanceName = (c) => (CLEARANCES.find((x) => x[0] === c) || [c, c])[1];
@@ -573,7 +578,7 @@ window.BRAIN = {
   hasRole, isAdmin, sandbox, setupPending,
   openDrawer, closeDrawer, openModal, closeModal,
   loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,
-  systemName, srcIcon, SYSTEMS, ROLE_NAMES, CLEARANCES, clearanceName,
+  systemName, srcIcon, containerName, isPersonalSpace, SYSTEMS, ROLE_NAMES, CLEARANCES, clearanceName,
   fmtDate, fmtTime, ago, dayLabel, when,
   skeletonRows, loadingBlock, errorBlock, emptyBlock, CARET, setCrumb, mbTitle,
   start() { cleanStorage(); boot(); },

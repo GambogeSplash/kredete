@@ -179,30 +179,48 @@ function connectStep(p) {
   };
 }
 async function spacesStep(p) {
-  let containers = p.containers;
-  render('spaces', `<h1>Pick the spaces Brain reads</h1><p class="sub">People still only see the pages they can open in Confluence.</p><div id="suspaces">${B.skeletonRows(3, 'gsrc')}</div><form id="suf" novalidate>${errorSlot}${primary('sugo', 'Include spaces')}</form><p class="disc">You own these spaces in Brain for now. Change owners in Admin, Connectors.</p>`);
+  render('spaces', `<h1>Pick the spaces Brain reads</h1><p class="sub">People still only see the pages they can open in Confluence.</p><div id="suspaces">${B.skeletonRows(3, 'gsrc')}</div><p class="surefresh">Missing a space? <button type="button" class="link" id="surefresh">Look again</button></p><form id="suf" novalidate>${errorSlot}${primary('sugo', 'Include spaces')}</form><p class="disc">You own these spaces in Brain for now. Change owners in Admin, Connectors.</p>`);
   const list = $('#suspaces');
   const go = $('#sugo');
   go.disabled = true;
-  try {
-    if (!containers.length) {
-      await B.api.post(`/admin/connections/${p.connection.id}/verify`);
-      containers = (await B.api.get('/admin/containers', { connection_id: p.connection.id })).items;
-    }
-  } catch (error) {
-    list.innerHTML = '';
-    showError(error);
-    return;
-  }
-  if (!containers.length) {
-    list.innerHTML = `<p class="sub">Brain found no spaces it can read on ${esc(p.connection.site)}.</p>`;
-    return;
-  }
-  list.innerHTML = `<div class="glist suspaces">${containers.map((c) => `<label class="gsrc">${B.srcIcon('confluence', 22)}<span class="gt"><span>${esc(c.path)}</span></span><input type="checkbox" class="gck" data-space="${c.id}" checked aria-label="Include ${esc(c.path)}"></label>`).join('')}</div>`;
   const count = () => $$('[data-space]:checked').length;
   const label = () => { go.disabled = !count(); $('span:last-child', go).textContent = count() ? `Include ${count()} ${count() === 1 ? 'space' : 'spaces'}` : 'Pick at least one space'; };
-  $$('[data-space]').forEach((c) => { c.onchange = label; });
-  label();
+  /* Ticks the person changed survive a refresh; new spaces start ticked unless personal. */
+  const ticked = new Map();
+  function draw(containers) {
+    $$('[data-space]').forEach((c) => ticked.set(c.dataset.space, c.checked));
+    if (!containers.length) {
+      list.innerHTML = `<p class="sub">Brain found no spaces it can read on ${esc(p.connection.site)}.</p>`;
+      label();
+      return;
+    }
+    list.innerHTML = `<div class="glist suspaces">${containers.map((c) => {
+      const name = B.containerName(c.path);
+      const on = ticked.has(c.id) ? ticked.get(c.id) : !B.isPersonalSpace(c.path);
+      return `<label class="gsrc">${B.srcIcon('confluence', 22)}<span class="gt"><span>${esc(name)}</span></span><input type="checkbox" class="gck" data-space="${c.id}" ${on ? 'checked' : ''} aria-label="Include ${esc(name)}"></label>`;
+    }).join('')}</div>`;
+    $$('[data-space]').forEach((c) => { c.onchange = label; });
+    label();
+  }
+  const stored = () => B.api.get('/admin/containers', { connection_id: p.connection.id }).then((r) => r.items);
+  /* Shows what Brain already knows, then asks Confluence, so spaces created after connecting
+     appear; if Confluence cannot be reached, the known spaces stay usable. */
+  async function load() {
+    go.disabled = true;
+    $('#sue').textContent = '';
+    let containers = p.containers;
+    if (containers.length) draw(containers);
+    try {
+      await B.api.post(`/admin/connections/${p.connection.id}/verify`);
+      containers = await stored();
+    } catch (error) {
+      if (!containers.length) { list.innerHTML = ''; showError(error); return; }
+      $('#sue').textContent = `Couldn't check Confluence for new spaces: ${(error && error.detail) || B.problem(error)}`;
+    }
+    p.containers = containers;
+    draw(containers);
+  }
+  $('#surefresh').onclick = () => load();
   $('#suf').onsubmit = (e) => {
     e.preventDefault();
     const picked = $$('[data-space]:checked').map((c) => c.dataset.space);
@@ -211,6 +229,7 @@ async function spacesStep(p) {
       await show();
     }, showError);
   };
+  await load();
 }
 let polling = 0;
 function syncStep(p) {

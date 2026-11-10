@@ -202,6 +202,7 @@ a.btn.si-btn{text-decoration:none}
 .sul li.on i{background:var(--brand);color:#fff}
 .sul li.done{color:var(--ink-2)}
 .sul li.done i{background:var(--ok-soft);color:var(--ok)}
+.surefresh{margin:var(--s-2) 0 var(--s-4);font-size:var(--fs-xs);color:var(--mute)}
 .suhint{margin:calc(-1 * var(--s-2)) 0 var(--s-3);font-size:var(--fs-xs);color:var(--mute)}
 .eminp.mono{font-family:var(--mono,ui-monospace,monospace);letter-spacing:.04em;text-transform:uppercase}
 .eminp.mono::placeholder{text-transform:none;letter-spacing:.02em}
