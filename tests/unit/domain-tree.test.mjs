@@ -109,3 +109,26 @@ describe('rows that contain a cycle', () => {
     assert.deepEqual(options(looped, { exclude: 'a' }).map(({ item }) => item.id), ['top']);
   });
 });
+
+describe('optionTags', () => {
+  const { optionTags } = createRequire(import.meta.url)('../../domain-tree.js');
+  const t = build(TWO_TREES);
+  const parse = (html) => [...html.matchAll(/<option value="([^"]*)" data-depth="(\d)" data-label="([^"]*)"( selected)?>([^<]*)<\/option>/g)].map((m) => ({ value: m[1], depth: Number(m[2]), label: m[3], selected: !!m[4], text: m[5] }));
+  it('lists every domain in tree order, indented, with its full path to show once chosen', () => {
+    assert.deepEqual(parse(optionTags(t)).map((o) => [o.text, o.depth, o.label]), [['P', 0, 'P'], ['Q', 1, 'P / Q'], ['R', 2, 'P / Q / R'], ['X', 0, 'X'], ['Y', 1, 'X / Y']]);
+  });
+  it('selects the given value, ids by default or another field when asked', () => {
+    assert.deepEqual(parse(optionTags(t, { selected: 'id-q' })).filter((o) => o.selected).map((o) => o.text), ['Q']);
+    const bySlug = parse(optionTags(t, { selected: 'r', value: (d) => d.id.slice(3) }));
+    assert.deepEqual(bySlug.map((o) => o.value), ['p', 'q', 'r', 'x', 'y']);
+    assert.deepEqual(bySlug.filter((o) => o.selected).map((o) => o.text), ['R']);
+  });
+  it('leaves out a domain and everything inside it', () => {
+    assert.deepEqual(parse(optionTags(t, { exclude: 'id-q' })).map((o) => o.text), ['P', 'X', 'Y']);
+  });
+  it('escapes names, which are plain text', () => {
+    const html = optionTags(tree([{ id: 'a', parent_id: null, name: '<img src=x onerror=alert(1)> & "co"' }]));
+    assert.ok(!html.includes('<img'), html);
+    assert.ok(html.includes('&#60;img'), html);
+  });
+});

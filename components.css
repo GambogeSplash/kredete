@@ -407,6 +407,9 @@ body[data-sf=ask] #crumb,body[data-sf=governance] #crumb,body[data-sf=admin] #cr
 .pphero{margin:0 0 var(--s-4)}
 .ppfs{border:0;padding:0;margin:0 0 var(--s-3);display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-4)}
 .ppfs legend{width:100%;margin-bottom:var(--s-2)}
+/* People > Domain owner of: the domain tree, one per line, each under its parent. */
+.ppfs.ppdoms{flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:0}
+.ppdom{padding:3px 0 3px calc(var(--depth,0) * 24px)}
 .ppck{display:inline-flex;align-items:center;gap:var(--s-2);min-height:32px;font-size:var(--fs-md);cursor:pointer}
 .ppck input{width:18px;height:18px;accent-color:var(--brand)}
 .ppnote{width:100%;margin:0}

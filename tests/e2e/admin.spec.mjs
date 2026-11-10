@@ -281,6 +281,19 @@ test.describe('connectors', () => {
     await expect(connection.getByText(/~5f1e2d3c/)).toHaveCount(0);
   });
 
+  test("a space's default domain is chosen from the tree, each shown with its path (nested domains spec 4.6)", async ({ open }) => {
+    const page = await open('admin', '/admin/connectors');
+    await page.getByRole('button', { name: 'Settings for Engineering (ENG)' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Settings for Engineering (ENG)' });
+    await expect(drawer.getByRole('button', { name: 'Default domain' })).toHaveText('No domain');
+    await drawer.getByRole('button', { name: 'Default domain' }).click();
+    const options = page.locator('.ssel-menu .ssel-o');
+    await expect(options).toHaveText(['No domain', 'Cards', 'Engineering', 'Payments', 'Collections', 'Payouts', 'Cross-border']);
+    await expect(options.filter({ hasText: 'Cross-border' })).toHaveAttribute('style', '--depth:2');
+    await page.getByRole('option', { name: 'Cross-border' }).click();
+    await expect(drawer.getByRole('button', { name: 'Default domain' })).toHaveText('Payments / Payouts / Cross-border');
+  });
+
   test("a space's settings save only what changed, and Broth re-reads it", async ({ open, check }) => {
     const sent = [];
     const page = await open('admin', '/admin/connectors', {
@@ -541,12 +554,52 @@ test.describe('people', () => {
     await expect(page.locator('[data-user]')).toContainText('Chidi Eze');
   });
 
+  test('owning a domain shows the domains inside it as owned through it (nested domains spec 4.6)', async ({ open, check }) => {
+    // Finn is answered as owning Cross-border, so his tag can show the full path; nothing is saved.
+    const page = await open('admin', '/admin/people', {
+      before: (p) => p.route(/\/v1\/admin\/users(\?|$)/, async (route) => {
+        const response = await route.fetch();
+        const body = await response.json();
+        const domains = await (await route.fetch({ url: route.request().url().replace(/\/users.*$/, '/domains') })).json();
+        const crossBorder = domains.items.find((d) => d.slug === 'cross-border');
+        const items = body.items.map((u) => (u.name === 'Finn Adeyemi' ? { ...u, roles: [{ role: 'domain_owner', domain_id: crossBorder.id }] } : u));
+        await route.fulfill({ response, json: { ...body, items } });
+      }),
+    });
+    const tag = finn(page).locator('.tag');
+    await expect(tag).toHaveText('Owns Cross-border');
+    await expect(tag).toHaveAttribute('title', 'Payments / Payouts / Cross-border');
+
+    await finn(page).getByRole('button', { name: 'Edit' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Edit Finn Adeyemi' });
+    const domains = dialog.locator('.ppdom');
+    await expect(domains).toHaveText(['Cards', 'Engineering', 'Payments', 'Collections', 'Payouts', /^Cross-border/]);
+    expect(await domains.evaluateAll((rows) => rows.map((r) => r.style.getPropertyValue('--depth')))).toEqual(['0', '0', '0', '1', '1', '2']);
+    const box = (name) => dialog.getByRole('checkbox', { name: new RegExp(`^${name}`) });
+    await expect(box('Cross-border')).toBeChecked();
+    await expect(box('Cross-border')).toBeEnabled();
+
+    await box('Payments').check();
+    for (const name of ['Collections', 'Payouts', 'Cross-border']) {
+      await expect(box(name)).toBeChecked();
+      await expect(box(name)).toBeDisabled();
+      await expect(domains.filter({ hasText: name })).toContainText('Owned through Payments');
+    }
+    await check(page, 'person-domains');
+    await box('Payments').uncheck();
+    await expect(box('Payouts')).not.toBeChecked();
+    await expect(box('Payouts')).toBeEnabled();
+    await expect(box('Cross-border')).toBeChecked(); // its own grant was kept all along
+    await expect(domains.filter({ hasText: 'Cross-border' }).locator('.ppthru')).toBeHidden();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+  });
+
   test('roles and clearance change, and a person can be suspended and reactivated', async ({ open, check }) => {
     const page = await open('admin', '/admin/people');
     await finn(page).getByRole('button', { name: 'Edit' }).click();
     const dialog = page.getByRole('dialog', { name: 'Edit Finn Adeyemi' });
     await dialog.getByRole('checkbox', { name: 'Developer' }).check();
-    await dialog.getByRole('checkbox', { name: 'Payments' }).check();
+    await dialog.getByRole('checkbox', { name: 'Payments', exact: true }).check();
     await check(page, 'person-edit');
     await dialog.getByRole('button', { name: 'Save' }).click();
     await expect(dialog).toHaveCount(0);
@@ -561,7 +614,7 @@ test.describe('people', () => {
 
     await finn(page).getByRole('button', { name: 'Edit' }).click();
     await dialog.getByRole('checkbox', { name: 'Developer' }).uncheck();
-    await dialog.getByRole('checkbox', { name: 'Payments' }).uncheck();
+    await dialog.getByRole('checkbox', { name: 'Payments', exact: true }).uncheck();
     await dialog.getByRole('button', { name: 'Save' }).click();
     await finn(page).getByRole('button', { name: 'Edit' }).click();
     await dialog.getByRole('button', { name: 'Reactivate' }).click();

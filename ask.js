@@ -565,7 +565,7 @@ function sourcesTab() {
   const opt = (value, label, current) => `<option value="${esc(value)}" ${current === value ? 'selected' : ''}>${esc(label)}</option>`;
   return `<div class="cxf"><input id="srcq" class="cxin" type="search" placeholder="Search sources" aria-label="Search sources" value="${esc(a.docs.q)}" autocomplete="off"><div class="cxpills">
     <select id="fsrc" class="cxsel" aria-label="Source type">${opt('', 'Any source', a.filters.system)}${f.systems.map((s) => opt(s.value, B.systemName(s.value), a.filters.system)).join('')}</select>
-    <select id="fdom" class="cxsel" aria-label="Domain">${opt('', 'Any domain', a.filters.domain)}${f.domains.map((d) => opt(d.value, d.label, a.filters.domain)).join('')}</select>
+    <select id="fdom" class="cxsel" aria-label="Domain">${opt('', 'Any domain', a.filters.domain)}${window.DOMAIN_TREE.optionTags(window.DOMAIN_TREE.tree(window.LIBRARY_BROWSE.folders(f)), { selected: a.filters.domain, value: (d) => d.slug })}</select>
     <select id="fwhen" class="cxsel" aria-label="Verified">${opt('', 'Any date', a.filters.when)}${opt('90', 'Verified in 90 days', a.filters.when)}${opt('365', 'Verified this year', a.filters.when)}</select></div></div>
     <div class="gall"><span id="selcount">${esc(selectedCount())}</span><button type="button" class="link" id="selall" ${a.exclude.length ? '' : 'disabled'}>Select all</button></div><div class="glist" id="srclist">${docRows()}</div>`;
 }

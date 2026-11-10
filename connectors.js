@@ -379,7 +379,7 @@ function settingsDrawer(space) {
     ${field('cnsowner', 'Owner', `<select id="cnsowner" aria-describedby="cnsownerh"><option value="">No owner</option>${options(people.map((u) => [u.id, u.name]), space.owner_user_id)}</select>`, SETTINGS_HELP.owner)}
     ${field('cnsauth', 'Default authority', `<select id="cnsauth" aria-describedby="cnsauthh">${options(AUTHORITIES, authority)}</select>`, SETTINGS_HELP.authority)}
     ${field('cnssens', 'Default sensitivity', `<select id="cnssens" aria-describedby="cnssensh">${options(SENSITIVITIES, sensitivity)}</select>`, SETTINGS_HELP.sensitivity)}
-    ${field('cnsdom', 'Default domain', `<select id="cnsdom" aria-describedby="cnsdomh"><option value="">No domain</option>${options(data.domains.map((d) => [d.id, d.name]), space.default_domain_id)}</select>`, SETTINGS_HELP.domain)}
+    ${field('cnsdom', 'Default domain', `<select id="cnsdom" aria-describedby="cnsdomh"><option value="">No domain</option>${window.DOMAIN_TREE.optionTags(window.DOMAIN_TREE.tree(data.domains), { selected: space.default_domain_id })}</select>`, SETTINGS_HELP.domain)}
     ${field('cnsrev', 'Review interval in months', `<input id="cnsrev" class="eminp" type="number" inputmode="numeric" min="1" max="120" step="1" value="${space.review_interval_months}" aria-describedby="cnsrevh">`, SETTINGS_HELP.review)}
     <div class="hse" id="cnse" role="alert"></div>
     <div class="actions"><button type="submit" class="btn primary" id="cnsgo">Save</button><button type="button" class="btn" data-close-drawer>Cancel</button></div></form></div>`);
