@@ -1673,10 +1673,48 @@ export interface components {
             /** Url */
             url: string;
         };
+        /**
+         * DomainCrumb
+         * @description One domain on a path through the domain tree (nested domains spec 3.4).
+         */
+        DomainCrumb: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+        };
+        /**
+         * DomainFacet
+         * @description A domain the caller can open at least one page under (nested domains spec 3.4).
+         */
+        DomainFacet: {
+            /** Count */
+            count: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Total */
+            total: number;
+            /** Value */
+            value: string;
+        };
         /** DomainIn */
         DomainIn: {
             /** Name */
             name: string;
+            /** Parent Id */
+            parent_id?: string | null;
             /** Slug */
             slug: string;
         };
@@ -1689,12 +1727,18 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Inherited Owners */
+            inherited_owners: components["schemas"]["InheritedOwner"][];
             /** Name */
             name: string;
             /** Owners */
             owners: components["schemas"]["DomainOwner"][];
+            /** Parent Id */
+            parent_id: string | null;
             /** Slug */
             slug: string;
+            /** Total Count */
+            total_count: number;
         };
         /** DomainOwner */
         DomainOwner: {
@@ -1710,6 +1754,8 @@ export interface components {
         DomainPatch: {
             /** Name */
             name?: string | null;
+            /** Parent Id */
+            parent_id?: string | null;
             /** Slug */
             slug?: string | null;
         };
@@ -1722,6 +1768,8 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /** Path */
+            path: components["schemas"]["DomainCrumb"][];
             /** Slug */
             slug: string;
         };
@@ -1739,7 +1787,7 @@ export interface components {
             /** Authorities */
             authorities: components["schemas"]["FacetCount"][];
             /** Domains */
-            domains: components["schemas"]["FacetCount"][];
+            domains: components["schemas"]["DomainFacet"][];
             /** Label Problems */
             label_problems?: number | null;
             /** Scopes */
@@ -1766,6 +1814,17 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** InheritedOwner */
+        InheritedOwner: {
+            from_domain: components["schemas"]["DomainCrumb"];
+            /** Name */
+            name: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** InvitationIn */
         InvitationIn: {
@@ -4014,6 +4073,8 @@ export interface operations {
                 system?: components["schemas"]["SourceSystem"] | null;
                 path?: string | null;
                 domain?: string | null;
+                direct?: boolean;
+                no_domain?: boolean;
                 q?: string | null;
                 label_problems?: boolean;
                 cursor?: string | null;
