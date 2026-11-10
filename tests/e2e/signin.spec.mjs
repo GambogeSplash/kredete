@@ -31,6 +31,24 @@ test('every sign-in refusal has its own message', async ({ open, check }) => {
   }
 });
 
+test('a refusal names the Google account it refused', async ({ open, check }) => {
+  // The server puts the address in the fragment, which never reaches a server or a log.
+  const page = await open(null, '/signin?error=not_provisioned#email=zoe.smith%2Bbrain%40kredete.com');
+  await expect(page.getByRole('alert')).toContainText('You do not have access yet');
+  await expect(page.getByRole('alert')).toContainText('Google account: zoe.smith+brain@kredete.com');
+  await expect(page).toHaveURL(/\/signin$/); // query and fragment both go
+  await check(page, 'signin-refused-account');
+  await page.close();
+
+  const marked = await open(null, '/signin?error=suspended#email=%3Cb%3Eeve%3C%2Fb%3E%40example.test');
+  await expect(marked.getByRole('alert')).toContainText('Google account: <b>eve</b>@example.test');
+  await expect(marked.locator('#aerr b')).toHaveCount(1); // only the heading is bold: the address is text
+  await marked.close();
+
+  const plain = await open(null, '/signin?error=not_provisioned');
+  await expect(plain.getByRole('alert')).not.toContainText('Google account:');
+});
+
 test('any other page sends a signed-out visitor to sign in', async ({ open }) => {
   const page = await open(null, '/library');
   await expect(page).toHaveURL(/\/signin$/);

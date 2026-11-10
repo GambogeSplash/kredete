@@ -65,12 +65,15 @@ AUTH.brand = brand;
 window.SURFACES.signin = () => {
   const params = new URLSearchParams(location.search);
   const failure = AUTH.signInError(params.get('error'));
+  // The account Google confirmed before Brain refused it; the server sends it in the fragment,
+  // which never reaches a server or a log.
+  const refused = failure ? new URLSearchParams(location.hash.slice(1)).get('email') : null;
   const unconfigured = B.S.setup && !B.S.setup.google_configured;
   const sub = B.sandbox()
     ? 'Continue with the Google account your Kredete admin invited.'
     : 'Continue with your Kredete Google account.';
   shell(`${brand}<h1>Sign in to Kredete</h1><p class="sub">${sub}</p>
-    ${failure ? `<div class="banner bad" role="alert" id="aerr"><b>${esc(failure[0])}.</b> ${esc(failure[1])}</div>` : ''}
+    ${failure ? `<div class="banner bad" role="alert" id="aerr"><b>${esc(failure[0])}.</b> ${esc(failure[1])}${refused ? `<span class="refused-as">Google account: ${esc(refused)}</span>` : ''}</div>` : ''}
     ${unconfigured ? `<div class="banner info" role="status"><b>Sign-in is not configured yet.</b> Your Kredete admin finishes setup first.</div>` : ''}
     <a class="btn primary si-btn" id="gsignin" href="${B.api.signInUrl}" ${unconfigured ? 'aria-disabled="true" tabindex="-1"' : ''}><span class="spin" aria-hidden="true"></span><span>Continue with Google</span></a>
     <p class="disc">Brain answers from the documents you can already open.</p>`, preview(null));
@@ -79,7 +82,7 @@ window.SURFACES.signin = () => {
     if (button.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
     button.classList.add('busy');
   };
-  if (failure) history.replaceState({}, '', '/signin'); // the message stays; a reload starts clean
+  if (failure) history.replaceState({}, '', '/signin'); // the message stays; a reload starts clean, without the address
 };
 
 /* ---------- boot error ---------- */

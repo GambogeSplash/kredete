@@ -663,7 +663,7 @@ h1{font-size:var(--fs-h2)}
 .si .wiz{margin-bottom:var(--s-6)}.si .wiz i{transition:background var(--dur-slow)}
 .si-btn{width:100%;padding:var(--s-3);font-size:var(--fs-md);display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);margin-top:var(--s-2)}
 
-.si .banner{text-align:left;margin-bottom:var(--s-4)}.si .banner .actions{margin-top:var(--s-3)}
+.si .banner{text-align:left;margin-bottom:var(--s-4)}.si .banner .refused-as{display:block;margin-top:var(--s-1);overflow-wrap:anywhere}.si .banner .actions{margin-top:var(--s-3)}
 .spin{display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:var(--surface);border-radius:50%;animation:sp .7s linear infinite}
 .si-btn.busy .spin{display:inline-block}.si-btn:disabled{opacity:.85;cursor:progress}
 @keyframes sp{to{transform:rotate(360deg)}}
