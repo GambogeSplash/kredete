@@ -65,7 +65,95 @@ test.describe('surfaces follow roles', () => {
   test('an admin has every admin screen', async ({ open }) => {
     const page = await open('admin', '/admin');
     await expect(page).toHaveURL(/\/admin\/connectors$/);
-    await expect(page.getByRole('navigation', { name: 'Admin' }).getByRole('button')).toHaveText(['Connectors', 'People', 'Audit']);
+    await expect(page.getByRole('navigation', { name: 'Admin' }).getByRole('button')).toHaveText(['Connectors', 'People', 'Domains', 'Audit']);
+  });
+
+  test('compliance cannot open Domains by its address', async ({ open }) => {
+    const page = await open('compliance', '/admin/domains');
+    await expect(page).toHaveURL(/\/admin\/audit$/);
+  });
+});
+
+/* Domains. Writes are answered here, not by the API: tests in a view share one seed and run
+   in parallel, and what the client sends is what these tests check (the API side is covered
+   by broth-service's integration tests). */
+test.describe('domains', () => {
+  const DOMAINS = '**/v1/admin/domains';
+  const captured = (page, pattern, method, reply) => {
+    const bodies = [];
+    return page.route(pattern, async (route) => {
+      if (route.request().method() !== method) return route.fallback();
+      bodies.push({ url: route.request().url(), body: route.request().postDataJSON() });
+      return route.fulfill(await reply(route, bodies));
+    }).then(() => bodies);
+  };
+
+  test('lists each domain with the label to use, its owners and page count', async ({ open, check }) => {
+    const page = await open('admin', '/admin/domains');
+    const payments = page.locator('[data-domain]').filter({ hasText: 'Payments' });
+    await expect(payments.locator('code')).toHaveText('broth-domain-payments');
+    await expect(payments.locator('.tag')).toHaveText(['Dami Bello']);
+    await check(page, 'domains');
+  });
+
+  test('a new domain suggests its label from the name', async ({ open, check }) => {
+    const page = await open('admin', '/admin/domains');
+    const created = await captured(page, DOMAINS, 'POST', (route) => ({
+      status: 201,
+      json: { id: '00000000-0000-4000-8000-0000000000d1', slug: 'card-disputes', name: 'Card Disputes', document_count: 0, owners: [] },
+    }));
+    await page.getByRole('button', { name: 'New domain' }).click();
+    await page.getByRole('textbox', { name: 'Name' }).fill('Card Disputes');
+    await expect(page.getByRole('textbox', { name: 'Label' })).toHaveValue('card-disputes');
+    await check(page, 'domains-new');
+    await page.getByRole('button', { name: 'Create' }).click();
+    await expect(page.locator('[data-domain]').filter({ hasText: 'Card Disputes' }).locator('code')).toHaveText('broth-domain-card-disputes');
+    expect(created.map((c) => c.body)).toEqual([{ name: 'Card Disputes', slug: 'card-disputes' }]);
+  });
+
+  test('an edited label is kept, and a taken one is explained', async ({ open }) => {
+    const page = await open('admin', '/admin/domains');
+    const sent = await captured(page, DOMAINS, 'POST', () => ({
+      status: 409,
+      contentType: 'application/problem+json',
+      json: { type: 'urn:broth:problem:invalid_state', title: 'Invalid state', status: 409, code: 'invalid_state', detail: 'a domain with this slug already exists' },
+    }));
+    await page.getByRole('button', { name: 'New domain' }).click();
+    await page.getByRole('textbox', { name: 'Label' }).fill('payments');
+    await page.getByRole('textbox', { name: 'Name' }).fill('Payments Two');
+    await expect(page.getByRole('textbox', { name: 'Label' })).toHaveValue('payments');
+    await page.getByRole('button', { name: 'Create' }).click();
+    await expect(page.getByRole('alert')).toHaveText('A domain with this slug already exists');
+    expect(sent.map((c) => c.body.slug)).toEqual(['payments']);
+  });
+
+  test('renaming and changing owners keeps everyone\'s other roles', async ({ open, check }) => {
+    const page = await open('admin', '/admin/domains');
+    const renamed = await captured(page, `${DOMAINS}/*`, 'PATCH', (route) => ({
+      json: { id: route.request().url().split('/').pop(), slug: 'payments', name: 'Payments and Transfers', document_count: 0, owners: [] },
+    }));
+    const roles = await captured(page, '**/v1/admin/users/*/roles', 'PUT', () => ({ json: {} }));
+    await page.locator('[data-domain]').filter({ hasText: 'Payments' }).getByRole('button', { name: 'Edit' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Edit Payments' });
+    await expect(dialog.getByRole('checkbox', { name: 'Dami Bello' })).toBeChecked();
+    await check(page, 'domains-edit');
+    await dialog.getByRole('textbox', { name: 'Name' }).fill('Payments and Transfers');
+    await dialog.getByRole('checkbox', { name: 'Dami Bello' }).uncheck();
+    await dialog.getByRole('checkbox', { name: 'Kofi Asante' }).check();
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('#toast')).toContainText('Saved');
+    expect(renamed.map((c) => c.body)).toEqual([{ name: 'Payments and Transfers' }]);
+    const byRoles = roles.map((c) => c.body.roles.map((r) => r.role).sort());
+    // Kofi keeps Developer and gains Payments; Dami loses Payments and keeps nothing else.
+    expect(byRoles.sort()).toEqual([[], ['developer', 'domain_owner']]);
+  });
+
+  test('with no domains, the tab explains what they are for', async ({ open, check }) => {
+    const page = await open('admin', '/admin/domains', {
+      before: (p) => p.route(DOMAINS, (route) => (route.request().method() === 'GET' ? route.fulfill({ json: { items: [], next_cursor: null } }) : route.fallback())),
+    });
+    await expect(page.getByRole('heading', { name: 'No domains yet' })).toBeVisible();
+    await check(page, 'domains-empty');
   });
 });
 

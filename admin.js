@@ -1,8 +1,8 @@
 /* admin.js: the Admin area (sandbox spec 4.3, plan C7 and C8) and its Audit tab.
  *
- * A settings-style page with a left rail. Admins see Connectors, People and Audit;
+ * A settings-style page with a left rail. Admins see Connectors, People, Domains and Audit;
  * compliance sees Audit only (the router also refuses the others by URL). Tabs register
- * in window.ADMIN.tabs: connectors.js and people.js add theirs.
+ * in window.ADMIN.tabs: connectors.js, people.js and domains.js add theirs.
  */
 (() => {
 'use strict';
@@ -15,7 +15,7 @@ const esc = B.esc;
 
 /** @type {Record<string, { label: string, roles: string[], render: (el: HTMLElement) => void }>} */
 const tabs = {};
-const ORDER = ['connectors', 'people', 'audit'];
+const ORDER = ['connectors', 'people', 'domains', 'audit'];
 const allowed = () => ORDER.filter((k) => tabs[k] && B.hasRole(...tabs[k].roles));
 
 window.SURFACES.admin = (params) => {
@@ -54,6 +54,7 @@ const ACTIONS = [
   ['credential.changed', 'Credentials changed'], ['setup.claimed', 'Setup claimed'],
   ['session.created', 'Signed in'], ['session.revoked', 'Signed out'],
   ['alias.declared', 'All-staff group declared'], ['alias.removed', 'All-staff group removed'], ['domain.changed', 'Domain changed'],
+  ['connection.warning_changed', 'Connection warning changed'],
 ];
 const actionName = (a) => (ACTIONS.find((x) => x[0] === a) || [a, a.replace(/[._]/g, ' ')])[1];
 function auditState() {

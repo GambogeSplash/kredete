@@ -1146,6 +1146,10 @@ export interface components {
             site: string;
             status: components["schemas"]["ConnectionStatus"];
             system: components["schemas"]["SourceSystem"];
+            /** Warnings */
+            warnings: {
+                [key: string]: unknown;
+            };
         };
         /**
          * ConnectionStatus
@@ -1305,6 +1309,8 @@ export interface components {
             id: string;
             /** Kind */
             kind: string;
+            /** Label Warnings */
+            label_warnings: string[];
             /** Last Verified At */
             last_verified_at: string | null;
             owner: components["schemas"]["OwnerRef"] | null;
@@ -1333,6 +1339,8 @@ export interface components {
         };
         /** DomainOut */
         DomainOut: {
+            /** Document Count */
+            document_count: number;
             /**
              * Id
              * Format: uuid
@@ -1340,8 +1348,20 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /** Owners */
+            owners: components["schemas"]["DomainOwner"][];
             /** Slug */
             slug: string;
+        };
+        /** DomainOwner */
+        DomainOwner: {
+            /** Name */
+            name: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** DomainPatch */
         DomainPatch: {
@@ -1377,6 +1397,8 @@ export interface components {
             authorities: components["schemas"]["FacetCount"][];
             /** Domains */
             domains: components["schemas"]["FacetCount"][];
+            /** Label Problems */
+            label_problems?: number | null;
             /** Scopes */
             scopes: components["schemas"]["FacetCount"][];
             /** Systems */
@@ -3081,6 +3103,7 @@ export interface operations {
                 path?: string | null;
                 domain?: string | null;
                 q?: string | null;
+                label_problems?: boolean;
                 cursor?: string | null;
                 limit?: number;
             };

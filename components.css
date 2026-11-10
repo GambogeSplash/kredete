@@ -348,3 +348,15 @@ time{white-space:nowrap}
 .wsav{width:24px;height:24px;line-height:24px}
 /* Search inputs fill their field, so the whole field is the target. */
 .libs input{align-self:stretch;min-height:24px}
+
+/* Admin > Domains (domains.js) */
+.dmintro{margin:0 0 var(--s-3);max-width:62ch}
+.dmlabel{display:flex;align-items:center;gap:var(--s-1);min-width:0}
+.dmlabel code,.dmfixed code{font:var(--fs-xs)/1.4 var(--mono);color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:1px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.dmcopy{flex:none;width:28px;height:28px;display:inline-grid;place-items:center}
+.dmslug{display:flex;align-items:baseline;gap:var(--s-1)}
+.dmslug .eminp{flex:1;min-width:0}
+.dmpre{font:var(--fs-sm)/1 var(--mono);color:var(--mute);flex:none}
+.dmfixed{display:flex;flex-direction:column;gap:var(--s-1);margin:0 0 var(--s-3)}
+.dmfixed code{align-self:flex-start;max-width:100%}
+.dmunit{display:none}

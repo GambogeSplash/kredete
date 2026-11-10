@@ -179,7 +179,7 @@ const ROUTES = [
   { re: /^\/library$/, surface: 'library' },
   { re: /^\/governance$/, surface: 'governance' },
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
-  { re: /^\/admin(?:\/(connectors|people|audit))?$/, surface: 'admin', keys: ['tab'], allow: () => hasRole('admin', 'compliance') },
+  { re: /^\/admin(?:\/(connectors|people|domains|audit))?$/, surface: 'admin', keys: ['tab'], allow: () => hasRole('admin', 'compliance') },
   { re: /^\/agent$/, surface: 'bot', allow: () => hasRole('admin', 'compliance', 'developer') },
   { re: /^\/setup$/, surface: 'setup' },
   { re: /^\/signin$/, surface: 'signin' },

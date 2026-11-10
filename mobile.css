@@ -299,3 +299,8 @@ body .mainpanel{min-height:100dvh}
 .dt-r.dt-h{display:none!important}
 /* Group labels in the phone menu: --mute-2 on the shell was 3.7:1. */
 #surfaces .sgl{color:var(--mute)}
+
+/* Admin > Domains on phones: the name and Edit share the first row, then the label, owners
+   and page count each take a full row. */
+.dt-r>.dmlabel{grid-column:1/-1;grid-row:auto}
+.dmunit{display:inline}
