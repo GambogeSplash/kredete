@@ -5,13 +5,17 @@ import { expect, test } from './fixtures.mjs';
 const TURNS = '**/v1/conversations/*/turns';
 const phone = (page) => page.viewportSize().width < 900;
 
-/** Asks in the open chat (or a new one from the home page) and waits for the answer to finish. */
+/** Asks in the open chat (or a new one from the home page) and waits for the answer to finish,
+ *  and for a new chat to take its title, which loads just after the first answer. */
 async function ask(page, question) {
   const before = await page.locator('#thread article').count();
   await page.getByRole('textbox', { name: 'Ask a question' }).fill(question);
   await page.keyboard.press('Enter');
   await expect(page.locator('#thread article')).toHaveCount(before + 1);
   await idle(page);
+  // Only a completed answer (it can be rated) titles the chat; a refused one leaves it untitled.
+  const completed = await lastAnswer(page).getByRole('button', { name: 'Helpful', exact: true }).count();
+  if (before === 0 && completed) await expect(page.locator('#cxtitle')).not.toHaveText('Untitled chat');
 }
 /** The answer stream has finished (completed, failed or stopped). */
 async function idle(page) {
@@ -165,6 +169,30 @@ test("a cited page's Domain breadcrumb opens its folder in the Library (nested d
   await drawer.locator('.svcrumb').getByRole('link', { name: 'Payouts' }).click();
   await expect(page).toHaveURL(/\/library\/payouts$/);
   await expect(page.locator('#libbody [data-folder]')).toHaveText([/Cross-border/]);
+});
+
+test('asking within a domain reaches the pages of the domains inside it (nested domains spec 3.5)', async ({ open, seed }) => {
+  const page = await open('employee', '/');
+  await ask(page, seed.questions.answered.question);
+  if (phone(page)) await page.locator('#cxsrc').click();
+  else {
+    await lastAnswer(page).locator('.ans .cite').click();
+    await page.locator('#rsrc').getByRole('tab', { name: 'Sources' }).click();
+  }
+  const panel = page.locator(phone(page) ? '#drawer' : '#rsrc');
+  await panel.getByRole('button', { name: 'Domain' }).click();
+  const options = page.locator('.ssel-menu .ssel-o');
+  await expect(options).toHaveText(['Any domain', 'Cards', 'Payments', 'Payouts', 'Cross-border']); // the folders Eve can open
+  await expect(options.filter({ hasText: 'Cross-border' })).toHaveAttribute('style', '--depth:2');
+  await page.getByRole('option', { name: 'Payments' }).click();
+  await expect(panel.getByRole('button', { name: 'Domain' })).toHaveText('Payments');
+  if (phone(page)) await page.locator('#drawer [data-close-drawer]').click();
+
+  const sent = page.waitForRequest((r) => /\/v1\/conversations\/[^/]+\/turns$/.test(r.url()) && r.method() === 'POST');
+  await ask(page, seed.questions.answered.question);
+  expect((await sent).postDataJSON().filters.domains).toEqual(['payments']);
+  // Transfer limits policy is filed in Cross-border, two levels inside Payments.
+  await expect(lastAnswer(page).locator('.ans .cite')).toHaveCount(1);
 });
 
 test('the sources panel shows the citations and sets what the next question reads', async ({ open, check, seed }) => {
