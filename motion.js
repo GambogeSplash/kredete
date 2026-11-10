@@ -105,7 +105,7 @@ const build=()=>{ const raw=$('#kq').value.trim(); const q=raw.toLowerCase(); co
   if(raw) g.push(['Ask',[{ic:B.ICON('arrow',16),t:'Ask Broth: '+raw,ask:true,f:()=>window.ASK&&window.ASK.askFresh(raw)}]]);
   const chats=(raw?(found.q===raw?found.conversations:[]):B.S.chats.items).slice(0,raw?6:4).map(c=>({ic:B.ICON('chat',16),t:B.chatTitle(c),f:()=>B.go('/c/'+c.id)}));
   if(chats.length) g.push([raw?'Chats':'Recent chats',chats]);
-  const docs=(raw&&found.q===raw?found.documents:[]).slice(0,6).map(d=>({ic:B.srcIcon(d.system,18),t:d.title,s:B.systemName(d.system),f:()=>window.LIBRARY&&window.LIBRARY.openDocument(d.id)}));
+  const docs=(raw&&found.q===raw?found.documents:[]).slice(0,6).map(d=>({ic:B.srcIcon(d.system,18),t:d.title,s:B.systemName(d.system),f:()=>window.DOCUMENTS.openDocument(d.id)}));
   if(docs.length) g.push(['Documents',docs]);
   const pg=pages().filter(p=>!q||p[0].toLowerCase().includes(q)).map(p=>({ic:B.ICON(p[1],16),t:p[0],f:p[2]})); if(pg.length) g.push(['Go to',pg]);
   return g; };

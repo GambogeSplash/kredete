@@ -13,7 +13,10 @@ declare global {
   var AUTH: any;
   var ASK: any;
   var SETUP: any;
+  /** The Library (library.js). */
   var LIBRARY: any;
+  /** The document drawer, and how a document reads in lists (document-drawer.js). */
+  var DOCUMENTS: any;
   var ADMIN: any;
   var DOCS: Record<string, any>;
   var LEVELS: string[];

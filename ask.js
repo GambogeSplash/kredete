@@ -641,7 +641,7 @@ function wireAnswerTab(root) {
     const open = () => {
       const turn = panelTurn();
       const c = turn && turn.answer.citations.find((x) => String(x.n) === row.dataset.n);
-      if (window.LIBRARY) window.LIBRARY.openDocument(row.dataset.doc, { citation: c });
+      window.DOCUMENTS.openDocument(row.dataset.doc, { citation: c });
     };
     row.onclick = open;
     row.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };

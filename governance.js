@@ -88,7 +88,7 @@ function draw() {
   more.innerHTML = g.next ? `<button type="button" class="btn sm" id="govload" ${g.loading ? 'disabled' : ''}>${g.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#govload');
   if (m) m.onclick = () => load(false);
-  $$('[data-doc]', list).forEach((b) => { b.onclick = () => window.LIBRARY.openDocument(b.dataset.doc); });
+  $$('[data-doc]', list).forEach((b) => { b.onclick = () => window.DOCUMENTS.openDocument(b.dataset.doc); });
   $$('[data-act]', list).forEach((b) => {
     b.onclick = () => {
       const act = b.dataset.act;
