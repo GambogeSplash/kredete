@@ -164,6 +164,15 @@ test.describe('connectors', () => {
     await expect(page.locator('[data-space]')).toHaveCount(3);
     await expect(page.getByText('Needs Google Workspace')).toBeVisible();
     await expect(page.locator('.cnc .tag.ok')).toHaveCount(2); // both OAuth clients configured
+    // The seed synced the connection as the schedule does, which starts no run (sync runs
+    // spec 2): the card says only when it synced, with no run status, bar or failed pages.
+    const connection = page.locator('.cnconn').first();
+    await expect(connection.locator('.cnsync')).toHaveText(/^Synced (just now|\d+ min ago)$/);
+    await expect(connection.locator('.cnsync .tag, .cnsync .suspin')).toHaveCount(0);
+    await expect(connection.getByRole('progressbar')).toHaveCount(0);
+    await expect(connection.getByText('Show failed pages')).toHaveCount(0);
+    await expect(connection.locator('.cnsrun')).toHaveText(['', '', '']); // no space has a read of its own
+    await expect(connection.getByRole('button', { name: 'Sync now' })).toBeEnabled();
     await check(page, 'connectors');
     await page.getByRole('heading', { name: 'App credentials' }).scrollIntoViewIfNeeded();
     await check(page, 'connectors-credentials');
@@ -253,6 +262,147 @@ test.describe('connectors', () => {
       }),
     });
     await expect(page.locator('.cnwarn')).toHaveText('Create a broth-indexer group containing only the indexer account, so restricted pages can opt in.');
+  });
+
+  test('failed pages load a page at a time when the list opens', async ({ open }) => {
+    // A finished run with more failed pages than one page of the list holds.
+    const pages = [
+      { items: [1, 2].map((i) => ({ external_id: `p${i}`, title: `Quarterly report ${i}`, url: `https://kredete-e2e.atlassian.net/wiki/p${i}`, error: 'The source did not respond', change: 'content' })), next_cursor: 'next' },
+      { items: [{ external_id: 'p3', title: null, url: null, error: null, change: 'content' }], next_cursor: null },
+    ];
+    const asked = [];
+    const page = await open('admin', '/admin/connectors', {
+      before: async (p) => {
+        await p.route('**/v1/admin/connections', async (route) => {
+          if (route.request().method() !== 'GET') return route.fallback();
+          const response = await route.fetch();
+          const body = await response.json();
+          const at = new Date().toISOString();
+          body.items = body.items.map((c) => (c.system !== 'confluence' ? c : { ...c, last_run: {
+            id: '00000000-0000-4000-8000-0000000000d1', trigger: 'manual', status: 'partial', connection_id: c.id, container_id: null,
+            tasks_total: 2, tasks_done: 2, pages_total: 12, pages_done: 9, pages_failed: 3, failing: 3, updated: 9, removed: 0,
+            started_at: at, finished_at: at, error: null,
+          } }));
+          return route.fulfill({ response, json: body });
+        });
+        await p.route('**/v1/admin/sync-runs/*/failures?*', (route) => {
+          const cursor = new URL(route.request().url()).searchParams.get('cursor');
+          asked.push(cursor);
+          return route.fulfill({ json: pages[cursor ? 1 : 0] });
+        });
+      },
+    });
+    const connection = page.locator('.cnconn').first();
+    await expect(connection.locator('.cnsync')).toHaveText(/^Synced, 3 failed (just now|\d+ min ago)\s·\s9\spages updated$/);
+    expect(asked).toEqual([]); // nothing is fetched until the list opens
+    await connection.getByText('Show failed pages').click();
+    await expect(connection.locator('.cnflist li')).toHaveCount(2);
+    await connection.getByRole('button', { name: 'Show more' }).click();
+    await expect(connection.locator('.cnflist li')).toHaveCount(3);
+    await expect(connection.getByRole('button', { name: 'Show more' })).toHaveCount(0);
+    // A page the source gave no title, link or reason for still reads as a failed page.
+    await expect(connection.locator('.cnflist li').nth(2)).toHaveText("p3Couldn't read this page");
+    await expect(connection.getByRole('link', { name: 'Open Quarterly report 1 in Confluence' })).toHaveAttribute('href', 'https://kredete-e2e.atlassian.net/wiki/p1');
+    // Closing and opening again keeps what was loaded.
+    await connection.getByText('Hide failed pages').click();
+    await connection.getByText('Show failed pages').click();
+    await expect(connection.locator('.cnflist li')).toHaveCount(3);
+    expect(asked).toEqual([null, 'next']);
+  });
+
+  // Runs that ended with failed pages, or failed, as the API reports them (sync runs spec 6).
+  // The e2e stack cannot end a run that way yet (see sync.spec.mjs), so the tests give them.
+  const run = (fields) => {
+    const at = new Date().toISOString();
+    return {
+      id: '00000000-0000-4000-8000-0000000000e1', trigger: 'manual', status: 'succeeded', connection_id: '', container_id: null,
+      tasks_total: 2, tasks_done: 2, pages_total: 0, pages_done: 0, pages_failed: 0, failing: 0, updated: 0, removed: 0,
+      started_at: at, finished_at: at, error: null, ...fields,
+    };
+  };
+  /** Gives the Confluence connection and its spaces the runs `change` returns. */
+  const withRuns = (p, { connection = (c) => c, space = (s) => s, failures = [] }) => Promise.all([
+    p.route('**/v1/admin/connections', async (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      const response = await route.fetch();
+      const body = await response.json();
+      body.items = body.items.map((c) => (c.system === 'confluence' ? connection(c) : c));
+      return route.fulfill({ response, json: body });
+    }),
+    p.route('**/v1/admin/containers', async (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      const response = await route.fetch();
+      const body = await response.json();
+      body.items = body.items.map(space);
+      return route.fulfill({ response, json: body });
+    }),
+    p.route('**/v1/admin/sync-runs/*/failures?*', (route) => route.fulfill({ json: { items: failures, next_cursor: null } })),
+  ]);
+  const FAILED = [
+    { external_id: 'pay-limits', title: 'Transfer limits policy', url: 'https://kredete-e2e.atlassian.net/wiki/spaces/PAY/pages/pay-limits', error: 'The source did not respond', change: 'content' },
+    { external_id: 'card-faq', title: 'Cards FAQ: replacement, freezing and limits for every card we issue', url: 'https://kredete-e2e.atlassian.net/wiki/spaces/CARD/pages/card-faq', error: 'The source returned an error for this page', change: 'content' },
+  ];
+
+  test('a sync that could not read some pages says how many, and lists them', async ({ open, check }) => {
+    const page = await open('admin', '/admin/connectors', {
+      before: (p) => withRuns(p, {
+        connection: (c) => ({ ...c, last_run: run({ connection_id: c.id, status: 'partial', pages_total: 9, pages_done: 7, pages_failed: 2, failing: 2, updated: 6, removed: 1 }) }),
+        failures: FAILED,
+      }),
+    });
+    const connection = page.locator('.cnconn').first();
+    await expect(connection.locator('.cnsync')).toHaveText(/^Synced, 2 failed (just now|\d+ min ago)\s·\s6\spages updated, 1\sremoved$/);
+    await expect(connection.locator('.cnsync .tag.warn')).toHaveText('Synced, 2 failed');
+    await connection.getByText('Show failed pages').click();
+    await expect(connection.locator('.cnflist li')).toHaveText([
+      'Transfer limits policyThe source did not respond',
+      'Cards FAQ: replacement, freezing and limits for every card we issueThe source returned an error for this page',
+    ]);
+    await expect(connection.getByRole('link', { name: 'Open Transfer limits policy in Confluence' })).toHaveAttribute('target', '_blank');
+    await check(page, 'connectors-partial');
+  });
+
+  test("a space's read that could not read a page links to it, until a later sync reads it", async ({ open, check }) => {
+    let fixed = false;
+    const page = await open('admin', '/admin/connectors', {
+      before: (p) => withRuns(p, {
+        space: (s) => (s.path !== 'Cards (CARD)' ? s : { ...s, last_run: run({ trigger: 'space_read', connection_id: s.connection_id, container_id: s.id, status: 'partial', tasks_total: 1, tasks_done: 1, pages_total: 2, pages_done: 1, pages_failed: 1, failing: fixed ? 0 : 1, updated: 1 }) }),
+        failures: FAILED.slice(1),
+      }),
+    });
+    const cards = page.locator('[data-space]').filter({ hasText: 'Cards (CARD)' });
+    await expect(cards.locator('.cnsrun')).toHaveText('1 page · 1 failed');
+    await check(page, 'connectors-space-failed');
+    await cards.getByRole('button', { name: '1 failed' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Failed pages in Cards (CARD)' });
+    await expect(drawer.locator('.cnflist li')).toHaveText(['Cards FAQ: replacement, freezing and limits for every card we issueThe source returned an error for this page']);
+    await check(page, 'connectors-space-failures');
+    await drawer.getByRole('button', { name: 'Close' }).click();
+    // A later Sync now read the page: the space's own count stays, its amber state goes (spec 3.4.1).
+    fixed = true;
+    await page.evaluate(() => window.BRAIN.go('/admin/people'));
+    await page.evaluate(() => window.BRAIN.go('/admin/connectors'));
+    await expect(cards.locator('.cnsrun')).toHaveText('2 pages');
+  });
+
+  test('a sync that the connection failing ended says so under the connection error', async ({ open, check }) => {
+    // As the worker leaves a connection after Atlassian refused its grant (sync runs spec 5.5).
+    const page = await open('admin', '/admin/connectors', {
+      before: (p) => withRuns(p, {
+        connection: (c) => ({
+          ...c,
+          status: 'failing',
+          last_error: 'Atlassian refused the refresh token; an admin must authorize again',
+          last_run: run({ connection_id: c.id, status: 'failed', tasks_done: 1, error: 'The connection failed: access to the source was refused' }),
+        }),
+      }),
+    });
+    const connection = page.locator('.cnconn').first();
+    await expect(connection.locator('.cnstate .tag.bad')).toHaveText('Failing');
+    await expect(connection.locator('.cnerr')).toHaveText('Atlassian refused the refresh token; an admin must authorize again');
+    await expect(connection.locator('.cnsync')).toHaveText('Sync failed The connection failed: access to the source was refused');
+    await expect(connection.getByRole('button', { name: 'Sync now' })).toBeEnabled();
+    await check(page, 'connectors-failed');
   });
 
   test('a failed Confluence authorization says what to do', async ({ open, check }) => {

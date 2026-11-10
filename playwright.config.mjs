@@ -5,8 +5,10 @@
 //   BROTH_SERVICE_DIR=../broth-service-wt BROTH_E2E_URL=http://localhost:8776 npm run test:e2e
 //
 // Projects run one after another, each on a freshly seeded database: the setup wizard states
-// first, then every scenario at 1440 px and 390 px, light and dark. Inside a project the
-// scenarios run in parallel; each person's sessions come from a pool split by worker.
+// first, then the sync runs on the Connectors page, then every scenario at 1440 px and 390 px,
+// light and dark. Inside a project the scenarios run in parallel; each person's sessions come
+// from a pool split by worker. The wizard and sync projects run serially and seed their own
+// states, because they change what the shared database would show the other scenarios.
 import { defineConfig } from '@playwright/test';
 
 const BASE = process.env.BROTH_E2E_URL || 'http://localhost:8766';
@@ -37,15 +39,16 @@ export default defineConfig({
   },
   projects: [
     { name: 'wizard', testMatch: /wizard\.spec\.mjs$/, fullyParallel: false },
+    { name: 'sync', testMatch: /sync\.spec\.mjs$/, fullyParallel: false, dependencies: ['wizard'] },
     ...VIEWS.flatMap((view, i) => [
       {
         name: `seed-${view.name}`,
         testMatch: /seed\.setup\.mjs$/,
-        dependencies: [i === 0 ? 'wizard' : VIEWS[i - 1].name],
+        dependencies: [i === 0 ? 'sync' : VIEWS[i - 1].name],
       },
       {
         name: view.name,
-        testIgnore: [/wizard\.spec\.mjs$/, /seed\.setup\.mjs$/],
+        testIgnore: [/wizard\.spec\.mjs$/, /sync\.spec\.mjs$/, /seed\.setup\.mjs$/],
         dependencies: [`seed-${view.name}`],
         use: { viewport: { width: view.width, height: view.height }, theme: view.theme },
       },

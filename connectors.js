@@ -5,6 +5,10 @@
  * a Settings drawer for each space's defaults (labelling spec 4.3): pages start from them and
  * labels can only make a page more cautious. A connection shows its warnings, such as the
  * indexer group check (labelling spec 4.4).
+ * Sync runs (sync runs spec 3.1, 3.2 and 3.4.1): a connection's header shows its Sync now run
+ * and each space row its own read, both through SYNC.runView, followed by SYNC.watchRuns while
+ * any is running. A poll repaints only what a run changes (paint), so focus, an open list of
+ * failed pages and the live status regions survive it.
  * Google Drive: a setup checklist; in sandbox mode it explains that Drive needs a Google
  * Workspace account. In sandbox mode the OAuth clients are managed here too. The Confluence
  * authorization returns to /admin/connectors?connected=<id> or ?error=<reason>.
@@ -37,6 +41,12 @@ const SETTINGS_HELP = {
   review: 'How long a verified page stays current before it is due for review.',
 };
 let banner = null;
+/** Stops following the page's runs; replaced each time the page is drawn. */
+let stopWatching = () => {};
+/** The failed pages loaded so far, by failuresKey, kept while the page repaints. */
+const failedPages = new Map();
+/** What each slot was last painted with, so an unchanged status is not announced again. */
+const painted = new WeakMap();
 
 async function fetchAll() {
   const [connections, containers, credentials, users, domains] = await Promise.all([
@@ -48,6 +58,8 @@ async function fetchAll() {
   ]);
   return { connections: connections.items, containers: containers.items, credentials: credentials.items, users: users.items, domains: domains.items };
 }
+/** Every run the page shows: each connection's and each space's running and last run. */
+const runsOf = (connections, containers) => [...connections, ...containers].flatMap((x) => [x.active_run, x.last_run]);
 
 /** Handles the return from Atlassian, then drops the query so a reload starts clean. */
 function readReturn() {
@@ -91,21 +103,24 @@ function draw() {
       <ol class="cncheck ${B.sandbox() ? 'off' : ''}"><li><b>Authorize Brain in the Google Admin console</b><span>Add Brain's client ID with the Drive and Admin SDK read scopes under domain-wide delegation.</span></li><li><b>Add the indexer to each shared drive</b><span>Invite broth-indexer@ as a viewer on every shared drive Brain should read.</span></li><li><b>Verify</b><span>Brain checks that it can see each shared drive, then you include them.</span></li></ol>
       ${drive.map(connectionHtml).join('')}</section>
     ${B.sandbox() ? `<section class="cnsec"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials</h2><p class="amute">OAuth clients for this sandbox. Secrets are stored encrypted and never shown again.</p></div></div><div class="fgroup cncreds">${data.credentials.map(credentialRow).join('')}</div></section>` : ''}`;
+  paint();
   wire();
+  watch();
 }
+/* The status, run status, bar, failed pages and error banner are slots that paint fills, when
+   the card is drawn and again whenever its runs move. */
 function connectionHtml(c) {
-  const st = STATUS[c.status] || [c.status, ''];
   const spaces = data.containers.filter((x) => x.connection_id === c.id);
-  return `<div class="cnconn" data-conn="${c.id}"><div class="cnconn-h"><b>${esc(c.site)}</b><span class="tag ${st[1]}">${st[0]}</span>${c.system === 'confluence' && !c.authorized ? '<span class="tag warn">Not authorized</span>' : ''}<span class="lsp"></span><span class="amute cnsync">${c.last_sync_at ? 'Synced ' + B.when(c.last_sync_at, B.ago(c.last_sync_at)) : 'Not synced yet'}</span></div>
-    ${c.last_error ? `<div class="banner bad cnerr">${esc(c.last_error)}</div>` : ''}
+  return `<div class="cnconn" data-conn="${c.id}"><div class="cnconn-h"><b>${esc(c.site)}</b><span class="cnstate"></span><span class="lsp"></span><span class="amute cnsync" role="status"></span></div>
+    <div class="cnbar"></div><div class="cnfails"></div><div class="cnerrs"></div>
     ${warningsHtml(c.warnings || {})}
-    <div class="cnacts">${c.system === 'confluence' && !c.authorized ? `<button type="button" class="btn sm primary" data-cact="authorize">Authorize with Atlassian</button>` : `<button type="button" class="btn sm" data-cact="verify">Find spaces</button><button type="button" class="btn sm" data-cact="sync">Sync now</button>${c.system === 'confluence' ? '<button type="button" class="btn sm" data-cact="authorize">Re-authorize</button>' : ''}`}<span class="lsp"></span><button type="button" class="btn sm" data-cact="disconnect">Disconnect</button></div>
+    <div class="cnacts">${c.system === 'confluence' && !c.authorized ? `<button type="button" class="btn sm primary" data-cact="authorize">Authorize with Atlassian</button>` : `<button type="button" class="btn sm" data-cact="verify">Find spaces</button><button type="button" class="btn sm cnsyncb" data-cact="sync"><span class="suspin" aria-hidden="true"></span><span>Sync now</span></button>${c.system === 'confluence' ? '<button type="button" class="btn sm" data-cact="authorize">Re-authorize</button>' : ''}`}<span class="lsp"></span><button type="button" class="btn sm" data-cact="disconnect">Disconnect</button></div>
     ${c.authorized || c.system === 'gdrive' ? `<div class="cnspaces">${spaces.length ? `<div class="dt" style="--cols:minmax(0,1.6fr) minmax(0,1.2fr) 64px 84px"><div class="dt-r dt-h"><span>${c.system === 'gdrive' ? 'Shared drive' : 'Space'}</span><span>Owner</span><span>Included</span><span></span></div>${spaces.map((s) => spaceRow(s)).join('')}</div>` : '<p class="amute cnnone">No spaces found yet. Use Find spaces.</p>'}</div>` : ''}</div>`;
 }
 function spaceRow(s) {
   const options = data.users.filter((u) => u.status === 'active').map((u) => `<option value="${u.id}" ${s.owner_user_id === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
   const name = B.containerName(s.path);
-  return `<div class="dt-r" data-space="${s.id}"><span class="dtp"><b style="font-weight:500">${esc(name)}</b></span><span class="cnown"><select data-owner aria-label="Owner of ${esc(name)}"><option value="" ${s.owner_user_id ? '' : 'selected'}>No owner</option>${options}</select></span><span class="cninc"><input type="checkbox" class="sw" data-include ${s.included ? 'checked' : ''} aria-label="Include ${esc(name)}"></span><span><button type="button" class="btn sm" data-settings aria-label="Settings for ${esc(name)}">Settings</button></span></div>`;
+  return `<div class="dt-r" data-space="${s.id}"><span class="dtp"><span><b>${esc(name)}</b><span class="cnsrun" role="status"></span></span></span><span class="cnown"><select data-owner aria-label="Owner of ${esc(name)}"><option value="" ${s.owner_user_id ? '' : 'selected'}>No owner</option>${options}</select></span><span class="cninc"><input type="checkbox" class="sw" data-include ${s.included ? 'checked' : ''} aria-label="Include ${esc(name)}"></span><span><button type="button" class="btn sm" data-settings aria-label="Settings for ${esc(name)}">Settings</button></span></div>`;
 }
 function credentialRow(c) {
   const [title, sub] = CREDENTIALS[c.name] || [c.name, ''];
@@ -126,11 +141,11 @@ function wire() {
     const id = b.closest('[data-conn]').dataset.conn;
     b.onclick = () => {
       const act = b.dataset.cact;
+      if (act === 'sync') { syncNow(b, id); return; }
       if (act === 'disconnect' && !b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Confirm disconnect'; b.classList.add('danger'); return; }
       B.busy(b, async () => {
         if (act === 'authorize') { await window.SETUP.authorize(id); return; }
         if (act === 'verify') { const r = await B.api.post(`/admin/connections/${id}/verify`); B.toast(`Found ${r.containers} ${r.containers === 1 ? 'space' : 'spaces'}`); }
-        if (act === 'sync') { await B.api.post(`/admin/connections/${id}/sync`); B.toast('Sync started'); }
         if (act === 'disconnect') { await B.api.del(`/admin/connections/${id}`); B.toast('Disconnected. Its content is hidden now.'); }
         await refresh();
       });
@@ -153,13 +168,19 @@ function wire() {
     $('[data-settings]', row).onclick = () => settingsDrawer(data.containers.find((x) => x.id === id));
   });
   $$('[data-cedit]', body).forEach((b) => { b.onclick = () => credentialForm(b.dataset.cedit); });
+  // A space's failed-pages link is repainted with its run, so the click is handled here.
+  body.onclick = (e) => {
+    const link = e.target.closest('[data-failed]');
+    const space = link && data.containers.find((x) => x.id === link.closest('[data-space]').dataset.space);
+    if (space) failedDrawer(space, link.dataset.failed);
+  };
 }
 async function patchSpace(id, change, undo) {
   try {
     const updated = await B.api.patch(`/admin/containers/${id}`, change);
     const i = data.containers.findIndex((x) => x.id === id);
     data.containers[i] = updated;
-    B.toast(change.included === true ? 'Included. Brain reads it on the next sync.' : change.included === false ? 'Excluded. Its content is hidden now.' : 'Owner changed');
+    B.toast(change.included === true ? 'Included. Brain reads it now.' : change.included === false ? 'Excluded. Its content is hidden now.' : 'Owner changed');
     draw();
     if (change.included !== undefined) { B.loadFacets(); B.refreshSetupProgress().then(() => B.renderSurfaces()); }
   } catch (error) {
@@ -167,6 +188,174 @@ async function patchSpace(id, change, undo) {
     B.toast(B.problem(error));
   }
 }
+
+/* ---- sync runs ---- */
+
+/** Sets a slot's HTML only when it changed, so a live region is not announced again. */
+function put(slot, html) {
+  if (!slot || painted.get(slot) === html) return;
+  slot.innerHTML = html;
+  painted.set(slot, html);
+}
+const pages = (n) => `${n} ${n === 1 ? 'page' : 'pages'}`;
+/** Escapes text and keeps each count with the word after it when the line wraps. */
+const counts = (text) => esc(text).replace(/(\d) /g, '$1&nbsp;');
+/** How long ago, inside a sentence ("Synced just now"). */
+function ago(iso) {
+  const text = B.ago(iso);
+  return text === 'Just now' ? 'just now' : text;
+}
+const bar = (fraction, label) => `<div class="bar" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(fraction * 100)}"><i style="width:${Math.round(fraction * 100)}%"></i></div>`;
+
+/** Brings every connection and space on the page up to date with `data`. */
+function paint() {
+  data.connections.forEach(paintConnection);
+  data.containers.forEach(paintSpace);
+}
+function paintConnection(c) {
+  const card = $(`[data-conn="${c.id}"]`);
+  if (!card) return;
+  const st = STATUS[c.status] || [c.status, ''];
+  put($('.cnstate', card), `<span class="tag ${st[1]}">${st[0]}</span>${c.system === 'confluence' && !c.authorized ? '<span class="tag warn">Not authorized</span>' : ''}`);
+  put($('.cnerrs', card), c.last_error ? `<div class="banner bad cnerr">${esc(c.last_error)}</div>` : '');
+  const running = c.active_run && c.active_run.status === 'running' ? c.active_run : null;
+  const run = running || c.last_run;
+  const view = SYNC.runView(run, { shownError: c.last_error });
+  put($('.cnsync', card), statusHtml(c, run, view));
+  put($('.cnbar', card), view && view.fraction !== null ? bar(view.fraction, `Syncing ${c.site}`) : '');
+  paintFailures($('.cnfails', card), c, running ? null : c.last_run);
+  const sync = $('[data-cact="sync"]', card);
+  if (sync) { sync.disabled = !!running; sync.classList.toggle('running', !!running); }
+}
+/** The header status: the run's progress or outcome, or when the connection last synced. */
+function statusHtml(c, run, view) {
+  if (!view) return `<span>${c.last_sync_at ? 'Synced ' + B.when(c.last_sync_at, ago(c.last_sync_at)) : 'Not synced yet'}</span>`;
+  if (view.busy) return `<span class="suspin" aria-hidden="true"></span><span>${esc(view.label)}</span>`;
+  if (!view.tag) return `<span>${esc(view.label)}</span>`;
+  const when = view.tag !== 'bad' && run.finished_at ? [B.when(run.finished_at, ago(run.finished_at))] : [];
+  const rest = [...when, ...(view.detail ? [counts(view.detail)] : [])].join(' · ');
+  return `<span class="tag ${view.tag}">${esc(view.label)}</span>${rest ? ` <span>${rest}</span>` : ''}`;
+}
+/** A space's own read: its progress, then its page count or the pages it could not read. */
+function paintSpace(s) {
+  const slot = $(`[data-space="${s.id}"] .cnsrun`);
+  if (!slot) return;
+  const run = s.active_run || (s.included ? s.last_run : null);
+  const view = SYNC.runView(run);
+  if (!view) { put(slot, ''); return; }
+  const name = B.containerName(s.path);
+  if (view.busy) { put(slot, `<span class="suspin" aria-hidden="true"></span><span>${esc(view.label)}</span>${view.fraction !== null ? bar(view.fraction, `Reading ${name}`) : ''}`); return; }
+  if (view.tag === 'ok') { put(slot, `<span class="cnok">${ICON('check', 14)}</span><span>${esc(view.label)}</span>`); return; }
+  if (view.tag === 'warn') { put(slot, `<span>${esc(view.detail || '')}</span> · <button type="button" class="link cnfl" data-failed="${run.id}">${esc(view.label)}</button>`); return; }
+  put(slot, `<span class="tag ${view.tag || ''}">${esc(view.label)}</span>${view.detail ? ` <span>${esc(view.detail)}</span>` : ''}`);
+}
+
+/** Under the header: the finished run's failed pages, collapsed until opened (spec 3.1). */
+function paintFailures(slot, c, run) {
+  const key = run && run.failing > 0 ? failuresKey(run) : '';
+  if ((slot.dataset.run || '') === key) return;
+  slot.dataset.run = key;
+  if (!key) { slot.innerHTML = ''; return; }
+  slot.innerHTML = `<details class="cnfail"><summary>${ICON('chevr', 14)}<span>Show failed pages</span></summary><div class="cnfbox"></div></details>`;
+  const details = $('details', slot);
+  details.ontoggle = () => {
+    $('summary span', details).textContent = details.open ? 'Hide failed pages' : 'Show failed pages';
+    if (details.open) showFailures($('.cnfbox', details), run, c.system);
+  };
+}
+function failedDrawer(space, runId) {
+  const run = [space.active_run, space.last_run].find((r) => r && r.id === runId);
+  if (!run) return;
+  const name = B.containerName(space.path);
+  const connection = data.connections.find((c) => c.id === space.connection_id);
+  const system = connection ? connection.system : 'confluence';
+  B.openDrawer(`<div class="sv" role="dialog" aria-label="Failed pages in ${esc(name)}"><div class="sv-top"><span class="sv-sys">${B.srcIcon(system, 20)}${esc(name)}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div><div class="sv-body">
+    <h2>Failed pages</h2><p class="sub">Brain couldn't read these pages of the space. Sync now tries them again.</p><div class="cnfbox"></div></div></div>`);
+  showFailures($('#drawer .cnfbox'), run, system);
+}
+/** A run's failed pages change only when a later run reads some of them (spec 3.4.1). */
+const failuresKey = (run) => `${run.id}:${run.failing}`;
+/** Fills `box` with a run's failed pages, loading the first page of them the first time. */
+function showFailures(box, run, system) {
+  const list = failedPages.get(failuresKey(run));
+  if (list) { failuresHtml(box, run, list, system); return; }
+  box.innerHTML = B.loadingBlock('Loading failed pages', 2, 'cnfsk');
+  moreFailures(box, run, { items: [], next: null, done: false }, system);
+}
+async function moreFailures(box, run, list, system) {
+  try {
+    const page = await B.api.get(`/admin/sync-runs/${run.id}/failures`, { limit: 50, cursor: list.next });
+    list.items.push(...page.items);
+    list.next = page.next_cursor || null;
+    list.done = !list.next;
+    failedPages.set(failuresKey(run), list);
+    failuresHtml(box, run, list, system);
+  } catch (error) {
+    if (list.items.length) { B.toast(B.problem(error)); return; }
+    box.innerHTML = `<p class="cnfe" role="alert">${esc(B.problem(error))} <button type="button" class="link">Try again</button></p>`;
+    $('button', box).onclick = () => showFailures(box, run, system);
+  }
+}
+function failuresHtml(box, run, list, system) {
+  const where = B.systemName(system);
+  const rows = list.items.map((f) => {
+    const title = f.title || f.external_id;
+    // The reason is the server's; a page it has none for still reads as a failure.
+    return `<li><span class="cnft">${esc(title)}</span><span class="cnfr">${esc(f.error || "Couldn't read this page")}</span>${f.url ? `<a class="cnfo" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(title)} in ${esc(where)}">${ICON('ext', 14)}</a>` : ''}</li>`;
+  }).join('');
+  box.innerHTML = rows
+    ? `<ul class="cnflist">${rows}</ul>${list.done ? '' : '<button type="button" class="btn sm cnfmore">Show more</button>'}`
+    : '<p class="amute cnfnone">Every page has been read since.</p>';
+  const more = $('.cnfmore', box);
+  if (more) more.onclick = () => B.busy(more, () => moreFailures(box, run, list, system));
+}
+
+/** Starts a Sync now run, or picks up the one already running, and follows it. */
+async function syncNow(button, id) {
+  button.disabled = true;
+  button.classList.add('running');
+  try {
+    const run = await B.api.post(`/admin/connections/${id}/sync`);
+    const c = data.connections.find((x) => x.id === id);
+    if (c && run) {
+      if (run.status === 'running') c.active_run = run;
+      else { c.active_run = null; c.last_run = run; }
+    }
+  } catch (error) {
+    B.toast(B.problem(error));
+  }
+  paint();
+  watch();
+}
+/** Follows the page's runs while any is running, repainting what they change. */
+function watch() {
+  stopWatching();
+  let latest = data;
+  stopWatching = SYNC.watchRuns({
+    runs: runsOf(data.connections, data.containers),
+    fetch: async () => {
+      const [connections, containers] = await Promise.all([B.api.get('/admin/connections'), B.api.get('/admin/containers')]);
+      latest = { ...data, connections: connections.items, containers: containers.items };
+      return runsOf(latest.connections, latest.containers);
+    },
+    onUpdate: (runs, finished) => {
+      data = latest;
+      paint();
+      finished.forEach(announce);
+    },
+  });
+}
+/** A toast when a Sync now run the page followed finishes (spec 3.1). */
+function announce(run) {
+  if (run.trigger !== 'manual') return;
+  const c = data.connections.find((x) => x.id === run.connection_id);
+  const site = c ? c.site : 'The connection';
+  if (run.status === 'failed') { B.toast(`${site} could not be synced.`); return; }
+  if (run.failing > 0) { B.toast(`${site} synced. ${pages(run.failing)} couldn't be read.`); return; }
+  const view = SYNC.runView(run);
+  B.toast(`${site} synced.${view && view.detail ? ` ${view.detail}.` : ''}`);
+}
+
 /** What an admin must fix on a connection, in plain words. */
 function warningsHtml(warnings) {
   const lines = [];

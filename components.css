@@ -296,7 +296,47 @@ a.btn.si-btn{text-decoration:none}
 .cnempty p{margin:0 0 var(--s-3)}
 .cnconn{border:1px solid var(--line2,var(--line));border-radius:var(--r-lg);padding:var(--s-3) var(--s-4);margin:0 0 var(--s-3)}
 .cnconn-h{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s-2)}
-.cnsync{font-size:var(--fs-sm)}
+.cnstate{display:contents}
+/* Sync runs (connectors.js): the run status in the header, a thin bar under it once the page
+   total is known, the failed pages of the last run, and each space's own read. */
+/* The status is inline text, so a long one wraps under its tag rather than below it. */
+.cnsync{font-size:var(--fs-sm);min-width:0}
+.cnsync .tag{margin-right:2px}
+@media (max-width:640px){.cnsync:has(.tag){line-height:1.75}}
+.cnsync .suspin,.cnsrun .suspin{display:inline-block;width:14px;height:14px;vertical-align:-3px;margin-right:6px}
+.cnbar .bar{height:4px;min-width:0;margin:var(--s-3) 0 0}
+.cnsyncb{display:inline-flex;align-items:center;gap:var(--s-2)}
+.cnsyncb .suspin{display:none;width:12px;height:12px}
+.cnsyncb.running .suspin{display:inline-block}
+.cnfail{margin:var(--s-2) 0 0;font-size:var(--fs-sm)}
+.cnfail summary{display:inline-flex;align-items:center;gap:var(--s-1);min-height:24px;color:var(--brand);font-weight:450;cursor:pointer;list-style:none}
+.cnfail summary::-webkit-details-marker{display:none}
+.cnfail summary svg{transition:transform var(--dur-base,.2s) ease}
+.cnfail[open] summary svg{transform:rotate(90deg)}
+.cnflist{list-style:none;margin:var(--s-2) 0 0;padding:0;border:1px solid var(--line2,var(--line));border-radius:var(--r-md)}
+.cnflist li{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 28px;gap:var(--s-3);align-items:center;padding:var(--s-2) var(--s-2) var(--s-2) var(--s-3);border-top:1px solid var(--line2,var(--line));font-size:var(--fs-sm)}
+.cnflist li:first-child{border-top:0}
+.cnft{overflow-wrap:anywhere}
+.cnfr{color:var(--mute)}
+.cnfo{grid-column:3;display:grid;place-items:center;width:28px;height:28px;border-radius:var(--r-sm);color:var(--mute)}
+.cnfo:hover{background:var(--wash);color:var(--ink)}
+/* In the drawer and on narrow screens: the title over its reason, the link beside both. */
+.sv .cnflist li{grid-template-columns:minmax(0,1fr) 28px;row-gap:2px}
+.sv .cnflist .cnfr{grid-column:1;grid-row:2}
+.sv .cnflist .cnfo{grid-column:2;grid-row:1/3}
+@media (max-width:640px){
+  .cnflist li{grid-template-columns:minmax(0,1fr) 28px;row-gap:2px}
+  .cnflist .cnfr{grid-column:1;grid-row:2}
+  .cnflist .cnfo{grid-column:2;grid-row:1/3}
+}
+.cnfmore{margin-top:var(--s-2)}
+.cnfnone,.cnfe{margin:var(--s-2) 0 0;font-size:var(--fs-sm)}
+.cnfsk{min-height:40px}
+.cnsrun{display:block;margin-top:2px;font-size:var(--fs-xs);line-height:1.6;color:var(--mute)}
+.cnsrun:empty{display:none}
+.cnsrun .bar{display:inline-block;width:72px;min-width:0;height:4px;vertical-align:middle;margin-left:var(--s-2)}
+.cnsrun .cnok{display:inline-block;color:var(--green);vertical-align:-3px;margin-right:4px}
+.cnsrun .cnfl{color:var(--amber);font-weight:500;vertical-align:middle}
 .cnerr{margin:var(--s-3) 0 0}
 .cnacts{display:flex;flex-wrap:wrap;gap:var(--s-2);margin:var(--s-3) 0 0}
 .cnspaces{margin-top:var(--s-3)}
