@@ -6,6 +6,10 @@ declare global {
   var API: ReturnType<ApiModule['createApi']>;
   /** How sync runs read in the UI (sync.js). */
   var SYNC: typeof import('./sync.js');
+  /** How domains nest, for every list of domains (domain-tree.js). */
+  var DOMAIN_TREE: typeof import('./domain-tree.js');
+  /** The Library's mode and documents query (library-browse.js). */
+  var LIBRARY_BROWSE: typeof import('./library-browse.js');
   /** The shell (app.js). */
   var BRAIN: any;
   /** Surfaces by name; the router renders them into #app. */
