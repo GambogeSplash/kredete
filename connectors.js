@@ -171,9 +171,9 @@ async function patchSpace(id, change, undo) {
 function warningsHtml(warnings) {
   const lines = [];
   const missing = warnings.indexer_group_missing, members = warnings.indexer_group_members;
-  if (missing) lines.push(`Create a ${esc(missing.group)} group containing only the indexer account, so restricted pages can opt in.`);
-  if (members) lines.push(`Only the indexer account should be in ${esc(members.group)}. Also in it: ${members.members.map(esc).join(', ')}.`);
-  return lines.map((l) => `<div class="notice low cnwarn" role="status"><span>${l}</span></div>`).join('');
+  if (missing) lines.push([`Create a ${esc(missing.group)} group containing only the indexer account, so restricted pages can opt in.`, 'indexerGroupMissing']);
+  if (members) lines.push([`Only the indexer account should be in ${esc(members.group)}. Also in it: ${members.members.map(esc).join(', ')}.`, 'indexerGroupMembers']);
+  return lines.map(([l, doc]) => `<div class="notice low cnwarn" role="status"><span>${l} ${window.DOCS.link(doc, 'How to fix it')}</span></div>`).join('');
 }
 
 const options = (list, value) => list.map(([k, l]) => `<option value="${k}" ${k === value ? 'selected' : ''}>${esc(l)}</option>`).join('');
@@ -184,7 +184,7 @@ function settingsDrawer(space) {
   const authority = space.default_authority || 'unapproved';
   const sensitivity = space.default_sensitivity && space.default_sensitivity !== 'public' ? space.default_sensitivity : 'internal';
   B.openDrawer(`<div class="sv" role="dialog" aria-label="Settings for ${esc(name)}"><div class="sv-top"><span class="sv-sys">${B.srcIcon('confluence', 20)}${esc(name)}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div><form class="sv-body cnsettings" id="cnsf" novalidate>
-    <h2>Space settings</h2><p class="sub">Every page in this space starts from these. A page's labels can only make it more cautious.</p>
+    <h2>Space settings</h2><p class="sub">Every page in this space starts from these. A page's labels can only make it more cautious.</p><p class="cndoc">${window.DOCS.link('spaceSettings')}</p>
     ${field('cnsowner', 'Owner', `<select id="cnsowner" aria-describedby="cnsownerh"><option value="">No owner</option>${options(people.map((u) => [u.id, u.name]), space.owner_user_id)}</select>`, SETTINGS_HELP.owner)}
     ${field('cnsauth', 'Default authority', `<select id="cnsauth" aria-describedby="cnsauthh">${options(AUTHORITIES, authority)}</select>`, SETTINGS_HELP.authority)}
     ${field('cnssens', 'Default sensitivity', `<select id="cnssens" aria-describedby="cnssensh">${options(SENSITIVITIES, sensitivity)}</select>`, SETTINGS_HELP.sensitivity)}

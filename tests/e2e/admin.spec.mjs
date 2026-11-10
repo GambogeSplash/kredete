@@ -238,7 +238,8 @@ test.describe('connectors', () => {
         return route.fulfill({ response, json: body });
       }),
     });
-    await expect(page.locator('.cnwarn')).toHaveText('Only the indexer account should be in broth-indexer. Also in it: Kofi Asante, Eve Mensah.');
+    await expect(page.locator('.cnwarn')).toHaveText('Only the indexer account should be in broth-indexer. Also in it: Kofi Asante, Eve Mensah. How to fix it');
+    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/docs/setting-up-spaces#warn-indexer-group-members');
     await check(page, 'connection-warnings');
   });
 
@@ -252,7 +253,8 @@ test.describe('connectors', () => {
         return route.fulfill({ response, json: body });
       }),
     });
-    await expect(page.locator('.cnwarn')).toHaveText('Create a broth-indexer group containing only the indexer account, so restricted pages can opt in.');
+    await expect(page.locator('.cnwarn')).toHaveText('Create a broth-indexer group containing only the indexer account, so restricted pages can opt in. How to fix it');
+    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/docs/setting-up-spaces#warn-indexer-group-missing');
   });
 
   test('a failed Confluence authorization says what to do', async ({ open, check }) => {

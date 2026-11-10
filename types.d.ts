@@ -601,6 +601,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/docs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Articles
+         * @description Every article, in reading order.
+         */
+        get: operations["list_articles_v1_docs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/docs/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Article */
+        get: operations["get_article_v1_docs__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/documents": {
         parameters: {
             query?: never;
@@ -1004,6 +1041,41 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** ArticleOut */
+        ArticleOut: {
+            /** Audiences */
+            audiences: ("askers" | "authors" | "admins" | "compliance")[];
+            /**
+             * Html
+             * @description Rendered by the server; safe to insert as it is.
+             */
+            html: string;
+            /** Order */
+            order: number;
+            /** Sections */
+            sections: components["schemas"]["SectionOut"][];
+            /** Slug */
+            slug: string;
+            /** Summary */
+            summary: string;
+            /** Title */
+            title: string;
+        };
+        /** ArticleSummaryOut */
+        ArticleSummaryOut: {
+            /** Audiences */
+            audiences: ("askers" | "authors" | "admins" | "compliance")[];
+            /** Order */
+            order: number;
+            /** Sections */
+            sections: components["schemas"]["SectionOut"][];
+            /** Slug */
+            slug: string;
+            /** Summary */
+            summary: string;
+            /** Title */
+            title: string;
+        };
         /** AskFilters */
         AskFilters: {
             /** Domains */
@@ -1297,6 +1369,11 @@ export interface components {
         DecisionIn: {
             /** Reason */
             reason?: string | null;
+        };
+        /** DocsIndexOut */
+        DocsIndexOut: {
+            /** Items */
+            items: components["schemas"]["ArticleSummaryOut"][];
         };
         /** DocumentOut */
         DocumentOut: {
@@ -1745,6 +1822,18 @@ export interface components {
             conversations: components["schemas"]["ConversationOut"][];
             /** Documents */
             documents: components["schemas"]["DocumentOut"][];
+        };
+        /** SectionOut */
+        SectionOut: {
+            /** Anchor */
+            anchor: string;
+            /**
+             * Level
+             * @description 2 or 3.
+             */
+            level: number;
+            /** Title */
+            title: string;
         };
         /** SessionOut */
         SessionOut: {
@@ -3084,6 +3173,64 @@ export interface operations {
                 content: {
                     "text/event-stream": string;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_articles_v1_docs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocsIndexOut"];
+                };
+            };
+        };
+    };
+    get_article_v1_docs__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleOut"];
+                };
+            };
+            /** @description No article has this slug. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

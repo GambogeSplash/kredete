@@ -16,7 +16,7 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':
 const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- storage: only the three keys the spec allows ---------- */
-const KEEP = ['brain-theme', 'brain-sbc', 'brain-tour'];
+const KEEP = ['brain-theme', 'brain-sbc', 'brain-tour', 'brain-docs-audience'];
 function cleanStorage() {
   try {
     const stale = [];
@@ -181,6 +181,7 @@ const ROUTES = [
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
   { re: /^\/admin(?:\/(connectors|people|domains|audit))?$/, surface: 'admin', keys: ['tab'], allow: () => hasRole('admin', 'compliance') },
   { re: /^\/agent$/, surface: 'bot', allow: () => hasRole('admin', 'compliance', 'developer') },
+  { re: /^\/docs(?:\/([a-z0-9-]+))?$/, surface: 'docs', keys: ['slug'] },
   { re: /^\/setup$/, surface: 'setup' },
   { re: /^\/signin$/, surface: 'signin' },
 ];
@@ -195,12 +196,13 @@ function match(path) {
   }
   return null;
 }
-/** Navigates inside the app. `replace` swaps the history entry instead of adding one. */
+/** Navigates inside the app. `replace` swaps the history entry instead of adding one. A hash
+ *  is kept, so a link can open a section of a page (the docs). */
 function go(path, opts) {
   const o = opts || {};
   const url = new URL(path, location.origin);
-  const target = url.pathname + url.search;
-  if (target !== location.pathname + location.search) {
+  const target = url.pathname + url.search + url.hash;
+  if (target !== location.pathname + location.search + location.hash) {
     history[o.replace ? 'replaceState' : 'pushState']({}, '', target);
   }
   route();
@@ -212,8 +214,10 @@ function route() {
   const path = location.pathname.replace(/\/+$/, '') || '/';
   if (S.phase === 'boot') { renderBoot(); return; }
   if (S.phase === 'error') { renderBootError(); return; }
-  if (S.phase === 'setup' && path !== '/setup') { go('/setup', { replace: true }); return; }
-  if (S.phase === 'signedout' && path !== '/signin') { go('/signin', { replace: true }); return; }
+  // The docs are public, so they open signed out and during setup as well.
+  const docs = path === '/docs' || path.startsWith('/docs/');
+  if (S.phase === 'setup' && path !== '/setup' && !docs) { go('/setup', { replace: true }); return; }
+  if (S.phase === 'signedout' && path !== '/signin' && !docs) { go('/signin', { replace: true }); return; }
   if (S.phase === 'app' && path === '/signin') { go('/', { replace: true }); return; }
   const found = match(path);
   if (!found || (found.allow && !found.allow())) { go('/', { replace: true }); return; }
@@ -231,6 +235,7 @@ function route() {
     window.AUTH && window.AUTH.mountAccount();
   }
   const render = window.SURFACES[found.surface];
+  document.title = 'Kredete Brain'; // the docs name their article; every other screen keeps this
   $('#app').className = '';
   if (render) render(found.params);
   setCrumb();
@@ -468,6 +473,7 @@ function renderSurfaces() {
   h += navItem('data-go="/library"', 'library', 'Library', r.surface === 'library');
   h += navItem('data-go="/governance"', 'shield', 'Governance', r.surface === 'governance');
   if (hasRole('admin', 'compliance')) h += navItem('data-go="/admin"', 'settings', 'Admin', r.surface === 'admin');
+  h += navItem('data-go="/docs"', 'book', 'Docs', r.surface === 'docs');
   if (setupPending()) h += navItem('data-go="/setup"', 'check', 'Finish setup', r.surface === 'setup', '<span class="sdot" aria-hidden="true"></span>', 'finish');
   $('#surfaces').innerHTML = `<div class="snav">${h}</div><div class="srec" id="srec" role="list" aria-label="Chats"></div>`;
   $$('#surfaces [data-go]').forEach((b) => { b.onclick = () => { go(b.dataset.go); window.scrollTo(0, 0); }; });
@@ -532,7 +538,7 @@ function newChat() {
 }
 
 /* ---------- breadcrumb and mobile title ---------- */
-const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], library: ['Workspace', 'Library'], governance: ['Workspace', 'Governance'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
+const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], library: ['Workspace', 'Library'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Docs'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
   const label = S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
@@ -542,7 +548,7 @@ function setCrumb() {
 function mbTitle() {
   const t = $('#mbtitle');
   if (!t) return;
-  const names = { library: 'Library', governance: 'Governance', account: 'Account', chats: 'Chats', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
+  const names = { library: 'Library', governance: 'Governance', docs: 'Docs', account: 'Account', chats: 'Chats', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
   t.textContent = names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
 }
 

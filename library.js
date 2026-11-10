@@ -94,7 +94,7 @@ function chips() {
   if (L.path) list.push(['path', `Folder: ${L.path}`]);
   if (L.problems) list.push(['problems', 'Label problems']);
   const box = $('#libchips');
-  box.innerHTML = list.map(([k, label]) => `<button type="button" class="lchip on" data-clear="${k}" aria-label="Remove filter ${esc(label)}">${esc(label)}${ICON('x', 12)}</button>`).join('') + (list.length > 1 ? '<button type="button" class="link" data-clear="all">Clear all</button>' : '');
+  box.innerHTML = list.map(([k, label]) => `<button type="button" class="lchip on" data-clear="${k}" aria-label="Remove filter ${esc(label)}">${esc(label)}${ICON('x', 12)}</button>`).join('') + (list.length > 1 ? '<button type="button" class="link" data-clear="all">Clear all</button>' : '') + (L.problems ? window.DOCS.link('findLabelProblems', 'Fixing label problems') : '');
   box.hidden = !list.length;
   $$('[data-clear]', box).forEach((b) => {
     b.onclick = () => {
@@ -213,7 +213,7 @@ async function openDocument(id, opts) {
 function labelProblems(d) {
   const warnings = d.label_warnings || [];
   if (!warnings.length) return '';
-  return `<div class="svwarn" role="note"><b>Label problems</b><ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul><p>Fix the labels in ${esc(B.systemName(d.system))}. Brain reads them again on its next sync.</p></div>`;
+  return `<div class="svwarn" role="note"><b>Label problems</b><ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul><p>Fix the labels in ${esc(B.systemName(d.system))}. Brain reads them again on its next sync.</p><p>${window.DOCS.link('labelProblems', 'What these mean')}</p></div>`;
 }
 
 function shareModal(d) {

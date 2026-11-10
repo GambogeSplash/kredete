@@ -309,3 +309,25 @@ body .mainpanel{min-height:100dvh}
    second. */
 .cnspaces .dt-r>.cnown{grid-column:1;grid-row:2}
 .cnspaces .dt-r>.cninc{grid-column:2;grid-row:2;justify-self:end}
+
+/* ---------- docs ---------- */
+.dcgrid,.dcgrid>.skwrap{grid-template-columns:minmax(0,1fr)}
+.dclay{grid-template-columns:minmax(0,1fr);gap:0}
+.dctoc{display:none}
+.dcsecm{display:block;margin:0 0 var(--s-5);border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface)}
+.dcsecm>summary{list-style:none;cursor:pointer;display:flex;align-items:center;min-height:44px;padding:0 var(--s-4);font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--ink)}
+.dcsecm>summary::-webkit-details-marker{display:none}
+.dcsecm>summary::after{content:"";margin-left:auto;width:7px;height:7px;border-right:1.5px solid var(--mute);border-bottom:1.5px solid var(--mute);transform:rotate(45deg) translateY(-2px);transition:transform var(--dur-fast) var(--ease-out)}
+.dcsecm[open]>summary::after{transform:rotate(225deg) translateY(-2px)}
+.dcsecm .dctocl{padding:0 var(--s-4) var(--s-3)}
+.dcsecm .dctocl a{padding:var(--s-2) 0;font-size:var(--fs-md)}
+.dcprose{font-size:var(--fs-md)}
+.dcprose h2,.dcprose h3{scroll-margin-top:72px}
+.dcprose h2{font-size:var(--fs-h3);margin-top:var(--s-7)}
+.dcprose h3{font-size:var(--fs-lg)}
+.dctop{padding:0 var(--s-4);padding-top:var(--safe-t);height:calc(56px + var(--safe-t))}
+.dcbrand>span:last-child{display:none}
+.dcsolo-b{padding:var(--s-5) var(--s-4) var(--s-8)}
+/* On its own there is no app bar: the page scrolls as a whole, edge to edge, and keeps its heading. */
+main#app.dcapp{padding:0!important;height:auto}
+.dcsolo .pg>h1{position:static;left:auto;width:auto;height:auto;overflow:visible;margin:0 0 var(--s-3)}

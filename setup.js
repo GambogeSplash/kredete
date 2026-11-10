@@ -160,7 +160,7 @@ async function authorize(connectionId) {
 function connectStep(p) {
   const c = p.connection;
   render('connect', c
-    ? `<h1>Authorize ${esc(c.site)}</h1><p class="sub">Atlassian asks you to allow Brain to read Confluence. You come back here afterwards.</p>${c.last_error ? `<div class="banner bad">${esc(c.last_error)}</div>` : ''}<form id="suf" novalidate>${errorSlot}${primary('sugo', 'Authorize with Atlassian')}</form><p class="disc">Wrong site? Remove it in Admin, Connectors.</p>`
+    ? `<h1>Authorize ${esc(c.site)}</h1><p class="sub">Atlassian asks you to allow Brain to read Confluence. You come back here afterwards.</p><p class="sudoc">Sign in to Atlassian as Brain's own indexer account, not your personal one. ${window.DOCS.link('indexerAccount', 'Why a dedicated account', true)}</p>${c.last_error ? `<div class="banner bad">${esc(c.last_error)}</div>` : ''}<form id="suf" novalidate>${errorSlot}${primary('sugo', 'Authorize with Atlassian')}</form><p class="disc">Wrong site? Remove it in Admin, Connectors.</p>`
     : `<h1>Connect your Confluence site</h1><p class="sub">The address of the Confluence site Brain reads.</p><form id="suf" novalidate>${field('susite', 'Site', 'autocomplete="off" spellcheck="false" inputmode="url" placeholder="yourteam.atlassian.net"')}${errorSlot}${primary('sugo', 'Continue to Atlassian')}</form>`);
   const site = $('#susite');
   if (site) site.focus();
@@ -179,7 +179,7 @@ function connectStep(p) {
   };
 }
 async function spacesStep(p) {
-  render('spaces', `<h1>Pick the spaces Brain reads</h1><p class="sub">People still only see the pages they can open in Confluence.</p><div id="suspaces">${B.skeletonRows(3, 'gsrc')}</div><p class="surefresh">Missing a space? <button type="button" class="link" id="surefresh">Look again</button></p><form id="suf" novalidate>${errorSlot}${primary('sugo', 'Include spaces')}</form><p class="disc">You own these spaces in Brain for now. Change owners in Admin, Connectors.</p>`);
+  render('spaces', `<h1>Pick the spaces Brain reads</h1><p class="sub">People still only see the pages they can open in Confluence.</p><p class="sudoc">Restricted pages reach Brain only when their authors share them with the broth-indexer group. ${window.DOCS.link('indexerGroup', 'How sharing works', true)}</p><div id="suspaces">${B.skeletonRows(3, 'gsrc')}</div><p class="surefresh">Missing a space? <button type="button" class="link" id="surefresh">Look again</button></p><form id="suf" novalidate>${errorSlot}${primary('sugo', 'Include spaces')}</form><p class="disc">You own these spaces in Brain for now. Change owners in Admin, Connectors.</p>`);
   const list = $('#suspaces');
   const go = $('#sugo');
   go.disabled = true;
