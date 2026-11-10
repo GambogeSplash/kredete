@@ -32,11 +32,11 @@ const spaceFinished = (fields) => space({ finished_at: '2026-11-10T09:05:00Z', t
 const idle = { busy: false, fraction: null };
 const CASES = [
   // Manual runs: the connection card (spec 3.1).
-  ['manual, checking for changes', run(), {}, { label: 'Checking for changes...', tag: null, detail: null, busy: true, fraction: null }],
-  ['manual, one of two feeds done', run({ tasks_done: 1, pages_total: 7, pages_done: 3 }), {}, { label: 'Checking for changes...', tag: null, detail: null, busy: true, fraction: null }],
+  ['manual, checking for changes', run(), {}, { label: 'Checking for changes…', tag: null, detail: null, busy: true, fraction: null }],
+  ['manual, one of two feeds done', run({ tasks_done: 1, pages_total: 7, pages_done: 3 }), {}, { label: 'Checking for changes…', tag: null, detail: null, busy: true, fraction: null }],
   ['manual, syncing pages', run({ tasks_done: 2, pages_total: 40, pages_done: 10, pages_failed: 2 }), {}, { label: 'Syncing 12 of 40 pages', tag: null, detail: null, busy: true, fraction: 0.3 }],
   ['manual, syncing one page', run({ tasks_done: 2, pages_total: 1 }), {}, { label: 'Syncing 0 of 1 page', tag: null, detail: null, busy: true, fraction: 0 }],
-  ['manual, feeds done and nothing queued yet', run({ tasks_done: 2 }), {}, { label: 'Checking for changes...', tag: null, detail: null, busy: true, fraction: null }],
+  ['manual, feeds done and nothing queued yet', run({ tasks_done: 2 }), {}, { label: 'Checking for changes…', tag: null, detail: null, busy: true, fraction: null }],
   ['manual, succeeded with changes', finished({ status: 'succeeded', pages_total: 40, pages_done: 40, updated: 40 }), {}, { label: 'Synced', tag: 'ok', detail: '40 pages updated', ...idle }],
   ['manual, succeeded with one change', finished({ status: 'succeeded', pages_total: 1, pages_done: 1, updated: 1 }), {}, { label: 'Synced', tag: 'ok', detail: '1 page updated', ...idle }],
   ['manual, succeeded without changes', finished({ status: 'succeeded' }), {}, { label: 'Synced', tag: 'ok', detail: 'No changes', ...idle }],
@@ -53,9 +53,9 @@ const CASES = [
   ['manual, failed while another error is shown', finished({ status: 'failed', error: 'Timed out' }), { shownError: 'Confluence refused the token' }, { label: 'Sync failed', tag: 'bad', detail: 'Timed out', ...idle }],
 
   // Space reads: the space rows (spec 3.2).
-  ['space, listing started', space(), {}, { label: 'Listing pages...', tag: null, detail: null, busy: true, fraction: null }],
-  ['space, listing', space({ pages_total: 30, pages_done: 4 }), {}, { label: 'Listing pages... 30 so far', tag: null, detail: null, busy: true, fraction: null }],
-  ['space, re-read joined while listing', space({ tasks_total: 2, tasks_done: 1, pages_total: 50 }), {}, { label: 'Listing pages... 50 so far', tag: null, detail: null, busy: true, fraction: null }],
+  ['space, listing started', space(), {}, { label: 'Listing pages…', tag: null, detail: null, busy: true, fraction: null }],
+  ['space, listing', space({ pages_total: 30, pages_done: 4 }), {}, { label: 'Listing pages… 30 so far', tag: null, detail: null, busy: true, fraction: null }],
+  ['space, re-read joined while listing', space({ tasks_total: 2, tasks_done: 1, pages_total: 50 }), {}, { label: 'Listing pages… 50 so far', tag: null, detail: null, busy: true, fraction: null }],
   ['space, reading', space({ tasks_done: 1, pages_total: 96, pages_done: 78, pages_failed: 2 }), {}, { label: '80 of 96', tag: null, detail: null, busy: true, fraction: 80 / 96 }],
   ['space, succeeded', spaceFinished({ status: 'succeeded', pages_total: 210, pages_done: 210, updated: 210 }), {}, { label: '210 pages', tag: 'ok', detail: null, ...idle }],
   ['space, succeeded with one page', spaceFinished({ status: 'succeeded', pages_total: 1, pages_done: 1, updated: 1 }), {}, { label: '1 page', tag: 'ok', detail: null, ...idle }],

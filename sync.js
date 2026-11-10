@@ -60,8 +60,8 @@
   function running(run, space) {
     const view = { tag: null, detail: null, fraction: null, busy: true };
     if (run.tasks_done < run.tasks_total || run.pages_total === 0) {
-      if (!space) return { label: 'Checking for changes...', ...view };
-      return { label: run.pages_total ? `Listing pages... ${run.pages_total} so far` : 'Listing pages...', ...view };
+      if (!space) return { label: 'Checking for changes…', ...view };
+      return { label: run.pages_total ? `Listing pages… ${run.pages_total} so far` : 'Listing pages…', ...view };
     }
     const processed = run.pages_done + run.pages_failed;
     const fraction = Math.min(1, processed / run.pages_total);
