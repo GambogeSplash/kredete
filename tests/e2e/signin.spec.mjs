@@ -63,12 +63,12 @@ test('workspace mode: no setup endpoints, straight to sign-in', async ({ open, c
   await check(page, 'signin-workspace');
 });
 
-test('when Brain cannot be reached, the boot screen offers a retry', async ({ open, check }) => {
+test('when Broth cannot be reached, the boot screen offers a retry', async ({ open, check }) => {
   let fail = true;
   const page = await open(null, '/', {
     before: (p) => p.route('**/v1/setup/status', (route) => (fail ? route.fulfill({ status: 502, body: 'Bad gateway' }) : route.continue())),
   });
-  await expect(page.getByRole('heading', { name: 'Brain could not be reached' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Broth could not be reached' })).toBeVisible();
   await expect(page.getByText('Check your connection and try again.')).toBeVisible();
   await check(page, 'boot-error');
   fail = false;
@@ -76,16 +76,16 @@ test('when Brain cannot be reached, the boot screen offers a retry', async ({ op
   await expect(page.getByRole('heading', { name: 'Sign in to Kredete' })).toBeVisible();
 });
 
-test('when Brain answers with a problem of its own, the boot screen shows it', async ({ open }) => {
+test('when Broth answers with a problem of its own, the boot screen shows it', async ({ open }) => {
   const page = await open(null, '/', {
     before: (p) => p.route('**/v1/setup/status', (route) => route.fulfill({
       status: 503,
       contentType: 'application/problem+json',
-      body: JSON.stringify({ title: 'Brain is updating. Try again in a minute.', status: 503 }),
+      body: JSON.stringify({ title: 'Broth is updating. Try again in a minute.', status: 503 }),
     })),
   });
-  await expect(page.getByRole('heading', { name: 'Brain could not start' })).toBeVisible();
-  await expect(page.getByText('Brain is updating. Try again in a minute.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Broth could not start' })).toBeVisible();
+  await expect(page.getByText('Broth is updating. Try again in a minute.')).toBeVisible();
 });
 
 test('the first-run welcome', async ({ open, check, seed }) => {
@@ -97,7 +97,7 @@ test('the first-run welcome', async ({ open, check, seed }) => {
   await expect(page.getByRole('heading', { name: 'How should it look?' })).toBeVisible();
   await check(page, 'welcome-2');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { name: 'What Brain can read for you' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What Broth can read for you' })).toBeVisible();
   await expect(page.getByText('Confluence')).toBeVisible();
   await check(page, 'welcome-3');
   await page.getByRole('button', { name: 'Start asking' }).click();

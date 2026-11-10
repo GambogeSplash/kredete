@@ -49,7 +49,7 @@
    * @property {<T>(name: string, task: () => Promise<T>) => Promise<T>} [lock] a cross-tab lock
    */
 
-  const UNREACHABLE = 'Brain could not be reached. Try again.';
+  const UNREACHABLE = 'Broth could not be reached. Try again.';
   const STREAM_EVENTS = new Set(['turn.started', 'status', 'answer.delta', 'turn.completed', 'error']);
 
   class ApiError extends Error {
@@ -62,7 +62,7 @@
      * @param {number | null} [fields.retryAfter] seconds to wait before retrying
      * @param {boolean} [fields.retryable]
      * @param {string | null} [fields.turnId] for streams: the turn that had started
-     * @param {boolean} [fields.reached] whether Brain itself answered (not a network failure, or a
+     * @param {boolean} [fields.reached] whether Broth itself answered (not a network failure, or a
      *   page without a problem document from something in between, such as a proxy's 502)
      */
     constructor({ status, title, detail = '', code = '', retryAfter = null, retryable, turnId = null, reached }) {

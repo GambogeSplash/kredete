@@ -119,7 +119,7 @@ function loadingBlock(label, n, cls) {
   return `<div class="skwrap" role="status" aria-live="polite"><span class="sr">${esc(label || 'Loading')}</span>${skeletonRows(n || 4, cls)}</div>`;
 }
 function errorBlock(error, retryId) {
-  return `<div class="empty errstate" role="alert"><h2>${esc(problem(error))}</h2><p>${error && error.status === 0 ? 'Check your connection.' : 'The rest of Brain still works.'}</p>${retryId ? `<button type="button" class="btn sm" id="${retryId}">Try again</button>` : ''}</div>`;
+  return `<div class="empty errstate" role="alert"><h2>${esc(problem(error))}</h2><p>${error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.'}</p>${retryId ? `<button type="button" class="btn sm" id="${retryId}">Try again</button>` : ''}</div>`;
 }
 function emptyBlock(title, text, action) {
   return `<div class="empty"><h2>${esc(title)}</h2>${text ? `<p>${text}</p>` : ''}${action || ''}</div>`;
@@ -235,7 +235,7 @@ function route() {
     window.AUTH && window.AUTH.mountAccount();
   }
   const render = window.SURFACES[found.surface];
-  document.title = 'Kredete Brain'; // the docs name their article; every other screen keeps this
+  document.title = 'Kredete Broth'; // the docs name their article; every other screen keeps this
   $('#app').className = '';
   if (render) render(found.params);
   setCrumb();
@@ -254,7 +254,7 @@ function route() {
 function renderBoot() {
   document.body.classList.add('noauth');
   $('#app').className = 'siapp';
-  $('#app').innerHTML = `<div class="bootsplash" role="status"><span class="pvk big" aria-hidden="true">K</span><span class="sr">Loading Kredete Brain</span></div>`;
+  $('#app').innerHTML = `<div class="bootsplash" role="status"><span class="pvk big" aria-hidden="true">K</span><span class="sr">Loading Kredete Broth</span></div>`;
 }
 function renderBootError() {
   window.AUTH.bootError(S.bootError, boot);

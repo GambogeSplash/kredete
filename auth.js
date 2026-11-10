@@ -65,7 +65,7 @@ AUTH.brand = brand;
 window.SURFACES.signin = () => {
   const params = new URLSearchParams(location.search);
   const failure = AUTH.signInError(params.get('error'));
-  // The account Google confirmed before Brain refused it; the server sends it in the fragment,
+  // The account Google confirmed before Broth refused it; the server sends it in the fragment,
   // which never reaches a server or a log.
   const refused = failure ? new URLSearchParams(location.hash.slice(1)).get('email') : null;
   const unconfigured = B.S.setup && !B.S.setup.google_configured;
@@ -76,7 +76,7 @@ window.SURFACES.signin = () => {
     ${failure ? `<div class="banner bad" role="alert" id="aerr"><b>${esc(failure[0])}.</b> ${esc(failure[1])}${refused ? `<span class="refused-as">Google account: ${esc(refused)}</span>` : ''}</div>` : ''}
     ${unconfigured ? `<div class="banner info" role="status"><b>Sign-in is not configured yet.</b> Your Kredete admin finishes setup first.</div>` : ''}
     <a class="btn primary si-btn" id="gsignin" href="${B.api.signInUrl}" ${unconfigured ? 'aria-disabled="true" tabindex="-1"' : ''}><span class="spin" aria-hidden="true"></span><span>Continue with Google</span></a>
-    <p class="disc">Brain answers from the documents you can already open.</p>`, preview(null));
+    <p class="disc">Broth answers from the documents you can already open.</p>`, preview(null));
   const button = $('#gsignin');
   button.onclick = (e) => {
     if (button.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
@@ -87,8 +87,8 @@ window.SURFACES.signin = () => {
 
 /* ---------- boot error ---------- */
 AUTH.bootError = (error, retry) => {
-  // Brain's own problem says what went wrong; without one, say what to do rather than repeat the heading.
-  const head = error && error.reached ? 'Brain could not start' : 'Brain could not be reached';
+  // Broth's own problem says what went wrong; without one, say what to do rather than repeat the heading.
+  const head = error && error.reached ? 'Broth could not start' : 'Broth could not be reached';
   const body = error && error.reached ? B.problem(error) : 'Check your connection and try again. If it keeps happening, tell your Kredete admin.';
   shell(`${brand}<h1>${head}</h1><p class="sub">${esc(body)}</p><button type="button" class="btn primary si-btn" id="bootretry"><span class="spin" aria-hidden="true"></span><span>Try again</span></button>`, preview(null));
   $('#bootretry').onclick = () => { $('#bootretry').classList.add('busy'); retry(); };
@@ -124,7 +124,7 @@ function drawWelcome() {
     left = `<h1>How should it look?</h1><div class="obopts" role="radiogroup" aria-label="Appearance">${[['light', 'Light'], ['dark', 'Dark'], ['system', 'Match my device']].map(([k, l]) => `<button class="obopt ${ob.theme === k ? 'on' : ''}" role="radio" aria-checked="${ob.theme === k}" data-th="${k}" type="button"><span class="obsw ${k}"></span><b>${l}</b></button>`).join('')}</div>${nav()}`;
   } else {
     const systems = (B.S.facets && B.S.facets.systems) || [];
-    left = `<h1>What Brain can read for you</h1>${systems.length ? `<div class="obapps">${systems.map((s) => `<div class="obapp">${B.srcIcon(s.value, 26)}<b>${esc(B.systemName(s.value))}</b><span class="tag ok">${s.count} ${s.count === 1 ? 'document' : 'documents'}</span></div>`).join('')}</div><p class="sub obnote">Only what you can already open there.</p>` : `<p class="sub">Nothing is connected yet. Answers appear once your admin connects a source.</p>`}${nav('Start asking')}`;
+    left = `<h1>What Broth can read for you</h1>${systems.length ? `<div class="obapps">${systems.map((s) => `<div class="obapp">${B.srcIcon(s.value, 26)}<b>${esc(B.systemName(s.value))}</b><span class="tag ok">${s.count} ${s.count === 1 ? 'document' : 'documents'}</span></div>`).join('')}</div><p class="sub obnote">Only what you can already open there.</p>` : `<p class="sub">Nothing is connected yet. Answers appear once your admin connects a source.</p>`}${nav('Start asking')}`;
   }
   shell(left, preview(person()), [ob.step, TOTAL]);
   const step = (d) => { ob.step = Math.max(1, Math.min(TOTAL, ob.step + d)); drawWelcome(); };

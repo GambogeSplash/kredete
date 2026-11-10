@@ -747,7 +747,7 @@ main#app{padding:var(--s-6) var(--s-7) var(--s-8)}
 /* header bar on Ask */
 .dchead{display:flex;align-items:center;gap:var(--s-2);height:44px;padding:0 var(--s-4);border-bottom:1px solid var(--line);flex:none;font-size:var(--fs-sm)}
 .dchead b{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
-/* Welcome to Brain (Linear's Ask screen) */
+/* Welcome to Broth (Linear's Ask screen) */
 .lhome{flex:1;display:flex;flex-direction:column;min-height:0;overflow:auto;background:radial-gradient(ellipse 60% 40% at 50% 28%,var(--brand-wash) 0,var(--surface) 70%)}
 .lh-in{width:100%;max-width:640px;margin:0 auto;padding:11vh var(--s-6) var(--s-9);display:flex;flex-direction:column}
 .lh-mark{align-self:center;opacity:.06;margin-bottom:var(--s-4)}

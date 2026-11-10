@@ -15,14 +15,14 @@ const VERIFY = '**/v1/admin/connections/*/verify';
 const CONTAINERS = '**/v1/admin/containers?*';
 const confluenceFound = (page) => page.route(VERIFY, (route) => route.fulfill({ json: { containers: 3 } }));
 const STEPS = [
-  { state: 'claim', heading: 'Set up Kredete Brain', as: 'visitor' },
+  { state: 'claim', heading: 'Set up Kredete Broth', as: 'visitor' },
   { state: 'google', heading: 'Connect Google sign-in', as: 'claimer' },
   { state: 'signin', heading: 'Sign in as the first admin', as: 'claimer' },
   { state: 'confluence', heading: 'Add the Confluence app', as: 'admin' },
   { state: 'connect', heading: 'Connect your Confluence site', as: 'admin' },
-  { state: 'spaces', heading: 'Pick the spaces Brain reads', as: 'admin', before: confluenceFound },
-  { state: 'sync', heading: 'Brain is reading your spaces', as: 'admin' },
-  { state: 'ready', heading: 'Brain is ready', as: 'admin' },
+  { state: 'spaces', heading: 'Pick the spaces Broth reads', as: 'admin', before: confluenceFound },
+  { state: 'sync', heading: 'Broth is reading your spaces', as: 'admin' },
+  { state: 'ready', heading: 'Broth is ready', as: 'admin' },
 ];
 
 /** Seeds `state` with one admin session per view and one spare, and restarts the API. */
@@ -88,7 +88,7 @@ test('the Confluence app moves on to connecting a site, and spaces move on to th
   page = await open('admin', '/setup', { token: seeded.people.admin.refresh_tokens[0], before: confluenceFound });
   await page.getByRole('checkbox').first().check();
   await page.getByRole('button', { name: /Include/ }).click();
-  await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Broth is reading your spaces' })).toBeVisible();
 });
 
 test('spaces: a space created after connecting appears on opening and on "Look again"', async ({ open }) => {
@@ -137,5 +137,5 @@ test('spaces: when Confluence cannot be read, the known spaces stay usable', asy
   await expect(page.getByRole('alert')).toHaveText(`Couldn't check Confluence for new spaces: ${detail}`);
   await expect(page.getByRole('checkbox')).toHaveCount(3);
   await page.getByRole('button', { name: 'Include 3 spaces' }).click();
-  await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Broth is reading your spaces' })).toBeVisible();
 });

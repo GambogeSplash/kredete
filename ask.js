@@ -1,7 +1,7 @@
 /* ask.js: the Ask surface (sandbox spec 4.3, plan C4).
  *
  * Answers stream from POST /v1/conversations/{id}/turns (and /v1/turns/{id}/regenerate):
- * the status stage shows while Brain searches and reads, answer.delta sentences appear as
+ * the status stage shows while Broth searches and reads, answer.delta sentences appear as
  * they arrive, and turn.completed brings the answer with its citations and kind. A stream
  * that fails or ends early shows a retryable error; a stopped or partial answer is never
  * shown as complete. Feedback, Report to owner and Regenerate round-trip to the API, and a
@@ -35,8 +35,8 @@ function askState() {
 }
 const REASONS = [['wrong', 'Wrong'], ['outdated', 'Outdated'], ['incomplete', 'Incomplete'], ['could_not_check', 'Could not check']];
 const FAILED = {
-  model_unavailable: 'Brain could not reach its model just now.',
-  answer_refused: 'Brain declined to answer this question.',
+  model_unavailable: 'Broth could not reach its model just now.',
+  answer_refused: 'Broth declined to answer this question.',
   internal: 'Something went wrong while answering.',
 };
 
@@ -274,7 +274,7 @@ function renderConversation(conv) {
   const draft = takeDraft(conv.id); // the view re-renders when the chat loads or is renamed
   const a = askState();
   $('#app').className = 'cxapp';
-  $('#app').innerHTML = `<div class="cx ${a.panel ? '' : 'closed'}"><section class="cxmain"><div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(B.chatTitle(conv))}</b><button type="button" class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more', 16)}</button><span class="lsp"></span><button type="button" class="lib ctog" id="cxtog" aria-label="Sources" title="Sources" aria-expanded="${a.panel}">${togInner()}</button></div><div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div><div class="cxcomp">${composer(false, 'Ask a follow-up', conv.id)}<p class="cxcap">Brain can be inaccurate. Check the sources.</p></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
+  $('#app').innerHTML = `<div class="cx ${a.panel ? '' : 'closed'}"><section class="cxmain"><div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(B.chatTitle(conv))}</b><button type="button" class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more', 16)}</button><span class="lsp"></span><button type="button" class="lib ctog" id="cxtog" aria-label="Sources" title="Sources" aria-expanded="${a.panel}">${togInner()}</button></div><div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div><div class="cxcomp">${composer(false, 'Ask a follow-up', conv.id)}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
   const thread = $('#thread');
   if (!conv.loaded) {
     thread.innerHTML = conv.error ? B.errorBlock(conv.error, 'convretry') : `<div class="skwrap" role="status"><span class="sr">Loading the conversation</span>${skeletonTurn()}${skeletonTurn()}</div>`;

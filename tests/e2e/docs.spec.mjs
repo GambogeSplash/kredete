@@ -13,7 +13,7 @@ test('the contents, from the sidebar', async ({ open, check }) => {
   await expect(page).toHaveURL(/\/docs$/);
   await expect(page.locator('.dcchips').getByRole('button', { name: 'All', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(cards(page)).toHaveCount(4);
-  await expect(cards(page).first()).toContainText('Asking Brain');
+  await expect(cards(page).first()).toContainText('Asking Broth');
   const size = page.viewportSize() || { width: 1440, height: 900 };
   await page.mouse.move(size.width - 4, size.height - 4); // off the cards, so none shows its hover
   await check(page, 'docs');
@@ -22,9 +22,9 @@ test('the contents, from the sidebar', async ({ open, check }) => {
 test('admins start on their audience, and a chosen audience is remembered', async ({ open, check }) => {
   const page = await open('admin', '/docs');
   await expect(page.locator('.dcchips').getByRole('button', { name: 'Admin', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(cards(page).locator('b')).toHaveText(['Asking Brain', 'Labelling pages', 'Setting up spaces', 'Fixing label problems']);
+  await expect(cards(page).locator('b')).toHaveText(['Asking Broth', 'Labelling pages', 'Setting up spaces', 'Fixing label problems']);
   await page.locator('.dcchips').getByRole('button', { name: 'Asking', exact: true }).click();
-  await expect(cards(page).locator('b')).toHaveText(['Asking Brain']);
+  await expect(cards(page).locator('b')).toHaveText(['Asking Broth']);
   await check(page, 'docs-filtered');
   await page.reload();
   await expect(page.locator('.dcchips').getByRole('button', { name: 'Asking', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -37,17 +37,17 @@ test('an article, its sections, and links between articles', async ({ open, chec
   await expect(page).toHaveURL(/\/docs\/labelling-pages$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Labelling pages' })).toBeVisible();
   await expect(page.locator('.dcprose table')).toBeVisible();
-  await expect(page).toHaveTitle('Labelling pages - Kredete Brain docs');
+  await expect(page).toHaveTitle('Labelling pages - Kredete Broth docs');
   const mobile = (page.viewportSize() || { width: 1440 }).width < 900;
   if (mobile) {
     await expect(toc(page)).toBeHidden();
     await page.getByText('Sections', { exact: true }).click();
     await check(page, 'docs-article-sections');
-    await page.locator('.dcsecm').getByRole('link', { name: 'Restricted pages and Brain' }).click();
+    await page.locator('.dcsecm').getByRole('link', { name: 'Restricted pages and Broth' }).click();
   } else {
     await check(page, 'docs-article');
-    await toc(page).getByRole('link', { name: 'Restricted pages and Brain' }).click();
-    await expect(toc(page).getByRole('link', { name: 'Restricted pages and Brain' })).toHaveAttribute('aria-current', 'location');
+    await toc(page).getByRole('link', { name: 'Restricted pages and Broth' }).click();
+    await expect(toc(page).getByRole('link', { name: 'Restricted pages and Broth' })).toHaveAttribute('aria-current', 'location');
   }
   await expect(page).toHaveURL(/#restricted-pages$/);
   await expect(page.locator('#restricted-pages')).toBeInViewport();

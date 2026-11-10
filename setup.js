@@ -24,8 +24,8 @@ const STEPS = [
   ['signin', 'Sign in', 'As the first admin'],
   ['confluence', 'Add the Confluence app', 'Your Atlassian OAuth client'],
   ['connect', 'Connect Confluence', 'Authorize your site'],
-  ['spaces', 'Pick spaces', 'What Brain reads'],
-  ['sync', 'First sync', 'Brain reads the pages'],
+  ['spaces', 'Pick spaces', 'What Broth reads'],
+  ['sync', 'First sync', 'Broth reads the pages'],
 ];
 const index = (key) => STEPS.findIndex((s) => s[0] === key);
 
@@ -56,7 +56,7 @@ async function progress() {
 /* ---------- the shell around every step ---------- */
 function checklist(current) {
   const at = current === 'done' ? STEPS.length : index(current);
-  return `<div class="pvp sup" aria-hidden="true"><div class="pvw sucard"><div class="suh">${ICON('check', 14)}<b>Set up Kredete Brain</b></div><ol class="sul">${STEPS.map(([k, title, sub], i) => `<li class="${i < at ? 'done' : i === at ? 'on' : ''}"><i>${i < at ? ICON('check', 12) : i + 1}</i><span><b>${esc(title)}</b><small>${esc(sub)}</small></span></li>`).join('')}</ol></div><div class="pvcap">${current === 'done' ? 'All set' : `Step ${at + 1} of ${STEPS.length}`}</div></div>`;
+  return `<div class="pvp sup" aria-hidden="true"><div class="pvw sucard"><div class="suh">${ICON('check', 14)}<b>Set up Kredete Broth</b></div><ol class="sul">${STEPS.map(([k, title, sub], i) => `<li class="${i < at ? 'done' : i === at ? 'on' : ''}"><i>${i < at ? ICON('check', 12) : i + 1}</i><span><b>${esc(title)}</b><small>${esc(sub)}</small></span></li>`).join('')}</ol></div><div class="pvcap">${current === 'done' ? 'All set' : `Step ${at + 1} of ${STEPS.length}`}</div></div>`;
 }
 function render(step, left) {
   const leave = B.S.phase === 'app' && step !== 'done' ? `<button type="button" class="link suleave" id="suleave">Leave setup for now</button>` : '';
@@ -99,7 +99,7 @@ function wireCopies() {
 
 /* ---------- steps ---------- */
 function claimStep() {
-  render('claim', `<h1>Set up Kredete Brain</h1><p class="sub">You are the first person here, so you become its admin. Enter the setup code from the server, and the Google account you will sign in with.</p>
+  render('claim', `<h1>Set up Kredete Broth</h1><p class="sub">You are the first person here, so you become its admin. Enter the setup code from the server, and the Google account you will sign in with.</p>
     <form id="suf" novalidate>${field('sucode', 'Setup code', 'autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX" class="eminp mono"')}${field('suemail', 'Your Google account', 'type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"')}${errorSlot}${primary('sugo', 'Continue')}</form>
     <p class="disc">Lost the code, or it expired? Run <code>make sandbox-setup-code</code> on the server for a new one.</p>`);
   $('#sucode').focus();
@@ -160,8 +160,8 @@ async function authorize(connectionId) {
 function connectStep(p) {
   const c = p.connection;
   render('connect', c
-    ? `<h1>Authorize ${esc(c.site)}</h1><p class="sub">Atlassian asks you to allow Brain to read Confluence. You come back here afterwards.</p><p class="sudoc">Sign in to Atlassian as Brain's own indexer account, not your personal one. ${window.DOCS.link('indexerAccount', 'Why a dedicated account', true)}</p>${c.last_error ? `<div class="banner bad">${esc(c.last_error)}</div>` : ''}<form id="suf" novalidate>${errorSlot}${primary('sugo', 'Authorize with Atlassian')}</form><p class="disc">Wrong site? Remove it in Admin, Connectors.</p>`
-    : `<h1>Connect your Confluence site</h1><p class="sub">The address of the Confluence site Brain reads.</p><form id="suf" novalidate>${field('susite', 'Site', 'autocomplete="off" spellcheck="false" inputmode="url" placeholder="yourteam.atlassian.net"')}${errorSlot}${primary('sugo', 'Continue to Atlassian')}</form>`);
+    ? `<h1>Authorize ${esc(c.site)}</h1><p class="sub">Atlassian asks you to allow Broth to read Confluence. You come back here afterwards.</p><p class="sudoc">Sign in to Atlassian as Broth's own indexer account, not your personal one. ${window.DOCS.link('indexerAccount', 'Why a dedicated account', true)}</p>${c.last_error ? `<div class="banner bad">${esc(c.last_error)}</div>` : ''}<form id="suf" novalidate>${errorSlot}${primary('sugo', 'Authorize with Atlassian')}</form><p class="disc">Wrong site? Remove it in Admin, Connectors.</p>`
+    : `<h1>Connect your Confluence site</h1><p class="sub">The address of the Confluence site Broth reads.</p><form id="suf" novalidate>${field('susite', 'Site', 'autocomplete="off" spellcheck="false" inputmode="url" placeholder="yourteam.atlassian.net"')}${errorSlot}${primary('sugo', 'Continue to Atlassian')}</form>`);
   const site = $('#susite');
   if (site) site.focus();
   $('#suf').onsubmit = (e) => {
@@ -179,7 +179,7 @@ function connectStep(p) {
   };
 }
 async function spacesStep(p) {
-  render('spaces', `<h1>Pick the spaces Brain reads</h1><p class="sub">People still only see the pages they can open in Confluence.</p><p class="sudoc">Restricted pages reach Brain only when their authors share them with the broth-indexer group. ${window.DOCS.link('indexerGroup', 'How sharing works', true)}</p><div id="suspaces">${B.skeletonRows(3, 'gsrc')}</div><p class="surefresh">Missing a space? <button type="button" class="link" id="surefresh">Look again</button></p><form id="suf" novalidate>${errorSlot}${primary('sugo', 'Include spaces')}</form><p class="disc">You own these spaces in Brain for now. Change owners in Admin, Connectors.</p>`);
+  render('spaces', `<h1>Pick the spaces Broth reads</h1><p class="sub">People still only see the pages they can open in Confluence.</p><p class="sudoc">Restricted pages reach Broth only when their authors share them with the broth-indexer group. ${window.DOCS.link('indexerGroup', 'How sharing works', true)}</p><div id="suspaces">${B.skeletonRows(3, 'gsrc')}</div><p class="surefresh">Missing a space? <button type="button" class="link" id="surefresh">Look again</button></p><form id="suf" novalidate>${errorSlot}${primary('sugo', 'Include spaces')}</form><p class="disc">You own these spaces in Broth for now. Change owners in Admin, Connectors.</p>`);
   const list = $('#suspaces');
   const go = $('#sugo');
   go.disabled = true;
@@ -190,7 +190,7 @@ async function spacesStep(p) {
   function draw(containers) {
     $$('[data-space]').forEach((c) => ticked.set(c.dataset.space, c.checked));
     if (!containers.length) {
-      list.innerHTML = `<p class="sub">Brain found no spaces it can read on ${esc(p.connection.site)}.</p>`;
+      list.innerHTML = `<p class="sub">Broth found no spaces it can read on ${esc(p.connection.site)}.</p>`;
       label();
       return;
     }
@@ -203,7 +203,7 @@ async function spacesStep(p) {
     label();
   }
   const stored = () => B.api.get('/admin/containers', { connection_id: p.connection.id }).then((r) => r.items);
-  /* Shows what Brain already knows, then asks Confluence, so spaces created after connecting
+  /* Shows what Broth already knows, then asks Confluence, so spaces created after connecting
      appear; if Confluence cannot be reached, the known spaces stay usable. */
   async function load() {
     go.disabled = true;
@@ -233,7 +233,7 @@ async function spacesStep(p) {
 }
 let polling = 0;
 function syncStep(p) {
-  render('sync', `<h1>Brain is reading your spaces</h1><p class="sub">The first sync takes a few minutes. You can leave this page; it carries on.</p><div class="susync" role="status"><span class="suspin" aria-hidden="true"></span><span id="susyncl">Waiting for the first pages</span></div>${p.connection.last_error ? `<div class="banner bad" id="suerr">${esc(p.connection.last_error)}</div>` : ''}<form id="suf" novalidate>${errorSlot}<button type="submit" class="btn si-btn" id="sugo"><span class="spin" aria-hidden="true"></span><span>Sync now</span></button></form>`);
+  render('sync', `<h1>Broth is reading your spaces</h1><p class="sub">The first sync takes a few minutes. You can leave this page; it carries on.</p><div class="susync" role="status"><span class="suspin" aria-hidden="true"></span><span id="susyncl">Waiting for the first pages</span></div>${p.connection.last_error ? `<div class="banner bad" id="suerr">${esc(p.connection.last_error)}</div>` : ''}<form id="suf" novalidate>${errorSlot}<button type="submit" class="btn si-btn" id="sugo"><span class="spin" aria-hidden="true"></span><span>Sync now</span></button></form>`);
   $('#suf').onsubmit = (e) => {
     e.preventDefault();
     B.busy($('#sugo'), async () => { await B.api.post(`/admin/connections/${p.connection.id}/sync`); B.toast('Sync started'); }, showError);
@@ -258,7 +258,7 @@ async function doneStep() {
   await B.refreshSetupProgress();
   let n = 0;
   try { n = (await B.loadFacets()).systems.reduce((sum, s) => sum + s.count, 0); } catch (e) { /* counts are a nicety */ }
-  render('done', `<h1>Brain is ready</h1><p class="sub">${n ? `${n} ${n === 1 ? 'page is' : 'pages are'} in the library. ` : ''}Invite the people who should use it; they sign in with Google.</p><div class="obnav"><button type="button" class="btn si-btn" id="supeople">Invite people</button><button type="button" class="btn primary si-btn" id="suask">Start asking</button></div>`);
+  render('done', `<h1>Broth is ready</h1><p class="sub">${n ? `${n} ${n === 1 ? 'page is' : 'pages are'} in the library. ` : ''}Invite the people who should use it; they sign in with Google.</p><div class="obnav"><button type="button" class="btn si-btn" id="supeople">Invite people</button><button type="button" class="btn primary si-btn" id="suask">Start asking</button></div>`);
   $('#supeople').onclick = () => B.go('/admin/people');
   $('#suask').onclick = () => B.go('/');
 }

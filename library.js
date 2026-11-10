@@ -4,7 +4,7 @@
  * /v1/facets for the filter counts, and /v1/documents/{id} for the drawer. "Open in source"
  * replaces "Request access": people ask for access in Confluence or Drive. A document can be
  * proposed for wider sharing (a promotion); admins and compliance see its lineage. Labels that
- * Brain ignored or adjusted show as Label problems on the document, and admins and domain owners
+ * Broth ignored or adjusted show as Label problems on the document, and admins and domain owners
  * can filter the Library to them (labelling spec 4.1 and 4.2).
  */
 (() => {
@@ -209,11 +209,11 @@ async function openDocument(id, opts) {
   if (lin) lin.onclick = () => lineageModal(d);
 }
 
-/** Labels Brain ignored or adjusted on this page, for its author to fix in the source. */
+/** Labels Broth ignored or adjusted on this page, for its author to fix in the source. */
 function labelProblems(d) {
   const warnings = d.label_warnings || [];
   if (!warnings.length) return '';
-  return `<div class="svwarn" role="note"><b>Label problems</b><ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul><p>Fix the labels in ${esc(B.systemName(d.system))}. Brain reads them again on its next sync.</p><p>${window.DOCS.link('labelProblems', 'What these mean')}</p></div>`;
+  return `<div class="svwarn" role="note"><b>Label problems</b><ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul><p>Fix the labels in ${esc(B.systemName(d.system))}. Broth reads them again on its next sync.</p><p>${window.DOCS.link('labelProblems', 'What these mean')}</p></div>`;
 }
 
 function shareModal(d) {

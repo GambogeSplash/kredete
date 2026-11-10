@@ -184,7 +184,7 @@ test.describe('connectors', () => {
     await expect(connection.getByText(/~5f1e2d3c/)).toHaveCount(0);
   });
 
-  test("a space's settings save only what changed, and Brain re-reads it", async ({ open, check }) => {
+  test("a space's settings save only what changed, and Broth re-reads it", async ({ open, check }) => {
     const sent = [];
     const page = await open('admin', '/admin/connectors', {
       before: (p) => p.route('**/v1/admin/containers/*', async (route) => {
@@ -204,7 +204,7 @@ test.describe('connectors', () => {
     await page.getByRole('option', { name: 'Draft' }).click();
     await drawer.getByRole('spinbutton', { name: 'Review interval in months' }).fill('7');
     await drawer.getByRole('button', { name: 'Save' }).click();
-    await expect(page.locator('#toast')).toContainText('Saved. Brain re-reads this space now.');
+    await expect(page.locator('#toast')).toContainText('Saved. Broth re-reads this space now.');
     expect(sent).toEqual([{ default_authority: 'draft', review_interval_months: 7 }]);
   });
 

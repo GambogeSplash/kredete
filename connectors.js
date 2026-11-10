@@ -23,7 +23,7 @@ const OAUTH_ERRORS = {
   invalid_state: 'The Confluence authorization expired or was started in another browser. Authorize again.',
   authorization_failed: 'Atlassian did not complete the authorization. Authorize again, and allow every requested permission.',
 };
-const CREDENTIALS = { google_oauth: ['Google sign-in', 'The OAuth client people sign in with.'], confluence_oauth: ['Confluence app', 'The Atlassian OAuth app Brain reads Confluence with.'] };
+const CREDENTIALS = { google_oauth: ['Google sign-in', 'The OAuth client people sign in with.'], confluence_oauth: ['Confluence app', 'The Atlassian OAuth app Broth reads Confluence with.'] };
 
 let data = null; // { connections, containers, credentials, users, domains }
 const AUTHORITIES = [['approved', 'Approved'], ['unapproved', 'Unapproved'], ['draft', 'Draft']];
@@ -82,13 +82,13 @@ function draw() {
   const confluence = data.connections.filter((c) => c.system === 'confluence' && c.status !== 'disconnected');
   const drive = data.connections.filter((c) => c.system === 'gdrive' && c.status !== 'disconnected');
   const conf = data.credentials.find((c) => c.name === 'confluence_oauth');
-  body.innerHTML = `<section class="cnsec"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2><p class="amute">Brain reads the spaces you include, with each person's Confluence access.</p></div></div>
+  body.innerHTML = `<section class="cnsec"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2><p class="amute">Broth reads the spaces you include, with each person's Confluence access.</p></div></div>
       ${B.sandbox() && conf && !conf.configured ? `<div class="notice low"><span>Add the Confluence app below before connecting a site.</span></div>` : ''}
       ${confluence.map(connectionHtml).join('') || `<div class="cnempty"><p class="amute">No Confluence site is connected.</p></div>`}
       <form class="cnadd" id="cnadd" novalidate><label class="hsl" for="cnsite">${confluence.length ? 'Connect another site' : 'Connect a site'}</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse" id="cnadde" role="alert"></div></form></section>
-    <section class="cnsec"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive</h2><p class="amute">${B.sandbox() ? 'Unavailable in this sandbox.' : 'Brain reads the shared drives you include.'}</p></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : ''}</div>
-      ${B.sandbox() ? '<div class="notice none"><span>Google Drive needs a Google Workspace account: Brain reads Drive through domain-wide delegation, which a personal Google account does not have.</span></div>' : ''}
-      <ol class="cncheck ${B.sandbox() ? 'off' : ''}"><li><b>Authorize Brain in the Google Admin console</b><span>Add Brain's client ID with the Drive and Admin SDK read scopes under domain-wide delegation.</span></li><li><b>Add the indexer to each shared drive</b><span>Invite broth-indexer@ as a viewer on every shared drive Brain should read.</span></li><li><b>Verify</b><span>Brain checks that it can see each shared drive, then you include them.</span></li></ol>
+    <section class="cnsec"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive</h2><p class="amute">${B.sandbox() ? 'Unavailable in this sandbox.' : 'Broth reads the shared drives you include.'}</p></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : ''}</div>
+      ${B.sandbox() ? '<div class="notice none"><span>Google Drive needs a Google Workspace account: Broth reads Drive through domain-wide delegation, which a personal Google account does not have.</span></div>' : ''}
+      <ol class="cncheck ${B.sandbox() ? 'off' : ''}"><li><b>Authorize Broth in the Google Admin console</b><span>Add Broth's client ID with the Drive and Admin SDK read scopes under domain-wide delegation.</span></li><li><b>Add the indexer to each shared drive</b><span>Invite broth-indexer@ as a viewer on every shared drive Broth should read.</span></li><li><b>Verify</b><span>Broth checks that it can see each shared drive, then you include them.</span></li></ol>
       ${drive.map(connectionHtml).join('')}</section>
     ${B.sandbox() ? `<section class="cnsec"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials</h2><p class="amute">OAuth clients for this sandbox. Secrets are stored encrypted and never shown again.</p></div></div><div class="fgroup cncreds">${data.credentials.map(credentialRow).join('')}</div></section>` : ''}`;
   wire();
@@ -159,7 +159,7 @@ async function patchSpace(id, change, undo) {
     const updated = await B.api.patch(`/admin/containers/${id}`, change);
     const i = data.containers.findIndex((x) => x.id === id);
     data.containers[i] = updated;
-    B.toast(change.included === true ? 'Included. Brain reads it on the next sync.' : change.included === false ? 'Excluded. Its content is hidden now.' : 'Owner changed');
+    B.toast(change.included === true ? 'Included. Broth reads it on the next sync.' : change.included === false ? 'Excluded. Its content is hidden now.' : 'Owner changed');
     draw();
     if (change.included !== undefined) { B.loadFacets(); B.refreshSetupProgress().then(() => B.renderSurfaces()); }
   } catch (error) {
@@ -212,7 +212,7 @@ function settingsDrawer(space) {
       const updated = await B.api.patch(`/admin/containers/${space.id}`, change);
       data.containers[data.containers.findIndex((x) => x.id === space.id)] = updated;
       B.closeDrawer();
-      B.toast(updated.included ? 'Saved. Brain re-reads this space now.' : 'Saved');
+      B.toast(updated.included ? 'Saved. Broth re-reads this space now.' : 'Saved');
       draw();
     }, (error) => { $('#cnse').textContent = (error && error.detail) || B.problem(error); });
   };
