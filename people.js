@@ -30,8 +30,14 @@ function state() {
   }
   return c.people;
 }
-const roleTags = (roles, domains) => (roles.length ? roles.map((r) => `<span class="tag">${esc(r.role === 'domain_owner' ? `Owns ${domainName(r.domain_id, domains)}` : B.ROLE_NAMES[r.role] || r.role)}</span>`).join('') : '<span class="tag">Employee</span>');
+const T = window.DOMAIN_TREE;
+/** A domain's full path (Payments / Payouts), since names repeat across the tree. */
+const domainPath = (id, domains) => T.path(T.tree(domains || []), id).map((d) => d.name).join(' / ');
 const domainName = (id, domains) => ((domains || []).find((d) => d.id === id) || { name: 'a domain' }).name;
+const roleTag = (r, domains) => (r.role === 'domain_owner'
+  ? `<span class="tag" title="${esc(domainPath(r.domain_id, domains))}">${esc(`Owns ${domainName(r.domain_id, domains)}`)}</span>`
+  : `<span class="tag">${esc(B.ROLE_NAMES[r.role] || r.role)}</span>`);
+const roleTags = (roles, domains) => (roles.length ? roles.map((r) => roleTag(r, domains)).join('') : '<span class="tag">Employee</span>');
 
 function render(el) {
   const p = state();
@@ -41,7 +47,9 @@ function render(el) {
   $$('[data-pt]', el).forEach((b) => { b.onclick = () => { p.tab = b.dataset.pt; render(el); }; });
   const inv = $('#ppinvite');
   if (inv) inv.onclick = inviteModal;
-  domains();
+  // Role tags name their domain: draw the people again once the domains arrive, whichever
+  // comes back first.
+  if (!p.domains) domains().then(() => { if (p.tab === 'people' && p.users.loaded) drawUsers(); });
   if (p.tab === 'invitations') invitations();
   else if (p.tab === 'links') links();
   else people();
@@ -102,17 +110,36 @@ function drawUsers() {
 async function editModal(user) {
   const doms = await domains();
   const has = (role, domain) => user.roles.some((r) => r.role === role && (domain === undefined || r.domain_id === domain));
+  // The domains they are made owner of directly. Owning a domain owns everything inside it, so
+  // a domain under one of these shows ticked and fixed ("Owned through ..."); a direct grant
+  // already there is kept, not silently dropped.
+  const tree = T.tree(doms);
+  const granted = new Set(user.roles.filter((r) => r.role === 'domain_owner').map((r) => r.domain_id));
   B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="Edit ${esc(user.name)}"><div class="bar"><span>${esc(user.name)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
     <div class="ppwho pphero">${AVATAR(user.name, 'lav', 40)}<span><b>${esc(user.name)}</b><small>${esc(user.email)}</small></span></div>
     <fieldset class="ppfs"><legend class="hsl">Roles</legend>${INVITABLE.map(([k, l]) => `<label class="ppck"><input type="checkbox" data-role="${k}" ${has(k) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</fieldset>
-    <fieldset class="ppfs"><legend class="hsl">Domain owner of</legend>${doms.length ? doms.map((d) => `<label class="ppck"><input type="checkbox" data-domain="${d.id}" ${has('domain_owner', d.id) ? 'checked' : ''}><span>${esc(d.name)}</span></label>`).join('') : '<p class="amute">No domains yet.</p>'}</fieldset>
+    <fieldset class="ppfs ppdoms"><legend class="hsl">Domain owner of</legend>${doms.length ? T.options(tree).map(({ item: d, depth }) => `<label class="ppck ppdom" style="--depth:${depth}"><input type="checkbox" data-domain="${d.id}"><span>${esc(d.name)}<small class="ppthru" hidden></small></span></label>`).join('') : '<p class="amute">No domains yet.</p>'}</fieldset>
     <label class="hsl" for="ppclear">Clearance</label><select id="ppclear" aria-label="Clearance">${B.CLEARANCES.map(([k, l]) => `<option value="${k}" ${user.clearance === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <div class="hse" id="ppe" role="alert"></div>
     <div class="actions"><button type="button" class="btn primary" id="ppsave">Save</button><button type="button" class="btn" data-close-modal>Cancel</button><span class="lsp"></span>${B.sandbox() ? `<button type="button" class="btn ${user.status === 'suspended' ? '' : 'danger-o'}" id="ppstatus">${user.status === 'suspended' ? 'Reactivate' : 'Suspend'}</button>` : ''}</div></div></div>`);
+  /** Each domain box shows its own grant, or, under a granted domain, that it is owned through it. */
+  const syncDomains = () => {
+    $$('[data-domain]').forEach((box) => {
+      const id = box.dataset.domain;
+      const above = T.path(tree, id).slice(0, -1).reverse().find((d) => granted.has(d.id));
+      const hint = box.parentElement.querySelector('.ppthru');
+      box.disabled = !!above;
+      box.checked = !!above || granted.has(id);
+      hint.hidden = !above;
+      hint.textContent = above ? `Owned through ${above.name}` : '';
+    });
+  };
+  $$('[data-domain]').forEach((box) => { box.onchange = () => { if (box.checked) granted.add(box.dataset.domain); else granted.delete(box.dataset.domain); syncDomains(); }; });
+  syncDomains();
   $('#ppsave').onclick = () => B.busy($('#ppsave'), async () => {
     const roles = [
       ...$$('[data-role]:checked').map((c) => ({ role: c.dataset.role, domain_id: null })),
-      ...$$('[data-domain]:checked').map((c) => ({ role: 'domain_owner', domain_id: c.dataset.domain })),
+      ...[...granted].map((id) => ({ role: 'domain_owner', domain_id: id })),
     ];
     const same = roles.length === user.roles.length && roles.every((r) => user.roles.some((x) => x.role === r.role && (x.domain_id || null) === r.domain_id));
     let updated = user;
