@@ -124,12 +124,12 @@ test('an account question is redirected to support', async ({ open, check, seed 
   await checkWidget(page, check, 'bot-account-question');
 });
 
-test('sources that disagree, and questions the help content does not cover, get no answer', async ({ open, check, seed }) => {
+test('questions about pages that are not Public, or that nothing covers, get no answer', async ({ open, check, seed }) => {
   const page = await open(null, demo(seed));
   await openPanel(page);
-  const conflict = await ask(page, seed.bot_questions.conflict);
-  await expect(conflict).toHaveAttribute('data-kind', 'no_answer');
-  await expect(conflict).not.toContainText('7.50');
+  const internal = await ask(page, seed.bot_questions.not_public);
+  await expect(internal).toHaveAttribute('data-kind', 'no_answer');
+  await expect(internal).not.toContainText('dollars');
   const uncovered = await ask(page, seed.bot_questions.not_covered);
   await expect(uncovered).toHaveAttribute('data-kind', 'no_answer');
   await expect(uncovered).toContainText("I couldn't find that in our help content.");

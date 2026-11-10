@@ -42,8 +42,9 @@ test.describe('surfaces follow roles', () => {
     await expect(rail.getByRole('button')).toHaveText(['Audit']);
     await page.getByRole('button', { name: 'Action' }).click();
     await page.getByRole('option', { name: 'Sharing requested' }).click();
-    await expect(page.locator('#audt .dt-r:not(.dt-h)')).toHaveCount(1);
-    await expect(page.locator('#audt .audact')).toHaveText('Sharing requested');
+    // The pending request, and the two the seed made for the Help centre bot's Public pages.
+    await expect(page.locator('#audt .dt-r:not(.dt-h)')).toHaveCount(3);
+    await expect(page.locator('#audt .audact')).toHaveText(Array(3).fill('Sharing requested'));
     await check(page, 'audit-compliance');
     const menu = await profileMenu(page);
     await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toBeVisible();
