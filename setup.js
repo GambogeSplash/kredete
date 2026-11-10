@@ -1,7 +1,8 @@
 /* setup.js: the setup wizard (sandbox spec 4.1, plan C3).
  *
  * Steps: setup code and email; Google OAuth client; sign in with Google; Confluence OAuth
- * client; connect Confluence; pick spaces; first sync. The current step is always derived
+ * client; connect Confluence; pick spaces; first sync, which lasts until every included space
+ * has been read (sync runs spec 3.3). The current step is always derived
  * from API state, never stored in the browser:
  * - before sign-in, from GET /v1/setup/status;
  * - after sign-in (an admin), from /v1/admin/credentials, /connections and /containers.
@@ -17,6 +18,7 @@ const $ = (s, r = document) => r.querySelector(s);
 /** @type {(s: string, r?: ParentNode) => any[]} */
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
+const SYNC = window.SYNC;
 
 const STEPS = [
   ['claim', 'Claim this workspace', 'Setup code and your email'],
@@ -28,6 +30,10 @@ const STEPS = [
   ['sync', 'First sync', 'Brain reads the pages'],
 ];
 const index = (key) => STEPS.findIndex((s) => s[0] === key);
+
+const included = (containers) => containers.filter((c) => c.included);
+/** Each included space's read: the one running, or else the last one finished. */
+const reads = (containers) => included(containers).map((c) => c.active_run || c.last_run);
 
 /** Where setup stands, from the API. */
 async function progress() {
@@ -49,7 +55,8 @@ async function progress() {
   if (!connection || !connection.authorized) return { step: 'connect', connection };
   const containers = (await B.api.get('/admin/containers', { connection_id: connection.id })).items;
   if (!containers.some((c) => c.included)) return { step: 'spaces', connection, containers };
-  if (!connection.last_sync_at) return { step: 'sync', connection, containers };
+  /* Each included space is read by its own run; setup is done once none is still running. */
+  if (included(containers).some((c) => c.active_run && c.active_run.status === 'running')) return { step: 'sync', connection, containers };
   return { step: 'done', connection, containers };
 }
 
@@ -59,7 +66,7 @@ function checklist(current) {
   return `<div class="pvp sup" aria-hidden="true"><div class="pvw sucard"><div class="suh">${ICON('check', 14)}<b>Set up Kredete Brain</b></div><ol class="sul">${STEPS.map(([k, title, sub], i) => `<li class="${i < at ? 'done' : i === at ? 'on' : ''}"><i>${i < at ? ICON('check', 12) : i + 1}</i><span><b>${esc(title)}</b><small>${esc(sub)}</small></span></li>`).join('')}</ol></div><div class="pvcap">${current === 'done' ? 'All set' : `Step ${at + 1} of ${STEPS.length}`}</div></div>`;
 }
 function render(step, left) {
-  const leave = B.S.phase === 'app' && step !== 'done' ? `<button type="button" class="link suleave" id="suleave">Leave setup for now</button>` : '';
+  const leave = B.S.phase === 'app' && step !== 'done' && step !== 'sync' ? `<button type="button" class="link suleave" id="suleave">Leave setup for now</button>` : '';
   A().shell(`${left}${leave}`, checklist(step), step === 'done' ? null : [index(step) + 1, STEPS.length]);
   const l = $('#suleave');
   if (l) l.onclick = () => B.go('/');
@@ -231,28 +238,47 @@ async function spacesStep(p) {
   };
   await load();
 }
-let polling = 0;
+/** Stops watching the sync step's reads; replaced whenever the step starts watching. */
+let unwatch = () => {};
+/** One space's read in the sync step: its name and how its run reads (sync.js). */
+function readRow(container) {
+  const view = SYNC.runView(container.active_run || container.last_run);
+  let state = '';
+  if (view && view.busy) state = `<span class="suspin" aria-hidden="true"></span><span>${esc(view.label)}</span>`;
+  else if (view && view.tag === 'ok') state = `<span class="suok">${ICON('check', 14)}</span><span>${esc(view.label)}</span>`;
+  else if (view) state = `<span class="tag ${view.tag || ''}">${esc(view.label)}</span>${view.detail ? `<span class="sumute">${esc(view.detail)}</span>` : ''}`;
+  return `<li class="surun"><span class="surun-n">${esc(B.containerName(container.path))}</span><span class="surun-s">${state}</span></li>`;
+}
+/** The reads together, then a row per space (spec 3.3). */
+function readsHtml(containers) {
+  const view = SYNC.readsView(reads(containers));
+  const head = view ? `<div class="susynch"><span class="suspin" aria-hidden="true"></span><span>${esc(view.label)}</span></div>` : '';
+  const bar = view && view.fraction !== null
+    ? `<div class="bar" role="progressbar" aria-label="Pages read" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(view.fraction * 100)}" aria-valuetext="${esc(view.label)}"><i style="width:${(view.fraction * 100).toFixed(1)}%"></i></div>`
+    : '';
+  return `${head}${bar}<ul class="suruns" aria-label="Spaces">${included(containers).map(readRow).join('')}</ul>`;
+}
 function syncStep(p) {
-  render('sync', `<h1>Brain is reading your spaces</h1><p class="sub">The first sync takes a few minutes. You can leave this page; it carries on.</p><div class="susync" role="status"><span class="suspin" aria-hidden="true"></span><span id="susyncl">Waiting for the first pages</span></div>${p.connection.last_error ? `<div class="banner bad" id="suerr">${esc(p.connection.last_error)}</div>` : ''}<form id="suf" novalidate>${errorSlot}<button type="submit" class="btn si-btn" id="sugo"><span class="spin" aria-hidden="true"></span><span>Sync now</span></button></form>`);
-  $('#suf').onsubmit = (e) => {
-    e.preventDefault();
-    B.busy($('#sugo'), async () => { await B.api.post(`/admin/connections/${p.connection.id}/sync`); B.toast('Sync started'); }, showError);
+  render('sync', `<h1>Brain is reading your spaces</h1><p class="sub">You can leave this page; it carries on.</p><div class="susync" id="susync" role="status"></div>${p.connection.last_error ? `<div class="banner bad" id="suerr">${esc(p.connection.last_error)}</div>` : ''}<div class="obnav"><button type="button" class="btn si-btn" id="suback">Continue in the background</button></div>`);
+  $('#suback').onclick = () => B.go('/');
+  let shown = '';
+  const draw = () => {
+    const html = readsHtml(p.containers);
+    const box = $('#susync');
+    if (box && html !== shown) { box.innerHTML = html; shown = html; } // unchanged text is not announced again
   };
-  const mine = ++polling;
-  const tick = async () => {
-    if (mine !== polling || B.S.route.surface !== 'setup') return;
-    try {
-      const now = await progress();
-      if (mine !== polling || B.S.route.surface !== 'setup') return;
-      if (now.step !== 'sync') { await show(now); return; }
-      const facets = await B.api.get('/facets');
-      const n = facets.systems.reduce((sum, s) => sum + s.count, 0);
-      const l = $('#susyncl');
-      if (l) l.textContent = n ? `${n} ${n === 1 ? 'page' : 'pages'} read so far` : 'Waiting for the first pages';
-    } catch (error) { /* keep polling; the page shows the last state */ }
-    setTimeout(tick, 4000);
-  };
-  setTimeout(tick, 4000);
+  draw();
+  unwatch = SYNC.watchRuns({
+    runs: reads(p.containers),
+    fetch: async () => {
+      p.containers = (await B.api.get('/admin/containers', { connection_id: p.connection.id })).items;
+      return reads(p.containers);
+    },
+    onUpdate: (runs) => {
+      if (runs.some((r) => r && r.status === 'running')) draw();
+      else show();
+    },
+  });
 }
 async function doneStep() {
   await B.refreshSetupProgress();
@@ -264,7 +290,7 @@ async function doneStep() {
 }
 
 async function show(known) {
-  polling += 1;
+  unwatch();
   let p = known;
   if (!p) {
     try { p = await progress(); }

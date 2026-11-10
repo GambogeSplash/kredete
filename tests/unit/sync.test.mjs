@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
-const { runView, watchRuns } = createRequire(import.meta.url)('../../sync.js');
+const { readsView, runView, watchRuns } = createRequire(import.meta.url)('../../sync.js');
 
 /** A SyncRunOut with every count at zero, overridden by `fields`. */
 const run = (fields = {}) => ({
@@ -81,6 +81,30 @@ describe('runView', () => {
       const { fraction } = runView(input, {});
       if (fraction !== null) assert.ok(fraction >= 0 && fraction <= 1, `${fraction}`);
     }
+  });
+});
+
+describe('readsView', () => {
+  // The setup step's one line over every included space's read (spec 3.3).
+  const reading = (id, total, done, failed = 0) => space({ id, tasks_done: 1, pages_total: total, pages_done: done, pages_failed: failed });
+  const read = (id, total) => spaceFinished({ id, status: 'succeeded', pages_total: total, pages_done: total, updated: total });
+  const busy = { tag: null, detail: null, busy: true };
+  const READS = [
+    ['one space starting to list', [space()], { label: 'Listing pages…', ...busy, fraction: null }],
+    ['one space listing, another reading', [reading('a', 4, 1), space({ id: 'b', pages_total: 30 })], { label: 'Listing pages… 34 so far', ...busy, fraction: null }],
+    ['every space listed', [read('a', 210), reading('b', 96, 78, 2), reading('c', 34, 0)], { label: 'Reading 290 of 340 pages', ...busy, fraction: 290 / 340 }],
+    ['one page in all', [reading('a', 1, 0)], { label: 'Reading 0 of 1 page', ...busy, fraction: 0 }],
+    ['a space that failed to start does not hold the others at listing', [spaceFinished({ id: 'a', status: 'failed', tasks_done: 0, error: 'x' }), reading('b', 9, 3)], { label: 'Reading 3 of 9 pages', ...busy, fraction: 3 / 9 }],
+    ['spaces without a read are left out', [null, undefined, reading('b', 2, 1)], { label: 'Reading 1 of 2 pages', ...busy, fraction: 0.5 }],
+  ];
+  for (const [name, input, expected] of READS) {
+    it(name, () => assert.deepEqual(readsView(input), expected));
+  }
+
+  it('shows nothing once no read is running', () => {
+    assert.equal(readsView([]), null);
+    assert.equal(readsView([null]), null);
+    assert.equal(readsView([read('a', 4), spaceFinished({ id: 'b', status: 'partial', pages_total: 2, pages_done: 1, pages_failed: 1, failing: 1 })]), null);
   });
 });
 

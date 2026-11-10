@@ -51,22 +51,46 @@
   }
 
   /**
-   * Until every feed task is done the page total is unknown, so there is no bar yet and it
-   * never moves backwards (spec 3.1). A space read counts pages while it lists them (spec 3.2).
+   * Whether a running run is still finding its pages: until every feed task (or listing) is
+   * done the page total is unknown, so there is no bar yet and it never moves backwards.
+   * @param {SyncRun} run
+   */
+  const finding = (run) => run.tasks_done < run.tasks_total || run.pages_total === 0;
+  /** @param {SyncRun} run */
+  const processed = (run) => run.pages_done + run.pages_failed;
+  /** @param {number} total pages listed so far */
+  const listing = (total) => (total ? `Listing pages… ${total} so far` : 'Listing pages…');
+
+  /**
+   * A running run (spec 3.1). A space read counts pages while it lists them (spec 3.2).
    * @param {SyncRun} run
    * @param {boolean} space
    * @returns {RunView}
    */
   function running(run, space) {
     const view = { tag: null, detail: null, fraction: null, busy: true };
-    if (run.tasks_done < run.tasks_total || run.pages_total === 0) {
-      if (!space) return { label: 'Checking for changes…', ...view };
-      return { label: run.pages_total ? `Listing pages… ${run.pages_total} so far` : 'Listing pages…', ...view };
-    }
-    const processed = run.pages_done + run.pages_failed;
-    const fraction = Math.min(1, processed / run.pages_total);
-    if (space) return { label: `${processed} of ${run.pages_total}`, ...view, fraction };
-    return { label: `Syncing ${processed} of ${count(run.pages_total, 'page', 'pages')}`, ...view, fraction };
+    if (finding(run)) return { label: space ? listing(run.pages_total) : 'Checking for changes…', ...view };
+    const done = processed(run);
+    const fraction = Math.min(1, done / run.pages_total);
+    if (space) return { label: `${done} of ${run.pages_total}`, ...view, fraction };
+    return { label: `Syncing ${done} of ${count(run.pages_total, 'page', 'pages')}`, ...view, fraction };
+  }
+
+  /**
+   * Several space reads as one line, for the setup step (spec 3.3): "Reading N of M pages"
+   * across them all once every running read has listed its pages, so the bar never moves
+   * backwards; until then the pages found so far. Null once no read is running.
+   * @param {Array<SyncRun | null | undefined>} runs
+   * @returns {RunView | null}
+   */
+  function readsView(runs) {
+    const reads = /** @type {SyncRun[]} */ (runs.filter(Boolean));
+    if (!reads.some(isRunning)) return null;
+    const total = reads.reduce((n, run) => n + run.pages_total, 0);
+    const view = { tag: null, detail: null, fraction: null, busy: true };
+    if (reads.some((run) => isRunning(run) && finding(run))) return { label: listing(total), ...view };
+    const done = reads.reduce((n, run) => n + processed(run), 0);
+    return { label: `Reading ${done} of ${count(total, 'page', 'pages')}`, ...view, fraction: Math.min(1, done / total) };
   }
 
   /**
@@ -186,5 +210,5 @@
     return app && app.S.route.path;
   }
 
-  return { runView, watchRuns };
+  return { readsView, runView, watchRuns };
 });
