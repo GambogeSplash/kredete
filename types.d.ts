@@ -405,6 +405,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/sync-runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run */
+        get: operations["get_run_v1_admin_sync_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/sync-runs/{run_id}/failures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Failures
+         * @description The run's failed pages that no later run has fixed (spec 3.4.1).
+         */
+        get: operations["list_failures_v1_admin_sync_runs__run_id__failures_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/users": {
         parameters: {
             query?: never;
@@ -1065,6 +1102,11 @@ export interface components {
          * @enum {string}
          */
         Authority: "approved" | "unapproved" | "draft";
+        /**
+         * ChangeType
+         * @enum {string}
+         */
+        ChangeType: "content" | "permission" | "delete";
         /** CitationOut */
         CitationOut: {
             authority: components["schemas"]["Authority"];
@@ -1129,6 +1171,7 @@ export interface components {
         };
         /** ConnectionOut */
         ConnectionOut: {
+            active_run: components["schemas"]["SyncRunOut"] | null;
             /** Authorized */
             authorized: boolean;
             /**
@@ -1140,6 +1183,7 @@ export interface components {
             last_error: string | null;
             /** Last Permission Sync At */
             last_permission_sync_at: string | null;
+            last_run: components["schemas"]["SyncRunOut"] | null;
             /** Last Sync At */
             last_sync_at: string | null;
             /** Site */
@@ -1163,6 +1207,7 @@ export interface components {
         ContainerKind: "shared_drive" | "folder" | "space";
         /** ContainerOut */
         ContainerOut: {
+            active_run: components["schemas"]["SyncRunOut"] | null;
             /**
              * Connection Id
              * Format: uuid
@@ -1185,6 +1230,7 @@ export interface components {
             /** Indexer Verified At */
             indexer_verified_at: string | null;
             kind: components["schemas"]["ContainerKind"];
+            last_run: components["schemas"]["SyncRunOut"] | null;
             /** Owner User Id */
             owner_user_id: string | null;
             /** Path */
@@ -1641,6 +1687,13 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** Page[SyncRunFailureOut] */
+        Page_SyncRunFailureOut_: {
+            /** Items */
+            items: components["schemas"]["SyncRunFailureOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** PolicyOut */
         PolicyOut: {
             /** Name */
@@ -1820,6 +1873,70 @@ export interface components {
             /** Team */
             team?: string | null;
         };
+        /** SyncRunFailureOut */
+        SyncRunFailureOut: {
+            change: components["schemas"]["ChangeType"];
+            /** Error */
+            error: string | null;
+            /** External Id */
+            external_id: string;
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string | null;
+        };
+        /** SyncRunOut */
+        SyncRunOut: {
+            /**
+             * Connection Id
+             * Format: uuid
+             */
+            connection_id: string;
+            /** Container Id */
+            container_id: string | null;
+            /** Error */
+            error: string | null;
+            /** Failing */
+            failing: number;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Pages Done */
+            pages_done: number;
+            /** Pages Failed */
+            pages_failed: number;
+            /** Pages Total */
+            pages_total: number;
+            /** Removed */
+            removed: number;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            status: components["schemas"]["SyncRunStatus"];
+            /** Tasks Done */
+            tasks_done: number;
+            /** Tasks Total */
+            tasks_total: number;
+            trigger: components["schemas"]["SyncRunTrigger"];
+            /** Updated */
+            updated: number;
+        };
+        /**
+         * SyncRunStatus
+         * @enum {string}
+         */
+        SyncRunStatus: "running" | "succeeded" | "partial" | "failed";
+        /**
+         * SyncRunTrigger
+         * @enum {string}
+         */
+        SyncRunTrigger: "manual" | "space_read";
         /** TurnOut */
         TurnOut: {
             answer: components["schemas"]["AnswerOut"] | null;
@@ -2225,7 +2342,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["SyncRunOut"];
                 };
             };
             /** @description Validation Error */
@@ -2657,6 +2774,71 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_v1_admin_sync_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_failures_v1_admin_sync_runs__run_id__failures_get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_SyncRunFailureOut_"];
+                };
             };
             /** @description Validation Error */
             422: {
