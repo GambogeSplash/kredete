@@ -139,3 +139,44 @@ test('spaces: when Confluence cannot be read, the known spaces stay usable', asy
   await page.getByRole('button', { name: 'Include 3 spaces' }).click();
   await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible();
 });
+
+// Sync runs plan C0.1: the bug this scenario reproduces is that the sync step moves on to
+// "Brain is ready" as soon as the connection's first poll finishes, while the included spaces
+// are still being read. On the e2e stack the worker reads them from the fake source (plan S0),
+// slowed down here so the reading takes a while; the fake source's page list says which pages
+// Broth has actually stored. test.fail() marks the known bug: plan task C3.2 drives the step
+// from sync runs and removes the marker.
+test('setup says Brain is ready only once the included spaces are read', async ({ open }) => {
+  test.fail(); // Known bug, fixed by sync runs plan C3.2, which removes this line.
+  test.setTimeout(150_000);
+  const seeded = await seedState('spaces');
+  const connection = seeded.connection_id;
+  const page = await open('admin', '/setup', { token: seeded.people.admin.refresh_tokens[0] });
+  const api = (method, path, body) => page.evaluate(([m, p, b]) => window.BRAIN.api[m](p, b), [method, path, body]);
+  const unread = async () => (await api('get', '/sandbox/fake-source/pages', { connection_id: connection }))
+    .items.filter((p) => !p.stored).map((p) => p.external_id).sort();
+  await api('post', '/sandbox/fake-source/configure', { connection_id: connection, delay_ms: 4000 });
+
+  await page.getByRole('button', { name: 'Include 3 spaces' }).click();
+  await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible();
+  // The connection's first poll, as the scheduler would run it (the e2e stack has none). A
+  // first poll only records where the change feed starts; it reads no pages.
+  await api('post', `/admin/connections/${connection}/sync`);
+
+  const ready = page.getByRole('heading', { name: 'Brain is ready' });
+  const deadline = Date.now() + 120_000;
+  for (;;) {
+    const shown = await ready.isVisible();
+    const left = await unread();
+    if (shown) {
+      expect(left, '"Brain is ready" is shown while these pages are still unread').toEqual([]);
+      break;
+    }
+    if (!left.length) {
+      await expect(ready, 'every page is read, so setup is done').toBeVisible({ timeout: 30_000 });
+      break;
+    }
+    expect(Date.now() < deadline, `pages still unread after two minutes: ${left.join(', ')}`).toBe(true);
+    await page.waitForTimeout(250);
+  }
+});
