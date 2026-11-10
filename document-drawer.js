@@ -3,8 +3,10 @@
  * GET /v1/documents/{id} for the drawer. "Open in source" replaces "Request access": people ask
  * for access in Confluence or Drive. A document can be proposed for wider sharing (a promotion);
  * admins and compliance see its lineage. Labels that Broth ignored or adjusted show as Label
- * problems on the document (labelling spec 4.1). The Library, Ask, Governance and search all
- * open the same drawer (window.DOCUMENTS.openDocument).
+ * problems on the document (labelling spec 4.1). Its domain shows as a breadcrumb of Library
+ * folders, and its Location (where it sits in the source) filters the whole Library (nested
+ * domains spec 4.3). The Library, Ask, Governance and search all open the same drawer
+ * (window.DOCUMENTS.openDocument).
  */
 (() => {
 'use strict';
@@ -26,7 +28,12 @@ function authorityTag(d) {
   }
   return `<span class="tag warn">${d.authority === 'draft' ? 'Draft' : 'Not approved'}</span>`;
 }
-const domainLabel = (d) => (d.domain ? `<span class="llab"><i style="background:${domainCol(d.domain.slug)}"></i>${esc(d.domain.name)}</span>` : '');
+/** The full path of a document's domain (nested domains spec 4.3): Payments / Payouts. */
+const domainPath = (d) => (d.domain ? d.domain.path.map((c) => c.name).join(' / ') : '');
+/** A document's domain as a label: its own name, with the full path in the tooltip. */
+const domainLabel = (d) => (d.domain ? `<span class="llab" title="${esc(domainPath(d))}"><i style="background:${domainCol(d.domain.slug)}"></i>${esc(d.domain.name)}</span>` : '');
+/** A document's domain as a breadcrumb of folder links. */
+const domainCrumbs = (d) => d.domain.path.map((c) => `<a href="/library/${esc(c.slug)}" data-link>${esc(c.name)}</a>`).join('<i aria-hidden="true">/</i>');
 
 /* ---------- the document drawer ---------- */
 async function openDocument(id, opts) {
@@ -50,16 +57,16 @@ async function openDocument(id, opts) {
   const canWiden = d.scope !== 'public';
   drawer.innerHTML = `<div class="sv"><div class="sv-top"><span class="sv-sys">${B.srcIcon(d.system, 20)}${esc(B.systemName(d.system))}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div>
     <div class="sv-body"><h2>${esc(d.title)}</h2>
-      <div class="sv-tags">${authorityTag(d) || '<span class="tag ok">Approved</span>'}<span class="tag ${scope[1]}">${esc(scope[0])}</span>${d.sensitivity !== 'internal' ? `<span class="tag">${esc(B.clearanceName(d.sensitivity))}</span>` : ''}${domainLabel(d)}</div>
+      <div class="sv-tags">${authorityTag(d) || '<span class="tag ok">Approved</span>'}<span class="tag ${scope[1]}">${esc(scope[0])}</span>${d.sensitivity !== 'internal' ? `<span class="tag">${esc(B.clearanceName(d.sensitivity))}</span>` : ''}</div>
       ${labelProblems(d)}
       ${c && c.quote ? `<blockquote class="sv-q">${esc(c.quote)}</blockquote>` : ''}
       ${d.owner ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b>${esc(d.owner.name)}</b><small>${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>` : ''}
-      <dl class="kv svkv">${d.path ? `<dt>Folder</dt><dd><button type="button" class="link" id="dfolder">${esc(d.path)}</button></dd>` : ''}<dt>Kind</dt><dd>${esc(kindName(d.kind))}</dd>${d.review_due_at ? `<dt>Review due</dt><dd>${B.when(d.review_due_at, B.fmtDate(d.review_due_at, true))}</dd>` : ''}${!d.owner && d.last_verified_at ? `<dt>Verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}</dl>
+      <dl class="kv svkv">${d.domain ? `<dt>Domain</dt><dd class="svcrumb">${domainCrumbs(d)}</dd>` : ''}${d.path ? `<dt>Location</dt><dd><button type="button" class="link" id="dlocation">${esc(d.path)}</button></dd>` : ''}<dt>Kind</dt><dd>${esc(kindName(d.kind))}</dd>${d.review_due_at ? `<dt>Review due</dt><dd>${B.when(d.review_due_at, B.fmtDate(d.review_due_at, true))}</dd>` : ''}${!d.owner && d.last_verified_at ? `<dt>Verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}</dl>
     </div>
     <div class="sv-act"><a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${B.srcIcon(d.system, 16)}Open in ${esc(B.systemName(d.system))}${ICON('ext', 14)}</a>${canWiden ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}${lineage ? '<button type="button" class="btn" id="dlineage">Lineage</button>' : ''}</div></div>`;
   $('[data-close-drawer]', drawer).onclick = B.closeDrawer;
-  const folder = $('#dfolder');
-  if (folder) folder.onclick = () => { B.closeDrawer(); window.LIBRARY.showLocation(d.path); };
+  const where = $('#dlocation');
+  if (where) where.onclick = () => { B.closeDrawer(); window.LIBRARY.showLocation(d.path); };
   const share = $('#dshare');
   if (share) share.onclick = () => shareModal(d);
   const lin = $('#dlineage');

@@ -153,6 +153,20 @@ test('feedback, Report to owner and Regenerate round-trip and survive a reload',
   await expect(page.locator('#thread article')).toHaveCount(1);
 });
 
+test("a cited page's Domain breadcrumb opens its folder in the Library (nested domains spec 4.3)", async ({ open, seed }) => {
+  const page = await open('employee', '/');
+  await ask(page, seed.questions.answered.question);
+  await lastAnswer(page).locator('.ans .cite').click();
+  const sources = phone(page) ? page.locator('#drawer') : page.locator('#rsrc');
+  await sources.locator('.cxs').filter({ hasText: 'Transfer limits policy' }).click();
+  const drawer = page.locator('#drawer');
+  await expect(drawer.getByRole('heading', { name: 'Transfer limits policy' })).toBeVisible();
+  await expect(drawer.locator('.svcrumb a')).toHaveText(['Payments', 'Payouts', 'Cross-border']);
+  await drawer.locator('.svcrumb').getByRole('link', { name: 'Payouts' }).click();
+  await expect(page).toHaveURL(/\/library\/payouts$/);
+  await expect(page.locator('#libbody [data-folder]')).toHaveText([/Cross-border/]);
+});
+
 test('the sources panel shows the citations and sets what the next question reads', async ({ open, check, seed }) => {
   const page = await open('employee', '/');
   await ask(page, seed.questions.answered.question);

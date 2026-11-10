@@ -107,7 +107,7 @@ test('every section a screen links to exists', async ({ open }) => {
 });
 
 test("a page's label problems link to what they mean", async ({ open }) => {
-  const page = await open('employee', '/library', {
+  const page = await open('employee', '/library/cards', {
     before: (p) => p.route('**/v1/documents/*', async (route) => {
       const response = await route.fetch();
       const body = await response.json();
