@@ -1,9 +1,9 @@
 // Unit tests for sync.js (sync runs spec 3.1, 3.2 and 3.4.1): how a run reads, and the poller.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { describe, it } from 'node:test';
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
-const { runView } = createRequire(import.meta.url)('../../sync.js');
+const { runView, watchRuns } = createRequire(import.meta.url)('../../sync.js');
 
 /** A SyncRunOut with every count at zero, overridden by `fields`. */
 const run = (fields = {}) => ({
@@ -80,6 +80,161 @@ describe('runView', () => {
     for (const [, input] of CASES) {
       const { fraction } = runView(input, {});
       if (fraction !== null) assert.ok(fraction >= 0 && fraction <= 1, `${fraction}`);
+    }
+  });
+});
+
+describe('watchRuns', () => {
+  beforeEach(() => mock.timers.enable({ apis: ['setTimeout'] }));
+  afterEach(() => mock.timers.reset());
+
+  /** Lets pending promise callbacks run (setImmediate is not faked). */
+  const settle = () => new Promise((resolve) => setImmediate(resolve));
+  /** Advances the fake clock by `ms`, then lets the poll it triggered finish. */
+  const wait = async (ms) => {
+    mock.timers.tick(ms);
+    await settle();
+  };
+  const active = run({ id: 'a' });
+  const done = finished({ id: 'a', status: 'succeeded' });
+
+  /** A watcher whose fetch answers from `answers` in order (an Error rejects) and records calls. */
+  function watch(answers, options = {}) {
+    const { runs = [active] } = options;
+    const route = 'route' in options ? options.route : () => '/admin/connectors';
+    const updates = [];
+    let fetches = 0;
+    const stop = watchRuns({
+      runs,
+      fetch: async () => {
+        const next = answers[Math.min(fetches++, answers.length - 1)];
+        if (next instanceof Error) throw next;
+        return next;
+      },
+      onUpdate: (runs, finished) => updates.push({ runs, finished }),
+      route,
+    });
+    return { stop, updates, fetches: () => fetches };
+  }
+
+  it('does not poll when no run is running', async () => {
+    const w = watch([[done]], { runs: [done, null] });
+    await wait(60_000);
+    assert.equal(w.fetches(), 0);
+    assert.deepEqual(w.updates, []);
+  });
+
+  it('polls every 2 seconds while a run is running and stops once none is', async () => {
+    const w = watch([[active, null], [active, null], [done, null]]);
+    await wait(1_999);
+    assert.equal(w.fetches(), 0);
+    await wait(1);
+    assert.equal(w.fetches(), 1);
+    assert.deepEqual(w.updates[0], { runs: [active, null], finished: [] });
+    await wait(2_000);
+    assert.equal(w.fetches(), 2);
+    await wait(2_000);
+    assert.equal(w.fetches(), 3);
+    assert.deepEqual(w.updates[2], { runs: [done, null], finished: [done] });
+    await wait(60_000);
+    assert.equal(w.fetches(), 3);
+  });
+
+  it('reports as finished only runs it saw running', async () => {
+    const other = finished({ id: 'b', status: 'partial', failing: 1 });
+    const w = watch([[done, other]], { runs: [active, other] });
+    await wait(2_000);
+    assert.deepEqual(w.updates, [{ runs: [done, other], finished: [done] }]);
+  });
+
+  it('keeps polling for a run that starts while it watches', async () => {
+    const second = run({ id: 'b' });
+    const secondDone = finished({ id: 'b', status: 'succeeded' });
+    const w = watch([[done, second], [done, secondDone]]);
+    await wait(2_000);
+    assert.deepEqual(w.updates[0].finished, [done]);
+    await wait(2_000);
+    assert.deepEqual(w.updates[1].finished, [secondDone]);
+    await wait(60_000);
+    assert.equal(w.fetches(), 2);
+  });
+
+  it('stops when told to, ignoring a poll already in flight', async () => {
+    let answer;
+    const updates = [];
+    const stop = watchRuns({
+      runs: [active],
+      fetch: () => new Promise((resolve) => { answer = resolve; }),
+      onUpdate: (runs) => updates.push(runs),
+      route: () => '/admin/connectors',
+    });
+    await wait(2_000);
+    stop();
+    answer([active]);
+    await wait(60_000);
+    assert.deepEqual(updates, []);
+  });
+
+  it('stops when the route changes', async () => {
+    let path = '/admin/connectors';
+    const w = watch([[active]], { route: () => path });
+    await wait(2_000);
+    assert.equal(w.fetches(), 1);
+    path = '/admin/people';
+    await wait(60_000);
+    assert.equal(w.fetches(), 1);
+    assert.equal(w.updates.length, 1);
+  });
+
+  it('drops a poll that returns after the route changed', async () => {
+    let path = '/setup';
+    let answer;
+    const updates = [];
+    watchRuns({
+      runs: [active],
+      fetch: () => new Promise((resolve) => { answer = resolve; }),
+      onUpdate: (runs) => updates.push(runs),
+      route: () => path,
+    });
+    await wait(2_000);
+    path = '/';
+    answer([done]);
+    await settle();
+    assert.deepEqual(updates, []);
+  });
+
+  it('backs off to 10 seconds after 3 errors in a row and recovers after a success', async () => {
+    const failure = new Error('offline');
+    const w = watch([failure, failure, failure, failure, [active], [active], [done]]);
+    await wait(2_000);
+    await wait(2_000);
+    await wait(2_000);
+    assert.equal(w.fetches(), 3);
+    await wait(9_999);
+    assert.equal(w.fetches(), 3);
+    await wait(1);
+    assert.equal(w.fetches(), 4);
+    await wait(10_000);
+    assert.equal(w.fetches(), 5);
+    assert.equal(w.updates.length, 1);
+    await wait(2_000);
+    assert.equal(w.fetches(), 6);
+    await wait(2_000);
+    assert.equal(w.fetches(), 7);
+    assert.deepEqual(w.updates.at(-1).finished, [done]);
+  });
+
+  it('follows the page route by default', async () => {
+    globalThis.BRAIN = { S: { route: { path: '/admin/connectors' } } };
+    try {
+      const w = watch([[active]], { route: undefined });
+      await wait(2_000);
+      assert.equal(w.fetches(), 1);
+      globalThis.BRAIN.S.route.path = '/library';
+      await wait(60_000);
+      assert.equal(w.fetches(), 1);
+    } finally {
+      delete globalThis.BRAIN;
     }
   });
 });

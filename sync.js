@@ -110,5 +110,81 @@
     return { label: space ? 'Read failed' : 'Sync failed', tag: 'bad', detail: run.error || null, ...view };
   }
 
-  return { runView };
+  /**
+   * @typedef {object} WatchOptions
+   * @property {Array<SyncRun | null | undefined>} runs the runs the page shows now
+   * @property {() => Promise<Array<SyncRun | null | undefined>>} fetch reads the runs again
+   * @property {(runs: Array<SyncRun | null | undefined>, finished: SyncRun[]) => void} onUpdate
+   *   called after every successful read; `finished` holds the runs this watcher saw running
+   *   that have since finished, each reported once (for completion toasts)
+   * @property {() => unknown} [route] the page the watcher belongs to; it stops once this
+   *   returns something else (default: the app's route path)
+   * @property {number} [interval] milliseconds between reads (default 2000)
+   * @property {number} [backoff] milliseconds between reads after 3 failed reads in a row
+   *   (default 10000)
+   */
+
+  /** @param {SyncRun | null | undefined} run */
+  const isRunning = (run) => !!run && run.status === 'running';
+
+  /**
+   * Re-reads runs while any of them is running, and stops once none is, when the page
+   * changes, or when the returned function is called (spec 6). A read that fails is retried;
+   * after 3 failures in a row the watcher slows down until a read succeeds again.
+   * @param {WatchOptions} options
+   * @returns {() => void} stops watching
+   */
+  function watchRuns({ runs, fetch, onUpdate, route = appRoute, interval = 2000, backoff = 10000 }) {
+    const page = route();
+    /** Ids of the runs seen running and not yet reported finished. */
+    const seen = new Set(runs.filter(isRunning).map((run) => /** @type {SyncRun} */ (run).id));
+    let stopped = seen.size === 0;
+    /** @type {ReturnType<typeof setTimeout> | undefined} */
+    let timer;
+    let errors = 0;
+    const live = () => !stopped && route() === page;
+    /** @param {number} ms */
+    const later = (ms) => { timer = setTimeout(tick, ms); };
+
+    async function tick() {
+      if (!live()) return;
+      /** @type {Array<SyncRun | null | undefined>} */
+      let latest;
+      try {
+        latest = await fetch();
+      } catch (error) {
+        if (!live()) return;
+        errors += 1;
+        later(errors >= 3 ? backoff : interval);
+        return;
+      }
+      if (!live()) return;
+      errors = 0;
+      /** @type {SyncRun[]} */
+      const finished = [];
+      for (const run of latest) {
+        if (!run) continue;
+        if (isRunning(run)) seen.add(run.id);
+        else if (seen.delete(run.id)) finished.push(run);
+      }
+      const more = latest.some(isRunning);
+      if (!more) stopped = true;
+      onUpdate(latest, finished);
+      if (more) later(interval);
+    }
+
+    if (!stopped) later(interval);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }
+
+  /** The app's current route path (app.js), or undefined outside the app. */
+  function appRoute() {
+    const app = /** @type {any} */ (globalThis).BRAIN;
+    return app && app.S.route.path;
+  }
+
+  return { runView, watchRuns };
 });
