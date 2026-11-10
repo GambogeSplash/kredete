@@ -2538,6 +2538,7 @@ export interface operations {
                 document_id?: string | null;
                 policy?: string | null;
                 action?: string | null;
+                bot_id?: string | null;
                 cursor?: string | null;
                 limit?: number;
             };

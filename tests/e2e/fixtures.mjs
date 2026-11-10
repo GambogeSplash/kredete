@@ -20,6 +20,10 @@ import { BASE, ROOT, SESSIONS, STATE, WORKERS, loadSeed } from './stack.mjs';
 
 const VERCEL = JSON.parse(readFileSync(resolve(ROOT, 'vercel.json'), 'utf8'));
 const HEADERS = Object.fromEntries(VERCEL.headers.find((h) => h.source === '/(.*)').headers.map((h) => [h.key, h.value]));
+// Vercel applies every matching rule, a later one overriding a key; only the demo page has its own.
+const PAGE_HEADERS = Object.fromEntries(
+  VERCEL.headers.filter((h) => h.source !== '/(.*)').map((h) => [h.source, Object.fromEntries(h.headers.map((x) => [x.key, x.value]))]),
+);
 const AUDIT = readFileSync(resolve(ROOT, 'tools/audit.js'), 'utf8');
 const SCREENSHOT_CSS = resolve(ROOT, 'tests/e2e/screenshot.css');
 const FONTS = resolve(ROOT, 'tests/e2e/fonts');
@@ -64,7 +68,8 @@ async function serveFonts(context) {
 async function withVercelHeaders(context) {
   await context.route((url) => url.origin === ORIGIN && !url.pathname.startsWith('/v1/'), handle(async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, headers: { ...response.headers(), ...HEADERS } });
+    const page = PAGE_HEADERS[new URL(route.request().url()).pathname] || {};
+    await route.fulfill({ response, headers: { ...response.headers(), ...HEADERS, ...page } });
   }));
 }
 

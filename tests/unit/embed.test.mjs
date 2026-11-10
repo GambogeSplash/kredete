@@ -143,7 +143,7 @@ describe('the store', () => {
 describe('the views', () => {
   it('render an answer with its markers, numbered sources and thumbs', () => {
     const html = messageView({ role: 'bot', reply: ANSWERED, turnId: 't1', vote: null }, SETTINGS, 3);
-    assert.match(html, /\$5,000 per day <sup class="ref">\[1\]<\/sup>/);
+    assert.match(html, /\$5,000 per day<sup class="ref">\[1\]<\/sup>\./);
     assert.match(html, /<li value="1">Transfer limits policy<\/li>/);
     assert.doesNotMatch(html, /<a href/); // a source without a public URL is a title only
     assert.match(html, /data-vote="up" aria-pressed="false" aria-label="Helpful"/);

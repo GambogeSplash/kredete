@@ -290,7 +290,7 @@
   }
 
   /** Sentence text, with its [n] markers set apart. @param {string} text */
-  const withMarkers = (text) => esc(text).replace(/\[(\d+)\]/g, (_, n) => `<sup class="ref">[${n}]</sup>`);
+  const withMarkers = (text) => esc(text).replace(/\s*\[(\d+)\]/g, (_, n) => `<sup class="ref">[${n}]</sup>`);
 
   /**
    * One message of the transcript.
@@ -496,9 +496,19 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
     const persist = () => store.save({ conversation: state.conversation, messages: state.messages });
     const input = () => /** @type {HTMLTextAreaElement | null} */ (shadow.querySelector('textarea'));
 
+    /** A selector for the focused control, so focus survives the next render. */
+    function focusedSelector() {
+      const active = /** @type {HTMLElement | null} */ (shadow.activeElement);
+      if (!active) return null;
+      if (active.tagName === 'TEXTAREA') return 'textarea';
+      const data = Object.entries(active.dataset).map(([k, v]) => `[data-${k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}="${CSS.escape(v || '')}"]`);
+      return data.length ? data.join('') : null;
+    }
+
     function render({ focusInput = false } = {}) {
       const draft = input();
       const text = draft ? draft.value : '';
+      const focused = focusedSelector();
       const label = state.open ? COPY.close : COPY.open;
       const launcher = `<button type="button" class="launcher" data-action="toggle" aria-expanded="${state.open}" aria-label="${esc(label)}">${state.open ? ICONS.close : ICONS.chat}</button>`;
       rootEl.innerHTML = (state.open ? panelView(settings, { ...state, started: started() }) : '') + launcher;
@@ -508,7 +518,12 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
       if (field) field.value = text;
       const log = shadow.querySelector('.log');
       if (log) log.scrollTop = log.scrollHeight;
+      // Keep keyboard focus where it was; if that control is gone (a vote turned into thanks),
+      // fall back to the question box rather than dropping focus onto the page.
+      const again = focused ? /** @type {HTMLElement | null} */ (shadow.querySelector(focused)) : null;
       if (focusInput && field && !field.disabled) field.focus();
+      else if (again) again.focus();
+      else if (focused && field && !field.disabled) field.focus();
     }
 
     function open() {
