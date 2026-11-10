@@ -176,7 +176,7 @@ const ROUTES = [
   { re: /^\/$/, surface: 'ask' },
   { re: /^\/c\/([0-9a-f-]{36})$/i, surface: 'ask', keys: ['id'] },
   { re: /^\/chats$/, surface: 'chats' },
-  { re: /^\/library$/, surface: 'library' },
+  { re: /^\/library(?:\/([a-z0-9-]+))?$/, surface: 'library', keys: ['domain'] },
   { re: /^\/governance$/, surface: 'governance' },
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
   { re: /^\/admin(?:\/(connectors|people|domains|audit))?$/, surface: 'admin', keys: ['tab'], allow: () => hasRole('admin', 'compliance') },
@@ -208,6 +208,15 @@ function go(path, opts) {
   route();
 }
 window.addEventListener('popstate', () => route());
+/* Links marked data-link navigate inside the app, wherever a screen, drawer or modal renders
+   them; a modified click still opens a new tab. */
+document.addEventListener('click', (e) => {
+  const a = e.target instanceof Element ? e.target.closest('a[data-link]') : null;
+  if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+  e.preventDefault();
+  closeDrawer(); closeModal();
+  go(a.getAttribute('href'));
+});
 
 let lastSurface = null;
 function route() {
@@ -222,7 +231,8 @@ function route() {
   const found = match(path);
   if (!found || (found.allow && !found.allow())) { go('/', { replace: true }); return; }
   if (found.surface === 'setup' && S.phase === 'app' && !(isAdmin() && sandbox())) { go('/', { replace: true }); return; }
-  S.route = { surface: found.surface, params: found.params, path };
+  // `from` is the surface shown before this one, so a surface can tell arriving from moving within it.
+  S.route = { surface: found.surface, params: found.params, path, from: lastSurface };
   const moved = lastSurface !== null && lastSurface !== found.surface;
   lastSurface = found.surface;
   closeDrawer(); closeModal();
@@ -548,11 +558,13 @@ function setCrumb() {
   $('#crumb').innerHTML = `<span>${c[0]}</span><i>›</i><span class="cur">${esc(label)}</span><span class="lsp"></span><button type="button" class="lib" id="ccopy" aria-label="Copy link">${ICON('link', 16)}</button>`;
   $('#ccopy').onclick = async () => { try { await navigator.clipboard.writeText(location.href); } catch (e) { /* blocked */ } toast('Link copied'); };
 }
+/** The phone top bar's title: what the surface names this screen (S.route.title, such as a
+ *  Library folder), else the surface's own name. */
 function mbTitle() {
   const t = $('#mbtitle');
   if (!t) return;
   const names = { library: 'Library', governance: 'Governance', docs: 'Docs', account: 'Account', chats: 'Chats', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
-  t.textContent = names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
+  t.textContent = S.route.title || names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
 }
 
 /* ---------- sidebar collapse and the phone menu ---------- */

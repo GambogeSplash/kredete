@@ -49,17 +49,9 @@ const standalone = () => B.S.phase !== 'app';
 /** A small "How this works" link to a section; `newTab` keeps a wizard's progress. */
 function docsLink(name, text, newTab) {
   const target = DOCS[name];
-  const attrs = newTab ? 'target="_blank" rel="noopener"' : 'data-docs-link';
+  const attrs = newTab ? 'target="_blank" rel="noopener"' : 'data-link';
   return `<a class="dclink" href="/docs/${target}" ${attrs}>${ICON('book', 14)}<span>${esc(text || 'How this works')}</span></a>`;
 }
-/* Links marked data-docs-link navigate inside the app, wherever a screen renders them. */
-document.addEventListener('click', (e) => {
-  const a = e.target instanceof Element ? e.target.closest('a[data-docs-link]') : null;
-  if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
-  e.preventDefault();
-  B.closeDrawer(); B.closeModal();
-  B.go(a.getAttribute('href'));
-});
 
 /* ---------- the audience filter ---------- */
 function storedFilter() {
@@ -83,7 +75,7 @@ function remember(value) {
 function frame(inner) {
   if (!standalone()) return inner;
   const back = B.S.phase === 'setup' ? ['/setup', 'Back to setup'] : ['/signin', 'Back to sign in'];
-  return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/docs" data-docs-link><span class="pvk" aria-hidden="true">K</span><b>Kredete Broth</b><span>Docs</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-docs-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
+  return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/docs" data-link><span class="pvk" aria-hidden="true">K</span><b>Kredete Broth</b><span>Docs</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
 }
 function paint(inner) {
   const app = $('#app');
@@ -138,7 +130,7 @@ function drawCards(filter) {
   }
   const items = s.index.filter((a) => !filter || a.audiences.includes(filter));
   grid.innerHTML = items.length
-    ? items.map((a) => `<a class="dccard" href="/docs/${esc(a.slug)}" data-docs-link><b>${esc(a.title)}</b><p>${esc(a.summary)}</p><span class="dctags">${a.audiences.map((x) => `<span class="tag">${esc(AUDIENCE_NAME[x] || x)}</span>`).join('')}</span></a>`).join('')
+    ? items.map((a) => `<a class="dccard" href="/docs/${esc(a.slug)}" data-link><b>${esc(a.title)}</b><p>${esc(a.summary)}</p><span class="dctags">${a.audiences.map((x) => `<span class="tag">${esc(AUDIENCE_NAME[x] || x)}</span>`).join('')}</span></a>`).join('')
     : B.emptyBlock('Nothing for this audience yet', 'Choose All to see every article.');
 }
 
@@ -155,11 +147,11 @@ async function article(slug) {
   if (B.S.route.surface !== 'docs' || B.S.route.params.slug !== slug) return;
   if (result.error) drawFailure(slug, result.error); else drawArticle(result);
 }
-const backLink = () => `<a class="dcback" href="/docs" data-docs-link>${ICON('chevr', 14)}<span>All docs</span></a>`;
+const backLink = () => `<a class="dcback" href="/docs" data-link>${ICON('chevr', 14)}<span>All docs</span></a>`;
 function drawFailure(slug, error) {
   setTitle('Docs');
   if (error.status === 404) {
-    paint(`<div class="pg dc dcart">${backLink()}${B.emptyBlock("This article doesn't exist", 'It may have moved. The contents list every article.', '<a class="btn sm" href="/docs" data-docs-link>See all docs</a>')}</div>`);
+    paint(`<div class="pg dc dcart">${backLink()}${B.emptyBlock("This article doesn't exist", 'It may have moved. The contents list every article.', '<a class="btn sm" href="/docs" data-link>See all docs</a>')}</div>`);
     return;
   }
   paint(`<div class="pg dc dcart">${backLink()}${B.errorBlock(error, 'dcretry')}</div>`);
