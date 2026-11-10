@@ -4,7 +4,7 @@
 //    in vercel.json, and the policy allows no hash that is not used.
 // 2. The policy and the other security headers match the spec exactly.
 // 3. types.d.ts matches the OpenAPI document, when the document is available.
-// 4. No em dash anywhere in the client's own text files, and no inline event handler
+// 4. No em dash and no old product name ("Brain") anywhere in the client's own text files, and no inline event handler
 //    attributes (the policy would block them).
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
@@ -108,6 +108,8 @@ async function checkText() {
   for (const file of await textFiles()) {
     const text = await read(file);
     if (text.includes('\u2014')) failures.push(`${file}: contains an em dash; use "-"`);
+    // The product is Broth; "Brain" was its old name (identifiers such as BRAIN and brain-* keys are not names).
+    if (file !== 'tools/check.mjs' && /\bBrain\b/.test(text)) failures.push(`${file}: says "Brain"; the product is called Broth`);
     if (/\.(html|js)$/.test(file) && !file.startsWith('tests/') && !file.startsWith('tools/')) {
       const handler = text.match(/<[a-z][^>]*\son[a-z]+\s*=\s*["']/i);
       if (handler) failures.push(`${file}: inline event handler attribute "${handler[0]}" is blocked by the CSP`);

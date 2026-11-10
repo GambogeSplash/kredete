@@ -1,7 +1,7 @@
 {
   "name": "kredete-brain-client",
   "private": true,
-  "description": "Kredete Brain web client. Served as plain files; this package only holds the developer tooling.",
+  "description": "Kredete Broth web client. Served as plain files; this package only holds the developer tooling.",
   "scripts": {
     "types": "node tools/types.mjs",
     "check": "tsc -p tsconfig.json && tsc -p tsconfig.ui.json && tsc -p tools/tsconfig.json && node tools/check.mjs",

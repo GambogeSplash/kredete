@@ -189,7 +189,7 @@ test('each space being read shows its own progress, and a changed default reads 
   await drawer.getByRole('button', { name: 'Default authority' }).click();
   await page.getByRole('option', { name: 'Draft' }).click();
   await drawer.getByRole('button', { name: 'Save' }).click();
-  await expect(toast(page)).toHaveText('Saved. Brain re-reads this space now.');
+  await expect(toast(page)).toHaveText('Saved. Broth re-reads this space now.');
   await expect(spaceRun(page, 'Payments (PAY)')).toHaveText(/^(Listing pages…|[0-3] of 4)$/);
   await expect(spaceRun(page, 'Payments (PAY)')).toHaveText('4 pages', { timeout: 60_000 });
 });

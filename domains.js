@@ -38,7 +38,7 @@ function forgetCaches() {
 }
 
 function render(el) {
-  el.innerHTML = `<p class="sub dmintro">A domain groups pages by subject, such as Payments or Cards. Give a page its domain with the label shown next to each one, or set a space's default domain in Connectors.</p><div class="pphead"><span class="lsp"></span><button type="button" class="btn primary sm" id="dmnew">New domain</button></div><div class="dt dmdt" style="--cols:minmax(0,1.3fr) minmax(0,1.5fr) minmax(0,1.3fr) 64px 76px" id="dmlist"></div>`;
+  el.innerHTML = `<p class="sub dmintro">A domain groups pages by subject, such as Payments or Cards. Give a page its domain with the label shown next to each one, or set a space's default domain in Connectors. ${window.DOCS.link('domains')}</p><div class="pphead"><span class="lsp"></span><button type="button" class="btn primary sm" id="dmnew">New domain</button></div><div class="dt dmdt" style="--cols:minmax(0,1.3fr) minmax(0,1.5fr) minmax(0,1.3fr) 64px 76px" id="dmlist"></div>`;
   $('#dmnew').onclick = () => createModal();
   const s = state();
   if (!s.loaded || s.error) load(); else draw();

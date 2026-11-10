@@ -27,7 +27,7 @@ const OAUTH_ERRORS = {
   invalid_state: 'The Confluence authorization expired or was started in another browser. Authorize again.',
   authorization_failed: 'Atlassian did not complete the authorization. Authorize again, and allow every requested permission.',
 };
-const CREDENTIALS = { google_oauth: ['Google sign-in', 'The OAuth client people sign in with.'], confluence_oauth: ['Confluence app', 'The Atlassian OAuth app Brain reads Confluence with.'] };
+const CREDENTIALS = { google_oauth: ['Google sign-in', 'The OAuth client people sign in with.'], confluence_oauth: ['Confluence app', 'The Atlassian OAuth app Broth reads Confluence with.'] };
 
 let data = null; // { connections, containers, credentials, users, domains }
 const AUTHORITIES = [['approved', 'Approved'], ['unapproved', 'Unapproved'], ['draft', 'Draft']];
@@ -94,13 +94,13 @@ function draw() {
   const confluence = data.connections.filter((c) => c.system === 'confluence' && c.status !== 'disconnected');
   const drive = data.connections.filter((c) => c.system === 'gdrive' && c.status !== 'disconnected');
   const conf = data.credentials.find((c) => c.name === 'confluence_oauth');
-  body.innerHTML = `<section class="cnsec"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2><p class="amute">Brain reads the spaces you include, with each person's Confluence access.</p></div></div>
+  body.innerHTML = `<section class="cnsec"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2><p class="amute">Broth reads the spaces you include, with each person's Confluence access.</p></div></div>
       ${B.sandbox() && conf && !conf.configured ? `<div class="notice low"><span>Add the Confluence app below before connecting a site.</span></div>` : ''}
       ${confluence.map(connectionHtml).join('') || `<div class="cnempty"><p class="amute">No Confluence site is connected.</p></div>`}
       <form class="cnadd" id="cnadd" novalidate><label class="hsl" for="cnsite">${confluence.length ? 'Connect another site' : 'Connect a site'}</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse" id="cnadde" role="alert"></div></form></section>
-    <section class="cnsec"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive</h2><p class="amute">${B.sandbox() ? 'Unavailable in this sandbox.' : 'Brain reads the shared drives you include.'}</p></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : ''}</div>
-      ${B.sandbox() ? '<div class="notice none"><span>Google Drive needs a Google Workspace account: Brain reads Drive through domain-wide delegation, which a personal Google account does not have.</span></div>' : ''}
-      <ol class="cncheck ${B.sandbox() ? 'off' : ''}"><li><b>Authorize Brain in the Google Admin console</b><span>Add Brain's client ID with the Drive and Admin SDK read scopes under domain-wide delegation.</span></li><li><b>Add the indexer to each shared drive</b><span>Invite broth-indexer@ as a viewer on every shared drive Brain should read.</span></li><li><b>Verify</b><span>Brain checks that it can see each shared drive, then you include them.</span></li></ol>
+    <section class="cnsec"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive</h2><p class="amute">${B.sandbox() ? 'Unavailable in this sandbox.' : 'Broth reads the shared drives you include.'}</p></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : ''}</div>
+      ${B.sandbox() ? '<div class="notice none"><span>Google Drive needs a Google Workspace account: Broth reads Drive through domain-wide delegation, which a personal Google account does not have.</span></div>' : ''}
+      <ol class="cncheck ${B.sandbox() ? 'off' : ''}"><li><b>Authorize Broth in the Google Admin console</b><span>Add Broth's client ID with the Drive and Admin SDK read scopes under domain-wide delegation.</span></li><li><b>Add the indexer to each shared drive</b><span>Invite broth-indexer@ as a viewer on every shared drive Broth should read.</span></li><li><b>Verify</b><span>Broth checks that it can see each shared drive, then you include them.</span></li></ol>
       ${drive.map(connectionHtml).join('')}</section>
     ${B.sandbox() ? `<section class="cnsec"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials</h2><p class="amute">OAuth clients for this sandbox. Secrets are stored encrypted and never shown again.</p></div></div><div class="fgroup cncreds">${data.credentials.map(credentialRow).join('')}</div></section>` : ''}`;
   paint();
@@ -180,7 +180,7 @@ async function patchSpace(id, change, undo) {
     const updated = await B.api.patch(`/admin/containers/${id}`, change);
     const i = data.containers.findIndex((x) => x.id === id);
     data.containers[i] = updated;
-    B.toast(change.included === true ? 'Included. Brain reads it now.' : change.included === false ? 'Excluded. Its content is hidden now.' : 'Owner changed');
+    B.toast(change.included === true ? 'Included. Broth reads it now.' : change.included === false ? 'Excluded. Its content is hidden now.' : 'Owner changed');
     draw();
     if (change.included !== undefined) { B.loadFacets(); B.refreshSetupProgress().then(() => B.renderSurfaces()); }
   } catch (error) {
@@ -270,7 +270,7 @@ function failedDrawer(space, runId) {
   const connection = data.connections.find((c) => c.id === space.connection_id);
   const system = connection ? connection.system : 'confluence';
   B.openDrawer(`<div class="sv" role="dialog" aria-label="Failed pages in ${esc(name)}"><div class="sv-top"><span class="sv-sys">${B.srcIcon(system, 20)}${esc(name)}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div><div class="sv-body">
-    <h2>Failed pages</h2><p class="sub">Brain couldn't read these pages of the space. Sync now tries them again.</p><div class="cnfbox"></div></div></div>`);
+    <h2>Failed pages</h2><p class="sub">Broth couldn't read these pages of the space. Sync now tries them again.</p><div class="cnfbox"></div></div></div>`);
   showFailures($('#drawer .cnfbox'), run, system);
 }
 /** A run's failed pages change only when a later run reads some of them (spec 3.4.1). */
@@ -362,9 +362,9 @@ function announce(run) {
 function warningsHtml(warnings) {
   const lines = [];
   const missing = warnings.indexer_group_missing, members = warnings.indexer_group_members;
-  if (missing) lines.push(`Create a ${esc(missing.group)} group containing only the indexer account, so restricted pages can opt in.`);
-  if (members) lines.push(`Only the indexer account should be in ${esc(members.group)}. Also in it: ${members.members.map(esc).join(', ')}.`);
-  return lines.map((l) => `<div class="notice low cnwarn" role="status"><span>${l}</span></div>`).join('');
+  if (missing) lines.push([`Create a ${esc(missing.group)} group containing only the indexer account, so restricted pages can opt in.`, 'indexerGroupMissing']);
+  if (members) lines.push([`Only the indexer account should be in ${esc(members.group)}. Also in it: ${members.members.map(esc).join(', ')}.`, 'indexerGroupMembers']);
+  return lines.map(([l, doc]) => `<div class="notice low cnwarn" role="status"><span>${l} ${window.DOCS.link(doc, 'How to fix it')}</span></div>`).join('');
 }
 
 const options = (list, value) => list.map(([k, l]) => `<option value="${k}" ${k === value ? 'selected' : ''}>${esc(l)}</option>`).join('');
@@ -375,7 +375,7 @@ function settingsDrawer(space) {
   const authority = space.default_authority || 'unapproved';
   const sensitivity = space.default_sensitivity && space.default_sensitivity !== 'public' ? space.default_sensitivity : 'internal';
   B.openDrawer(`<div class="sv" role="dialog" aria-label="Settings for ${esc(name)}"><div class="sv-top"><span class="sv-sys">${B.srcIcon('confluence', 20)}${esc(name)}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div><form class="sv-body cnsettings" id="cnsf" novalidate>
-    <h2>Space settings</h2><p class="sub">Every page in this space starts from these. A page's labels can only make it more cautious.</p>
+    <h2>Space settings</h2><p class="sub">Every page in this space starts from these. A page's labels can only make it more cautious.</p><p class="cndoc">${window.DOCS.link('spaceSettings')}</p>
     ${field('cnsowner', 'Owner', `<select id="cnsowner" aria-describedby="cnsownerh"><option value="">No owner</option>${options(people.map((u) => [u.id, u.name]), space.owner_user_id)}</select>`, SETTINGS_HELP.owner)}
     ${field('cnsauth', 'Default authority', `<select id="cnsauth" aria-describedby="cnsauthh">${options(AUTHORITIES, authority)}</select>`, SETTINGS_HELP.authority)}
     ${field('cnssens', 'Default sensitivity', `<select id="cnssens" aria-describedby="cnssensh">${options(SENSITIVITIES, sensitivity)}</select>`, SETTINGS_HELP.sensitivity)}
@@ -403,7 +403,7 @@ function settingsDrawer(space) {
       const updated = await B.api.patch(`/admin/containers/${space.id}`, change);
       data.containers[data.containers.findIndex((x) => x.id === space.id)] = updated;
       B.closeDrawer();
-      B.toast(updated.included ? 'Saved. Brain re-reads this space now.' : 'Saved');
+      B.toast(updated.included ? 'Saved. Broth re-reads this space now.' : 'Saved');
       draw();
     }, (error) => { $('#cnse').textContent = (error && error.detail) || B.problem(error); });
   };

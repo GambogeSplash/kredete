@@ -193,7 +193,7 @@ test.describe('connectors', () => {
     await expect(connection.getByText(/~5f1e2d3c/)).toHaveCount(0);
   });
 
-  test("a space's settings save only what changed, and Brain re-reads it", async ({ open, check }) => {
+  test("a space's settings save only what changed, and Broth re-reads it", async ({ open, check }) => {
     const sent = [];
     const page = await open('admin', '/admin/connectors', {
       before: (p) => p.route('**/v1/admin/containers/*', async (route) => {
@@ -213,7 +213,7 @@ test.describe('connectors', () => {
     await page.getByRole('option', { name: 'Draft' }).click();
     await drawer.getByRole('spinbutton', { name: 'Review interval in months' }).fill('7');
     await drawer.getByRole('button', { name: 'Save' }).click();
-    await expect(page.locator('#toast')).toContainText('Saved. Brain re-reads this space now.');
+    await expect(page.locator('#toast')).toContainText('Saved. Broth re-reads this space now.');
     expect(sent).toEqual([{ default_authority: 'draft', review_interval_months: 7 }]);
   });
 
@@ -247,7 +247,8 @@ test.describe('connectors', () => {
         return route.fulfill({ response, json: body });
       }),
     });
-    await expect(page.locator('.cnwarn')).toHaveText('Only the indexer account should be in broth-indexer. Also in it: Kofi Asante, Eve Mensah.');
+    await expect(page.locator('.cnwarn')).toHaveText('Only the indexer account should be in broth-indexer. Also in it: Kofi Asante, Eve Mensah. How to fix it');
+    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/docs/setting-up-spaces#warn-indexer-group-members');
     await check(page, 'connection-warnings');
   });
 
@@ -261,7 +262,8 @@ test.describe('connectors', () => {
         return route.fulfill({ response, json: body });
       }),
     });
-    await expect(page.locator('.cnwarn')).toHaveText('Create a broth-indexer group containing only the indexer account, so restricted pages can opt in.');
+    await expect(page.locator('.cnwarn')).toHaveText('Create a broth-indexer group containing only the indexer account, so restricted pages can opt in. How to fix it');
+    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/docs/setting-up-spaces#warn-indexer-group-missing');
   });
 
   test('failed pages load a page at a time when the list opens', async ({ open }) => {

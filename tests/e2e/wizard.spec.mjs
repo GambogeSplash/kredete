@@ -38,13 +38,13 @@ const reading = (page) => page.getByRole('status').filter({ has: page.getByRole(
 /** The sync step's row for a space. */
 const row = (page, name) => page.getByRole('listitem').filter({ hasText: name });
 const STEPS = [
-  { state: 'claim', heading: 'Set up Kredete Brain', as: 'visitor' },
+  { state: 'claim', heading: 'Set up Kredete Broth', as: 'visitor' },
   { state: 'google', heading: 'Connect Google sign-in', as: 'claimer' },
   { state: 'signin', heading: 'Sign in as the first admin', as: 'claimer' },
   { state: 'confluence', heading: 'Add the Confluence app', as: 'admin' },
   { state: 'connect', heading: 'Connect your Confluence site', as: 'admin' },
-  { state: 'spaces', heading: 'Pick the spaces Brain reads', as: 'admin', before: confluenceFound },
-  { state: 'ready', heading: 'Brain is ready', as: 'admin' },
+  { state: 'spaces', heading: 'Pick the spaces Broth reads', as: 'admin', before: confluenceFound },
+  { state: 'ready', heading: 'Broth is ready', as: 'admin' },
 ];
 
 /** Seeds `state` with one admin session per view and one spare, and restarts the API. */
@@ -112,7 +112,7 @@ test('the Confluence app moves on to connecting a site, and spaces move on to th
   await configure(page, seeded.connection_id, { delay_ms: 2000 }); // the read outlasts the assertion
   await page.getByRole('checkbox').first().check();
   await page.getByRole('button', { name: /Include/ }).click();
-  await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Broth is reading your spaces' })).toBeVisible();
   await readsFinished(page, seeded.connection_id);
 });
 
@@ -164,16 +164,16 @@ test('spaces: when Confluence cannot be read, the known spaces stay usable', asy
   await expect(page.getByRole('checkbox')).toHaveCount(3);
   await configure(page, seeded.connection_id, { delay_ms: 2000 }); // the read outlasts the assertion
   await page.getByRole('button', { name: 'Include 3 spaces' }).click();
-  await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Broth is reading your spaces' })).toBeVisible();
   await readsFinished(page, seeded.connection_id);
 });
 
 // Sync runs plan C0.1: the bug this scenario reproduces is that the sync step moves on to
-// "Brain is ready" as soon as the connection's first poll finishes, while the included spaces
+// "Broth is ready" as soon as the connection's first poll finishes, while the included spaces
 // are still being read. On the e2e stack the worker reads them from the fake source (plan S0),
 // slowed down here so the reading takes a while; the fake source's page list says which pages
 // Broth has actually stored. Plan task C3 drives the step from the spaces' read runs.
-test('setup says Brain is ready only once the included spaces are read', async ({ open }) => {
+test('setup says Broth is ready only once the included spaces are read', async ({ open }) => {
   test.setTimeout(150_000);
   const seeded = await seedState('spaces');
   const connection = seeded.connection_id;
@@ -183,18 +183,18 @@ test('setup says Brain is ready only once the included spaces are read', async (
   await configure(page, connection, { delay_ms: 4000 });
 
   await page.getByRole('button', { name: 'Include 3 spaces' }).click();
-  await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Broth is reading your spaces' })).toBeVisible();
   // The connection's first poll, as the scheduler would run it (the e2e stack has none). A
   // first poll only records where the change feed starts; it reads no pages.
   await api(page, 'post', `/admin/connections/${connection}/sync`);
 
-  const ready = page.getByRole('heading', { name: 'Brain is ready' });
+  const ready = page.getByRole('heading', { name: 'Broth is ready' });
   const deadline = Date.now() + 120_000;
   for (;;) {
     const shown = await ready.isVisible();
     const left = await unread();
     if (shown) {
-      expect(left, '"Brain is ready" is shown while these pages are still unread').toEqual([]);
+      expect(left, '"Broth is ready" is shown while these pages are still unread').toEqual([]);
       break;
     }
     if (!left.length) {
@@ -224,7 +224,7 @@ test('the sync step shows each space being listed and read, then moves on', asyn
   await first.getByRole('checkbox', { name: 'Include Cards (CARD)' }).uncheck();
   await first.getByRole('checkbox', { name: 'Include Engineering (ENG)' }).uncheck();
   await first.getByRole('button', { name: 'Include 1 space' }).click();
-  await expect(first.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible({ timeout: INCLUDED });
+  await expect(first.getByRole('heading', { name: 'Broth is reading your spaces' })).toBeVisible({ timeout: INCLUDED });
   await expect(row(first, 'Payments (PAY)')).toContainText('0 of 4', { timeout: 30_000 });
   // No Sync now here; the step reads on by itself (spec 3.3).
   await expect(first.getByRole('button', { name: 'Sync now' })).toHaveCount(0);
@@ -255,7 +255,7 @@ test('the sync step shows each space being listed and read, then moves on', asyn
   }
 
   for (const page of opened) {
-    await expect(page.getByRole('heading', { name: 'Brain is ready' })).toBeVisible({ timeout: 90_000 });
+    await expect(page.getByRole('heading', { name: 'Broth is ready' })).toBeVisible({ timeout: 90_000 });
     await expect(page.getByText(/couldn't be read/)).toHaveCount(0);
   }
   const stored = (await api(first, 'get', '/sandbox/fake-source/pages', { connection_id: connection })).items;
@@ -280,7 +280,7 @@ test('pages that could not be read are named on the done screen, with a link to 
   await page.getByRole('checkbox', { name: 'Include Cards (CARD)' }).uncheck();
   await page.getByRole('checkbox', { name: 'Include Engineering (ENG)' }).uncheck();
   await page.getByRole('button', { name: 'Include 1 space' }).click();
-  await expect(page.getByRole('heading', { name: 'Brain is ready' })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole('heading', { name: 'Broth is ready' })).toBeVisible({ timeout: 60_000 });
   for (const [i, view] of VIEWS.entries()) {
     const shown = i ? await open('admin', '/setup', { view, token: seeded.people.admin.refresh_tokens[i], before: twoFailed }) : page;
     await expect(shown.getByText("2 pages couldn't be read; see Connectors.")).toBeVisible();
@@ -299,8 +299,8 @@ test('a space read whose pages keep failing ends on the done screen with the not
   const page = await open('admin', '/setup', { token: seeded.people.admin.refresh_tokens[0], before: confluenceFound });
   await configure(page, seeded.connection_id, { fail: ['card-fees', 'eng-release'] });
   await page.getByRole('button', { name: 'Include 3 spaces' }).click();
-  await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible({ timeout: INCLUDED });
-  await expect(page.getByRole('heading', { name: 'Brain is ready' })).toBeVisible({ timeout: 150_000 });
+  await expect(page.getByRole('heading', { name: 'Broth is reading your spaces' })).toBeVisible({ timeout: INCLUDED });
+  await expect(page.getByRole('heading', { name: 'Broth is ready' })).toBeVisible({ timeout: 150_000 });
   await expect(page.getByText("2 pages couldn't be read; see Connectors.")).toBeVisible();
 });
 
@@ -310,7 +310,7 @@ test('the sync step can be left to carry on in the background', async ({ open })
   const page = await open('admin', '/setup', { token: seeded.people.admin.refresh_tokens[0], before: confluenceFound });
   await configure(page, seeded.connection_id, { delay_ms: 3000 });
   await page.getByRole('button', { name: 'Include 3 spaces' }).click();
-  await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible({ timeout: INCLUDED });
+  await expect(page.getByRole('heading', { name: 'Broth is reading your spaces' })).toBeVisible({ timeout: INCLUDED });
   await expect(page.getByRole('button', { name: 'Leave setup for now' })).toHaveCount(0); // Continue replaces it
   let polls = 0;
   page.on('request', (r) => { if (r.url().includes('/v1/admin/containers?')) polls += 1; });
@@ -335,8 +335,8 @@ test('reloading the sync step resumes the reads where they are', async ({ open }
   await page.getByRole('button', { name: 'Include 1 space' }).click();
   await expect(row(page, 'Payments (PAY)')).toContainText('0 of 4', { timeout: 30_000 });
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible({ timeout: INCLUDED });
+  await expect(page.getByRole('heading', { name: 'Broth is reading your spaces' })).toBeVisible({ timeout: INCLUDED });
   await expect(row(page, 'Payments (PAY)')).toContainText('0 of 4');
   await expect(reading(page)).toContainText('Reading 0 of 4 pages');
-  await expect(page.getByRole('heading', { name: 'Brain is ready' })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole('heading', { name: 'Broth is ready' })).toBeVisible({ timeout: 60_000 });
 });

@@ -300,11 +300,11 @@ describe('problems', () => {
     assert.equal(error.reached, true);
   });
 
-  it('says whether Brain itself answered: not for a network failure or a page from something in between', async () => {
+  it('says whether Broth itself answered: not for a network failure or a page from something in between', async () => {
     const { fetch } = stubFetch({
       'GET /v1/me': () => new Response('<html>Bad gateway</html>', { status: 502, headers: { 'content-type': 'text/html' } }),
       'GET /v1/facets': () => { throw new TypeError('Failed to fetch'); },
-      'GET /v1/documents': () => problem(503, 'Brain is updating its index', {}, { 'retry-after': '5' }),
+      'GET /v1/documents': () => problem(503, 'Broth is updating its index', {}, { 'retry-after': '5' }),
     });
     const api = createApi({ fetch });
     api.setToken('t1');
@@ -313,14 +313,14 @@ describe('problems', () => {
     const busy = await api.get('/documents').catch((e) => e);
     assert.deepEqual([proxy.status, proxy.reached], [502, false]);
     assert.deepEqual([offline.status, offline.reached], [0, false]);
-    assert.deepEqual([busy.status, busy.reached, busy.title], [503, true, 'Brain is updating its index']);
+    assert.deepEqual([busy.status, busy.reached, busy.title], [503, true, 'Broth is updating its index']);
   });
 
   it('honors Retry-After in seconds for 429 and as an HTTP date for 503', async () => {
     const now = Date.parse('2026-11-08T12:00:00Z');
     const { fetch } = stubFetch({
       'POST /v1/setup/claim': () => problem(429, 'Too many attempts', { code: 'rate_limited' }, { 'retry-after': '30' }),
-      'GET /v1/me': () => problem(503, 'Brain is busy', { code: 'model_unavailable' }, { 'retry-after': 'Sun, 08 Nov 2026 12:00:12 GMT' }),
+      'GET /v1/me': () => problem(503, 'Broth is busy', { code: 'model_unavailable' }, { 'retry-after': 'Sun, 08 Nov 2026 12:00:12 GMT' }),
     });
     const api = createApi({ fetch, now: () => now });
     api.setToken('t1');
@@ -339,7 +339,7 @@ describe('problems', () => {
     api.setToken('t1');
     const error = await api.get('/me').catch((e) => e);
     assert.equal(error.status, 502);
-    assert.equal(error.title, 'Brain could not be reached. Try again.');
+    assert.equal(error.title, 'Broth could not be reached. Try again.');
     assert.equal(error.retryable, true);
   });
 

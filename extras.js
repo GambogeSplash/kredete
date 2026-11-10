@@ -56,7 +56,7 @@ async function drawChats() {
   }
   list.innerHTML = items.length
     ? items.map((c, i) => `<div class="actr chr" data-o="${i}" role="button" tabindex="0"><span class="actic">${ICON('chat', 16)}</span><span class="actt"><b>${esc(B.chatTitle(c))}</b><small>${B.when(c.updated_at, B.ago(c.updated_at))}</small></span><span class="actb">${c.pinned ? `<span class="chpin" aria-label="Pinned">${ICON('pin', 13)}</span>` : ''}<button type="button" class="lib" data-m="${i}" aria-label="Chat actions" aria-haspopup="menu">${ICON('more', 16)}</button></span></div>`).join('')
-    : `<p class="actn">${q ? 'No chats match.' : 'No chats yet. Ask Brain a question to start one.'}</p>`;
+    : `<p class="actn">${q ? 'No chats match.' : 'No chats yet. Ask Broth a question to start one.'}</p>`;
   $$('[data-o]', list).forEach((r) => {
     const open = () => B.go('/c/' + items[+r.dataset.o].id);
     r.onclick = (e) => { if (!e.target.closest('[data-m]')) open(); };
