@@ -1,6 +1,7 @@
 {
   // Type-checks the browser modules (JSDoc types over plain JavaScript; nothing is emitted).
-  // The tools have their own project in tools/tsconfig.json.
+  // The tools have their own project in tools/tsconfig.json. The support bot widget
+  // (embed.js) is checked strictly too: it runs on other people's pages.
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -11,5 +12,5 @@
     "skipLibCheck": true,
     "types": []
   },
-  "include": ["types.d.ts", "globals.d.ts", "api.js", "sync.js"]
+  "include": ["types.d.ts", "globals.d.ts", "api.js", "sync.js", "embed.js"]
 }

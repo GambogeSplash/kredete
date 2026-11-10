@@ -1,26 +1,23 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kredete help site</title>
-<style>
-body{margin:0;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222;background:#fafaf9}
-header{padding:16px 24px;border-bottom:1px solid #e4e4e0;background:#fff;font-weight:600}
-main{max-width:640px;margin:48px auto;padding:0 24px}
-h1{font-size:28px;margin:0 0 12px}p{color:#555}
-ul{padding-left:20px;color:#555}
-</style></head><body>
-<header>Kredete help site</header>
-<main><h1>How can we help?</h1>
-<p>Browse our guides on cards, transfers and savings, or ask the assistant in the corner.</p>
-<ul><li>Cards and replacements</li><li>Sending money</li><li>Savings accounts</li></ul></main>
-<script src="embed.js" async
-  data-key="bk_live_c40be8d1"
-  data-product="Kredete Help site"
-  data-accent="#26a269"
-  data-name="Kredete Assistant"
-  data-greeting="Hi, I can answer questions about your Kredete account and cards."
-  data-suggestions="[&quot;What is the card replacement fee?&quot;,&quot;What is the daily transfer limit?&quot;]"
-  data-tone="friendly"
-  data-side="right"
-  data-handoff="true"
-  data-unknown="I could not find that in our help content."></script>
-</body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kredete help centre (demo)</title>
+<link rel="stylesheet" href="embed-demo.css">
+</head>
+<body>
+<header class="bar">Kredete help centre</header>
+<main>
+  <h1>How can we help?</h1>
+  <p>Browse our guides on cards, transfers and savings, or ask the assistant in the corner.</p>
+  <ul>
+    <li>Cards and replacements</li>
+    <li>Sending money</li>
+    <li>Savings accounts</li>
+  </ul>
+  <p id="demo-help" class="demo-help" hidden>This page shows the support bot widget. Open it with <code>?key=</code> (a product key from the admin API) and <code>&amp;api=</code> (the bot API address).</p>
+</main>
+<script src="embed-demo.js"></script>
+</body>
+</html>

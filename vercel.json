@@ -31,6 +31,15 @@
           "value": "camera=(), microphone=(), geolocation=()"
         }
       ]
+    },
+    {
+      "source": "/embed-demo.html",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'sha256-CKnO2LD2fnTO3zuLmIsTytr8LMLOY7JSxJT6OXs01gg=' 'sha256-Vw1AwmAMt/DMMuED7QBEr8llvpADu/EouY2eN+xcv7s='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.up.railway.app http://localhost:*; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+        }
+      ]
     }
   ]
 }

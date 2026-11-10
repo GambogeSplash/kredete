@@ -97,6 +97,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Bots */
+        get: operations["list_bots_v1_admin_bots_get"];
+        put?: never;
+        /** Create Bot */
+        post: operations["create_bot_v1_admin_bots_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bots/{bot_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bot */
+        get: operations["get_bot_v1_admin_bots__bot_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Bot */
+        patch: operations["patch_bot_v1_admin_bots__bot_id__patch"];
+        trace?: never;
+    };
+    "/v1/admin/bots/{bot_id}/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Product */
+        post: operations["create_product_v1_admin_bots__bot_id__products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bots/{bot_id}/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Sources */
+        put: operations["put_sources_v1_admin_bots__bot_id__sources_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/connections": {
         parameters: {
             query?: never;
@@ -400,6 +470,57 @@ export interface paths {
         post?: never;
         /** Delete Alias */
         delete: operations["delete_alias_v1_admin_principal_aliases__token__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/products/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Product */
+        patch: operations["patch_product_v1_admin_products__product_id__patch"];
+        trace?: never;
+    };
+    "/v1/admin/products/{product_id}/replace-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace Key */
+        post: operations["replace_key_v1_admin_products__product_id__replace_key_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/products/{product_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke */
+        post: operations["revoke_v1_admin_products__product_id__revoke_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1175,6 +1296,105 @@ export interface components {
          */
         Authority: "approved" | "unapproved" | "draft";
         /**
+         * BotChanges
+         * @description A partial update; only the fields given change.
+         */
+        BotChanges: {
+            /** Contact Label */
+            contact_label?: string | null;
+            /** Contact Url */
+            contact_url?: string | null;
+            /** Daily Question Limit */
+            daily_question_limit?: number | null;
+            /** Greeting */
+            greeting?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Notice */
+            notice?: string | null;
+            /** Privacy Url */
+            privacy_url?: string | null;
+            /** Starters */
+            starters?: string[] | null;
+        };
+        /** BotOut */
+        BotOut: {
+            /** Contact Label */
+            contact_label: string;
+            /** Contact Url */
+            contact_url: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Daily Question Limit */
+            daily_question_limit: number;
+            /** Greeting */
+            greeting: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Notice */
+            notice: string;
+            /** Privacy Url */
+            privacy_url: string;
+            /** Products */
+            products: components["schemas"]["ProductOut"][];
+            /** Sources */
+            sources: string[];
+            /** Starters */
+            starters: string[];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * BotProductStatus
+         * @enum {string}
+         */
+        BotProductStatus: "live" | "revoked";
+        /**
+         * BotSettings
+         * @description A whole bot, as created.
+         */
+        BotSettings: {
+            /**
+             * Contact Label
+             * @default Contact support
+             */
+            contact_label: string;
+            /** Contact Url */
+            contact_url: string;
+            /**
+             * Daily Question Limit
+             * @default 2000
+             */
+            daily_question_limit: number;
+            /**
+             * Greeting
+             * @default
+             */
+            greeting: string;
+            /** Name */
+            name: string;
+            /**
+             * Notice
+             * @default I give general information from our help pages, not personal financial advice.
+             */
+            notice: string;
+            /** Privacy Url */
+            privacy_url: string;
+            /** Starters */
+            starters?: string[];
+        };
+        /**
          * ChangeType
          * @enum {string}
          */
@@ -1701,6 +1921,13 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** Page[BotOut] */
+        Page_BotOut_: {
+            /** Items */
+            items: components["schemas"]["BotOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** Page[ConnectionOut] */
         Page_ConnectionOut_: {
             /** Items */
@@ -1784,6 +2011,70 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** ProductChanges */
+        ProductChanges: {
+            /** Accent */
+            accent?: string | null;
+            /** Allowed Origins */
+            allowed_origins?: string[] | null;
+            /** Name */
+            name?: string | null;
+            side?: components["schemas"]["ProductSide"] | null;
+        };
+        /**
+         * ProductFields
+         * @description A product as created; `allowed_origins` are normalized by `with_origins`.
+         */
+        ProductFields: {
+            /**
+             * Accent
+             * @default #5e6ad2
+             */
+            accent: string;
+            /** Allowed Origins */
+            allowed_origins: string[];
+            /** Name */
+            name: string;
+            /** @default right */
+            side: components["schemas"]["ProductSide"];
+        };
+        /** ProductOut */
+        ProductOut: {
+            /** Accent */
+            accent: string;
+            /** Allowed Origins */
+            allowed_origins: string[];
+            /**
+             * Bot Id
+             * Format: uuid
+             */
+            bot_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Revoked At */
+            revoked_at: string | null;
+            side: components["schemas"]["ProductSide"];
+            /** Snippet */
+            snippet: string | null;
+            status: components["schemas"]["BotProductStatus"];
+        };
+        /**
+         * ProductSide
+         * @enum {string}
+         */
+        ProductSide: "left" | "right";
         /** PromotionIn */
         PromotionIn: {
             /** Reason */
@@ -1938,6 +2229,11 @@ export interface components {
          * @enum {string}
          */
         SourceSystem: "gdrive" | "confluence";
+        /** SourcesIn */
+        SourcesIn: {
+            /** Container Ids */
+            container_ids: string[];
+        };
         /** StatusOut */
         StatusOut: {
             /**
@@ -2258,6 +2554,195 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_AuditOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_bots_v1_admin_bots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_BotOut_"];
+                };
+            };
+        };
+    };
+    create_bot_v1_admin_bots_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BotSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BotOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bot_v1_admin_bots__bot_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BotOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_bot_v1_admin_bots__bot_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BotChanges"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BotOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_product_v1_admin_bots__bot_id__products_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductFields"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_sources_v1_admin_bots__bot_id__sources_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourcesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BotOut"];
                 };
             };
             /** @description Validation Error */
@@ -2863,6 +3348,103 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_product_v1_admin_products__product_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductChanges"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_key_v1_admin_products__product_id__replace_key_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_v1_admin_products__product_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
             };
             /** @description Validation Error */
             422: {

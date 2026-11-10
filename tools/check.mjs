@@ -13,6 +13,8 @@ import { fileURLToPath } from 'node:url';
 import { generateTypes, openapiAvailable, openapiPath } from './openapi-types.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const DEMO_PAGE = '/embed-demo.html';
+const DEMO_CONNECT = 'https://*.up.railway.app http://localhost:*';
 /** @type {string[]} */
 const failures = [];
 /** @type {string[]} */
@@ -74,6 +76,16 @@ async function checkSecurityHeaders() {
     failures.push(
       'vercel.json: Content-Security-Policy does not match the inline scripts in ' +
         `${pages.join(', ')}.\n  Expected: ${expected}\n  Found:    ${headers['Content-Security-Policy']}`,
+    );
+  }
+  // The support bot demo page calls the bot API on its own host (support bot spec 6.3): the
+  // hosted dev Railway service, or the browser-test stack's port. Only its connect-src differs.
+  const demo = (vercel.headers || []).find((/** @type {any} */ r) => r.source === DEMO_PAGE);
+  const demoPolicy = demo && demo.headers.find((/** @type {any} */ h) => h.key === 'Content-Security-Policy');
+  const demoExpected = expected.replace("connect-src 'self';", `connect-src 'self' ${DEMO_CONNECT};`);
+  if (!demoPolicy || demoPolicy.value !== demoExpected || demo.headers.length !== 1) {
+    failures.push(
+      `vercel.json: ${DEMO_PAGE} needs exactly one header, its Content-Security-Policy.\n  Expected: ${demoExpected}\n  Found:    ${demoPolicy && demoPolicy.value}`,
     );
   }
   /** @type {Record<string, string>} */
