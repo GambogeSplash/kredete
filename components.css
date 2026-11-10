@@ -222,6 +222,9 @@ a.btn.si-btn{text-decoration:none}
 .surun .suspin{width:12px;height:12px;border-width:1.5px}
 .suok{display:inline-flex;color:var(--ok)}
 .sumute{color:var(--mute)}
+#sufailing{margin:0 0 var(--s-2)}
+/* A link inside the sentence: no side padding, so it sits between its words and the full stop. */
+#sufailing .link{padding:0}
 .suspin{width:18px;height:18px;border-radius:50%;border:2px solid var(--fill-3);border-top-color:var(--brand);animation:suspin .9s linear infinite;flex:none}
 @keyframes suspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion: reduce){.suspin{animation:none;border-color:var(--brand)}}

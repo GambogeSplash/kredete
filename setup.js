@@ -280,13 +280,20 @@ function syncStep(p) {
     },
   });
 }
-async function doneStep() {
+async function doneStep(p) {
   await B.refreshSetupProgress();
   let n = 0;
   try { n = (await B.loadFacets()).systems.reduce((sum, s) => sum + s.count, 0); } catch (e) { /* counts are a nicety */ }
-  render('done', `<h1>Brain is ready</h1><p class="sub">${n ? `${n} ${n === 1 ? 'page is' : 'pages are'} in the library. ` : ''}Invite the people who should use it; they sign in with Google.</p><div class="obnav"><button type="button" class="btn si-btn" id="supeople">Invite people</button><button type="button" class="btn primary si-btn" id="suask">Start asking</button></div>`);
+  /* Pages a space read gave up on, and no later run has read since (spec 3.4.1). */
+  const failing = reads(p.containers || []).reduce((sum, r) => sum + ((r && r.failing) || 0), 0);
+  const note = failing
+    ? `<div class="notice low" id="sufailing"><span>${failing} ${failing === 1 ? 'page' : 'pages'} couldn't be read; <a class="link" href="/admin/connectors" id="suconn">see Connectors</a>.</span></div>`
+    : '';
+  render('done', `<h1>Brain is ready</h1><p class="sub">${n ? `${n} ${n === 1 ? 'page is' : 'pages are'} in the library. ` : ''}Invite the people who should use it; they sign in with Google.</p>${note}<div class="obnav"><button type="button" class="btn si-btn" id="supeople">Invite people</button><button type="button" class="btn primary si-btn" id="suask">Start asking</button></div>`);
   $('#supeople').onclick = () => B.go('/admin/people');
   $('#suask').onclick = () => B.go('/');
+  const connectors = $('#suconn');
+  if (connectors) connectors.onclick = (e) => { e.preventDefault(); B.go('/admin/connectors'); };
 }
 
 async function show(known) {

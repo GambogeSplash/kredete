@@ -262,6 +262,51 @@ test('the sync step shows each space being listed and read, then moves on', asyn
   expect(stored.filter((p) => !p.stored).map((p) => p.external_id), 'every page is read when setup says ready').toEqual([]);
 });
 
+/* Answers the containers list with every finished read turned partial: 2 of its pages failed. */
+const twoFailed = (page) => page.route(CONTAINERS, async (route) => {
+  const response = await route.fetch();
+  const body = await response.json();
+  const partial = (run) => run && { ...run, status: 'partial', pages_done: run.pages_total - 2, pages_failed: 2, failing: 2 };
+  await route.fulfill({ response, json: { ...body, items: body.items.map((c) => ({ ...c, last_run: partial(c.last_run) })) } });
+});
+
+test('pages that could not be read are named on the done screen, with a link to Connectors', async ({ open, check }) => {
+  test.setTimeout(180_000);
+  const seeded = await seedState('spaces');
+  // The read is real; only its outcome is made partial here, because the e2e stack cannot fail
+  // a page yet (see the next scenario).
+  const before = async (p) => { await confluenceFound(p); await twoFailed(p); };
+  const page = await open('admin', '/setup', { view: VIEWS[0], token: seeded.people.admin.refresh_tokens[0], before });
+  await page.getByRole('checkbox', { name: 'Include Cards (CARD)' }).uncheck();
+  await page.getByRole('checkbox', { name: 'Include Engineering (ENG)' }).uncheck();
+  await page.getByRole('button', { name: 'Include 1 space' }).click();
+  await expect(page.getByRole('heading', { name: 'Brain is ready' })).toBeVisible({ timeout: 60_000 });
+  for (const [i, view] of VIEWS.entries()) {
+    const shown = i ? await open('admin', '/setup', { view, token: seeded.people.admin.refresh_tokens[i], before: twoFailed }) : page;
+    await expect(shown.getByText("2 pages couldn't be read; see Connectors.")).toBeVisible();
+    await check(shown, `ready-failing-${view.name}`);
+  }
+  await page.getByRole('link', { name: 'see Connectors' }).click();
+  await expect(page).toHaveURL(/\/admin\/connectors$/);
+  await expect(page.getByRole('heading', { name: 'Connectors' })).toBeVisible();
+});
+
+// The same through the worker: the fake source fails two pages on every fetch, and the worker
+// gives up on them after 5 tries. fixme: on the e2e stack the worker never sees a retry count
+// above 1 (its SQS receive asks for ApproximateReceiveCount through MessageSystemAttributeNames,
+// which the AWS emulator ignores), so it never makes the final attempt and the read stays running
+// until the run times out. Enable once broth-service fixes the receive.
+test.fixme('a space read whose pages keep failing ends on the done screen with the note', async ({ open }) => {
+  test.setTimeout(240_000);
+  const seeded = await seedState('spaces');
+  const page = await open('admin', '/setup', { token: seeded.people.admin.refresh_tokens[0], before: confluenceFound });
+  await configure(page, seeded.connection_id, { fail: ['card-fees', 'eng-release'] });
+  await page.getByRole('button', { name: 'Include 3 spaces' }).click();
+  await expect(page.getByRole('heading', { name: 'Brain is reading your spaces' })).toBeVisible({ timeout: INCLUDED });
+  await expect(page.getByRole('heading', { name: 'Brain is ready' })).toBeVisible({ timeout: 150_000 });
+  await expect(page.getByText("2 pages couldn't be read; see Connectors.")).toBeVisible();
+});
+
 test('the sync step can be left to carry on in the background', async ({ open }) => {
   test.setTimeout(150_000);
   const seeded = await seedState('spaces');
