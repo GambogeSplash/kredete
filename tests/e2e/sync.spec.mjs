@@ -6,8 +6,8 @@
 // at it: the worker reads 4 pages at a time, each taking the delay, so with more pages than
 // that, or with slots already busy, a run stops part way for a known while. Each state is
 // checked at 1440 and 390 px, light and dark, by opening the page in every view once the state
-// is reached. Failed pages are rendered from answers the tests give in admin.spec.mjs, until
-// the stack can end a run with failed pages (see the fixme below).
+// is reached. The failed-pages states are also rendered from given answers in admin.spec.mjs,
+// so every view project has them; the last scenario here reaches them through real runs.
 //
 // Serial, in a project of its own: each scenario reseeds `ready` and changes what the shared
 // database would show other scenarios (a run's outcome stays on the card).
@@ -177,6 +177,8 @@ test('each space being read shows its own progress, and a changed default reads 
     await expect(spaceRun(p, 'Engineering (ENG)')).toHaveText('3 pages', { timeout: 180_000 });
     await expect(spaceRun(p, 'Cards (CARD)')).toHaveText('2 pages', { timeout: 180_000 });
     await expect(row(p, 'Cards (CARD)').locator('.cnok svg')).toBeVisible();
+    // The first reads have finished, so setup is done: nothing offers to finish it any more.
+    await expect(p.getByText('Finish setup', { exact: true })).toHaveCount(0);
   });
   await closeOthers(views);
 
@@ -192,12 +194,9 @@ test('each space being read shows its own progress, and a changed default reads 
   await expect(spaceRun(page, 'Payments (PAY)')).toHaveText('4 pages', { timeout: 60_000 });
 });
 
-// Not yet possible on the e2e stack: its SQS emulator (moto 5.1.4) does not return
-// ApproximateReceiveCount when asked through MessageSystemAttributeNames, so the worker counts
-// every attempt as the first, never reports a final one, and a page that keeps failing stays
-// pending until the 30-minute timeout instead of ending the run partial (broth-service, worker
-// consumer). The failed-pages states are rendered from given answers in admin.spec.mjs.
-test.fixme('Sync now lists the pages it could not read, until a later sync reads them', async ({ open }) => {
+// The fake source fails a page on every fetch; the worker gives up on it after 5 tries and the
+// run ends partial, until a later sync reads it.
+test('Sync now lists the pages it could not read, until a later sync reads them', async ({ open }) => {
   test.setTimeout(300_000);
   const s = await fresh();
   const page = await open('admin', PATH, { view: VIEWS[0], token: s.token() });

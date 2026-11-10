@@ -24,12 +24,6 @@
    * @property {boolean} busy whether the run is still going (show a spinner)
    */
   /**
-   * @typedef {object} RunContext
-   * @property {string | null} [shownError] the connection error already shown above the run
-   *   status (its red banner), so a run that error ended can point at it instead of repeating it
-   */
-
-  /**
    * @param {number} n
    * @param {string} one
    * @param {string} many
@@ -39,14 +33,13 @@
   /**
    * How a run reads, or null when there is no run.
    * @param {SyncRun | null | undefined} run
-   * @param {RunContext} [context]
    * @returns {RunView | null}
    */
-  function runView(run, context = {}) {
+  function runView(run) {
     if (!run) return null;
     const space = run.trigger === 'space_read';
     if (run.status === 'running') return running(run, space);
-    if (run.status === 'failed') return failed(run, space, context.shownError);
+    if (run.status === 'failed') return failed(run, space);
     return space ? spaceRead(run) : synced(run);
   }
 
@@ -74,6 +67,27 @@
     const fraction = Math.min(1, done / run.pages_total);
     if (space) return { label: `${done} of ${run.pages_total}`, ...view, fraction };
     return { label: `Syncing ${done} of ${count(run.pages_total, 'page', 'pages')}`, ...view, fraction };
+  }
+
+  /**
+   * Whether the first read of the setup is still running: a read of an included space that
+   * started before any space's read had finished (spec 3.3). Spaces included together all
+   * count, so setup waits for every one; once a read has finished, a space included or
+   * read again later is an ordinary sync and does not take the deployment back into setup.
+   * An included space with no read at all was read before sync runs existed (every include
+   * starts one), so it counts as a finished read.
+   * @param {Array<{ included: boolean, active_run?: SyncRun | null, last_run?: SyncRun | null }>} containers
+   * @returns {boolean}
+   */
+  function firstReadsRunning(containers) {
+    const spaces = containers.filter((c) => c.included);
+    if (spaces.some((c) => !c.active_run && !c.last_run)) return false;
+    const finishedAt = spaces
+      .map((c) => c.last_run && c.last_run.finished_at)
+      .filter(Boolean)
+      .map((at) => Date.parse(/** @type {string} */ (at)));
+    const firstFinished = finishedAt.length ? Math.min(...finishedAt) : Infinity;
+    return spaces.some((c) => c.active_run && isRunning(c.active_run) && Date.parse(c.active_run.started_at) < firstFinished);
   }
 
   /**
@@ -121,16 +135,14 @@
   }
 
   /**
-   * A run ended by its connection failing points at the connection's error banner while that
-   * banner shows the same error; otherwise it states its own error (spec 3.1).
+   * A failed run states its own user-facing reason, including when its connection ended it
+   * (the connection's banner keeps the technical detail) (spec 3.1).
    * @param {SyncRun} run
    * @param {boolean} space
-   * @param {string | null | undefined} shownError
    * @returns {RunView}
    */
-  function failed(run, space, shownError) {
+  function failed(run, space) {
     const view = { fraction: null, busy: false };
-    if (run.error && run.error === shownError) return { label: 'Sync failed. See the error above.', tag: null, detail: null, ...view };
     return { label: space ? 'Read failed' : 'Sync failed', tag: 'bad', detail: run.error || null, ...view };
   }
 
@@ -210,5 +222,5 @@
     return app && app.S.route.path;
   }
 
-  return { readsView, runView, watchRuns };
+  return { firstReadsRunning, readsView, runView, watchRuns };
 });

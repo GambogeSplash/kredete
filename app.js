@@ -293,10 +293,13 @@ async function loadFacets() {
 /** Admin, sandbox: whether a Confluence connection is serving (spec 4.1 "Finish setup"). */
 async function refreshSetupProgress() {
   if (!isAdmin() || !sandbox()) { S.setupDone = null; return null; }
+  const before = S.setupDone;
   try {
     const progress = await window.SETUP.progress();
     S.setupDone = progress.step === 'done';
   } catch (e) { S.setupDone = null; }
+  // Surfaces that show "Finish setup" outside the sidebar listen for this.
+  if (S.setupDone !== before) document.dispatchEvent(new CustomEvent('brain:setupchange'));
   return S.setupDone;
 }
 

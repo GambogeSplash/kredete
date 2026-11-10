@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
-const { readsView, runView, watchRuns } = createRequire(import.meta.url)('../../sync.js');
+const { firstReadsRunning, readsView, runView, watchRuns } = createRequire(import.meta.url)('../../sync.js');
 
 /** A SyncRunOut with every count at zero, overridden by `fields`. */
 const run = (fields = {}) => ({
@@ -48,9 +48,7 @@ const CASES = [
   ['manual, partial where nothing was read', finished({ status: 'partial', pages_total: 2, pages_failed: 2, failing: 2 }), {}, { label: 'Synced, 2 failed', tag: 'warn', detail: null, ...idle }],
   ['manual, failed for its own reason', finished({ status: 'failed', tasks_done: 1, error: "Couldn't check for changes: The source did not respond" }), {}, { label: 'Sync failed', tag: 'bad', detail: "Couldn't check for changes: The source did not respond", ...idle }],
   ['manual, failed with no reason given', finished({ status: 'failed' }), {}, { label: 'Sync failed', tag: 'bad', detail: null, ...idle }],
-  ['manual, failed by the connection, error shown above', finished({ status: 'failed', error: 'Confluence refused the token' }), { shownError: 'Confluence refused the token' }, { label: 'Sync failed. See the error above.', tag: null, detail: null, ...idle }],
-  ['manual, failed by the connection, since recovered', finished({ status: 'failed', error: 'Confluence refused the token' }), { shownError: null }, { label: 'Sync failed', tag: 'bad', detail: 'Confluence refused the token', ...idle }],
-  ['manual, failed while another error is shown', finished({ status: 'failed', error: 'Timed out' }), { shownError: 'Confluence refused the token' }, { label: 'Sync failed', tag: 'bad', detail: 'Timed out', ...idle }],
+  ['manual, failed by its connection', finished({ status: 'failed', error: 'The connection failed: access to the source was refused' }), {}, { label: 'Sync failed', tag: 'bad', detail: 'The connection failed: access to the source was refused', ...idle }],
 
   // Space reads: the space rows (spec 3.2).
   ['space, listing started', space(), {}, { label: 'Listing pages…', tag: null, detail: null, busy: true, fraction: null }],
@@ -82,6 +80,30 @@ describe('runView', () => {
       if (fraction !== null) assert.ok(fraction >= 0 && fraction <= 1, `${fraction}`);
     }
   });
+});
+
+describe('firstReadsRunning', () => {
+  /** An included space with the given active and last space reads. */
+  const container = (active_run = null, last_run = null) => ({ included: true, active_run, last_run });
+  const reading = (started_at) => space({ started_at });
+  const read = (started_at, finished_at) => spaceFinished({ started_at, finished_at, status: 'succeeded' });
+  const CASES = [
+    ['nothing included is being read', [container(), container(null, read('09:00', '09:05'))], false],
+    ['spaces included together, none finished', [container(reading('09:00')), container(reading('09:01'))], true],
+    ['one of them finished, the others still part of the first read', [container(null, read('09:00', '09:04')), container(reading('09:01'))], true],
+    ['a space included after a read finished is a later sync, not setup', [container(null, read('09:00', '09:04')), container(reading('10:00'))], false],
+    ['a space read again after setup is a later sync', [container(reading('10:00'), read('09:00', '09:04'))], false],
+    ['a space read before sync runs existed counts as a finished read', [container(), container(reading('10:00'))], false],
+    ['an excluded space being read does not count', [{ included: false, active_run: reading('09:00'), last_run: null }], false],
+  ];
+  for (const [name, containers, expected] of CASES) {
+    it(name, () => {
+      const at = (t) => `2026-11-10T${t}:00Z`;
+      const stamp = (r) => r && { ...r, started_at: at(r.started_at), finished_at: r.finished_at && at(r.finished_at) };
+      const input = containers.map((c) => ({ ...c, active_run: stamp(c.active_run), last_run: stamp(c.last_run) }));
+      assert.equal(firstReadsRunning(input), expected);
+    });
+  }
 });
 
 describe('readsView', () => {

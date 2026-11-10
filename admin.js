@@ -22,12 +22,27 @@ window.SURFACES.admin = (params) => {
   const mine = allowed();
   const tab = params.tab;
   if (!tab || !mine.includes(tab)) { B.go('/admin/' + (mine[0] || ''), { replace: true }); return; }
-  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Admin">${mine.map((k) => `<button type="button" class="tab" data-at="${k}" aria-current="${k === tab ? 'page' : 'false'}">${tabs[k].label}</button>`).join('')}${B.setupPending() ? '<div class="lrail-sep" role="separator"></div><button type="button" class="tab" data-setup="1">Finish setup</button>' : ''}</nav><div class="lcont"><h1 class="lcont-t">${tabs[tab].label}</h1><div id="adpane"></div></div></div>`;
-  $$('[data-at]').forEach((b) => { b.onclick = () => B.go('/admin/' + b.dataset.at); });
-  const s = $('[data-setup]');
-  if (s) s.onclick = () => B.go('/setup');
+  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Admin"></nav><div class="lcont"><h1 class="lcont-t">${tabs[tab].label}</h1><div id="adpane"></div></div></div>`;
+  rail(tab);
   tabs[tab].render($('#adpane'));
 };
+
+/**
+ * The tab rail, with Finish setup while setup is pending.
+ * @param {string} tab
+ */
+function rail(tab) {
+  const nav = $('.lrail');
+  if (!nav) return;
+  nav.innerHTML = `${allowed().map((k) => `<button type="button" class="tab" data-at="${k}" aria-current="${k === tab ? 'page' : 'false'}">${tabs[k].label}</button>`).join('')}${B.setupPending() ? '<div class="lrail-sep" role="separator"></div><button type="button" class="tab" data-setup="1">Finish setup</button>' : ''}`;
+  $$('[data-at]', nav).forEach((b) => { b.onclick = () => B.go('/admin/' + b.dataset.at); });
+  const s = $('[data-setup]', nav);
+  if (s) s.onclick = () => B.go('/setup');
+}
+// Setup can finish while an Admin tab is open (a space's first read ends): the rail follows.
+document.addEventListener('brain:setupchange', () => {
+  if (B.S.route && B.S.route.surface === 'admin') rail(B.S.route.params.tab);
+});
 
 /* ---------- people names, for admins (audit actors, promotion requesters, owners) ---------- */
 async function names() {

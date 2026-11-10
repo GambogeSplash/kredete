@@ -292,11 +292,8 @@ test('pages that could not be read are named on the done screen, with a link to 
 });
 
 // The same through the worker: the fake source fails two pages on every fetch, and the worker
-// gives up on them after 5 tries. fixme: on the e2e stack the worker never sees a retry count
-// above 1 (its SQS receive asks for ApproximateReceiveCount through MessageSystemAttributeNames,
-// which the AWS emulator ignores), so it never makes the final attempt and the read stays running
-// until the run times out. Enable once broth-service fixes the receive.
-test.fixme('a space read whose pages keep failing ends on the done screen with the note', async ({ open }) => {
+// gives up on them after 5 tries.
+test('a space read whose pages keep failing ends on the done screen with the note', async ({ open }) => {
   test.setTimeout(240_000);
   const seeded = await seedState('spaces');
   const page = await open('admin', '/setup', { token: seeded.people.admin.refresh_tokens[0], before: confluenceFound });

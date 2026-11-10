@@ -220,7 +220,7 @@ function paintConnection(c) {
   put($('.cnerrs', card), c.last_error ? `<div class="banner bad cnerr">${esc(c.last_error)}</div>` : '');
   const running = c.active_run && c.active_run.status === 'running' ? c.active_run : null;
   const run = running || c.last_run;
-  const view = SYNC.runView(run, { shownError: c.last_error });
+  const view = SYNC.runView(run);
   put($('.cnsync', card), statusHtml(c, run, view));
   put($('.cnbar', card), view && view.fraction !== null ? bar(view.fraction, `Syncing ${c.site}`) : '');
   paintFailures($('.cnfails', card), c, running ? null : c.last_run);
@@ -342,6 +342,8 @@ function watch() {
       data = latest;
       paint();
       finished.forEach(announce);
+      // A finished space read can finish setup's first reads: the sidebar follows (spec 3.3).
+      if (finished.some((run) => run.trigger === 'space_read')) B.refreshSetupProgress().then(() => B.renderSurfaces());
     },
   });
 }

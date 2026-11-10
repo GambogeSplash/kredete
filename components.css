@@ -224,10 +224,9 @@ a.btn.si-btn{text-decoration:none}
 .sumute{color:var(--mute)}
 #sufailing{margin:0 0 var(--s-2)}
 /* A link inside the sentence: no side padding, so it sits between its words and the full stop. */
-#sufailing .link{padding:0}
 .suspin{width:18px;height:18px;border-radius:50%;border:2px solid var(--fill-3);border-top-color:var(--brand);animation:suspin .9s linear infinite;flex:none}
 @keyframes suspin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion: reduce){.suspin{animation:none;border-color:var(--brand)}}
+@media (prefers-reduced-motion: reduce){.suspin{animation:none}}
 /* An empty error slot takes no room; a message appears in place when there is one. */
 .hse:empty{display:none}
 #suf .si-btn{margin-top:var(--s-4)}
@@ -392,7 +391,7 @@ body[data-sf=ask] #crumb,body[data-sf=governance] #crumb,body[data-sf=admin] #cr
 /* A date or time reads as one unit: "8 Nov", "2 min ago" never break across lines. */
 time{white-space:nowrap}
 /* A link inside a tinted notice takes the notice's own color (brand on amber was 4.2:1). */
-.notice .link,.banner .link{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.notice .link,.banner .link{color:inherit;text-decoration:underline;text-underline-offset:2px;padding:0}
 /* Initials: white on --mute-2 was 4.1:1. */
 .lav.avini,.avini{background-color:var(--mute)}
 /* Quiet text that still carries meaning. */

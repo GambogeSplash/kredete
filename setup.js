@@ -55,8 +55,8 @@ async function progress() {
   if (!connection || !connection.authorized) return { step: 'connect', connection };
   const containers = (await B.api.get('/admin/containers', { connection_id: connection.id })).items;
   if (!containers.some((c) => c.included)) return { step: 'spaces', connection, containers };
-  /* Each included space is read by its own run; setup is done once none is still running. */
-  if (included(containers).some((c) => c.active_run && c.active_run.status === 'running')) return { step: 'sync', connection, containers };
+  /* Each included space is read by its own run; setup is done once the first reads have finished. */
+  if (SYNC.firstReadsRunning(containers)) return { step: 'sync', connection, containers };
   return { step: 'done', connection, containers };
 }
 
