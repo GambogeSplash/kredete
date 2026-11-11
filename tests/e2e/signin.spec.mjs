@@ -15,7 +15,7 @@ const REASONS = {
 
 test('the sign-in screen', async ({ open, check }) => {
   const page = await open(null, '/signin');
-  await expect(page.getByRole('heading', { name: 'Sign in to Broth' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute('href', '/v1/auth/google/start');
   await check(page, 'signin');
 });
@@ -59,7 +59,7 @@ test('workspace mode: no setup endpoints, straight to sign-in', async ({ open, c
     before: (p) => p.route('**/v1/setup/status', (route) => route.fulfill({ status: 404, contentType: 'application/problem+json', body: '{"title":"Not found","status":404}' })),
   });
   await expect(page).toHaveURL(/\/signin$/);
-  await expect(page.getByText('Continue with your Broth Google account.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Continue with Google' })).toBeVisible();
   await check(page, 'signin-workspace');
 });
 
@@ -73,7 +73,7 @@ test('when Broth cannot be reached, the boot screen offers a retry', async ({ op
   await check(page, 'boot-error');
   fail = false;
   await page.getByRole('button', { name: 'Try again' }).click();
-  await expect(page.getByRole('heading', { name: 'Sign in to Broth' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
 });
 
 test('when Broth answers with a problem of its own, the boot screen shows it', async ({ open }) => {

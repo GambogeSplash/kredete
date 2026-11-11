@@ -57,7 +57,7 @@ async function seedState(state) {
 /** Opens the wizard as the step needs: before claiming, after claiming, or as the admin. */
 function openAs(open, step, seeded, view, i) {
   if (step.as === 'admin') return open('admin', '/setup', { view, token: seeded.people.admin.refresh_tokens[i], before: step.before });
-  return open(null, '/', { view, setupSession: step.as === 'claimer' ? seeded.setup_session : undefined });
+  return open(null, '/setup', { view, setupSession: step.as === 'claimer' ? seeded.setup_session : undefined });
 }
 
 for (const step of STEPS) {
@@ -75,7 +75,7 @@ for (const step of STEPS) {
 
 test('claiming: a wrong code is refused, the right one moves on to Google', async ({ open }) => {
   const seeded = await seedState('claim');
-  const page = await open(null, '/');
+  const page = await open(null, '/setup');
   await page.getByRole('textbox', { name: 'Setup code' }).fill('AAAA-BBBB-CCCC-DDDD');
   await page.getByRole('textbox', { name: 'Your Google account' }).fill(ADMIN_EMAIL);
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -89,7 +89,7 @@ test('claiming: a wrong code is refused, the right one moves on to Google', asyn
 
 test('the Google client moves on to sign-in', async ({ open }) => {
   const seeded = await seedState('google');
-  const page = await open(null, '/', { setupSession: seeded.setup_session });
+  const page = await open(null, '/setup', { setupSession: seeded.setup_session });
   await page.getByRole('textbox', { name: 'Client ID' }).fill('1234-test.apps.googleusercontent.com');
   await page.getByLabel('Client secret').fill('GOCSPX-browser-test-secret');
   await page.getByRole('button', { name: /Save/ }).click();
@@ -316,8 +316,8 @@ test('the sync step can be left to carry on in the background', async ({ open })
   page.on('request', (r) => { if (r.url().includes('/v1/admin/containers?')) polls += 1; });
   await page.getByRole('button', { name: 'Continue in the background' }).click();
   await expect(page).toHaveURL(/\/$/);
-  // Setup is not finished while the spaces are read, so the way back stays in the sidebar.
-  await expect(page.getByRole('button', { name: 'Finish setup' }).first()).toBeAttached();
+  // The wizard is no longer offered in the sidebar: the way back is its address.
+  await expect(page.getByRole('button', { name: 'Finish setup' })).toHaveCount(0);
   // The step stopped watching the reads when it was left: let a few poll intervals pass.
   const before = polls;
   await page.waitForTimeout(5000);

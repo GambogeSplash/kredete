@@ -92,7 +92,7 @@ test('signed out, the docs open on their own with a way back', async ({ open, ch
   await expect(page.getByRole('heading', { level: 1, name: 'Setting up spaces' })).toBeVisible();
   await check(page, 'docs-signed-out-article');
   await page.getByRole('link', { name: 'Back to sign in' }).click();
-  await expect(page.getByRole('heading', { name: 'Sign in to Broth' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
 });
 
 test('every section a screen links to exists', async ({ open }) => {
