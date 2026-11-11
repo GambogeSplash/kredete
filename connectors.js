@@ -200,24 +200,24 @@ const offered = () => PICK_ORDER.map((k) => SOURCES.find((x) => x.key === k)).fi
    without an entry gets the generic story. */
 const SOURCE_STORIES = {
   notion: {
-    read: 'Pages and databases in the Notion workspaces you pick, with their text and properties.',
-    answers: 'Answers will cite the original page with a link back, and show its owner and when it was last verified, as they do for other sources. Its pages will appear in the Library under their own Notion section.',
-    access: "Broth will keep Notion's own access rules, so people only get answers from pages they can already open in Notion. Admins choose which workspaces to connect and who owns each.",
+    read: 'Pages and databases in the workspaces you pick, with their properties such as status and owner. Nested pages will be read with the page they sit under.',
+    answers: 'Wiki pages go stale quietly, so answers will show who owns a page and when it was last verified. Each answer will link back to the Notion page.',
+    access: "Broth will check Notion's permissions on every question, so people only get answers from pages they can open. Admins pick the workspaces and name an owner for each.",
   },
   slack: {
-    read: 'Public channels you choose, with their messages and threads.',
-    answers: 'Answers will cite the original message with a link back, and show its owner and when it was last verified, as they do for other sources. Its messages will appear in the Library under their own Slack section.',
-    access: "Broth will keep Slack's own access rules, so people only get answers from channels they can already open in Slack. Admins choose which channels to connect and who owns each.",
+    read: 'Public channels you choose, read one thread at a time. Private channels and direct messages will never be read.',
+    answers: 'Decisions often sit buried in chat, so answers will cite the thread that holds one and link back to the message, with when it was last confirmed.',
+    access: 'People only get answers from channels they can already join. Admins choose which channels to connect and who owns each one.',
   },
   sharepoint: {
-    read: 'Sites, document libraries and pages you choose, and the documents in them.',
-    answers: 'Answers will cite the original page or document with a link back, and show its owner and when it was last verified, as they do for other sources. Its content will appear in the Library under its own SharePoint section.',
-    access: "Broth will keep SharePoint's own access rules, so people only get answers from items they can already open in SharePoint. Admins choose which sites to connect and who owns each.",
+    read: 'Sites and document libraries you choose, including Word, Excel and PowerPoint files and site pages.',
+    answers: 'Answers will cite the file or page and link back to it in SharePoint, with the site owner and when it was last verified shown beside it.',
+    access: 'Broth will respect Microsoft 365 permissions on every question, so people only get answers from items they can open. Admins pick the sites and the owner of each.',
   },
   gcs: {
-    read: 'Documents in the buckets you choose, such as PDFs and text files.',
-    answers: 'Answers will cite the original file with a link back, and show its owner and when it was last verified, as they do for other sources. Its files will appear in the Library under their own Google Cloud Storage section.',
-    access: "Broth will keep the bucket's own access rules, so people only get answers from files they can already open in Google Cloud. Admins choose which buckets to connect and who owns each.",
+    read: 'Buckets and folders you choose, with the PDFs and text files inside them.',
+    answers: 'Files carry no author, so the owner of each bucket will be the person you assign, and answers will show that name. Each answer will link back to the file.',
+    access: "Broth will follow the bucket's own access rules, so people only get answers from files they can open. Admins choose the buckets and who owns each.",
   },
 };
 const STORY_FALLBACK = (name) => ({
