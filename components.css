@@ -622,3 +622,6 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 @media (max-width:720px){.dmcols{grid-template-columns:minmax(0,1fr) auto}.dmcols>:nth-child(n+3){display:none}}
 
 .dmlab{margin:0 0 var(--s-2);font-size:var(--fs-xs);color:var(--mute)}
+
+.fcount{display:inline-grid;place-items:center;min-width:16px;height:16px;margin-left:6px;padding:0 4px;border-radius:8px;background:var(--brand,#5e6ad2);color:#fff;font-style:normal;font-size:11px;line-height:1}
+.audf2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3)}.audf2 .audd{width:100%;box-sizing:border-box;min-width:0}
