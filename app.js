@@ -419,8 +419,9 @@ async function pinChat(id, pinned) {
   toast(pinned ? 'Pinned' : 'Unpinned');
   return updated;
 }
-async function deleteChat(id) {
+async function deleteChat(id, row) {
   await API.del(`/conversations/${id}`);
+  if (row && window.BROTH_FX) await window.BROTH_FX.trashRow(row);
   forgetChat(id);
   toast('Chat deleted');
   if (S.conv && S.conv.id === id) { S.conv = null; go('/', { replace: true }); }
@@ -459,7 +460,11 @@ function editTitle(el, conv, onDone) {
     finished = true;
     const value = input.value.trim();
     if (save && value && value !== chatTitle(conv)) {
-      try { await renameChat(conv.id, value); toast('Renamed'); } catch (error) { toast(problem(error)); }
+      let renamed = false;
+      try { await renameChat(conv.id, value); toast('Renamed'); renamed = true; } catch (error) { toast(problem(error)); }
+      onDone();
+      if (renamed && window.BROTH_FX) window.BROTH_FX.renamed(value);
+      return;
     }
     onDone();
   };
@@ -502,7 +507,7 @@ function chatMenu(anchor, conv, opts) {
       if (a === 'ren') opts.rename();
       else if (a === 'pin') await pinChat(conv.id, !conv.pinned);
       else if (a === 'link') { try { await navigator.clipboard.writeText(location.origin + '/c/' + conv.id); } catch (err) { /* clipboard blocked */ } toast('Link copied'); }
-      else if (a === 'del') await deleteChat(conv.id);
+      else if (a === 'del') await deleteChat(conv.id, anchor.closest('.chr,.surf.chat'));
     } catch (error) { toast(problem(error)); }
   };
 }
