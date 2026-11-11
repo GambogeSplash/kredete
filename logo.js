@@ -30,11 +30,39 @@ const probe = (d) => new Promise((resolve) => {
   im.onerror = () => { clearTimeout(t); resolve({ w: 0, url }); };
   im.src = url;
 });
-/** The typed website as a bare host (scheme, path, query and port dropped), or '' when it does not look like one. */
+/** Mailbox providers: a person's email on one of these says nothing about their company, so it never becomes a name or a logo lookup. */
+const FREE = new Set(['gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 'hotmail.co.uk', 'live.com', 'msn.com', 'yahoo.com', 'yahoo.co.uk', 'ymail.com', 'icloud.com', 'me.com', 'mac.com', 'proton.me', 'protonmail.com', 'pm.me', 'aol.com', 'gmx.com', 'gmx.net', 'zoho.com', 'yandex.com', 'yandex.ru', 'mail.com', 'fastmail.com', 'hey.com', 'tutanota.com', 'qq.com', '163.com']);
+const isFree = (h) => FREE.has(String(h || '').toLowerCase());
+/** The typed website as a bare host (scheme, path, query and port dropped), or '' when it does not look like one or is a mailbox provider. */
 function host(value) {
   const h = String(value || '').trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, '').replace(/[/?#].*$/, '').replace(/:\d+$/, '');
-  return /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(h) ? h : '';
+  return /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(h) && !isFree(h) ? h : '';
 }
+/** What this browser saved for the workspace: { name, site, logo, kind }. */
+const company = () => read(COMPANY_KEY, {});
+/** A company name from an email's domain, or '' for a mailbox provider ("name@acme.co.uk" gives "Acme"). */
+function derive(email) {
+  const h = String(email || '').split('@')[1] || '';
+  if (!h || isFree(h)) return '';
+  const parts = h.toLowerCase().split('.');
+  const label = parts.length >= 3 && ['co', 'com', 'org', 'net', 'ac', 'gov', 'edu'].includes(parts[parts.length - 2]) ? parts[parts.length - 3] : parts[parts.length - 2];
+  return label ? label.charAt(0).toUpperCase() + label.slice(1) : '';
+}
+/** The workspace name everywhere: the saved one, else one derived from a work email, else "Your workspace". */
+const workspaceName = (email) => (company().name || '').trim() || derive(email) || 'Your workspace';
+/** The workspace logo as an image address that is known to load, or '' (the saved upload, else the typed website's favicon when it is bigger than 16 px). */
+async function workspaceLogo() {
+  const c = company();
+  if (c.logo) return c.logo;
+  const h = host(c.site);
+  if (!h || !LOGO_LOOKUP) return '';
+  let hit = found.get(h);
+  if (!hit) { hit = await probe(h); found.set(h, hit); }
+  return hit.w > 16 ? hit.url : '';
+}
+/** The saved company as raw text, and a way to put it back: a dialog that is cancelled restores what was there. */
+const snapshot = () => { try { return localStorage.getItem(COMPANY_KEY); } catch (e) { return null; } };
+const restore = (raw) => { try { if (raw === null) localStorage.removeItem(COMPANY_KEY); else localStorage.setItem(COMPANY_KEY, raw); } catch (e) { /* storage unavailable */ } };
 /** One answer per distinct host, kept for this page. */
 const found = new Map();
 
@@ -109,7 +137,8 @@ function mount(root, opts = {}) {
     lf.onchange = () => {
       const f = lf.files && lf.files[0];
       if (!f) return;
-      if (f.size > 4 * 1024 * 1024) { if (opts.toast) opts.toast('Pick an image under 4 MB'); return; }
+      const max = opts.maxBytes || 4 * 1024 * 1024;
+      if (f.size > max) { if (opts.toast) opts.toast(`Pick an image under ${Math.round(max / 1048576)} MB`); return; }
       const reader = new FileReader();
       reader.onerror = () => { if (opts.toast) opts.toast('That file could not be read as an image'); };
       reader.onload = () => {
@@ -136,5 +165,5 @@ function mount(root, opts = {}) {
   if (host(st.site) && !st.logo) look();
 }
 
-window.BROTH_LOGO = { mount, LOGO_LOOKUP };
+window.BROTH_LOGO = { mount, LOGO_LOOKUP, host, isFree, company, derive, workspaceName, workspaceLogo, snapshot, restore };
 })();
