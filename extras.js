@@ -45,10 +45,9 @@ AUTH.signin=()=>{ const au=A(); const DIR=DIRX();
  const err=h=>{ $('#aerr').innerHTML=`<div class="banner bad">${h}</div>`; $('#em').setAttribute('aria-invalid','true'); };
  f.onsubmit=e=>{ e.preventDefault(); const em=$('#em').value.trim().toLowerCase(); const sso=$('#sso'); $('#aerr').innerHTML=''; $('#em').removeAttribute('aria-invalid');
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){ err('<b>Enter your work email.</b> It looks like name@kredete.example.'); return; }
-  if(!/@kredete\.example$/.test(em)){ err('<b>That is not a Broth address.</b> Sign in with your work email.'); return; }
   au.last=em; sso.classList.add('busy'); sso.disabled=true; $('#ssol').textContent='Signing you in';
   setTimeout(()=>{
-   const prof=DIR[em];
+   const prof=DIR[em]||(S().accounts||{})[em];
    if(!prof){ ashell(`${logo2}<h1>We could not find you</h1><p class="sub" style="margin:0 0 18px">There is no Broth profile for ${esc(em)}. Ask IT to add you.</p><div class="actions"><button class="btn primary" id="reqacc" type="button">Contact IT</button><button class="btn" id="back" type="button">Back</button></div><p class="disc" id="rq"></p>`,pvHtml(null)); $('#reqacc').onclick=function(){ this.disabled=true; $('#rq').textContent='IT has been notified.'; }; $('#back').onclick=()=>AUTH.signin(); return; }
    au.expired=false; const seen=!!((S().seen||{})[em]); S().user=Object.assign({email:em,onboarded:true,welcomed:seen},prof,{roles:prof.roles.slice()}); AUTH._ob=null; B.save(); B.route(); if(seen) B.toast('Welcome back, '+(S().user.nick||prof.name.split(' ')[0]));
   },650); }; };
@@ -80,7 +79,7 @@ function suRender(){ const su=AUTH._su, TOTAL=4;
  else if(su.step===3){ $$('[data-app]').forEach(btn=>btn.onclick=()=>{ const a=btn.dataset.app; const t=$('.tag',btn); if(!su.apps.includes(a)){ t.textContent='Connecting'; btn.disabled=true; setTimeout(()=>{ su.apps.push(a); suRender(); },650); } else { su.apps=su.apps.filter(x=>x!==a); suRender(); } }); $('#sun').onclick=next; $('#susk').onclick=next; }
  else { const fin=()=>{ const inv=($('#suinv').value||'').split(/[,\s;]+/).map(x=>x.trim()).filter(x=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)); su.invites=inv; const first=su.name.split(' ')[0]; const s2=S();
    s2.levels=s2.levels||{}; s2.levels[su.email]=2; (s2.seen=s2.seen||{})[su.email]=true;
-   s2.user={email:su.email,name:su.name,nick:first,title:'Workspace owner',team:'Admin',level:2,roles:['employee','admin'],onboarded:true,welcomed:true,company:su.company,invites:inv}; AUTH._su=null; s2.surface='app'; s2.mode='ask'; s2.thread=[]; B.save(); B.route(); B.toast('Workspace ready'+(inv.length?', '+inv.length+' invite'+(inv.length===1?'':'s')+' sent':'')); };
+   s2.user={email:su.email,name:su.name,nick:first,title:'Workspace owner',team:'Admin',level:2,roles:['employee','admin'],onboarded:true,welcomed:true,company:su.company,invites:inv}; (s2.accounts=s2.accounts||{})[su.email]=JSON.parse(JSON.stringify(s2.user)); AUTH._su=null; s2.surface='app'; s2.mode='ask'; s2.thread=[]; B.save(); B.route(); B.toast('Workspace ready'+(inv.length?', '+inv.length+' invite'+(inv.length===1?'':'s')+' sent':'')); };
   $('#sun').onclick=fin; $('#susk').onclick=()=>{ $('#suinv').value=''; fin(); }; }
 }
 
@@ -360,10 +359,9 @@ window.SURFACES.account=()=>{ const s=S(), u=s.user; if(!u){ s.surface='app'; B.
      st.domains.push({d:v,status:'pending',members:0,role:'Employee'}); st.domStep[v]=0; B.save(); draw(); openDom(st.domains.length-1); }; };
    draw(); },
   Sessions(){ const hist=[['Today, 8:02','Chrome on macOS','Lagos','Signed in'],['Yesterday, 18:40','Safari on iPhone','Lagos','Signed in'],['10 Nov, 9:15','Chrome on macOS','Lagos','Signed in'],['8 Nov, 23:51','Edge on Windows','London','Blocked: new location'],['6 Nov, 7:30','Chrome on macOS','Lagos','Signed in']];
-   el.innerHTML=`<div class="fgroup">${fr('Sign-in','Broth single sign-on','<span class="tag ok">Managed by IT</span>')}${fr('2-step verification','','<span class="tag ok">Required</span>')}${fr('Simulate session expiry','','','<button class="btn sm" id="aexp">Expire</button>')}</div>
+   el.innerHTML=`<div class="fgroup">${fr('Sign-in','Broth single sign-on','<span class="tag ok">Managed by IT</span>')}${fr('2-step verification','','<span class="tag ok">Required</span>')}</div>
    <div id="sdev" style="margin-top:var(--s-5)"></div>
 `;
-   $('#aexp').onclick=()=>{ s.user=null; A().expired=true; B.save(); B.route(); };
    P.Devices($('#sdev')); adLife(el); },
   Devices(host){ const el=host; const dev=d=>{ const P=/iphone|android|phone|mobile/i.test(d)?'<rect x="7.5" y="3" width="9" height="18" rx="2.2"/><path d="M11 18h2"/>':/windows|linux|desktop/i.test(d)?'<rect x="3.5" y="4.5" width="17" height="11" rx="1.8"/><path d="M9 20h6M12 15.5V20"/>':'<rect x="5" y="5" width="14" height="10" rx="1.6"/><path d="M3 18.5h18"/>'; return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${P}</svg>`; };
    const base=[{id:'cur',dev:'Chrome on macOS',loc:'Lagos, Nigeria',at:'Now',cur:true,trusted:true,ip:'197.210.•••.••',first:'3 Oct'},{id:'a',dev:'Safari on iPhone',loc:'Lagos, Nigeria',at:'2 days ago',trusted:true,ip:'105.112.•••.••',first:'18 Oct'},{id:'b',dev:'Edge on Windows',loc:'London, United Kingdom',at:'5 days ago',trusted:false,flag:true,ip:'81.2.•••.••',first:'6 Nov'}];
