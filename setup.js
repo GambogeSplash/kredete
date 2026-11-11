@@ -75,7 +75,7 @@ const head = (title, hint) => `<div class="suhd"><h1>${esc(title)}</h1>${hint ? 
  * rising 5 px, and the picture is left alone. */
 function swapIn(old) {
   const c = $('#sin');
-  if (!c || !old || window.__entering || matchMedia('(prefers-reduced-motion: reduce)').matches || !c.animate) return;
+  if (!c || !old || /** @type {any} */ (window).__entering || matchMedia('(prefers-reduced-motion: reduce)').matches || !c.animate) return;
   const cr = c.getBoundingClientRect();
   const ghost = document.createElement('div');
   ghost.setAttribute('aria-hidden', 'true');
