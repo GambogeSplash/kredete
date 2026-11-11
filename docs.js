@@ -20,6 +20,11 @@ const $ = (s, r = document) => r.querySelector(s);
 /** @type {(s: string, r?: ParentNode) => any[]} */
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
+/** A framed empty or failure state (the shared .ds-empty spec). */
+const framed = (icon, title, line, action, alert) => `<div class="ds-empty${alert ? ' errstate' : ''}"${alert ? ' role="alert"' : ''}><span class="ds-empty-ic">${ICON(icon, 20)}</span><b>${esc(title)}</b>${line ? `<p>${esc(line)}</p>` : ''}${action || ''}</div>`;
+const failed = (error, retryId) => framed('refresh', B.problem(error), error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.', `<button type="button" class="btn sm" id="${retryId}">Try again</button>`, true);
+/** The (i) hint that carries the explanation a subtitle used to. */
+const hint = (text) => `<span class="hint" tabindex="0" data-tip="${esc(text)}" aria-label="${esc(text)}">i</span>`;
 
 const DOCS = {
   labelProblems: 'labelling-pages#label-problems',
@@ -100,7 +105,7 @@ async function contents() {
   setTitle('Docs');
   const ask = !standalone() && window.ASK ? '<button type="button" class="btn primary" id="dcask">Ask Broth</button>' : '';
   const mail = SUPPORT_EMAIL ? `<a class="btn" href="mailto:${esc(SUPPORT_EMAIL)}">Email support</a>` : '';
-  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Docs</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the docs" aria-label="Search the docs" value="${esc(query)}" autocomplete="off"></div></div><div class="dcbody" id="dcgrid"></div>${ask || mail ? `<div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth${mail ? ', or write to a person' : ''}.</p></div><div class="dcbtns">${ask}${mail}</div></div>` : ''}</div>`);
+  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Docs${hint('How to ask Broth, describe pages with labels, and set Broth up for your team.')}</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the docs" aria-label="Search the docs" value="${esc(query)}" autocomplete="off"></div></div><div class="dcbody" id="dcgrid"></div>${ask || mail ? `<div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth${mail ? ', or write to a person' : ''}.</p></div><div class="dcbtns">${ask}${mail}</div></div>` : ''}</div>`);
   $('#dcq').oninput = (e) => { query = e.target.value; drawCards(); };
   const askBtn = $('#dcask');
   if (askBtn) askBtn.onclick = () => { B.go('/'); setTimeout(() => window.ASK.askFresh('How do I connect a source?'), 350); };
@@ -120,7 +125,7 @@ function drawCards() {
   if (!grid) return;
   if (!s.index) {
     if (s.error) {
-      grid.innerHTML = B.errorBlock(s.error, 'dcretry');
+      grid.innerHTML = failed(s.error, 'dcretry');
       $('#dcretry').onclick = async () => { s.error = null; drawCards(); await loadIndex(); drawCards(); };
     } else {
       grid.innerHTML = B.loadingBlock('Loading the docs', 4, 'dccard dcsk');
@@ -132,7 +137,7 @@ function drawCards() {
     const hits = s.index.filter((a) => `${a.title} ${a.summary}`.toLowerCase().includes(q));
     grid.innerHTML = hits.length
       ? `<div class="dclist">${hits.map((a) => `<a class="dcrow" href="/docs/${esc(a.slug)}" data-link>${esc(a.title)}<small>${esc(a.audiences.map((x) => AUDIENCE_NAME[x] || x).join(', '))}</small><span>${ICON('chevr', 14)}</span></a>`).join('')}</div>`
-      : B.emptyBlock('No articles match', 'Try fewer words.');
+      : framed('search', 'No articles match', 'Try fewer words.');
     return;
   }
   grid.innerHTML = `<div class="dcgrid">${TOPICS.map((t) => {
@@ -163,10 +168,10 @@ const backLink = () => `<a class="dcback" href="/docs" data-link>${ICON('chevr',
 function drawFailure(slug, error) {
   setTitle('Docs');
   if (error.status === 404) {
-    paint(`<div class="pg dc dcart">${backLink()}${B.emptyBlock("This article doesn't exist", 'It may have moved. The contents list every article.', '<a class="btn sm" href="/docs" data-link>See all docs</a>')}</div>`);
+    paint(`<div class="pg dc dcart">${backLink()}${framed('book', "This article doesn't exist", 'It may have moved. The contents list every article.', '<a class="btn sm" href="/docs" data-link>See all docs</a>')}</div>`);
     return;
   }
-  paint(`<div class="pg dc dcart">${backLink()}${B.errorBlock(error, 'dcretry')}</div>`);
+  paint(`<div class="pg dc dcart">${backLink()}${failed(error, 'dcretry')}</div>`);
   $('#dcretry').onclick = () => { delete state().articles[slug]; article(slug); };
 }
 /** The topic being read: the one opened from the contents, else the first whose audiences the article shares. */
@@ -181,7 +186,7 @@ function navHtml(a) {
   const t = topicFor(a);
   if (!idx || !t) return '<nav class="dcnav" aria-label="Articles"></nav>';
   const list = idx.filter((x) => inTopic(x, t));
-  return `<nav class="dcnav" aria-label="Articles"><span class="dcimg"><img src="/assets/help/${t.id}.jpg" alt="" draggable="false"></span><h2 class="dct">${esc(t.title)}</h2><p class="dcbl">${esc(t.blurb)}</p><div class="dcarts">${list.map((x) => `<a class="dcai${x.slug === a.slug ? ' on' : ''}" href="/docs/${esc(x.slug)}" data-link ${x.slug === a.slug ? 'aria-current="page"' : ''}>${esc(x.title)}</a>`).join('')}</div></nav>`;
+  return `<nav class="dcnav" aria-label="Articles"><span class="dcimg"><img src="/assets/help/${t.id}.jpg" alt="" draggable="false"></span><h2 class="dct">${esc(t.title)}${hint(t.blurb)}</h2><div class="dcarts">${list.map((x) => `<a class="dcai${x.slug === a.slug ? ' on' : ''}" href="/docs/${esc(x.slug)}" data-link ${x.slug === a.slug ? 'aria-current="page"' : ''}>${esc(x.title)}</a>`).join('')}</div></nav>`;
 }
 function sectionList(a, cls) {
   return `<ul class="${cls}">${a.sections.map((x) => `<li class="l${x.level}"><a href="#${esc(x.anchor)}" data-sec="${esc(x.anchor)}">${esc(x.title)}</a></li>`).join('')}</ul>`;
@@ -190,7 +195,7 @@ function drawArticle(a) {
   setTitle(a.title);
   const tags = a.audiences.map((x) => `<span class="tag">${esc(AUDIENCE_NAME[x] || x)}</span>`).join('');
   const has = a.sections.length > 0;
-  paint(`<div class="pg dc dcart">${backLink()}<div class="dclay">${navHtml(a)}<article class="dcdoc"><h1>${esc(a.title)}</h1><p class="sub dcsum">${esc(a.summary)}</p><div class="dctags">${tags}</div>${has ? `<details class="dcsecm"><summary>Sections</summary>${sectionList(a, 'dctocl')}</details>` : ''}<div class="dcprose">${a.html}</div></article>${has ? `<aside class="dctoc" aria-label="On this page"><div class="dctoch">On this page</div>${sectionList(a, 'dctocl')}</aside>` : ''}</div></div>`);
+  paint(`<div class="pg dc dcart">${backLink()}<div class="dclay">${navHtml(a)}<article class="dcdoc"><h1>${esc(a.title)}${hint(a.summary)}</h1><div class="dctags">${tags}</div>${has ? `<details class="dcsecm"><summary>Sections</summary>${sectionList(a, 'dctocl')}</details>` : ''}<div class="dcprose">${a.html}</div></article>${has ? `<aside class="dctoc" aria-label="On this page"><div class="dctoch">On this page</div>${sectionList(a, 'dctocl')}</aside>` : ''}</div></div>`);
   const prose = $('.dcprose');
   // Links between articles navigate in the app; external ones already open a new tab.
   $$('a[href^="/docs"]', prose).forEach((link) => {
