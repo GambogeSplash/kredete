@@ -395,7 +395,7 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
  .rl:hover:not([aria-current=page]){background:var(--fill-1)}
  .rl-dot{top:1px;right:-4px;box-shadow:0 0 0 2px var(--shell)}
 }
-@media (min-width:901px){ .rail .rl-grp{gap:10px} }
+@media (min-width:901px){ .rail .rl-grp{gap:8px} }
 /* the rail menu replaces the old floating expand button */
 @media (min-width:901px){ #sbopen,.sbopen{display:none!important} }
 
