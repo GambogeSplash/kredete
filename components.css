@@ -302,3 +302,19 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
  .sbsearch{height:36px!important;margin-top:4px!important}
  .rl-acct .thm{width:44px!important}
 }
+@media (min-width:901px){
+ body:not(.noauth) .rail{grid-template-columns:64px}
+ .rl-acct{width:64px;display:flex;justify-content:center}
+ .rl-acct .thm,.rl-acct .acct{margin:0!important}
+}
+@media (min-width:901px){
+ .rl-acct .acct{display:flex!important;justify-content:center;align-items:center;gap:0!important}
+ .rl-acct .acct .acct-t,.rl-acct .acct .acct-c{display:none!important}
+}
+
+/* the chats shell belongs to chat pages only; other pages use the full width next to the rail */
+@media (min-width:901px){
+ body.nochats:not(.noauth) .top{display:none}
+ body.nochats:not(.noauth) .mainpanel{margin-left:calc(64px + var(--s-2));border-radius:var(--r-lg)}
+ body.nochats:not(.noauth) .rl-menu{visibility:hidden}
+}

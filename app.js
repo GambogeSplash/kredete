@@ -446,6 +446,7 @@ function renderSurfaces(){
   if(!Array.isArray(S.thread)) S.thread=[];
   const sf=S.surface||'app';
   const inAsk=sf==='app';
+  document.body.classList.toggle('nochats',!inAsk);
   const nb=(attr,icon,label,cur,extra,cls)=>`<button class="surf ${cls||''}" ${attr} aria-current="${cur?'page':'false'}">${icon}<span>${label}</span>${extra||''}</button>`;
     let h='';
   h+=nb('data-home="1"',ICON('compose',16),'New chat',inAsk&&!S.thread.length&&!S.ask.stack,'','newchat-nav');
