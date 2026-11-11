@@ -17,3 +17,6 @@ Source pattern: https://unsplash.com/photos/<id>
 
 The people shown are stock models, not Kredete staff. The names in the prototype are invented.
 Everything in svg/, png/ (except photos), gif/ and video/ was made for this prototype.
+
+## Help center placeholders
+assets/help/*.jpg are Cash App help and support screens pulled from Mobbin, used only as placeholders. Replace before any public release.
