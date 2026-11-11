@@ -620,3 +620,5 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 .dmcols{grid-template-columns:minmax(0,2fr) 150px 100px minmax(0,1fr)}
 .dmn{display:flex;align-items:center;gap:var(--s-3);min-width:0}.dmn b{font-weight:500;font-size:var(--fs-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dmn .adsti{margin:0;width:30px;height:30px}.dmn .adfav img{width:20px;height:20px}
 @media (max-width:720px){.dmcols{grid-template-columns:minmax(0,1fr) auto}.dmcols>:nth-child(n+3){display:none}}
+
+.dmlab{margin:0 0 var(--s-2);font-size:var(--fs-xs);color:var(--mute)}
