@@ -667,3 +667,5 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 .svsrc{display:inline-flex;gap:6px;align-items:center}.svx{justify-self:end}.svx .btn{width:28px;height:28px;padding:0;display:grid;place-items:center}
 .ds-tr[data-ask]{cursor:pointer}
 @media (max-width:900px){.svcols{grid-template-columns:minmax(0,1fr) 40px}.svcols>:nth-child(n+2):not(:last-child){display:none}}
+
+.trashfx{position:fixed;z-index:80;width:36px;height:36px;display:grid;place-items:center;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--line);color:var(--mute);box-shadow:0 6px 18px -8px rgba(0,0,0,.5);pointer-events:none}
