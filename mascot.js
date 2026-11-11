@@ -45,13 +45,27 @@ window.BROTH_MASCOT = { mount, svg: () => svg('head') };
 const scan = () => document.querySelectorAll('.bm:not([data-bm])').forEach((h) => mount(h));
 new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
 scan();
-/* the logomark on the new chat page: lands softly, then floats */
-const lmScan = () => document.querySelectorAll('.lm:not([data-lm])').forEach((h) => {
-  h.dataset.lm = '1';
-  const img = h.querySelector('svg') || h.querySelector('img'); if (!img || !M || RM()) return;
-  M.animate(img, { y: [-24, 0], scale: [.9, 1], opacity: [0, 1] }, { type: 'spring', stiffness: 260, damping: 14 });
-  M.animate(img, { y: [0, -4] }, { duration: 2.4, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut', delay: .8 });
+/* the wordmark on the new chat page writes itself out: each letter's outline is drawn left to right, then the letters fill in */
+const WM='assets/brand/broth-wordmark.svg';
+let wmD=null;
+const wmPath=()=>wmD?Promise.resolve(wmD):fetch(WM).then(r=>r.text()).then(t=>{ const m=/ d="([^"]+)"/.exec(t); wmD=m?m[1]:''; return wmD; });
+const NS='http://www.w3.org/2000/svg';
+function writeOut(h){
+  const svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 963 247'); svg.setAttribute('class','lmw'); svg.setAttribute('aria-hidden','true');
+  const fill=document.createElementNS(NS,'path'); fill.setAttribute('d',wmD); fill.setAttribute('fill','currentColor'); fill.setAttribute('fill-rule','evenodd'); fill.style.opacity=RM()||!M?'1':'0'; svg.appendChild(fill);
+  h.replaceChildren(svg);
+  if(RM()||!svg.animate) return;
+  const parts=wmD.split(/Z\s*(?=M)/).map((p,i,a)=>p.trim()+(i<a.length-1?' Z':''));
+  const strokes=parts.map((d)=>{ const p=document.createElementNS(NS,'path'); p.setAttribute('d',d); p.setAttribute('fill','none'); p.setAttribute('stroke','currentColor'); p.setAttribute('stroke-width','5'); p.setAttribute('stroke-linejoin','round'); p.setAttribute('stroke-linecap','round'); p.setAttribute('pathLength','1'); p.style.strokeDasharray='1'; p.style.strokeDashoffset='1'; svg.appendChild(p); return p; });
+  const xs=strokes.map((p)=>p.getBBox().x); const order=[...strokes.keys()].sort((a,b)=>xs[a]-xs[b]); const minX=xs[order[0]]; const span=Math.max(1,xs[order[order.length-1]]-minX);
+  order.forEach((i)=>{ const delay=Math.round(((xs[i]-minX)/span)*520); strokes[i].animate([{strokeDashoffset:1},{strokeDashoffset:0}],{duration:720,delay,easing:'cubic-bezier(.45,.05,.2,1)',fill:'forwards'}); });
+  fill.animate([{opacity:0},{opacity:1}],{duration:520,delay:980,easing:'ease-out',fill:'forwards'});
+  strokes.forEach((p)=>p.animate([{opacity:1},{opacity:0}],{duration:420,delay:1180,fill:'forwards'}));
+}
+const lmScan=()=>document.querySelectorAll('.lm:not([data-lm])').forEach((h)=>{
+  h.dataset.lm='1';
+  wmPath().then((d)=>{ if(!d||!h.isConnected) return; writeOut(h); h.style.cursor='pointer'; h.onclick=()=>writeOut(h); }).catch(()=>{});
 });
-new MutationObserver(lmScan).observe(document.documentElement, { childList: true, subtree: true });
+new MutationObserver(lmScan).observe(document.documentElement,{childList:true,subtree:true});
 lmScan();
 })();
