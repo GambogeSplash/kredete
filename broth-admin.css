@@ -256,21 +256,8 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 
 /* ===== source dialogs: a section moved into the centred modal ===== */
 .srcm .cnsec{border:0;padding:0;margin:0;background:none;max-width:none;border-radius:0}
-.srcm .cnsec-h h2,.srcm .cnsec-h>img,.srcm .cnsec-h>svg,.srcm .cnsec-h>.cnsec-i{display:none}
-.srcm .cnsec-h{margin-bottom:var(--s-3);justify-content:space-between}
-.srcm .cnsec-h>div:empty{display:none}
 .srcm .modal-body,.modal.srcm .body{max-height:calc(100dvh - 160px);overflow:auto}
-.srcm .dt-h{display:none}
-.srcm .dt-r{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:var(--s-1) var(--s-3)!important;align-items:center}
-.srcm .dt-r>.dtp{grid-column:1;grid-row:1;min-width:0}
-.srcm .dt-r>span:last-child:not(.dtp):not(.dtm){grid-column:2;grid-row:1;justify-self:end}
-.srcm .cnspaces .dt-r>.cnown{grid-column:1;grid-row:2}
-.srcm .cnspaces .dt-r>.cninc{grid-column:2;grid-row:2;justify-self:end}
-.srcm .cnspaces .dt-r>.cndecl{grid-column:1/-1;grid-row:3}
-.srcm .cnspaces .ssel{max-width:none}
-.srcm .cncheck{margin:0}
 .slist .srow .btn{flex:none}
-.srcm .dt-r.dt-h{display:none!important}
 /* the shared modal hides a title when its body has a heading; a source dialog keeps its title bar */
 .modal.srcm:has(.body h2)>.bar{position:static!important;padding:var(--s-4) var(--s-4) 0 var(--s-6)!important;min-height:44px}
 .modal.srcm:has(.body h2)>.bar>span{display:inline-flex!important}
@@ -331,3 +318,44 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 .dmn .dmtile{margin:0}
 .adth>span:first-child{width:40px}
 .adrow.adth>span:first-child{width:40px}
+
+/* ===== source dialogs: one structure per connection, a real table for its spaces ===== */
+.srcm .cnsec{border:0;padding:0;margin:0;background:none;max-width:none;border-radius:0}
+.srcm .cnsec-h h2,.srcm .cnsec-h>img,.srcm .cnsec-h>svg,.srcm .cnsec-h>.cnsec-i,.srcm .cnsec-h>.tag{display:none}
+.srcm .cnsec-h:not(:has(.dclink)){display:none}
+.srcm .cnsec-h{margin:0 0 var(--s-4);justify-content:flex-end}
+.srcm .cnconn{border:0;border-radius:0;padding:0;margin:0}
+.srcm .cnconn+.cnconn{margin-top:var(--s-4);padding-top:var(--s-4);border-top:1px solid var(--line)}
+.srcm .cnconn-h{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;margin:0 0 var(--s-3)}
+.srcm .cnconn-h b{font-weight:600;font-size:var(--fs-md)}
+.srcm .cnconn-h .lsp{flex:1}
+.srcm .cnconn-h .cnsync{font-size:var(--fs-sm)}
+.srcm .cnacts{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;margin:0}
+.srcm .cnacts .lsp{flex:1}
+.srcm .cnacts .btn{min-height:32px}
+.srcm .cnbar,.srcm .cnfails,.srcm .cnerrs{margin-top:var(--s-3)}
+.srcm .cnbar:empty,.srcm .cnfails:empty,.srcm .cnerrs:empty{display:none;margin:0}
+.srcm .cnspaces{margin-top:var(--s-4)}
+.srcm .cnspaces .dt{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--surface)}
+.srcm .cnspaces .dt-r{display:grid;grid-template-columns:var(--cols);gap:var(--s-3);align-items:center;min-height:56px;padding:0 var(--s-4);box-sizing:border-box;border-top:1px solid var(--line2,var(--line))}
+.srcm .cnspaces .dt-r:first-child{border-top:0}
+.srcm .cnspaces .dt-r.dt-h{display:grid;min-height:40px;background:var(--fill-1);color:var(--mute);font-size:var(--fs-xs)}
+.srcm .cnspaces .dt-r:not(.dt-h):hover{background:var(--fill-1)}
+.srcm .cnspaces .dtp{min-width:0}.srcm .cnspaces .dtp b{font-weight:500}
+.srcm .cnspaces .cnown{min-width:0}.srcm .cnspaces .cnown .ssel{display:block;width:100%;max-width:none}.srcm .cnspaces .cnown .ssel-btn{width:100%;min-height:32px}
+.srcm .cnspaces .cninc{display:flex;justify-content:flex-end}
+.srcm .cnspaces .cnset{display:flex;justify-content:flex-start}
+.srcm .cnspaces .btn{min-height:32px}
+.srcm .cncheck{margin:0}
+@media (max-width:900px){
+  .srcm .cnspaces .dt-r.dt-h{display:none}
+  .srcm .cnspaces .dt-r{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:var(--s-2) var(--s-3);padding:var(--s-3) var(--s-4);min-height:0}
+  .srcm .cnspaces .dt-r>.dtp{grid-column:1;grid-row:1}
+  .srcm .cnspaces .dt-r>.cninc{grid-column:2;grid-row:1;justify-self:end}
+  .srcm .cnspaces .dt-r>.cnown{grid-column:1;grid-row:2}
+  .srcm .cnspaces .dt-r>.cnset{grid-column:2;grid-row:2;justify-self:end}
+  .srcm .cnspaces .dt-r>.cndecl{grid-column:1/-1;grid-row:3}
+}
+.slist .srow{min-height:64px;padding:var(--s-3);gap:var(--s-3)}
+.srcm .btn,.modal.bt .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);line-height:1.2}
+.srcm .cndecl .btn{white-space:nowrap}

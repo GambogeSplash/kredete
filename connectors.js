@@ -26,7 +26,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 
-const STATUS = { healthy: ['Healthy', 'ok'], degraded: ['Degraded', 'warn'], failing: ['Failing', 'bad'], disconnected: ['Disconnected', ''] };
+const STATUS = { healthy: ['Connected', 'ok'], degraded: ['Degraded', 'warn'], failing: ['Failing', 'bad'], disconnected: ['Disconnected', ''] };
 const OAUTH_ERRORS = {
   invalid_state: 'The Confluence authorization expired or was started in another browser. Authorize again.',
   authorization_failed: 'Atlassian did not complete the authorization. Authorize again, and allow every requested permission.',
@@ -165,7 +165,7 @@ function openSection(src) {
   const key = SECTIONS[src.key];
   const sec = key && $(`#cnhold [data-sec="${key}"]`);
   if (!sec) return false;
-  openModal(shell(src.name, '<div id="srcbody"></div>', 560, src.logo ? B.srcIcon(src.logo, 22) : ICON('lock', 18)));
+  openModal(shell(src.name, '<div id="srcbody"></div>', src.key === 'github' ? 720 : 640, src.logo ? B.srcIcon(src.logo, 22) : ICON('lock', 18)));
   const box = $('#srcbody');
   box.appendChild(sec);
   // The failed-pages link inside a section is handled by the page's delegated click.
@@ -301,7 +301,7 @@ function connectionHtml(c) {
   const spaces = data.containers.filter((x) => x.connection_id === c.id);
   const repos = c.system === 'github_docs';
   const unit = repos ? 'Repository' : c.system === 'gdrive' ? 'Shared drive' : 'Space';
-  const cols = repos ? 'minmax(0,1.5fr) minmax(0,1.1fr) 64px minmax(124px,0.9fr) 84px' : 'minmax(0,1.6fr) minmax(0,1.2fr) 64px 84px';
+  const cols = repos ? 'minmax(0,1.1fr) minmax(0,1.2fr) 124px 88px 72px' : 'minmax(0,1.4fr) minmax(0,1.1fr) 88px 72px';
   const needs = (c.system === 'confluence' || repos) && !c.authorized;
   const start = repos ? '<button type="button" class="btn sm primary" data-cact="install">Install on GitHub</button>' : '<button type="button" class="btn sm primary" data-cact="authorize">Authorize with Atlassian</button>';
   const find = repos ? 'Find repositories' : 'Find spaces';
@@ -309,7 +309,7 @@ function connectionHtml(c) {
     <div class="cnbar"></div><div class="cnfails"></div><div class="cnerrs"></div>
     ${warningsHtml(c.warnings || {})}
     <div class="cnacts">${needs ? start : `<button type="button" class="btn sm" data-cact="verify">${find}</button><button type="button" class="btn sm cnsyncb" data-cact="sync"><span class="suspin" aria-hidden="true"></span><span>Sync now</span></button>${c.system === 'confluence' ? '<button type="button" class="btn sm" data-cact="authorize">Re-authorize</button>' : ''}`}<span class="lsp"></span><button type="button" class="btn sm" data-cact="disconnect">Disconnect</button></div>
-    ${c.authorized || c.system === 'gdrive' ? `<div class="cnspaces">${spaces.length ? `<div class="dt" style="--cols:${cols}"><div class="dt-r dt-h"><span>${unit}</span><span>Owner</span><span>Included</span>${repos ? '<span>Bots</span>' : ''}<span></span></div>${spaces.map((s) => spaceRow(s, repos)).join('')}</div>` : `<div class="ds-empty cnnone"><b>No ${repos ? 'repositories' : 'spaces'} found yet</b><p>Use ${find}.</p></div>`}</div>` : ''}</div>`;
+    ${c.authorized || c.system === 'gdrive' ? `<div class="cnspaces">${spaces.length ? `<div class="dt" style="--cols:${cols}"><div class="dt-r dt-h"><span>${unit}</span><span>Owner</span>${repos ? '<span>Bots</span>' : ''}<span>Settings</span><span class="cninc">Included</span></div>${spaces.map((s) => spaceRow(s, repos)).join('')}</div>` : `<div class="ds-empty cnnone"><b>No ${repos ? 'repositories' : 'spaces'} found yet</b><p>Use ${find}.</p></div>`}</div>` : ''}</div>`;
 }
 /** A repository's Public declaration: Request public, or where its request stands. */
 function declarationCell(s) {
@@ -324,7 +324,7 @@ function declarationCell(s) {
 function spaceRow(s, repos = false) {
   const options = data.users.filter((u) => u.status === 'active').map((u) => `<option value="${u.id}" ${s.owner_user_id === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
   const name = B.containerName(s.path);
-  return `<div class="dt-r" data-space="${s.id}"><span class="dtp"><span><b>${esc(name)}</b><span class="cnsrun" role="status"></span></span></span><span class="cnown"><select data-owner aria-label="Owner of ${esc(name)}"><option value="" ${s.owner_user_id ? '' : 'selected'}>No owner</option>${options}</select></span><span class="cninc"><input type="checkbox" class="sw" data-include ${s.included ? 'checked' : ''} aria-label="Include ${esc(name)}"></span>${repos ? declarationCell(s) : ''}<span><button type="button" class="btn sm" data-settings aria-label="Settings for ${esc(name)}">Settings</button></span></div>`;
+  return `<div class="dt-r" data-space="${s.id}"><span class="dtp"><span><b>${esc(name)}</b><span class="cnsrun" role="status"></span></span></span><span class="cnown"><select data-owner aria-label="Owner of ${esc(name)}"><option value="" ${s.owner_user_id ? '' : 'selected'}>No owner</option>${options}</select></span>${repos ? declarationCell(s) : ''}<span class="cnset"><button type="button" class="btn sm" data-settings aria-label="Settings for ${esc(name)}">Settings</button></span><span class="cninc"><input type="checkbox" class="sw" data-include ${s.included ? 'checked' : ''} aria-label="Include ${esc(name)}"></span></div>`;
 }
 function credentialRow(c) {
   const [title, sub] = CREDENTIALS[c.name] || [c.name, ''];
