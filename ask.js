@@ -239,7 +239,8 @@ function recentHtml() {
 
 function renderHome() {
   $('#app').className = 'cxapp';
-  $('#app').innerHTML = `<div class="lhome"><div class="dchead"><b>New chat</b></div><div class="lh-in"><h1 class="lh-t">${greeting()}</h1>${composer(true, 'Ask a question')}<div id="lhrecent">${recentHtml()}</div>${feedHtml()}</div></div>`;
+  $('#app').innerHTML = `<div class="lhome"><div class="dchead"><b>New chat</b></div><div class="lh-in"><div class="bm" id="bm"></div><h1 class="lh-t">${greeting()}</h1>${composer(true, 'Ask a question')}<div id="lhrecent">${recentHtml()}</div>${feedHtml()}</div></div>`;
+  if (window.BROTH_MASCOT) window.BROTH_MASCOT.mount($('#bm'));
   wireComposer(true);
   wireHome();
 }
