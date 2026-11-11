@@ -38,6 +38,7 @@ const DOCS = {
   docsInstall: 'connecting-docs-repositories#install',
   docsDeclaration: 'connecting-docs-repositories#public-declaration',
   docsProblems: 'connecting-docs-repositories#problems',
+  docsPrivateKey: 'connecting-docs-repositories#private-key',
 };
 const AUDIENCES = [['', 'All'], ['askers', 'Asking'], ['authors', 'Writing pages'], ['admins', 'Admin'], ['compliance', 'Compliance']];
 const AUDIENCE_NAME = Object.fromEntries(AUDIENCES.filter(([k]) => k));
