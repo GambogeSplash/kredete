@@ -750,3 +750,13 @@ a.btn,a.btn:hover,a.btn:focus{text-decoration:none}
 .pvsr{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--r-full);background:var(--fill-1);color:var(--mute);font-size:var(--fs-2xs);margin-bottom:var(--s-2)}
 .pvgh{padding:2px 6px}.pvrow{padding:5px 6px;border-radius:var(--r-sm)}.pvrow:first-of-type{background:var(--fill-1)}
 .pvm.pvsh{padding:var(--s-6) var(--s-5)}
+
+.pm-who .pm-ch{margin-left:auto;flex:none;color:var(--mute);display:grid;place-items:center;transition:transform var(--dur-fast),color var(--dur-fast)}.pm-who:hover .pm-ch{color:var(--ink);transform:translateX(2px)}
+
+/* sign-in and first-run: the whole two-part frame floats like the app's shells, inset from the window with rounded corners */
+@media (min-width:901px){
+ body.noauth{background:var(--shell)}
+ body.noauth .mainpanel{margin:8px!important;height:calc(100vh - 16px)!important;border:1px solid var(--line)!important;border-radius:var(--r-lg)!important;overflow:hidden;background:var(--surface)}
+ body.noauth main#app{height:100%;overflow:auto}
+ body.noauth .si{min-height:0;height:100%}
+}

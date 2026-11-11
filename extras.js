@@ -181,7 +181,7 @@ function profileMenu(a){ if(pm){ closePM(true); return; } const s=S(), u=s.user;
  const sf=s.surface||'app';
  const it=(k,l,ic,extra)=>`<button type="button" class="pm-i" role="menuitem" data-pm="${k}" ${sf===k?'aria-current="page"':''}>${ICON(ic,18)}<span>${l}</span>${extra||''}</button>`;
  const th=THEME();
- let h=`<div class="pm-head"><button type="button" class="pm-who" role="menuitem" data-pm="account">${AVATAR(u.name,'avimg',40)}<span><b>${esc(u.name)}</b><small>${esc(u.email||'')}</small><em>${esc(u.team||'')}</em></span></button><button type="button" class="pm-go" role="menuitem" data-pm="account" aria-label="Account settings">${ICON('chevr',16)}</button></div>`;
+ let h=`<div class="pm-head"><button type="button" class="pm-who" role="menuitem" data-pm="account">${AVATAR(u.name,'avimg',40)}<span><b>${esc(u.name)}</b><small>${esc(u.email||'')}</small><em>${esc(u.team||'')}</em></span><i class="pm-ch">${ICON('chevr',16)}</i></button></div>`;
  h+='<div class="pm-s"></div>';
  h+=it('account','Account settings','user');
  if(adm) h+=it('admin','Admin settings','gear');
@@ -191,8 +191,8 @@ function profileMenu(a){ if(pm){ closePM(true); return; } const s=S(), u=s.user;
  h+='<div class="pm-s"></div><button type="button" class="pm-i danger" role="menuitem" data-pm="out">'+ICON('logout',18)+'<span>Sign out</span></button>';
  const el=document.createElement('div'); el.className='pmenu'; el.setAttribute('role','menu'); el.setAttribute('aria-label','Profile'); el.innerHTML=h; document.body.appendChild(el);
  const r=a.getBoundingClientRect(); el.style.left=Math.max(8,Math.min(r.left,innerWidth-el.offsetWidth-8))+'px'; el.style.bottom=(innerHeight-r.top+6)+'px'; el.style.maxHeight=Math.max(200,r.top-16)+'px';
- pm={el,a}; a.setAttribute('aria-expanded','true'); const items=[...el.querySelectorAll('.pm-i,.pm-who,.pm-go')]; let cur=-1; const hi=n=>{ cur=n; items[n].focus({preventScroll:true}); }; el.setAttribute('tabindex','-1'); el.focus({preventScroll:true});
-  items.filter(b=>b.dataset.pm).forEach(b=>b.onclick=()=>{ const k=b.dataset.pm; closePM(false); if(window.BRAIN.haptic) window.BRAIN.haptic('light'); if(k==='theme'){ applyTheme(isDark()?'light':'dark'); return; } if(k==='out'){ s.user=null; A().expired=false; B.save(); B.route(); return; } if(k==='admin'){ s.acctTab='Workspace'; s.surface='account'; B.save(); B.route(); window.scrollTo(0,0); return; } s.surface=k; B.save(); B.route(); window.scrollTo(0,0); });
+ pm={el,a}; a.setAttribute('aria-expanded','true'); const items=[...el.querySelectorAll('.pm-i,.pm-who')]; let cur=-1; const hi=n=>{ cur=n; items[n].focus({preventScroll:true}); }; el.setAttribute('tabindex','-1'); el.focus({preventScroll:true});
+  items.filter(b=>b.dataset.pm).forEach(b=>b.onclick=()=>{ const k=b.dataset.pm; closePM(false); if(window.BRAIN.haptic) window.BRAIN.haptic('light'); if(k==='theme'){ applyTheme(isDark()?'light':'dark'); return; } if(k==='out'){ s.user=null; A().expired=false; B.save(); B.route(); return; } if(k==='admin'){ s.acctTab='Workspace'; s.surface='account'; B.save(); B.route(); window.scrollTo(0,0); return; } if(k==='account'){ s.acctTab='Profile'; s.surface='account'; B.save(); B.route(); window.scrollTo(0,0); return; } s.surface=k; B.save(); B.route(); window.scrollTo(0,0); });
  el.onkeydown=e=>{ if(e.key==='ArrowDown'){ e.preventDefault(); hi((cur+1)%items.length); } else if(e.key==='ArrowUp'){ e.preventDefault(); hi((cur-1+items.length)%items.length); } else if(e.key==='Home'){ e.preventDefault(); hi(0); } else if(e.key==='End'){ e.preventDefault(); hi(items.length-1); } else if(e.key==='Escape'||e.key==='Tab'){ e.preventDefault(); closePM(true); } };
  document.addEventListener('pointerdown',pmOut,true); window.addEventListener('resize',pmWin); }
 

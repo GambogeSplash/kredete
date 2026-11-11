@@ -18,6 +18,8 @@ const newCid=()=>'c_'+Date.now().toString(36)+Math.random().toString(36).slice(2
 /* saved answers lose the document functions in JSON, so point them back at the live documents */
 (S.thread||[]).forEach(t=>{ const a=t.a||{}; ['a','b'].forEach(k=>{ if(a[k]&&a[k].id&&D[a[k].id]) a[k]=D[a[k].id]; }); if(a.sources) a.sources=a.sources.map(x=>x&&x.id&&D[x.id]?D[x.id]:x); });
 const save = () => { try{ if(S.thread&&S.thread.length&&S.thread[0].q&&S.thread[0].cid){ (S.saved=S.saved||{})[S.thread[0].cid]=S.thread.map((e,i)=>({cid:i?undefined:e.cid,q:e.q,fb:e.fb||null,ts:e.ts,files:e.files||[],V:e.V,c:e.c})); } }catch(e){} localStorage.setItem(KEY, JSON.stringify(S)); };
+/* several tabs share one saved state: when another tab saves, take its version at once, so a stale tab can never write an old state (a signed-out you) back over a newer one */
+window.addEventListener('storage',e=>{ if(e.key!==KEY||!e.newValue||EMB) return; try{ const n=JSON.parse(e.newValue); const userChanged=JSON.stringify(n.user||null)!==JSON.stringify(S.user||null); Object.keys(S).forEach(k=>{ if(!(k in n)) delete S[k]; }); Object.assign(S,n); if(userChanged&&window.BRAIN&&window.BRAIN.route) window.BRAIN.route(); }catch(err){} });
 const tg=(t,c)=>`<span class="tag ${c||''}">${t}</span>`;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
