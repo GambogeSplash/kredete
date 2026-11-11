@@ -507,7 +507,7 @@ time{white-space:nowrap}
 .lrail .agback svg{flex:none}
 .lrail .agname{font-size:var(--fs-sm);font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* fields: label and counter on one line, hint and error below */
-.agfield{margin-bottom:var(--s-3)}
+.agfield{margin-bottom:var(--s-3);scroll-margin-bottom:168px}
 .agfield .eminp{width:100%;margin-bottom:0}
 .agfield textarea.eminp{resize:vertical;font-family:inherit;min-height:64px}
 .aglab{display:flex;align-items:baseline;gap:var(--s-2)}

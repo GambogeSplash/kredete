@@ -181,9 +181,13 @@ function showError(root, key, message) {
   const box = $(`[data-field="${key}"]`, root);
   if (!box) return;
   const err = $('.agerr', box);
+  const fresh = !!message && !!err && err.textContent !== message;
   if (err) err.textContent = message || '';
   const control = $('input,textarea,select', box);
   if (control) control.setAttribute('aria-invalid', message ? 'true' : 'false');
+  // A new message under the field being typed in stays in view, clear of the floating Save bar
+  // (scroll-margin-bottom in components.css leaves room for it).
+  if (fresh && box.contains(document.activeElement)) box.scrollIntoView({ block: 'nearest' });
 }
 
 /** Keeps each field's character counter current; calling it again redraws them after a reset. */
