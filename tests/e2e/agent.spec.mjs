@@ -162,7 +162,7 @@ test.describe('Knowledge', () => {
     await page.getByRole('button', { name: 'Open Payments (PAY) in the Library' }).click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(page.getByRole('button', { name: 'Remove filter Source: Payments (PAY)' })).toBeVisible();
-    const rows = page.locator('.lrow:not(.lfold)');
+    const rows = page.locator('#libbody [data-open]');
     await expect(rows.first()).toBeVisible();
     for (const path of await rows.locator('.lpath').allTextContents()) expect(path).toMatch(/^Payments \(PAY\)/);
     await check(page, 'library-source-filter');

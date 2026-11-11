@@ -114,7 +114,7 @@ test("a page's label problems link to what they mean", async ({ open }) => {
       await route.fulfill({ response, json: body.title === 'Cards FAQ' ? { ...body, label_warnings: ['Unknown Broth label "broth-domian-cards".'] } : body });
     }),
   });
-  await page.locator('#libbody .lrow').filter({ hasText: 'Cards FAQ' }).click();
+  await page.locator('#libbody [data-open]').filter({ hasText: 'Cards FAQ' }).click();
   await page.locator('#drawer').getByRole('link', { name: 'What these mean' }).click();
   await expect(page).toHaveURL(/\/docs\/labelling-pages#label-problems$/);
   await expect(page.locator('#drawer')).toHaveAttribute('aria-hidden', 'true');
