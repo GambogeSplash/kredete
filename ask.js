@@ -35,6 +35,7 @@ function askState() {
       focus: null, // the turn whose sources the panel shows (defaults to the last answer)
       filters: { system: '', domain: '', when: '' },
       exclude: [],
+      files: [], // chips in the composer: kept in this browser, never sent
       docs: { q: '', items: [], next: null, loading: false, error: null, loaded: false },
     };
   }
@@ -226,8 +227,78 @@ function sourcesLabel() {
   const narrowed = askState().filters.system || askState().filters.domain || askState().filters.when;
   return `${narrowed ? 'Filtered · ' : ''}${n} ${n === 1 ? 'source' : 'sources'}`;
 }
+/* ---------- attached files and dictation: kept in this browser, never sent (the API has no file endpoint) ---------- */
+const FT = { pdf: ['PDF', '#e5484d'], csv: ['CSV', '#26a269'], tsv: ['TSV', '#26a269'], xlsx: ['XLS', '#26a269'], xls: ['XLS', '#26a269'], doc: ['DOC', '#3b82f6'], docx: ['DOC', '#3b82f6'], ppt: ['PPT', '#e2784a'], pptx: ['PPT', '#e2784a'], txt: ['TXT', '#7a7d85'], md: ['MD', '#7a7d85'], json: ['JSON', '#d4a30a'], zip: ['ZIP', '#7a7d85'] };
+const IMG_EXT = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'heic', 'avif'];
+const fmtSize = (n) => (n < 1024 ? n + ' B' : n < 1048576 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(1) + ' MB');
+function attInfo(x) {
+  const ext = (String(x.name).split('.').pop() || '').toLowerCase();
+  const isImg = /^image\//.test(x.type || '') || IMG_EXT.includes(ext);
+  return { ext, isImg, label: isImg ? 'Image' : (FT[ext] ? FT[ext][0] : (ext ? ext.toUpperCase().slice(0, 4) : 'File')) };
+}
+function attCard(x, i) {
+  const inf = attInfo(x);
+  const col = (FT[inf.ext] || [0, '#7a7d85'])[1];
+  const thumb = inf.isImg && x.data ? `<img class="athm" src="${esc(x.data)}" alt="">` : `<span class="athm atile" style="--c:${col}">${inf.isImg ? ICON('image', 16) : esc(inf.label)}</span>`;
+  return `<span class="att"><span class="atb">${thumb}<span class="atx"><b>${esc(x.name)}</b><small>${esc(inf.label + (x.size ? ' · ' + fmtSize(x.size) : ''))}</small></span></span><button type="button" class="atrm" data-rmf="${i}" aria-label="Remove ${esc(x.name)}">${ICON('x', 12)}</button></span>`;
+}
+function filesHtml() {
+  const f = askState().files;
+  return f.length ? `<div class="dfiles">${f.map(attCard).join('')}</div>` : '';
+}
+function drawFiles() {
+  const d = $('#dfiles');
+  if (!d) return;
+  d.innerHTML = filesHtml();
+  $$('[data-rmf]', d).forEach((b) => { b.onclick = () => { askState().files.splice(Number(b.dataset.rmf), 1); drawFiles(); }; });
+}
+function addFiles(list) {
+  const f = askState().files;
+  [...list].forEach((x) => {
+    if (f.length >= 5) return;
+    if (x.size > 10 * 1024 * 1024) { B.toast(x.name + ' is over 10 MB'); return; }
+    const ent = { name: x.name, size: x.size, type: x.type || '', data: '' };
+    f.push(ent);
+    if (/^image\//.test(x.type) && x.size < 4 * 1024 * 1024) { // data: URLs pass the page's image policy, blob: URLs do not
+      const fr = new FileReader();
+      fr.onload = () => { ent.data = String(fr.result || ''); drawFiles(); };
+      fr.readAsDataURL(x);
+    }
+  });
+  drawFiles();
+}
+/** @type {any} */
+let rec = null;
+function stopMic() { if (rec) { try { rec.stop(); } catch (e) { /* already stopped */ } } }
+function toggleMic(btn, ta) {
+  const SR = /** @type {any} */ (window).SpeechRecognition || /** @type {any} */ (window).webkitSpeechRecognition;
+  if (!SR) return;
+  if (rec) { stopMic(); return; }
+  const r = new SR();
+  rec = r;
+  r.lang = navigator.language || 'en-US';
+  r.interimResults = true;
+  r.continuous = true;
+  const base = ta.value ? ta.value.replace(/\s*$/, ' ') : '';
+  let fin = '';
+  r.onresult = (e) => {
+    let it = '';
+    for (let i = e.resultIndex; i < e.results.length; i += 1) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) fin += t; else it += t;
+    }
+    ta.value = base + fin + it;
+    ta.dispatchEvent(new Event('input'));
+  };
+  r.onerror = (e) => { B.toast(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Allow the microphone to speak your question.' : 'Voice input stopped.'); };
+  r.onend = () => { rec = null; btn.classList.remove('rec'); btn.setAttribute('aria-pressed', 'false'); btn.setAttribute('aria-label', 'Dictate'); ta.focus(); };
+  try { r.start(); btn.classList.add('rec'); btn.setAttribute('aria-pressed', 'true'); btn.setAttribute('aria-label', 'Stop dictating'); B.toast('Listening. Speak your question.'); } catch (e) { rec = null; }
+}
+
 function composer(home, placeholder, convId) {
-  return `<form class="dform" id="askform"><textarea id="askin" rows="${home ? 3 : 1}" placeholder="${placeholder}" aria-label="Ask a question" autocomplete="off" maxlength="4000" ${convId ? `data-conv="${esc(convId)}"` : ''}></textarea><div class="drow"><button type="button" class="dchip" id="cxsrc">${ICON('stack', 14)}<span>${esc(sourcesLabel())}</span>${B.CARET}</button><span class="lsp"></span><button class="dsend" type="submit" aria-label="Ask">${ICON('send', 16)}</button></div></form>`;
+  const SR = /** @type {any} */ (window).SpeechRecognition || /** @type {any} */ (window).webkitSpeechRecognition;
+  const mic = SR ? `<button type="button" class="dic" id="cxmic" aria-label="Dictate" aria-pressed="false" title="Speak your question">${ICON('mic', 16)}</button>` : '';
+  return `<form class="dform" id="askform"><div id="dfiles">${filesHtml()}</div><textarea id="askin" rows="${home ? 3 : 1}" placeholder="${placeholder}" aria-label="Ask a question" autocomplete="off" maxlength="4000" ${convId ? `data-conv="${esc(convId)}"` : ''}></textarea><div class="drow"><button type="button" class="dic" id="cxatt" aria-label="Attach" title="Attach a file">${ICON('clip', 16)}</button>${mic}<input type="file" id="cxfile" multiple hidden accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.png,.jpg,.jpeg"><button type="button" class="dchip" id="cxsrc">${ICON('stack', 14)}<span>${esc(sourcesLabel())}</span>${B.CARET}</button><span class="lsp"></span><button class="dsend" type="submit" aria-label="Ask">${ICON('send', 16)}</button></div></form>`;
 }
 function feedHtml() {
   const sys = systems();
@@ -382,10 +453,21 @@ function wireComposer(home) {
     if (active || creating) return;
     const v = ta.value.trim();
     if (!v) return;
+    stopMic();
+    if (askState().files.length) { askState().files = []; drawFiles(); B.toast('Files stay on this device. Only your question was sent.'); }
     ta.value = '';
     ta.style.height = '';
     ask(v);
   };
+  const att = $('#cxatt'), mic = $('#cxmic'), fi = $('#cxfile');
+  if (att) {
+    att.onclick = () => fi.click();
+    fi.onchange = () => { addFiles(fi.files); fi.value = ''; };
+    ['dragenter', 'dragover'].forEach((ev) => form.addEventListener(ev, (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); form.classList.add('drop'); } }));
+    ['dragleave', 'drop'].forEach((ev) => form.addEventListener(ev, (e) => { if (ev === 'drop' && e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); addFiles(e.dataTransfer.files); } form.classList.remove('drop'); }));
+  }
+  if (mic) mic.onclick = () => toggleMic(mic, ta);
+  drawFiles();
   $('#cxsrc').onclick = () => {
     askState().pt = 'sources';
     if (innerWidth <= 860) openSourcesDrawer();

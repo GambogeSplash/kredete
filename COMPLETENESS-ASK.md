@@ -9,7 +9,9 @@ Status: done = present and matched in the real app with real data. browser-only 
 | Placeholder typewriter cycle | app.js renderAsk | yes | kept | done |
 | Composer: up-arrow send, Enter sends, Shift+Enter newline, auto-grow | app.js composer | yes | tested | done |
 | Home composer not focused on load | app.js | was autofocused | removed autofocus | done |
-| Attach, mic, file chips | composer() | no | not revived | needs-backend |
+| Mic: dictate into the input (Web Speech API, hidden when unsupported), recording state | toggleMic | yes | ported, metrics equal | browser-only |
+| Attach button and file chips (up to 5, 10 MB, remove, drop on composer) | addFiles, attCard | yes | ported; chips stay on this device, send ignores them with a toast | browser-only |
+| Sending attached files to Broth, Library picker | attachMenu | no | the API has no file endpoint | needs-backend |
 | Source count chip opens the panel (not a drawer) on desktop | #cxsrc | was a drawer | fixed | done |
 | Four example cards with source icons | .lh-sug | yes | card lift on hover removed (prototype holds no lift) | done |
 | Reading from N connected apps | .lh-feed | yes, from /v1/facets | kept | done |
@@ -31,4 +33,4 @@ Status: done = present and matched in the real app with real data. browser-only 
 | Mobile: sheet for the panel, round avatar | mobile.css | yes | avatar made round under 901 px | done |
 | Ask motion (stagger, springs, focus scale) | life.js | yes | not edited | done |
 
-Rows 26 | done 22 | browser-only 1 | needs-backend 3. Empty states are framed and headings carry (i) hints.
+Rows 28 | done 22 | browser-only 3 | needs-backend 3. Empty states are framed and headings carry (i) hints.
