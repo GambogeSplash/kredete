@@ -145,3 +145,4 @@ a.prov[aria-disabled=true]{pointer-events:none}
 /* after a picture-to-picture swap the new page keeps its entrance off for good (removing a class would restart it and blink the picture) */
 .si.v2[data-nofade]:has(.si-r.pict){animation:none}
 .si[data-nofade] .si-in.in{animation:none}
+.pvmock.pvw.pvfl{align-items:stretch}
