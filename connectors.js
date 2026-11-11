@@ -158,7 +158,7 @@ function showPage(body) {
   if (hold) hold.hidden = true;
   const head = $('.cnsec-h', sec);
   if (head) head.remove();
-  window.ADMIN.setTitle(`<span class="srctl"><span class="adsl">${B.srcIcon(pageSrc.logo, 28)}</span><span>${esc(pageSrc.name)}</span><span class="tag ${st.tag[1]}">${st.tag[0]}</span></span>`, BASE, 'Sources');
+  window.ADMIN.setTitle(`<span class="srctl"><span class="adsl">${B.srcIcon(pageSrc.logo, 28)}</span><span>${esc(pageSrc.name)}</span>${st.conns.length > 1 || st.tag[1] !== 'ok' ? `<span class="tag ${st.tag[1]}">${st.tag[0]}</span>` : ''}</span>`, BASE, 'Sources');
   window.ADMIN.actions(link ? window.DOCS.link('docsInstall', 'How to connect').replace('class="dclink"', 'class="dclink btn sm"') : '');
 }
 /* Every dialog here is the prototype's: a centred .modal in the shared #modal host, a title bar with a
@@ -384,7 +384,7 @@ function spaceRow(s, repos = false) {
 }
 function credentialRow(c) {
   const [title, sub] = CREDENTIALS[c.name] || [c.name, ''];
-  return `<div class="frow cnc" data-cred="${c.name}"><div class="frl"><b>${title}</b><small>${sub}</small></div><div class="frv">${c.configured ? `<span class="tag ok">Configured</span><span class="amute"> ${c.name === 'github_app' ? 'App ID' : 'Client ID'} ends in ${esc(c.client_id_last4 || '')}${c.updated_at ? ' · ' + B.when(c.updated_at, B.ago(c.updated_at)) : ''}</span>` : '<span class="tag warn">Not configured</span>'}</div><div class="fra"><button type="button" class="btn sm" data-cedit="${c.name}">${c.configured ? 'Replace' : 'Add'}</button></div></div>`;
+  return `<div class="frow cnc" data-cred="${c.name}"><div class="frl"><b>${title}</b><small>${sub}</small></div><div class="frv">${c.configured ? `<span class="amute">Configured · ${c.name === 'github_app' ? 'App ID' : 'Client ID'} ends in ${esc(c.client_id_last4 || '')}${c.updated_at ? ' · ' + B.when(c.updated_at, B.ago(c.updated_at)) : ''}</span>` : '<span class="tag warn">Not configured</span>'}</div><div class="fra"><button type="button" class="btn sm" data-cedit="${c.name}">${c.configured ? 'Replace' : 'Add'}</button></div></div>`;
 }
 function wire() {
   const body = $('#cnbody');
@@ -564,6 +564,8 @@ function statusHtml(c, run, view) {
   if (!view.tag) return `<span>${esc(view.label)}</span>`;
   const when = view.tag !== 'bad' && run.finished_at ? [B.when(run.finished_at, ago(run.finished_at))] : [];
   const rest = [...when, ...(view.detail ? [counts(view.detail)] : [])].join(' · ');
+  // A finished, healthy read is plain muted text ("Synced 7 h ago · No changes"); a tag marks only a problem.
+  if (view.tag === 'ok') return `<span>${esc(view.label)}${rest ? ' ' + rest : ''}</span>`;
   return `<span class="tag ${view.tag}">${esc(view.label)}</span>${rest ? ` <span>${rest}</span>` : ''}`;
 }
 /** A space's own read: its progress, then its page count or the pages it could not read. */
