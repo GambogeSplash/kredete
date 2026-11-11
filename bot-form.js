@@ -107,6 +107,7 @@
       if (text.length > max) return `At most ${max} characters.`;
       return null;
     }
+    if (!text && ['contact_url', 'privacy_url', 'daily_question_limit', 'accent'].includes(field)) return 'Required.';
     switch (field) {
       case 'contact_url':
         if (text.startsWith('mailto:')) return EMAIL.test(text.slice(7)) ? null : 'Use one email address, like mailto:help@kredete.com.';

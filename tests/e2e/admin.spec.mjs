@@ -35,7 +35,7 @@ test.describe('surfaces follow roles', () => {
     }
   });
 
-  test('compliance sees Audit and the Support agent, not the other admin screens', async ({ open, check }) => {
+  test('compliance sees Audit only: no other admin screen and no Support agent', async ({ open, check }) => {
     const page = await open('compliance', '/admin/people');
     await expect(page).toHaveURL(/\/admin\/audit$/);
     const rail = page.getByRole('navigation', { name: 'Admin' });
@@ -47,20 +47,25 @@ test.describe('surfaces follow roles', () => {
     await expect(page.locator('#audt .audact')).toHaveText(Array(3).fill('Sharing requested'));
     await check(page, 'audit-compliance');
     const menu = await profileMenu(page);
-    await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
+    // The bot admin API is admin only, and so are its screens (bot admin spec 4.1).
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => window.BRAIN.go('/agent'));
+    await expect(page).not.toHaveURL(/\/agent/);
   });
 
-  test('a developer has the Support agent and no Admin', async ({ open, check }) => {
+  test('a developer has neither Admin nor the Support agent', async ({ open }) => {
     const page = await open('developer', '/');
     const surfaces = await nav(page);
     await expect(surfaces.getByRole('button', { name: 'Admin' })).toHaveCount(0);
     if (phone(page)) await page.getByRole('button', { name: 'Close menu' }).click();
     const menu = await profileMenu(page);
-    await menu.getByRole('menuitem', { name: 'Support agent' }).click();
-    await expect(page).toHaveURL(/\/agent$/);
-    await check(page, 'support-agent');
-    await page.evaluate(() => window.BRAIN.go('/admin'));
-    await expect(page).toHaveURL(/\/$/);
+    await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    for (const path of ['/admin', '/agent']) {
+      await page.evaluate((p) => window.BRAIN.go(p), path);
+      await expect(page).toHaveURL(/\/$/);
+    }
   });
 
   test('an admin has every admin screen', async ({ open }) => {

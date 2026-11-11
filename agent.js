@@ -1,97 +1,275 @@
-/* Support agent: the customer-facing bot as a product. Four pages, one Publish. */
+/* agent.js: the Support agent (bot admin spec 4): the bots, and each bot's pages.
+ *
+ * Admins only, as the bot admin API is. /agent lists the bots, always, even with one: a
+ * redirect would trap "All bots" on that bot. /agent/<bot>/<page> shows one of the bot's pages;
+ * the pages register in window.AGENT.pages (agent-overview.js, agent-knowledge.js,
+ * agent-experience.js, agent-products.js) and get the bot, the containers and connections, and
+ * `saved(bot)`, so the rail, the breadcrumb and every page show the same record.
+ *
+ * The bots, containers and connections load once each time someone arrives at the Support
+ * agent, so Public page counts are current after promoting pages in the Library.
+ */
 (() => {
-const B=window.BRAIN; const D=window.DOCS; const state={bot:{msgs:[],offline:false,fb:{}},ext:{},items:[]}; const $=(s,r=document)=>r.querySelector(s); const $$=(s,r=document)=>[...r.querySelectorAll(s)]; const esc=B.esc;
-const NAV=[['Agent',['Overview']],['Build',['Knowledge','Experience']]];
-const bot=()=>{ const b=state.bot; b.products=b.products||[{id:'p1',name:'Kredete Business app',origin:'app.kredete.example',accent:'#5e6ad2',key:'bk_live_7f3a91c2',live:true},{id:'p2',name:'Kredete Help site',origin:'help.kredete.example',accent:'#26a269',key:'bk_live_c40be8d1',live:true}]; b.fixes=b.fixes||[]; b.version=b.version||1; b.tab=NAV.flatMap(g=>g[1]).includes(b.tab)?b.tab:'Overview'; return b; };
-const live=d=>d.id==='fee_schedule'||d.id==='public_fee'||state.ext[d.id]===true;
-const norm=t=>String(t).toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
-const drafts=()=>bot().fixes.filter(f=>f.status==='draft').length;
+'use strict';
+const B = window.BRAIN;
+const F = window.BOT_FORM;
+/** @type {(s: string, r?: ParentNode) => any} */
+const $ = (s, r = document) => r.querySelector(s);
+/** @type {(s: string, r?: ParentNode) => any[]} */
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = B.esc;
 
-function shell(){ const b=bot(); if(!['Overview','Knowledge','Experience'].includes(b.tab)) b.tab='Overview'; const d=drafts();
-  $('#app').className='';
-  $('#app').innerHTML=`<div class="lset"><nav class="lrail" aria-label="Support agent">${NAV.map(([g,ts])=>`${ts.map(t=>`<button class="tab" data-at="${t}" aria-current="${b.tab===t?'page':'false'}">${t}</button>`).join('')}`).join('')}</nav>
-   <div class="lcont"><div class="aghd"><h1 class="lcont-t">${b.tab}</h1><span class="lsp"></span>${d?`<span class="tag warn">${d} unpublished</span><button class="btn primary" id="agpub">Publish version ${b.version+1}</button>`:b.tab==='Overview'?`<span class="tag ok">Live · version ${b.version}</span>`:''}</div><div id="abpane"></div></div></div>`;
-  $$('[data-at]').forEach(x=>x.onclick=()=>{ b.tab=x.dataset.at; shell(); window.scrollTo(0,0); });
-  const pb=$('#agpub'); if(pb) pb.onclick=()=>{ const n=bot().fixes.filter(f=>f.status==='draft'); n.forEach(f=>f.status='live'); b.version++; B.toast('Version '+b.version+' is live on '+b.products.filter(p=>p.live).length+' products'); shell(); };
-  window.BOT_HOST=null; ({Overview,Knowledge,Experience}[b.tab]||Overview)(); }
+const LABELS = { overview: 'Overview', knowledge: 'Knowledge', experience: 'Experience', products: 'Products' };
+/** @type {Record<string, (el: HTMLElement, ctx: any) => void>} */
+const pages = {};
 
-/* ---- Overview: readiness, numbers, live preview ---- */
-function Overview(){ const b=bot(), el=$('#abpane'); const liveP=b.products.filter(p=>p.live).length;
-  const docs=Object.values(D).filter(live).slice(0,5); const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; const vals=liveP?[142,168,155,191,176,88,97]:[0,0,0,0,0,0,0]; const mx=Math.max(...vals,1);
-  const kpi=liveP?[['86%','Answered from your sources','+4 pts'],['1,017','Questions this week','+12%'],['9%','Handed to a person','-2 pts'],['4.6','Customer rating','+0.1']]:[['0%','Answered from your sources',''],['0','Questions this week',''],['0%','Handed to a person',''],['0','Customer rating','']];
-  const gaps=[['Can I change my payout date?',23,'No source covers payouts timing'],['How do I dispute a charge?',17,'Only an internal policy exists'],['Do you support Apple Pay?',11,'No source mentions it']];
-  const hits=[212,164,131,98,74];
-  el.innerHTML=`<div class="agov">
-   <div class="ovk">${kpi.map(k=>`<div class="astat"><b>${k[0]}</b><span>${k[1]}</span>${k[2]?`<em class="${k[2][0]==='-'&&/Handed/.test(k[1])?'up':k[2][0]==='-'?'dn':'up'}">${k[2]}</em>`:''}</div>`).join('')}</div>
-   <div class="acard"><div class="agc-h"><h3>Questions per day</h3><span class="lsp"></span><span class="ovsub">Last 7 days</span></div><div class="ovc" role="img" aria-label="Questions per day, last 7 days">${vals.map((v,i)=>`<div class="ovb"><i style="height:${Math.max(v/mx*100,2)}%"><u>${v}</u></i><span>${days[i]}</span></div>`).join('')}</div></div>
-   <div class="ov2">
-    <div class="acard"><div class="agc-h"><h3>Questions it could not answer</h3><span class="lsp"></span><button class="btn sm" data-go="Knowledge">Add knowledge</button></div>${gaps.map(g=>`<div class="ovr"><span class="ovt"><b>${g[0]}</b><small>${g[2]}</small></span><span class="ovn">${g[1]}x</span></div>`).join('')}</div>
-    <div class="acard"><div class="agc-h"><h3>Most used sources</h3></div>${docs.length?docs.map((d,i)=>`<div class="ovr"><span class="ovt ovs">${SRCICON(d.system,20)}<b>${esc(d.title)}</b></span><span class="ovn">${hits[i]||40}</span></div>`).join(''):'<div class="ovr"><span class="ovt"><small>No sources are visible to customers yet</small></span></div>'}</div>
-   </div>
-   <div class="ovh"><h3>Products</h3></div><div id="agprod"></div></div>`;
-  $$('[data-go]',el).forEach(x=>x.onclick=()=>{ b.tab=x.dataset.go; shell(); });
-  Products();
- }
-
-/* ---- Conversations: handovers first, then recent, with the fix editor ---- */
-
-/* ---- Knowledge: what customers can know, and ask for more ---- */
-function Knowledge(){ const el=$('#abpane'); const docs=Object.values(D).filter(d=>d.kind||d.level!=null); const reqs=state.items.filter(i=>i.type==='approval'&&i.reqDoc);
-  const rows=docs.sort((a,b)=>(live(b)?1:0)-(live(a)?1:0)).map(d=>{ const lv=live(d); const asked=reqs.find(r=>r.reqDoc===d.id&&['open','progress'].includes(r.status)); const canAsk=!lv&&(d.level||0)===0;
-   return `<div class="dt-r"><span class="dtp">${SRCICON(d.system,22)}<span><b>${esc(d.title)}</b><small>${esc(d.system)}</small></span></span><span class="dtm"><i class="adot" style="background:${window.LEVEL_COL[d.level||0]}"></i> ${window.LEVELS[d.level||0]}</span><span>${lv?'<span class="tag ok">Visible</span>':asked?'<span class="tag blue">Approval requested</span>':'<span class="tag">Internal</span>'}</span><span class="dtr">${canAsk&&!asked?`<button class="btn sm" data-ask="${d.id}">Ask to approve</button>`:''}</span></div>`; }).join('');
-  el.innerHTML=`<div class="dt" style="--cols:minmax(0,2fr) minmax(0,1fr) 150px 130px"><div class="dt-r dt-h"><span>Source</span><span>Level</span><span>For customers</span><span></span></div>${rows}</div>`;
-  $$('[data-ask]',el).forEach(x=>x.onclick=()=>{ const d=D[x.dataset.ask]; state.items.unshift({id:'i'+Date.now(),type:'approval',title:'Approve "'+d.title+'" for the support agent',domain:d.domain,impact:0,owner:d.owner,status:'open',age:'just now',reqDoc:d.id,preview:d.text?B.esc(String(d.text()).replace(/<[^>]+>/g,'')):'',note:'Requested from the Support agent. Approving makes it visible to customers.'}); B.toast('Sent to '+d.owner+' for approval'); Knowledge(); }); }
-
-
-/* ---- Experience: how the bot looks and behaves for customers, with a live preview ---- */
-const EXPD={name:'Kredete Assistant',greeting:'Hi, I can answer questions about your Kredete account and cards.',sugg:['What is the card replacement fee?','What is the daily transfer limit?','How much interest does Flexible Saver pay?'],tone:'friendly',handoff:true,unknown:"I could not find that in our help content.",side:'right',accent:'#5e6ad2'};
-const expo=()=>{ const b=bot(); b.exp=Object.assign({},EXPD,b.exp||{}); b.exp.sugg=(b.exp.sugg||EXPD.sugg).slice(0,3); return b.exp; };
-function expAnswer(q,x){ const ws=q.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>2&&!/^(the|what|how|does|can|for|you|are|and|with|much)$/.test(w));
-  const docs=Object.values(D).filter(live); let best=null,sc=0; docs.forEach(d=>{ const t=(d.title+' '+String(d.text?d.text(d.value):'')).replace(/<[^>]+>/g,' ').toLowerCase(); const n=ws.reduce((a,w)=>a+(t.includes(w)?1:0),0); if(n>sc){ sc=n; best=d; } });
-  if(!best||sc<1) return {ok:false,text:x.unknown};
-  const raw=String(best.text(best.value)).replace(/<[^>]+>/g,'').split(/(?<=\.)\s/)[0]; return {ok:true,text:(x.tone==='friendly'?'Happy to help! ':'')+raw,src:best.title}; }
-function Experience(){ const b=bot(), el=$('#abpane'); const x=expo();
-  const seg=(k,opts)=>`<div class="seg exseg" role="group">${opts.map(([v,l])=>`<button type="button" class="exsb ${x[k]===v?'on':''}" data-k="${k}" data-v="${v}" aria-pressed="${x[k]===v}">${l}</button>`).join('')}</div>`;
-  const sw=['#5e6ad2','#26a269','#e5484d','#1b1b1f'];
-  el.innerHTML=`<div class="exg"><div class="exf">
-   <label class="hsl" for="exn" style="margin-top:0">Name</label><input id="exn" class="eminp" value="${esc(x.name)}" maxlength="32">
-   <label class="hsl" for="exg">Opening line</label><textarea id="exg" class="eminp" rows="2" maxlength="120">${esc(x.greeting)}</textarea>
-   <label class="hsl">Suggested questions</label>${x.sugg.map((q,i)=>`<input class="eminp exsq" data-i="${i}" value="${esc(q)}" maxlength="60" aria-label="Suggested question ${i+1}">`).join('')}
-   <div class="exrow"><span class="hsl">Tone</span>${seg('tone',[['friendly','Friendly'],['concise','Concise']])}</div>
-   <div class="exrow"><span class="hsl">Colour</span><div class="exsw">${sw.map(c=>`<button type="button" class="exc ${x.accent===c?'on':''}" data-c="${c}" style="--c:${c}" aria-label="Colour ${c}" aria-pressed="${x.accent===c}"></button>`).join('')}</div></div>
-   <div class="exrow"><span class="hsl">Button position</span>${seg('side',[['left','Left'],['right','Right']])}</div>
-   <div class="exrow"><span class="hsl">Offer a person when it cannot answer</span><input type="checkbox" class="sw" id="exh" ${x.handoff?'checked':''} aria-label="Offer a person"></div>
-   <label class="hsl" for="exu">When it does not know</label><input id="exu" class="eminp" value="${esc(x.unknown)}" maxlength="90">
-  </div><div class="exp"><div class="exw" style="--ac:${x.accent}"><div class="exh"><span class="exav">${esc(x.name.trim().charAt(0)||'K')}</span><b>${esc(x.name)}</b></div><div class="exm" id="exm"><div class="exb bot">${esc(x.greeting)}</div><div class="exq">${x.sugg.filter(Boolean).map(q=>`<button type="button" class="exqb">${esc(q)}</button>`).join('')}</div></div><form class="exi" id="exfm"><input id="exin" placeholder="Ask a question" aria-label="Ask a question"><button type="submit" class="exs" aria-label="Send">${ICON('send',14)}</button></form></div><div class="exl ${x.side}" style="--ac:${x.accent}" aria-hidden="true">${ICON('chat',20)}</div></div></div>`;
-  const upd=()=>{ };
-  const redraw=()=>{ upd(); Experience(); };
-  $('#exn').oninput=e=>{ x.name=e.target.value; upd(); $('.exh b').textContent=x.name; $('.exav').textContent=x.name.trim().charAt(0)||'K'; };
-  $('#exg').oninput=e=>{ x.greeting=e.target.value; upd(); const f=$('.exb.bot'); if(f) f.textContent=x.greeting; };
-  $$('.exsq',el).forEach(i=>i.onchange=()=>{ x.sugg[+i.dataset.i]=i.value; redraw(); });
-  $$('.exsb',el).forEach(b2=>b2.onclick=()=>{ x[b2.dataset.k]=b2.dataset.v; redraw(); });
-  $$('.exc',el).forEach(b2=>b2.onclick=()=>{ x.accent=b2.dataset.c; redraw(); });
-  $('#exh').onchange=e=>{ x.handoff=e.target.checked; upd(); };
-  $('#exu').oninput=e=>{ x.unknown=e.target.value; upd(); };
-  const m=$('#exm'); const say=q=>{ q=q.trim(); if(!q) return; const u=document.createElement('div'); u.className='exb me'; u.textContent=q; m.appendChild(u); const r=expAnswer(q,x); const a=document.createElement('div'); a.className='exb bot'; a.textContent=r.text; if(r.src){ const s2=document.createElement('small'); s2.textContent='From '+r.src; a.appendChild(s2); } if(!r.ok&&x.handoff){ const h=document.createElement('button'); h.type='button'; h.className='exqb'; h.textContent='Talk to a person'; h.onclick=()=>{ B.toast('A person will pick this up'); }; a.appendChild(h); } setTimeout(()=>{ m.appendChild(a); m.scrollTop=m.scrollHeight; },380); m.scrollTop=m.scrollHeight; };
-  $$('.exqb',el).forEach(q=>{ if(!q.dataset.h) q.onclick=()=>say(q.textContent); });
-  $('#exfm').onsubmit=e=>{ e.preventDefault(); const i=$('#exin'); say(i.value); i.value=''; };
+function state() {
+  const c = B.S.cache;
+  if (!c.agent) c.agent = { bots: [], containers: [], connections: [], loaded: false, error: null };
+  return c.agent;
 }
 
-/* ---- Products: embed anywhere ---- */
-const snippet=p=>{ const x=expo(), at=(k,v)=>`\n  data-${k}="${esc(v)}"`;
-  return `<script src="https://kredete.vercel.app/embed.js" async`+at('key',p.key)+at('product',p.name)+at('accent',p.accent)+at('name',x.name)+at('greeting',x.greeting)+at('suggestions',JSON.stringify(x.sugg.filter(Boolean)))+at('tone',x.tone)+at('side',x.side)+at('handoff',String(!!x.handoff))+at('unknown',x.unknown)+`><\/script>`; };
-function Products(){ const b=bot(), el=$('#agprod'); const sel=b.products.find(p=>p.id===b.selP)||b.products[0]; b.selP=sel.id;
-  el.innerHTML=`<div class="pgrid">${b.products.map(p=>`<button type="button" class="pcard ${p.id===sel.id?'on':''}" data-pid="${p.id}" aria-pressed="${p.id===sel.id}"><span class="pico" style="--c:${p.accent}">${ICON(/help|docs|site/i.test(p.name)?'book':'stack',20)}</span><span class="pcn"><b>${esc(p.name)}</b><small>${esc(p.origin)}</small></span><span class="tag ${p.live?'ok':'warn'}">${p.live?'Live':'Revoked'}</span></button>`).join('')}<button type="button" class="pcard padd" id="agadd"><span class="pico plus" aria-hidden="true">+</span><span class="pcn"><b>Add a product</b></span></button></div>
-  <div class="acard" style="margin-top:var(--s-3)"><div class="agc-h"><h3>${esc(sel.name)}<small class="pkey">Key ${sel.key.slice(0,8)}••••${sel.key.slice(-4)}</small></h3><span class="lsp"></span><button class="btn sm" id="agrv">${sel.live?'Revoke key':'Restore key'}</button></div><pre class="code" id="agsn">${snippet(sel).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre><div class="actions" style="margin:8px 0 0"><button class="btn primary" id="agcp">Copy snippet</button><a class="link" href="/embed-demo.html" target="_blank" rel="noopener">Open demo page ${ICON('ext',14)}</a></div></div>`;
-  $$('[data-pid]',el).forEach(x=>{ const o=()=>{ b.selP=x.dataset.pid; Products(); }; x.onclick=o; x.onkeydown=e=>{ if(e.key==='Enter') o(); }; });
-  $('#agrv').onclick=()=>{ sel.live=!sel.live; B.toast(sel.live?'Key restored':'Key revoked. The agent stops answering there.'); shell(); };
-  $('#agcp').onclick=()=>{ try{ navigator.clipboard.writeText(snippet(sel)); }catch(e){} B.toast('Snippet copied'); };
-  $('#agadd').onclick=()=>addProduct(); }
-function addProduct(){ const b=bot(); const m=$('#modal');
-  m.innerHTML=`<div class="modal" role="dialog" aria-label="Add a product"><div class="bar"><span>Add a product</span><button class="link" id="mclose">Close</button></div><div class="body"><label class="hsl" for="apn" style="margin-top:0">Name</label><input id="apn" class="eminp" type="text" placeholder="Kredete Consumer app"><label class="hsl" for="apo">Site it runs on</label><input id="apo" class="eminp" type="text" placeholder="consumer.kredete.example"><label class="hsl">Colour</label><select id="apa"><option value="#5e6ad2">Indigo</option><option value="#26a269">Green</option><option value="#e5484d">Red</option><option value="#1b1b1f">Black</option></select><div class="hse" id="ape" role="alert"></div><div class="actions"><button class="btn primary" id="apg">Create key</button><button class="btn" id="apc">Cancel</button></div></div></div>`;
-  m.classList.add('on'); m.setAttribute('aria-hidden','false'); $('#mclose').onclick=$('#apc').onclick=B.closeModal; setTimeout(()=>$('#apn').focus(),80);
-  $('#apg').onclick=()=>{ const n=$('#apn').value.trim(), o=$('#apo').value.trim().replace(/^https?:\/\//,''); if(!n||!/\./.test(o)){ $('#ape').textContent='Add a name and the site, like app.example.com.'; return; } const id='p'+Date.now(); b.products.push({id,name:n,origin:o,accent:$('#apa').value,key:'bk_live_'+Math.random().toString(16).slice(2,10),live:true}); b.selP=id; B.closeModal(); B.toast('Key created for '+n); shell(); }; }
+async function load(params) {
+  const s = state();
+  s.error = null;
+  try {
+    const [bots, containers, connections] = await Promise.all([
+      B.api.get('/admin/bots'),
+      B.api.get('/admin/containers'),
+      B.api.get('/admin/connections'),
+    ]);
+    s.bots = bots.items; s.containers = containers.items; s.connections = connections.items;
+    s.loaded = true;
+  } catch (error) { s.error = error; }
+  if (B.S.route.surface === 'bot' && B.S.route.params === params) window.SURFACES.bot(params, true);
+}
 
-window.AGENTFIX=q=>{ const b=bot(); const f=b.fixes.find(x=>norm(x.q)===norm(q)&&(x.status==='live'||x.status==='draft')); return f?f.a:null; };
-window.SURFACES.bot=shell;
+window.SURFACES.bot = (params, loaded) => {
+  const s = state();
+  // Arriving from elsewhere reads everything again; moving between pages does not.
+  if (!loaded && (B.S.route.from !== 'bot' || s.error || !s.loaded)) { s.loaded = false; load(params); }
+  render(params);
+};
+
+function render(params) {
+  const s = state();
+  const app = $('#app');
+  if (!s.loaded) {
+    B.S.route.title = '';
+    app.innerHTML = `<div class="lcont agwide">${s.error ? B.errorBlock(s.error, 'agretry') : B.skeletonRows(4, 'dt-r')}</div>`;
+    const r = $('#agretry');
+    if (r) r.onclick = () => { s.error = null; render(params); load(params); };
+    return;
+  }
+  if (!params.bot) { list(app); B.setCrumb(); B.mbTitle(); return; }
+  const bot = s.bots.find((b) => b.id === params.bot);
+  if (!bot) {
+    B.S.route.title = '';
+    app.innerHTML = `<div class="lcont agwide">${B.emptyBlock("This bot doesn't exist", 'It may have been removed, or the link is wrong.', '<a class="btn sm" href="/agent" data-link>All bots</a>')}</div>`;
+    return;
+  }
+  if (!params.page) { B.go(`/agent/${bot.id}/overview`, { replace: true }); return; }
+  B.S.route.title = bot.name;
+  B.setCrumb(); B.mbTitle();
+  app.innerHTML = `<div class="lset"><nav class="lrail" aria-label="Support agent"></nav><div class="lcont agwide"><div class="aghd"><h1 class="lcont-t">${LABELS[params.page]}</h1></div><div id="agpane"></div></div></div>`;
+  rail(bot, params.page);
+  const page = pages[params.page];
+  if (page) page($('#agpane'), context(bot, params));
+}
+
+/** What a page gets from the shell. */
+function context(bot, params) {
+  const s = state();
+  return {
+    bot,
+    containers: s.containers,
+    connections: s.connections,
+    /** After a save: the server's bot replaces the cached one, and the rail and crumb follow it. */
+    saved(next) {
+      s.bots = s.bots.map((b) => (b.id === next.id ? next : b));
+      if (B.S.route.params !== params) return;
+      B.S.route.title = next.name;
+      rail(next, params.page);
+      B.setCrumb(); B.mbTitle();
+    },
+    go: (page) => B.go(`/agent/${bot.id}/${page}`),
+  };
+}
+
+function rail(bot, current) {
+  const nav = $('.lrail');
+  if (!nav) return;
+  const tab = (p) => `<button type="button" class="tab" data-ap="${p}" aria-current="${p === current ? 'page' : 'false'}">${LABELS[p]}</button>`;
+  nav.innerHTML = `<a class="tab agback" href="/agent" data-link>${window.ICON('chevl', 14)}<span>All bots</span></a><div class="lrail-h agname" title="${esc(bot.name)}">${esc(bot.name)}</div>${tab('overview')}<div class="lrail-g">Build</div>${['knowledge', 'experience', 'products'].map(tab).join('')}`;
+  $$('[data-ap]', nav).forEach((b) => { b.onclick = () => B.go(`/agent/${bot.id}/${b.dataset.ap}`); });
+}
+
+/* ---- the bot list (spec 4.2) ---- */
+function list(app) {
+  const s = state();
+  B.S.route.title = '';
+  const rows = s.bots.map((bot) => {
+    const live = bot.products.filter((p) => p.status === 'live').length;
+    const sites = F.liveSites(bot);
+    return `<a class="dt-r agrow" href="/agent/${bot.id}/overview" data-link><span class="dtp"><b>${esc(bot.name)}</b></span><span class="dtm">${count(bot.sources.length, 'source')}</span><span class="dtm">${live} of ${bot.products.length} live</span><span>${sites ? `<span class="tag ok">Live on ${count(sites, 'site')}</span>` : '<span class="tag">Not live</span>'}</span></a>`;
+  }).join('');
+  app.innerHTML = `<div class="lcont agwide"><div class="aghd"><h1 class="lcont-t">Support agent</h1><span class="lsp"></span><button type="button" class="btn primary sm" id="agnew">New bot</button></div>
+    <p class="sub agintro">A support bot answers customers on Kredete's websites from pages approved for them, and offers your contact route when it can't. ${window.DOCS.link('botSources')}</p>
+    ${s.bots.length
+      ? `<div class="dt agbots" style="--cols:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 150px"><div class="dt-r dt-h"><span>Bot</span><span>Sources</span><span>Products</span><span>Status</span></div>${rows}</div>`
+      : `<div class="dt"><div class="dt-r dtempty">${B.emptyBlock('No bots yet', 'Create one, choose the sources it answers from, then put it on a site.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>')}</div></div>`}
+  </div>`;
+  $('#agnew').onclick = newBot;
+  const again = $('#agnew2');
+  if (again) again.onclick = newBot;
+}
+const count = (n, word) => `${n} ${n === 1 ? word : word + 's'}`;
+
+function newBot() {
+  B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="New bot"><div class="bar"><span>New bot</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
+    <form id="nbf" novalidate>
+      ${field('name', 'Name', { placeholder: 'Help centre', hint: 'Shown in the chat header.', max: 32 })}
+      ${field('contact_url', 'Contact link', { placeholder: 'https://kredete.com/support', hint: "A web page or a mailto: address, shown whenever the bot can't answer." })}
+      ${field('privacy_url', 'Privacy link', { placeholder: 'https://kredete.com/privacy', hint: 'Where visitors read how their questions are used.' })}
+      <div class="hse" id="nbe" role="alert"></div>
+      <div class="actions"><button type="submit" class="btn primary" id="nbgo">Create bot</button><button type="button" class="btn" data-close-modal>Cancel</button></div>
+    </form></div></div>`);
+  const form = $('#nbf');
+  counters(form);
+  $('#nbname').focus();
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const values = { name: $('#nbname').value, contact_url: $('#nbcontact_url').value, privacy_url: $('#nbprivacy_url').value };
+    let first = null;
+    for (const [k, v] of Object.entries(values)) {
+      const error = F.fieldError(k, v);
+      showError(form, k, error);
+      if (error && !first) first = k;
+    }
+    if (first) { $(`#nb${first}`).focus(); return; }
+    B.busy($('#nbgo'), async () => {
+      const bot = await B.api.post('/admin/bots', Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.trim()])));
+      state().bots.push(bot);
+      B.closeModal();
+      B.toast(`${bot.name} is ready. Choose what it answers from.`);
+      B.go(`/agent/${bot.id}/knowledge`);
+    }, (error) => serverErrors(form, error, $('#nbe')));
+  };
+}
+
+/* ---- form helpers the pages share ---- */
+
+/**
+ * A labelled text field with a hint and a slot for its error. Ids are prefixed by the form.
+ * @param {string} key
+ * @param {string} label
+ * @param {{ value?: string, placeholder?: string, hint?: string, max?: number, rows?: number, prefix?: string, type?: string }} [o]
+ */
+function field(key, label, o = {}) {
+  const id = (o.prefix || 'nb') + key.replace(/\W/g, '');
+  const value = o.value == null ? '' : String(o.value);
+  const attrs = `id="${id}" class="eminp" name="${esc(key)}" autocomplete="off"${o.placeholder ? ` placeholder="${esc(o.placeholder)}"` : ''} aria-describedby="${id}-h ${id}-e"`;
+  const control = o.rows
+    ? `<textarea ${attrs} rows="${o.rows}">${esc(value)}</textarea>`
+    : `<input ${attrs} type="${o.type || 'text'}" value="${esc(value)}"${o.type === 'number' ? ' inputmode="numeric" min="1" step="1"' : ''}>`;
+  const counter = o.max ? `<span class="agcount" data-count="${id}" data-max="${o.max}" aria-hidden="true"></span>` : '';
+  return `<div class="agfield" data-field="${esc(key)}"><div class="aglab"><label class="hsl" for="${id}">${esc(label)}</label>${counter}</div>${control}${o.hint ? `<p class="suhint" id="${id}-h">${esc(o.hint)}</p>` : ''}<p class="agerr" id="${id}-e" role="alert"></p></div>`;
+}
+
+/** Shows or clears the error under a field, and marks the control invalid. */
+function showError(root, key, message) {
+  const box = $(`[data-field="${key}"]`, root);
+  if (!box) return;
+  const err = $('.agerr', box);
+  if (err) err.textContent = message || '';
+  const control = $('input,textarea,select', box);
+  if (control) control.setAttribute('aria-invalid', message ? 'true' : 'false');
+}
+
+/** Keeps each field's character counter current. */
+function counters(root) {
+  $$('[data-count]', root).forEach((c) => {
+    const input = $(`#${c.dataset.count}`, root);
+    if (!input || input.dataset.counted) return;
+    input.dataset.counted = '1';
+    const sync = () => {
+      const n = input.value.trim().length;
+      c.textContent = `${n}/${c.dataset.max}`;
+      c.classList.toggle('over', n > Number(c.dataset.max));
+    };
+    input.addEventListener('input', sync);
+    sync();
+  });
+}
+
+/**
+ * A 422's messages under the fields they name; anything else goes in `fallback`.
+ * @param {ParentNode} root
+ * @param {any} error
+ * @param {HTMLElement | null} fallback
+ */
+function serverErrors(root, error, fallback) {
+  const located = (error && error.status === 422 && error.errors) || [];
+  let placed = false;
+  for (const e of located) {
+    const [where, key, index] = e.loc;
+    if (where !== 'body' || typeof key !== 'string') continue;
+    const box = (typeof index === 'number' && $(`[data-field="${key}.${index}"]`, root)) || $(`[data-field="${key}"]`, root);
+    if (!box) continue;
+    showError(root, box.dataset.field, humanize(e.msg));
+    placed = true;
+  }
+  if (fallback) fallback.textContent = placed ? '' : B.problem(error);
+  return placed;
+}
+/** "Value error, a site must use https" reads as "A site must use https." */
+function humanize(msg) {
+  const text = String(msg).replace(/^Value error,\s*/i, '');
+  const sentence = text.charAt(0).toUpperCase() + text.slice(1);
+  return /[.!?]$/.test(sentence) ? sentence : `${sentence}.`;
+}
+
+/**
+ * The sticky Save bar: shown while `dirty()`; Save is off while `valid()` is false. It also
+ * guards leaving the page while there are unsaved changes.
+ * @param {HTMLElement} host
+ * @param {{ dirty: () => boolean, valid: () => boolean, save: (button: HTMLButtonElement) => void, discard: () => void }} o
+ */
+function saveBar(host, o) {
+  host.insertAdjacentHTML('beforeend', `<div class="agsave" role="region" aria-label="Unsaved changes" hidden><span class="agsave-t">Unsaved changes</span><span class="agsave-e" role="alert"></span><span class="lsp"></span><button type="button" class="btn sm" data-discard>Discard</button><button type="button" class="btn primary sm" data-save>Save</button></div>`);
+  const bar = /** @type {HTMLElement} */ (host.lastElementChild);
+  const save = /** @type {HTMLButtonElement} */ ($('[data-save]', bar));
+  $('[data-discard]', bar).onclick = () => o.discard();
+  save.onclick = () => o.save(save);
+  const update = () => {
+    const dirty = o.dirty();
+    bar.hidden = !dirty;
+    if (!save.classList.contains('busy')) save.disabled = !o.valid();
+    if (!dirty) $('.agsave-e', bar).textContent = '';
+  };
+  B.guardLeaving(o.dirty);
+  update();
+  return { update, error: (text) => { $('.agsave-e', bar).textContent = text || ''; }, el: bar };
+}
+
+/**
+ * A confirmation for an action that cannot be undone; resolves true when confirmed.
+ * @param {{ title: string, text: string, action: string }} o
+ * @returns {Promise<boolean>}
+ */
+function confirmAction(o) {
+  return new Promise((resolve) => {
+    B.openModal(`<div class="modal ppmodal" role="alertdialog" aria-modal="true" aria-labelledby="cft" aria-describedby="cfd"><div class="body"><h2 id="cft">${esc(o.title)}</h2><p class="sub" id="cfd">${esc(o.text)}</p><div class="actions"><button type="button" class="btn danger" id="cfgo">${esc(o.action)}</button><button type="button" class="btn" id="cfno">Cancel</button></div></div></div>`);
+    const modal = $('#modal');
+    let done = false;
+    const watch = new MutationObserver(() => { if (!modal.classList.contains('on')) finish(false); });
+    const finish = (yes) => { if (done) return; done = true; watch.disconnect(); B.closeModal(); resolve(yes); };
+    $('#cfgo').onclick = () => finish(true);
+    $('#cfno').onclick = () => finish(false);
+    $('#cfno').focus();
+    watch.observe(modal, { attributes: true, attributeFilter: ['class'] });
+  });
+}
+
+window.AGENT = { pages, field, showError, counters, serverErrors, saveBar, confirmAction, count };
 })();

@@ -47,6 +47,9 @@ describe('fieldError', () => {
     for (const v of ['1', '2000', '1000000', 2000]) ok('daily_question_limit', v);
     for (const v of ['0', '1000001', '2.5', '-1', '', 'lots', '1e3']) bad('daily_question_limit', v);
   });
+  it('says a required field is required before saying how to fill it', () => {
+    for (const f of ['name', 'contact_label', 'notice', 'contact_url', 'privacy_url', 'daily_question_limit', 'accent']) assert.equal(F.fieldError(f, '  '), 'Required.', f);
+  });
   it('takes a six-digit hex accent', () => {
     for (const v of ['#5e6ad2', '#5E6AD2']) ok('accent', v);
     for (const v of ['5e6ad2', '#5e6', '#5e6ad2ff', 'indigo']) bad('accent', v);

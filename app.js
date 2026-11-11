@@ -180,7 +180,7 @@ const ROUTES = [
   { re: /^\/governance$/, surface: 'governance' },
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
   { re: /^\/admin(?:\/(connectors|people|domains|audit))?$/, surface: 'admin', keys: ['tab'], allow: () => hasRole('admin', 'compliance') },
-  { re: /^\/agent$/, surface: 'bot', allow: () => hasRole('admin', 'compliance', 'developer') },
+  { re: /^\/agent(?:\/([0-9a-f-]{36})(?:\/(overview|knowledge|experience|products))?)?$/i, surface: 'bot', keys: ['bot', 'page'], allow: () => hasRole('admin') },
   { re: /^\/docs(?:\/([a-z0-9-]+))?$/, surface: 'docs', keys: ['slug'] },
   { re: /^\/setup$/, surface: 'setup' },
   { re: /^\/signin$/, surface: 'signin' },
@@ -202,12 +202,37 @@ function go(path, opts) {
   const o = opts || {};
   const url = new URL(path, location.origin);
   const target = url.pathname + url.search + url.hash;
-  if (target !== location.pathname + location.search + location.hash) {
+  if (target !== here() && !o.force && unsaved()) { askToLeave(() => go(path, { ...o, force: true })); return; }
+  if (target !== here()) {
     history[o.replace ? 'replaceState' : 'pushState']({}, '', target);
   }
   route();
 }
-window.addEventListener('popstate', () => route());
+const here = () => location.pathname + location.search + location.hash;
+
+/* A screen with unsaved changes registers a check (guardLeaving); moving away asks first, and
+   closing the tab gets the browser's own warning. The check is dropped on every route. */
+/** @type {(() => boolean) | null} */
+let leaveGuard = null;
+let shown = here();
+const unsaved = () => !!leaveGuard && leaveGuard();
+function guardLeaving(check) { leaveGuard = check; }
+function askToLeave(leave) {
+  openModal(`<div class="modal ppmodal" role="alertdialog" aria-modal="true" aria-labelledby="lvt" aria-describedby="lvd"><div class="body"><h2 id="lvt">Leave without saving?</h2><p class="sub" id="lvd">Your changes on this page will be lost.</p><div class="actions"><button type="button" class="btn primary" id="lvstay">Keep editing</button><button type="button" class="btn danger" id="lvgo">Leave</button></div></div></div>`);
+  $('#lvstay').onclick = closeModal;
+  $('#lvgo').onclick = () => { closeModal(); leaveGuard = null; leave(); };
+  $('#lvstay').focus();
+}
+window.addEventListener('popstate', () => {
+  if (unsaved()) {
+    const target = here();
+    history.pushState({}, '', shown); // stay put until they choose
+    askToLeave(() => go(target, { force: true }));
+    return;
+  }
+  route();
+});
+window.addEventListener('beforeunload', (e) => { if (unsaved()) { e.preventDefault(); e.returnValue = ''; } });
 /* Links marked data-link navigate inside the app, wherever a screen, drawer or modal renders
    them; a modified click still opens a new tab. */
 document.addEventListener('click', (e) => {
@@ -233,6 +258,8 @@ function route() {
   if (found.surface === 'setup' && S.phase === 'app' && !(isAdmin() && sandbox())) { go('/', { replace: true }); return; }
   // `from` is the surface shown before this one, so a surface can tell arriving from moving within it.
   S.route = { surface: found.surface, params: found.params, path, from: lastSurface };
+  leaveGuard = null;
+  shown = here();
   const moved = lastSurface !== null && lastSurface !== found.surface;
   lastSurface = found.surface;
   closeDrawer(); closeModal();
@@ -558,7 +585,9 @@ const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], l
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
   const label = S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
-  $('#crumb').innerHTML = `<span>${c[0]}</span><i>›</i><span class="cur">${esc(label)}</span><span class="lsp"></span><button type="button" class="lib" id="ccopy" aria-label="Copy link">${ICON('link', 16)}</button>`;
+  // A bot's pages add its name (bot admin spec 4.1), once the Support agent has loaded it.
+  const parts = S.route.surface === 'bot' && S.route.title ? [c[0], label, S.route.title] : [c[0], label];
+  $('#crumb').innerHTML = `${parts.slice(0, -1).map((p) => `<span>${esc(p)}</span><i>›</i>`).join('')}<span class="cur">${esc(parts[parts.length - 1])}</span><span class="lsp"></span><button type="button" class="lib" id="ccopy" aria-label="Copy link">${ICON('link', 16)}</button>`;
   $('#ccopy').onclick = async () => { try { await navigator.clipboard.writeText(location.href); } catch (e) { /* blocked */ } toast('Link copied'); };
 }
 /** The phone top bar's title: what the surface names this screen (S.route.title, such as a
@@ -604,7 +633,7 @@ window.BRAIN = {
   loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,
   systemName, srcIcon, containerName, isPersonalSpace, SYSTEMS, ROLE_NAMES, CLEARANCES, clearanceName,
   fmtDate, fmtTime, ago, dayLabel, when,
-  skeletonRows, loadingBlock, errorBlock, emptyBlock, CARET, setCrumb, mbTitle,
+  skeletonRows, loadingBlock, errorBlock, emptyBlock, CARET, setCrumb, mbTitle, guardLeaving,
   start() { cleanStorage(); boot(); },
 };
 })();

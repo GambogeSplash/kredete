@@ -25,8 +25,10 @@ declare global {
   var DOCUMENTS: any;
   var ADMIN: any;
   var DOCS: Record<string, any>;
-  var LEVELS: string[];
-  var LEVEL_COL: string[];
+  /** The Support agent's shell, page registry and form helpers (agent.js). */
+  var AGENT: any;
+  /** The support bot widget, loaded with data-preview for the Experience preview (embed.js). */
+  var BrothBot: any;
   var Motion: any;
   function ICON(name: string, size?: number): string;
   function SRCICON(system: string, size?: number): string;
