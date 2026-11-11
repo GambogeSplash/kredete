@@ -91,7 +91,6 @@ html[data-mode=dark] :is(.cmenu,.modal){box-shadow:0 16px 40px -8px rgba(255,255
 .lcont-t .hint,.pg h1 .hint,.ach .hint,.adh3 .hint{margin-left:var(--s-2);vertical-align:middle;font-size:var(--fs-xs);font-weight:400}
 @media (max-width:900px){.lcont-t{margin-bottom:16px}#surfaces .sgl{color:var(--mute-2)!important}}
 /* sessions: the button sits right above the table */
-.ach2row.sesbar{justify-content:flex-end;margin:0 0 var(--s-3)}
 /* review dialog content (the dialog itself is the shared .modal) */
 .rvbody{display:grid;gap:var(--s-4)}
 .rv-who{display:flex;align-items:center;gap:var(--s-3)}.rv-who>span:nth-child(2){display:grid;flex:1;min-width:0}.rv-who b{font-weight:500}.rv-who small{color:var(--mute);font-size:var(--fs-xs)}
@@ -100,3 +99,5 @@ html[data-mode=dark] :is(.cmenu,.modal){box-shadow:0 16px 40px -8px rgba(255,255
 .rv-dl{display:grid;place-items:center;width:24px;height:24px;flex:none}
 .rv-acc{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap}.rv-ar{color:var(--mute);display:inline-flex}
 .rv-note{margin:0;padding:var(--s-3);border-radius:var(--r-md);background:var(--fill-1);color:var(--ink-2);font-size:var(--fs-sm)}
+.lcont-head{margin-bottom:var(--s-4)}.lcont-head .lcont-t{margin:0}
+@media (max-width:900px){.lcont-head{justify-content:flex-end}}

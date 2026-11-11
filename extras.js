@@ -102,7 +102,7 @@ window.SURFACES.account = (params) => {
   const adminLinks = B.hasRole('admin', 'compliance')
     ? `<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administrator settings</div>${[['Sources', '/admin/connectors'], ['People and access', '/admin/people'], ['Sharing requests', '/governance'], ['Domains', '/admin/domains'], ['Audit log', '/admin/audit']].map(([l, to]) => `<button type="button" class="tab" data-at="${to}" aria-current="false">${l}</button>`).join('')}`
     : '';
-  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><div class="lrail-h">Account settings</div><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button>${adminLinks}<div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div id="acpane"></div></div></div>`;
+  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><div class="lrail-h">Account settings</div><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button>${adminLinks}<div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><div class="ds-head lcont-head"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div class="ds-act" id="acact"></div></div><div id="acpane"></div></div></div>`;
   $$('[data-at]').forEach((b) => { b.onclick = () => B.go(b.dataset.at); });
   $('#aout').onclick = () => B.signOut();
   if (tab === 'profile') profile(me);
@@ -201,7 +201,7 @@ async function sessions() {
   }
   const others = list.filter((s) => !s.current);
   const row = (s) => `<div class="ds-tr dvcols" data-id="${s.id}" role="row"><span class="dmn"><span class="addvi dvic">${deviceIcon(s.user_agent)}</span><span class="ltb"><b>${esc(device(s.user_agent))}${s.current ? '<span class="tag blue dvme">This device</span>' : ''}</b></span></span><span class="amute dvm">${B.when(s.created_at, B.fmtDate(s.created_at))}</span><span class="amute dvm">${s.current ? '<span class="adok"><i></i>Now</span>' : B.when(s.last_used_at, B.ago(s.last_used_at))}</span><span class="dvact">${s.current ? '' : `<button type="button" class="btn sm" data-so="${s.id}">Sign out</button>`}</span></div>`;
-  el.innerHTML = `${others.length ? '<div class="ach2row sesbar"><button type="button" class="btn sm" id="soall">Sign out of all other devices</button></div>' : ''}
+  el.innerHTML = `
    <div class="ds-table sesdt" role="table" aria-label="Devices"><div class="ds-tr ds-th dvcols" role="row"><span>Device</span><span class="dvm">First seen</span><span class="dvm">Last active</span><span></span></div>${list.map(row).join('')}</div>`;
   $$('[data-so]', el).forEach((b) => {
     b.onclick = () => {
@@ -223,6 +223,7 @@ async function sessions() {
       sessions();
     });
   }
+  $('#acact').innerHTML = others.length ? '<button type="button" class="btn sm" id="soall">Sign out of all other devices</button>' : '';
   const all = $('#soall');
   if (all) {
     all.onclick = () => B.busy(all, async () => {
