@@ -165,10 +165,10 @@ function renderAsk(){
   const nx0=window.AUTH&&S.user&&!S.flow?window.AUTH.nextStep():null;
   const chips = [...new Set([...(S.user&&window.AUTH?[window.AUTH.example(S.user.team)]:[]),'What is the card replacement fee?','What is the daily transfer limit?','How do I request access to a source?','Show me the product tour'])].filter(c=>!(nx0&&nx0.l===c)).slice(0,4);
   $('#app').className='cxapp';
-  const side=first?'':'<aside class="cxside" id="rsrc" aria-label="Sources"></aside>';
+  const side='<aside class="cxside" id="rsrc" aria-label="Sources"></aside>';
   if(!first) GR.on=false;
   $('#app').innerHTML = first ? `
-  <div class="lhome">
+  <div class="cx ${panelOn()?'':'closed'}"><section class="cxmain"><div class="lhome">
     <div class="dchead"><b>New chat</b></div>
     <div class="lh-in">
       <div class="bm" id="bm"></div>
@@ -177,14 +177,15 @@ function renderAsk(){
       <div class="lh-sugs">${chips.slice(0,chips.length>=4?4:2).map((c,i)=>{ const ap=appsOn(); const ic=/access/i.test(c)?ICON('lock',16):/tour/i.test(c)?ICON('book',16):SRCICON(ap[i%Math.max(1,ap.length)]||'Confluence',18); return `<button class="lh-sug" style="--i:${i}" data-q="${esc(c)}"><span class="lh-si">${ic}</span><span class="lh-sq">${esc(c)}</span><span class="lh-go">${ICON('arrow',14)}</span></button>`; }).join('')}</div>
       <p class="lh-feed">${appsOn().map(k=>SRCICON(k,14)).join('')}<span>Reading from ${appsOn().length} connected app${appsOn().length===1?'':'s'}</span></p>
     </div>
-  </div>` : `
-  <div class="cx ${S.ask.open?'':'closed'}">
+  </div></section>${side}</div>` : `
+  <div class="cx ${panelOn()?'':'closed'}">
    <section class="cxmain">
      <div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(titleOf(S.thread[0].cid))}</b><button class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more',16)}</button><span class="lsp"></span><button class="lib ctog" id="cxtog" aria-label="Sources" title="Sources">${(()=>{ const l=S.thread[S.thread.length-1]; const a=l&&l.a; const srcs=a?(a.sources||(a.a?[a.a,a.b]:[])):[]; const sy=[...new Set(srcs.map(d=>d.system))].slice(0,3); return sy.length?`<span class="ctogs">${sy.map(x=>SRCICON(x,16)).join('')}</span>`:ICON('stack',15); })()}<span class="ctogn">${(()=>{ const l=S.thread[S.thread.length-1]; const a=l&&l.a; const n=a?((a.sources&&a.sources.length)||(a.a?2:0)):0; return n?n+(n===1?' source':' sources'):''; })()}</span></button></div>
      <div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div>
      <div class="cxcomp">${composer(false,n,'Ask a follow-up')}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div>
    </section>${side}
   </div>`;
+  if(first) renderPanel();
   const nx=window.AUTH&&S.user?window.AUTH.nextStep():null;
   const go=$('#nxgo'); if(go&&nx) go.onclick=()=>{ window.AUTH.nextDone(nx.k); if(nx.pre) nx.pre(); if(nx.k==='ask'){ renderAsk(); ask(nx.l); } else if(nx.k==='report'){ report(); } else if(nx.stay){ nx.run(); renderAsk(); } else if(nx.ask){ renderAsk(); ask(nx.ask); } else { nx.run(); save(); route(); } };
   if(window.Motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches){ const nc=$('.nxt'); if(nc){ Motion.animate(nc,{opacity:[0,1],y:[-10,0],scale:[.98,1]},{type:'spring',stiffness:420,damping:28}); } const nb=$('#nxgo'); if(nb){ nb.addEventListener('pointerdown',()=>Motion.animate(nb,{scale:.94},{duration:.1})); ['pointerup','pointerleave'].forEach(e=>nb.addEventListener(e,()=>Motion.animate(nb,{scale:1},{type:'spring',stiffness:600,damping:18}))); } } const al=$('#nxall'); if(al) al.onclick=()=>{ S.surface='flows'; save(); route(); }; const sk=$('#nxskip'); if(sk&&nx) sk.onclick=()=>{ window.AUTH.nextDone(nx.k); renderAsk(); };
@@ -199,14 +200,15 @@ function renderAsk(){
     const th = $('#thread'); S.thread.forEach((entry,i)=> th.appendChild(turnEl(entry,i,false)));
     { const rn=()=>{ const t=$('#cxtitle'); if(!t||!S.thread[0]) return; editTitle(t,S.thread[0].cid,()=>{ renderAsk(); renderSurfaces(); }); }; $('#cxtitle').onclick=rn; $('#cxtitle').onkeydown=e=>{ if(e.key==='Enter'||e.key==='F2'){ e.preventDefault(); rn(); } }; $('#cxmore').onclick=e=>{ e.stopPropagation(); chatMenu($('#cxmore'),S.thread[0].q,{rename:rn,cur:true}); }; }
     if($('#cxnew')) $('#cxnew').onclick=()=>{  S.thread=[]; S.ask.pt='answer'; S.ask.open=false; S.ask.stack=null; S.ask.off={}; save(); route(); };
-    $('#cxtog').onclick=()=>{ S.ask.open=!S.ask.open; save(); setPanelOpen(S.ask.open); if(S.ask.open) renderPanel(); };
+    $('#cxtog').onclick=()=>{ const on=!panelOn(); setPanelOpen(on); save(); if(on) renderPanel(); };
     renderPanel(); const ch=$('#chat'); if(ch) ch.scrollTop=ch.scrollHeight;
   }
   if(fid){ const t=$('#'+fid)||$('#askin'); if(t) t.focus({preventScroll:true}); }
 }
 function doNext(){ const nx=window.AUTH&&S.user?window.AUTH.nextStep():null; if(!nx) return; window.AUTH.nextDone(nx.k); const toAsk=()=>{ S.surface='app'; S.mode='ask'; save(); route(); };
   if(nx.k==='ask'){ toAsk(); ask(nx.l); } else if(nx.k==='report'){ toAsk(); report(); } else if(nx.stay){ nx.run(); toAsk(); } else if(nx.ask){ toAsk(); ask(nx.ask); } else { if(nx.pre) nx.pre(); nx.run(); save(); route(); } }
-function setPanelOpen(on){ const c=$('.cx'); if(c) c.classList.toggle('closed',!on); S.ask.open=!!on; }
+function panelOn(){ return !!S.ask.open||(innerWidth>=1200&&!S.ask.shut); }
+function setPanelOpen(on){ const c=$('.cx'); if(c) c.classList.toggle('closed',!on); S.ask.open=!!on; S.ask.shut=!on; }
 function pickSources(){ const d=$('#drawer'); const draw=()=>{ const off=S.ask.off||(S.ask.off={}); d.innerHTML=`<button class="btn sm" id="dclose">Close</button><h3>Sources</h3><p class="sub" style="margin:0 0 12px">${SRCDOCS.filter(id=>!off[id]&&canSee(D[id])).length} of ${VIS().length} used for your next question</p><div class="glist">${srcRows('')}</div>`; $('#dclose').onclick=closeDrawer; d.querySelectorAll('[data-sd]').forEach(c=>c.onchange=()=>{ S.ask.off[c.dataset.sd]=!c.checked; save(); const k=SRCDOCS.filter(id=>!S.ask.off[id]&&canSee(D[id])).length; d.querySelector('.sub').textContent=k+' of '+VIS().length+' used for your next question'; const cx=$('#cxsrc'); if(cx) cx.innerHTML=ICON('stack',14)+' '+(S.ask.stack?esc(S.ask.stack)+' · ':'')+k+' sources'; }); }; draw(); d.classList.add('on'); $('#scrim').classList.add('on'); d.setAttribute('aria-hidden','false'); }
 function fileById(fid){ const all=[...(S.ask.files||[]),...S.thread.flatMap(e=>e.files||[]),...Object.values(S.saved||{}).flatMap(t=>t.flatMap(e=>e.files||[]))]; return all.find(x=>x.fid===fid); }
 function previewBody(f){ const b=(window._fb||{})[f.fid]; const url=(b&&b.url)||f.data||''; const ext=(f.name.split('.').pop()||'').toLowerCase(); const ty=(b&&b.type)||f.type||'';

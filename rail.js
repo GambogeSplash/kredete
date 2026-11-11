@@ -7,6 +7,13 @@ window.BROTH_RAIL = () => {
   let rail = $('#rail');
   if (!rail) { rail = document.createElement('nav'); rail.id = 'rail'; rail.className = 'rail'; rail.setAttribute('aria-label', 'Main'); document.body.insertBefore(rail, $('.top')); }
   rail.innerHTML = '<div class="rl-grp"></div><button type="button" class="rl rl-menu" id="rlmenu" aria-label="Show or hide chats" title="Show or hide chats">' + MENU + '</button>';
+  if (!$('#sbsearch')) {
+    const sp = document.createElement('button');
+    sp.type = 'button'; sp.id = 'sbsearch'; sp.className = 'sbsearch';
+    sp.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><span>Search</span><kbd>\u2318K</kbd>';
+    sp.onclick = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
+    $('.top').insertBefore(sp, $('#surfaces'));
+  }
   const grp = $('.rl-grp', rail);
   src.forEach((s) => {
     const label = ($('span', s) || s).textContent.trim();
