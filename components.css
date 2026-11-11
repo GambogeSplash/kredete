@@ -512,3 +512,6 @@ time{white-space:nowrap}
 .bm{width:92px;height:96px;margin:0 auto var(--s-4);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .bm-svg{display:block;width:100%;height:100%;overflow:visible}
 @media (max-width:900px){.bm{width:76px;height:79px}}
+
+/* Broth wordmark: a mask so it follows the text colour in light and dark */
+.si-wm{display:block;width:104px;height:26px;background:currentColor;-webkit-mask:url(/assets/brand/broth-wordmark.svg) left center/contain no-repeat;mask:url(/assets/brand/broth-wordmark.svg) left center/contain no-repeat}
