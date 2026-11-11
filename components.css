@@ -302,6 +302,11 @@ a.btn.si-btn{text-decoration:none}
 .cnflist{list-style:none;margin:var(--s-2) 0 0;padding:0;border:1px solid var(--line2,var(--line));border-radius:var(--r-md)}
 .cnflist li{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 28px;gap:var(--s-3);align-items:center;padding:var(--s-2) var(--s-2) var(--s-2) var(--s-3);border-top:1px solid var(--line2,var(--line));font-size:var(--fs-sm)}
 .cnflist li:first-child{border-top:0}
+.cnnbox .cndoc{margin:var(--s-2) 0 0}
+.cnnh{font-size:var(--fs-sm);font-weight:550;margin:var(--s-3) 0 0}
+.cndecl{display:flex;align-items:center;min-width:0}
+.cnkey{font-family:var(--font-mono,ui-monospace,monospace);font-size:var(--fs-xs,12px);resize:vertical;min-height:96px}
+.cnrepo{margin:var(--s-2) 0 var(--s-3)}
 .cnft{overflow-wrap:anywhere}
 .cnfr{color:var(--mute)}
 .cnfo{grid-column:3;display:grid;place-items:center;width:28px;height:28px;border-radius:var(--r-sm);color:var(--mute)}

@@ -35,6 +35,9 @@ const DOCS = {
   botSnippet: 'support-bots#snippet',
   botKeys: 'support-bots#keys',
   botContact: 'support-bots#contact',
+  docsInstall: 'connecting-docs-repositories#install',
+  docsDeclaration: 'connecting-docs-repositories#public-declaration',
+  docsProblems: 'connecting-docs-repositories#problems',
 };
 const AUDIENCES = [['', 'All'], ['askers', 'Asking'], ['authors', 'Writing pages'], ['admins', 'Admin'], ['compliance', 'Compliance']];
 const AUDIENCE_NAME = Object.fromEntries(AUDIENCES.filter(([k]) => k));

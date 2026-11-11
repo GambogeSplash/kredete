@@ -72,7 +72,7 @@ function toast(message) {
 const problem = (error) => (error && error.title) || (error && error.message) || 'Something went wrong. Try again.';
 const isAbort = (error) => error && error.name === 'AbortError';
 
-const SYSTEMS = { confluence: 'Confluence', gdrive: 'Google Drive' };
+const SYSTEMS = { confluence: 'Confluence', gdrive: 'Google Drive', github_docs: 'Docs repositories' };
 const systemName = (s) => SYSTEMS[s] || s || '';
 const srcIcon = (system, px) => window.SRCICON(systemName(system), px);
 /* Confluence names a personal space after its owner, with a key like "~712020cc...". The server

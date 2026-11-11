@@ -59,6 +59,6 @@ const P={
 window.PERSON=(name,px,cls)=>`<span class="who">${window.AVATAR(name,cls||'lav',px||18)}<span>${String(name==null?'':name).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span></span>`;
 /* Initials on a tinted tile: real people have no stored photo. */
 window.AVATAR=(name,cls,px)=>{ const n=String(name||'').replace(/\(.*\)/,'').trim(); const ini=n.split(/\s+/).map(x=>x[0]||'').join('').slice(0,2).toUpperCase(); const safe=n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); return `<span class="${cls||'avimg'} avini" title="${safe}" style="${px?`width:${px}px;height:${px}px;font-size:${Math.max(9,Math.round(px*0.4))}px`:''}" aria-hidden="true">${ini}</span>`; };
-window.SRCICON=(system,px)=>`<img src="/assets/svg/${{'Confluence':'src-confluence','Google Drive':'src-drive','Help centre':'src-help'}[system]||'src-file'}.svg?v=3" alt="${system}" width="${px||20}" height="${px||20}" style="border-radius:5px;flex:none">`;
+window.SRCICON=(system,px)=>`<img src="/assets/svg/${{'Confluence':'src-confluence','Google Drive':'src-drive','Help centre':'src-help','Docs repositories':'src-repo'}[system]||'src-file'}.svg?v=3" alt="${system}" width="${px||20}" height="${px||20}" style="border-radius:5px;flex:none">`;
 window.ICON=(n,s)=>`<svg class="ic-svg" data-i="${n}" width="${s||18}" height="${s||18}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||''}</svg>`;
 })();
