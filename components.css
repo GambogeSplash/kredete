@@ -445,3 +445,9 @@ html[data-mode=dark] .umsg.editing{filter:none}
 .cxtabs .ltab.ic{width:auto!important;min-width:44px;padding:0 12px!important;display:inline-flex!important;align-items:center;justify-content:center;gap:8px}
 .cxtabs .ltab .ltl{display:none;font-size:13px;font-weight:500;white-space:nowrap}
 .cxtabs .ltab.on .ltl{display:inline}
+/* rail icons: centred in their frame (an old .rl rule added bottom padding); softer active fill, stroke untouched */
+@media (min-width:901px){
+ .rail .rl{padding:0}
+ .rl[aria-current=page]{background:#ececef}
+ html[data-mode=dark] .rl[aria-current=page]{background:#e6e6e6}
+}
