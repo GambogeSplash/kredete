@@ -275,7 +275,9 @@ function profileMenu(a) {
   const item = (k, l, ic) => `<button type="button" class="pm-i" role="menuitem" data-pm="${k}" ${current === k ? 'aria-current="page"' : ''}>${ICON(ic, 18)}<span>${l}</span></button>`;
   let h = `<div class="pm-head"><button type="button" class="pm-who" role="menuitem" data-pm="account">${AVATAR(me.name, 'avimg', 40)}<span><b>${esc(me.name)}</b><small>${esc(me.email)}</small><em>${esc(me.team || '')}</em></span></button><span class="pm-go" data-pm="account" aria-hidden="true">${ICON('chevr', 16)}</span></div>`;
   h += '<div class="pm-s"></div>' + item('account', 'Account settings', 'user');
+  if (B.hasRole('admin', 'compliance')) h += item('admin', 'Admin settings', 'gear');
   if (B.hasRole('admin')) h += item('bot', 'Support agent', 'headset');
+  h += item('docs', 'Help center', 'book');
   h += `<div class="pm-s"></div><button type="button" class="pm-i danger" role="menuitem" data-pm="out">${ICON('logout', 18)}<span>Sign out</span></button>`;
   const el = document.createElement('div');
   el.className = 'pmenu'; el.setAttribute('role', 'menu'); el.setAttribute('aria-label', 'Profile');
@@ -298,7 +300,7 @@ function profileMenu(a) {
       closeMenu(false);
       B.haptic('light');
       if (k === 'out') { B.signOut(); return; }
-      B.go(k === 'bot' ? '/agent' : '/account');
+      B.go({ bot: '/agent', admin: '/admin', docs: '/docs' }[k] || '/account');
       window.scrollTo(0, 0);
     };
   });

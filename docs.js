@@ -40,12 +40,22 @@ const DOCS = {
   docsProblems: 'connecting-docs-repositories#problems',
   docsPrivateKey: 'connecting-docs-repositories#private-key',
 };
-const AUDIENCES = [['', 'All'], ['askers', 'Asking'], ['authors', 'Writing pages'], ['admins', 'Admin'], ['compliance', 'Compliance']];
-const AUDIENCE_NAME = Object.fromEntries(AUDIENCES.filter(([k]) => k));
-const FILTER_KEY = 'brain-docs-audience';
-/** The picture on a card and above the article list, by audience. */
-const AUD_IMAGE = { askers: 'ask', authors: 'sources', admins: 'admin', compliance: 'trust' };
-const imageOf = (audiences) => AUD_IMAGE[(audiences || [])[0]] || 'start';
+const AUDIENCE_NAME = { askers: 'Asking', authors: 'Writing pages', admins: 'Admin', compliance: 'Compliance' };
+/** The six topic cards (the Broth help centre). Each one lists the real articles written for its audiences. */
+const TOPICS = [
+  { id: 'start', icon: 'compose', title: 'Getting started', blurb: 'Your first question, and what to expect.', audiences: ['askers'] },
+  { id: 'ask', icon: 'search', title: 'Asking questions', blurb: 'Better questions, better answers.', audiences: ['askers'] },
+  { id: 'sources', icon: 'grid', title: 'Sources and connectors', blurb: 'What Broth reads, and how it stays current.', audiences: ['admins', 'authors'] },
+  { id: 'owners', icon: 'inbox', title: 'Owners and conflicts', blurb: 'Fixing what Broth finds wrong.', audiences: ['authors'] },
+  { id: 'admin', icon: 'settings', title: 'Admin', blurb: 'People, policies, and the audit log.', audiences: ['admins'] },
+  { id: 'trust', icon: 'shield', title: 'Privacy and security', blurb: 'Who can see what.', audiences: ['compliance'] },
+];
+const TOPIC_KEY = 'brain-docs-topic';
+const topicOf = (id) => TOPICS.find((t) => t.id === id);
+const inTopic = (a, t) => a.audiences.some((x) => t.audiences.includes(x));
+const imageOf = (audiences) => ({ askers: 'ask', authors: 'sources', admins: 'admin', compliance: 'trust' }[(audiences || [])[0]] || 'start');
+/** Where people write to a person. Left empty until Broth has an address for it, then the button shows. */
+const SUPPORT_EMAIL = '';
 let query = '';
 const OFFSET = 96; // a heading this close to the top counts as the section being read
 
@@ -63,24 +73,6 @@ function docsLink(name, text, newTab) {
   const target = DOCS[name];
   const attrs = newTab ? 'target="_blank" rel="noopener"' : 'data-link';
   return `<a class="dclink" href="/docs/${target}" ${attrs}>${ICON('book', 14)}<span>${esc(text || 'How this works')}</span></a>`;
-}
-
-/* ---------- the audience filter ---------- */
-function storedFilter() {
-  let value = null;
-  try { value = localStorage.getItem(FILTER_KEY); } catch (e) { return null; }
-  return value === '' || (value !== null && value in AUDIENCE_NAME) ? value : null;
-}
-function defaultFilter() {
-  const stored = storedFilter();
-  if (stored !== null) return stored;
-  if (standalone() || !B.S.me) return '';
-  if (B.hasRole('admin')) return 'admins';
-  if (B.hasRole('compliance')) return 'compliance';
-  return '';
-}
-function remember(value) {
-  try { localStorage.setItem(FILTER_KEY, value); } catch (e) { /* storage unavailable */ }
 }
 
 /* ---------- the frame: inside the app, or on its own ---------- */
@@ -106,46 +98,52 @@ function setTitle(title) {
 async function contents() {
   const s = state();
   setTitle('Docs');
-  const filter = defaultFilter();
-  const chips = AUDIENCES.map(([k, l]) => `<button type="button" class="lchip ${filter === k ? 'on' : ''}" aria-pressed="${filter === k}" data-aud="${k}">${l}</button>`).join('');
-  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Docs</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the docs" aria-label="Search the docs" value="${esc(query)}" autocomplete="off"></div></div><div class="libchips dcchips" role="group" aria-label="Who it is for">${chips}</div><div class="dcgrid" id="dcgrid"></div></div>`);
-  $$('[data-aud]').forEach((b) => {
-    b.onclick = () => {
-      remember(b.dataset.aud);
-      $$('[data-aud]').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); });
-      drawCards(b.dataset.aud);
-    };
-  });
-  $('#dcq').oninput = (e) => { query = e.target.value; const on = $('.dcchips .lchip.on'); drawCards(on ? on.dataset.aud : ''); };
-  drawCards(filter);
+  const ask = !standalone() && window.ASK ? '<button type="button" class="btn primary" id="dcask">Ask Broth</button>' : '';
+  const mail = SUPPORT_EMAIL ? `<a class="btn" href="mailto:${esc(SUPPORT_EMAIL)}">Email support</a>` : '';
+  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Docs</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the docs" aria-label="Search the docs" value="${esc(query)}" autocomplete="off"></div></div><div class="dcbody" id="dcgrid"></div>${ask || mail ? `<div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth${mail ? ', or write to a person' : ''}.</p></div><div class="dcbtns">${ask}${mail}</div></div>` : ''}</div>`);
+  $('#dcq').oninput = (e) => { query = e.target.value; drawCards(); };
+  const askBtn = $('#dcask');
+  if (askBtn) askBtn.onclick = () => { B.go('/'); setTimeout(() => window.ASK.askFresh('How do I connect a source?'), 350); };
+  drawCards();
   if (s.index) return;
   await loadIndex();
-  const chosen = $('.dcchips .lchip.on');
-  if (B.S.route.surface === 'docs' && !B.S.route.params.slug && chosen) drawCards(chosen.dataset.aud);
+  if (B.S.route.surface === 'docs' && !B.S.route.params.slug) drawCards();
 }
 async function loadIndex() {
   const s = state();
   s.loading = true; s.error = null;
   try { s.index = (await get('/docs')).items; } catch (error) { s.error = error; } finally { s.loading = false; }
 }
-function drawCards(filter) {
+function drawCards() {
   const s = state();
   const grid = $('#dcgrid');
   if (!grid) return;
   if (!s.index) {
     if (s.error) {
       grid.innerHTML = B.errorBlock(s.error, 'dcretry');
-      $('#dcretry').onclick = async () => { s.error = null; drawCards(filter); await loadIndex(); drawCards(filter); };
+      $('#dcretry').onclick = async () => { s.error = null; drawCards(); await loadIndex(); drawCards(); };
     } else {
       grid.innerHTML = B.loadingBlock('Loading the docs', 4, 'dccard dcsk');
     }
     return;
   }
   const q = query.toLowerCase().trim();
-  const items = s.index.filter((a) => (!filter || a.audiences.includes(filter)) && (!q || `${a.title} ${a.summary}`.toLowerCase().includes(q)));
-  grid.innerHTML = items.length
-    ? items.map((a) => `<a class="dccard" href="/docs/${esc(a.slug)}" data-link><span class="dcimg"><img src="/assets/help/${imageOf(a.audiences)}.jpg" alt="" loading="lazy" draggable="false"></span><b>${esc(a.title)}</b><p>${esc(a.summary)}</p><span class="dctags">${a.audiences.map((x) => `<span class="tag">${esc(AUDIENCE_NAME[x] || x)}</span>`).join('')}</span></a>`).join('')
-    : q ? B.emptyBlock('No articles match', 'Try fewer words.') : B.emptyBlock('Nothing for this audience yet', 'Choose All to see every article.');
+  if (q) {
+    const hits = s.index.filter((a) => `${a.title} ${a.summary}`.toLowerCase().includes(q));
+    grid.innerHTML = hits.length
+      ? `<div class="dclist">${hits.map((a) => `<a class="dcrow" href="/docs/${esc(a.slug)}" data-link>${esc(a.title)}<small>${esc(a.audiences.map((x) => AUDIENCE_NAME[x] || x).join(', '))}</small><span>${ICON('chevr', 14)}</span></a>`).join('')}</div>`
+      : B.emptyBlock('No articles match', 'Try fewer words.');
+    return;
+  }
+  grid.innerHTML = `<div class="dcgrid">${TOPICS.map((t) => {
+    const list = s.index.filter((a) => inTopic(a, t));
+    const n = list.length;
+    const open = list[0] ? `/docs/${esc(list[0].slug)}` : '/docs';
+    return `<a class="dccard" href="${open}" data-link data-topic="${t.id}" ${n ? '' : 'aria-disabled="true"'}><span class="dcimg"><img src="/assets/help/${t.id}.jpg" alt="" loading="lazy" draggable="false"></span><b>${esc(t.title)}</b><p>${esc(t.blurb)}</p><small class="dccount">${n} ${n === 1 ? 'article' : 'articles'}</small></a>`;
+  }).join('')}</div>`;
+  $$('[data-topic]', grid).forEach((c) => {
+    c.addEventListener('click', () => { try { localStorage.setItem(TOPIC_KEY, c.dataset.topic); } catch (e) { /* storage unavailable */ } });
+  });
 }
 
 /* ---------- an article ---------- */
@@ -171,17 +169,19 @@ function drawFailure(slug, error) {
   paint(`<div class="pg dc dcart">${backLink()}${B.errorBlock(error, 'dcretry')}</div>`);
   $('#dcretry').onclick = () => { delete state().articles[slug]; article(slug); };
 }
-/** The articles of the group being read, beside the article (hidden on narrow screens). */
-function groupOf(a) {
-  const f = defaultFilter();
-  return f && a.audiences.includes(f) ? f : a.audiences[0];
+/** The topic being read: the one opened from the contents, else the first whose audiences the article shares. */
+function topicFor(a) {
+  let stored = null;
+  try { stored = localStorage.getItem(TOPIC_KEY); } catch (e) { /* storage unavailable */ }
+  const t = topicOf(stored);
+  return t && inTopic(a, t) ? t : TOPICS.find((x) => inTopic(a, x)) || null;
 }
 function navHtml(a) {
   const idx = state().index;
-  const group = groupOf(a);
-  if (!idx || !group) return '<nav class="dcnav" aria-label="Articles"></nav>';
-  const list = idx.filter((x) => x.audiences.includes(group));
-  return `<nav class="dcnav" aria-label="Articles"><span class="dcimg"><img src="/assets/help/${imageOf([group])}.jpg" alt="" draggable="false"></span><h2 class="dct">${esc(AUDIENCE_NAME[group] || group)}</h2><div class="dcarts">${list.map((x) => `<a class="dcai${x.slug === a.slug ? ' on' : ''}" href="/docs/${esc(x.slug)}" data-link ${x.slug === a.slug ? 'aria-current="page"' : ''}>${esc(x.title)}</a>`).join('')}</div></nav>`;
+  const t = topicFor(a);
+  if (!idx || !t) return '<nav class="dcnav" aria-label="Articles"></nav>';
+  const list = idx.filter((x) => inTopic(x, t));
+  return `<nav class="dcnav" aria-label="Articles"><span class="dcimg"><img src="/assets/help/${t.id}.jpg" alt="" draggable="false"></span><h2 class="dct">${esc(t.title)}</h2><p class="dcbl">${esc(t.blurb)}</p><div class="dcarts">${list.map((x) => `<a class="dcai${x.slug === a.slug ? ' on' : ''}" href="/docs/${esc(x.slug)}" data-link ${x.slug === a.slug ? 'aria-current="page"' : ''}>${esc(x.title)}</a>`).join('')}</div></nav>`;
 }
 function sectionList(a, cls) {
   return `<ul class="${cls}">${a.sections.map((x) => `<li class="l${x.level}"><a href="#${esc(x.anchor)}" data-sec="${esc(x.anchor)}">${esc(x.title)}</a></li>`).join('')}</ul>`;

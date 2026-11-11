@@ -49,3 +49,5 @@
  .rl-acct .acct{width:42px!important;min-width:0!important;height:auto;padding:4px 8px;margin:0!important;gap:0!important}
 }
 @media (min-width:901px){.rl-acct .acct .avimg,.rl-acct .acct .lav,.rl-acct .acct>span:first-child{width:36px!important;height:36px!important;border-radius:32%!important}}
+@media (min-width:901px){body[data-home="1"] #crumb{display:none}}
+@media (min-width:901px){body[data-sf=docs] #crumb{display:none}}
