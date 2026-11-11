@@ -35,6 +35,11 @@ const domainLabel = (d) => (d.domain ? `<span class="llab" title="${esc(domainPa
 /** A document's domain as a breadcrumb of folder links. */
 const domainCrumbs = (d) => d.domain.path.map((c) => `<a href="/library/${esc(c.slug)}" data-link>${esc(c.name)}</a>`).join('<i aria-hidden="true">/</i>');
 
+/** An empty state sits in a frame where the list would be (the shared .ds-empty spec). */
+const emptyFrame = (icon, title, text, action) => `<div class="ds-empty">${icon ? `<span class="ds-empty-ic">${ICON(icon, 20)}</span>` : ''}<b>${esc(title)}</b>${text ? `<p>${text}</p>` : ''}${action || ''}</div>`;
+/** A failed read, framed, with the retry under it. */
+const errorFrame = (error, retryId) => `<div class="ds-empty errstate" role="alert"><span class="ds-empty-ic">${ICON('refresh', 20)}</span><b>${esc(B.problem(error))}</b><p>${error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.'}</p>${retryId ? `<button type="button" class="btn sm" id="${retryId}">Try again</button>` : ''}</div>`;
+
 /* ---------- the document drawer ---------- */
 async function openDocument(id, opts) {
   const o = opts || {};
@@ -45,7 +50,7 @@ async function openDocument(id, opts) {
     d = await B.api.get('/documents/' + id);
   } catch (error) {
     const body = $('#svbody');
-    if (body) body.innerHTML = error.status === 404 ? B.emptyBlock('Not available', 'This document is not available to you. It may have moved, or its access changed.') : B.errorBlock(error, 'docretry');
+    if (body) body.innerHTML = error.status === 404 ? emptyFrame('lock', 'Not available', 'This document is not available to you. It may have moved, or its access changed.') : errorFrame(error, 'docretry');
     const r = $('#docretry');
     if (r) r.onclick = () => openDocument(id, o);
     return;
@@ -57,13 +62,13 @@ async function openDocument(id, opts) {
   const canWiden = d.scope !== 'public';
   drawer.innerHTML = `<div class="sv"><div class="sv-top"><span class="sv-sys">${B.srcIcon(d.system, 20)}${esc(B.systemName(d.system))}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div>
     <div class="sv-body"><h2>${esc(d.title)}</h2>
-      <div class="sv-tags">${authorityTag(d) || '<span class="tag ok">Approved</span>'}<span class="tag ${scope[1]}">${esc(scope[0])}</span>${d.sensitivity !== 'internal' ? `<span class="tag">${esc(B.clearanceName(d.sensitivity))}</span>` : ''}</div>
+      <div class="sv-tags">${d.domain ? `<span class="sv-team"><b>${esc(d.domain.name)}</b></span>` : ''}${authorityTag(d)}<span class="tag ${scope[1]}">${esc(scope[0])}</span>${d.sensitivity !== 'internal' ? `<span class="tag">${esc(B.clearanceName(d.sensitivity))}</span>` : ''}</div>
       ${labelProblems(d)}
       ${c && c.quote ? `<blockquote class="sv-q">${esc(c.quote)}</blockquote>` : ''}
       ${d.owner ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b>${esc(d.owner.name)}</b><small>${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>` : ''}
       <dl class="kv svkv">${d.domain ? `<dt>Domain</dt><dd class="svcrumb">${domainCrumbs(d)}</dd>` : ''}${d.path ? `<dt>Location</dt><dd><button type="button" class="link" id="dlocation">${esc(d.path)}</button></dd>` : ''}<dt>Kind</dt><dd>${esc(kindName(d.kind))}</dd>${d.review_due_at ? `<dt>Review due</dt><dd>${B.when(d.review_due_at, B.fmtDate(d.review_due_at, true))}</dd>` : ''}${!d.owner && d.last_verified_at ? `<dt>Verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}</dl>
     </div>
-    <div class="sv-act"><a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${B.srcIcon(d.system, 16)}Open in ${esc(B.systemName(d.system))}${ICON('ext', 14)}</a>${canWiden ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}${lineage ? '<button type="button" class="btn" id="dlineage">Lineage</button>' : ''}</div></div>`;
+    <div class="sv-act"><a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${B.srcIcon(d.system, 16)}Open in ${esc(B.systemName(d.system))}${ICON('ext', 14)}</a>${canWiden ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}${lineage ? '<button type="button" class="btn" id="dlineage">Details and lineage</button>' : ''}</div></div>`;
   $('[data-close-drawer]', drawer).onclick = B.closeDrawer;
   const where = $('#dlocation');
   if (where) where.onclick = () => { B.closeDrawer(); window.LIBRARY.showLocation(d.path); };
@@ -108,12 +113,12 @@ async function lineageModal(d) {
     if (!box) return;
     box.innerHTML = page.items.length
       ? `<div class="actl">${page.items.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' · ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' · ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
-      : '<p class="actn">Nothing yet. Answers that cite this document appear here.</p>';
+      : emptyFrame('chat', 'Nothing yet', 'Answers that cite this document appear here.');
   } catch (error) {
     const box = $('#lin');
-    if (box) box.innerHTML = B.errorBlock(error);
+    if (box) box.innerHTML = errorFrame(error);
   }
 }
 
-window.DOCUMENTS = { openDocument, authorityTag, domainLabel, domainCol, kindName, KIND_ICON };
+window.DOCUMENTS = { openDocument, authorityTag, domainLabel, domainCol, kindName, KIND_ICON, emptyFrame, errorFrame };
 })();

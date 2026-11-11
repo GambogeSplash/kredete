@@ -238,7 +238,7 @@ test.describe('domains', () => {
     await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
     await reread;
     await page.evaluate(() => window.BRAIN.go('/library/payments'));
-    await expect(page.locator('#libbody [data-folder] .ltt > span')).toHaveText(['Cross-border']);
+    await expect(page.locator('#libbody [data-folder] .ltb b')).toHaveText(['Cross-border']);
   });
 
   test('with no domains, the tab explains what they are for', async ({ open, check }) => {
