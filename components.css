@@ -491,7 +491,7 @@ code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:va
 .adsearch{position:relative;width:260px}.adsearch span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mute);display:grid}.adsearch input{width:100%;height:36px;padding:0 12px 0 36px;border:1px solid var(--line);border-radius:var(--r-full);background:var(--surface);color:var(--ink);font:inherit;font-size:var(--fs-sm)}
 .adinv{display:grid;gap:var(--s-3);padding:var(--s-4);border:1px solid var(--brand);border-radius:var(--r-lg);margin-bottom:var(--s-4);background:var(--surface)}.adinv div{display:flex;gap:var(--s-2)}.adinv .suta{min-height:64px}
 .adppl{border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--surface)}
-.adrow{display:grid;grid-template-columns:auto minmax(160px,1.2fr) 1.2fr 150px 90px auto;gap:var(--s-4);align-items:center;padding:12px var(--s-4);border-bottom:1px solid var(--line);transition:background var(--dur-fast)}.adrow:last-child{border-bottom:0}.adrow:hover{background:var(--fill-1)}
+.adrow{display:grid;grid-template-columns:auto minmax(160px,1.2fr) 1.2fr 150px 90px 170px;gap:var(--s-4);align-items:center;padding:12px var(--s-4);border-bottom:1px solid var(--line);transition:background var(--dur-fast)}.adrow:last-child{border-bottom:0}.adrow:hover{background:var(--fill-1)}
 .adav .avimg,.adav .lav{width:40px!important;height:40px!important;border-radius:32%!important}.adgh{display:grid;place-items:center;width:40px;height:40px;border-radius:32%;background:var(--fill-2);color:var(--mute)}
 .adwho b{display:block;font-weight:500}.adwho small{color:var(--mute)}.adroles{display:flex;gap:6px;flex-wrap:wrap}
 .adlv{display:flex;align-items:center;gap:10px}.adlv em{font-style:normal;color:var(--mute);font-size:var(--fs-sm)}.adseg{display:inline-flex;gap:3px;align-items:flex-end}.adseg i{width:5px;border-radius:2px;background:var(--fill-2)}.adseg i:nth-child(1){height:8px}.adseg i:nth-child(2){height:11px}.adseg i:nth-child(3){height:14px}.adseg i:nth-child(4){height:17px}.adseg i.on{background:var(--brand)}
@@ -654,3 +654,7 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 @media (max-width:900px){.libcols{grid-template-columns:minmax(0,1fr) 70px 20px}.libcols>:nth-child(2),.libcols>:nth-child(3),.libcols>:nth-child(4){display:none}}
 
 .libt .llab{border:0!important;background:none!important;padding:0!important;border-radius:0!important;width:auto}
+
+.cxside{position:relative}.cxclose{position:absolute;top:var(--s-3);right:var(--s-3);z-index:2;width:32px;height:32px;display:grid;place-items:center;padding:0;border-radius:var(--r-md)}
+
+.cxside .cxclose{width:32px!important;min-width:0!important;height:32px!important;left:auto!important;right:var(--s-3)!important}
