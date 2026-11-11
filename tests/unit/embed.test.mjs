@@ -222,3 +222,54 @@ describe('the views', () => {
     assert.doesNotMatch(html, /javascript:/);
   });
 });
+
+describe('the preview (bot admin spec 6.2)', () => {
+  const { styles, previewClient, previewMessages, boot } = embed;
+
+  it('never reaches the network: every call is refused without fetch', async () => {
+    const original = globalThis.fetch;
+    let fetched = 0;
+    globalThis.fetch = async () => { fetched += 1; return new Response('{}'); };
+    try {
+      const client = previewClient();
+      for (const call of [() => client.settings(), () => client.start(), () => client.ask({ id: 'c', token: 't' }, 'q', () => {}), () => client.feedback('t', 'x', 'up', null)]) {
+        await assert.rejects(call());
+      }
+    } finally { globalThis.fetch = original; }
+    assert.equal(fetched, 0);
+  });
+
+  it('shows the welcome, or a question it could not answer with the contact route', () => {
+    assert.deepEqual(previewMessages('start'), []);
+    const cant = previewMessages('no_answer');
+    assert.equal(cant[0].role, 'user');
+    assert.equal(cant[1].reply.kind, 'no_answer');
+    const html = cant.map((m, i) => messageView(m, SETTINGS, i)).join('');
+    assert.match(html, /I couldn&#39;t find that in our help content./);
+    assert.match(html, /class="contact" href="https:\/\/kredete.com\/support"/);
+    assert.doesNotMatch(html, /data-action="vote"/); // no turn, so no thumbs
+  });
+
+  it('keeps host pages exactly as they were: contained and scheme rules apply only when set', () => {
+    const css = styles('#5e6ad2');
+    // The phone panel still fills the screen on host pages, and never in a contained preview.
+    assert.match(css, /:host\(:not\(\[data-contained\]\)\) \.panel\{position:fixed;inset:0/);
+    assert.match(css, /:host\(\[data-contained\]\)\{position:absolute/);
+    // Dark follows the visitor unless the preview names a scheme.
+    assert.match(css, /@media \(prefers-color-scheme:dark\)\{:host\(:not\(\[data-scheme="light"\]\)\)\{--surface:#1c1c20/);
+    assert.match(css, /:host\(\[data-scheme="dark"\]\)\{--surface:#1c1c20/);
+  });
+
+  it('a data-preview script tag mounts nothing, warns nothing, and hands the page the module', async () => {
+    const warned = [];
+    const win = {
+      console: { warn: (m) => warned.push(m) },
+      document: { currentScript: { dataset: { preview: '' } }, body: { appendChild() { throw new Error('mounted'); } } },
+      fetch() { throw new Error('fetched'); },
+    };
+    await boot(win);
+    assert.deepEqual(warned, []);
+    assert.equal(typeof win.BrothBot.preview, 'function');
+    assert.equal(win.__brothBot, undefined);
+  });
+});

@@ -402,7 +402,14 @@
     down: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M17 13V4h3v9h-3Zm0 0-4 8a2 2 0 0 1-2-2v-4H5.5a2 2 0 0 1-2-2.3l1.2-7A2 2 0 0 1 6.7 4H17"/></svg>',
   };
 
-  /** Design-system tokens, inlined: the widget lives on other people's pages. @param {string} accent */
+  const DARK = '--surface:#1c1c20;--shell:#26262b;--fill:#2e2e34;--line:#34343a;--ink:#f2f2f4;--ink-2:#d0d0d6;--mute:#a2a4ab;--warn:#ffd77a;--warn-soft:#3a2f12;--danger:#ff8a80';
+
+  /**
+   * Design-system tokens, inlined: the widget lives on other people's pages. A preview sets
+   * data-contained (stay inside the host element, never full screen) and data-scheme (light or
+   * dark, whatever the device prefers); host pages set neither.
+   * @param {string} accent
+   */
   function styles(accent) {
     return `
 :host{all:initial;
@@ -412,8 +419,12 @@
   --e3:0 4px 8px rgba(28,10,60,.06),0 16px 32px -8px rgba(28,10,60,.16),0 32px 64px -16px rgba(28,10,60,.18);
   --dur:.22s;--ease:cubic-bezier(.2,.8,.2,1);
   position:fixed;bottom:20px;z-index:2147483000;font:14px/1.5 var(--font);color:var(--ink)}
-@media (prefers-color-scheme:dark){:host{--surface:#1c1c20;--shell:#26262b;--fill:#2e2e34;--line:#34343a;--ink:#f2f2f4;--ink-2:#d0d0d6;--mute:#a2a4ab;--warn:#ffd77a;--warn-soft:#3a2f12;--danger:#ff8a80}}
+@media (prefers-color-scheme:dark){:host(:not([data-scheme="light"])){${DARK}}}
+:host([data-scheme="dark"]){${DARK}}
 :host([data-side="right"]){right:20px}:host([data-side="left"]){left:20px}
+:host([data-contained]){position:absolute;bottom:16px;z-index:1}
+:host([data-contained][data-side="right"]){right:16px}:host([data-contained][data-side="left"]){left:16px}
+:host([data-contained]) .panel{width:var(--bb-panel-w,380px);max-width:none;height:var(--bb-panel-h,520px)}
 *{box-sizing:border-box}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -464,20 +475,21 @@ footer{padding:0 16px 12px;font-size:11px;line-height:1.4;color:var(--mute)}
 footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (max-width:480px){:host{bottom:16px}:host([data-side="right"]){right:16px}:host([data-side="left"]){left:16px}
-  .panel{position:fixed;inset:0;width:100vw;max-width:none;height:100%;border-radius:0;border:0}
-  :host([data-open]) .launcher{display:none}}
+  :host(:not([data-contained])) .panel{position:fixed;inset:0;width:100vw;max-width:none;height:100%;border-radius:0;border:0}
+  :host([data-open]:not([data-contained])) .launcher{display:none}}
 `;
   }
 
   // ---- the widget ----
 
   /**
-   * @param {{client: ReturnType<typeof createBotClient>, store: ReturnType<typeof createStore>, settings: any, host: HTMLElement, win: any}} options
+   * @param {{client: ReturnType<typeof createBotClient>, store: ReturnType<typeof createStore>, settings: any, host: HTMLElement, win: any, preview?: boolean}} options
    */
-  function createWidget({ client, store, settings, host, win }) {
+  function createWidget({ client, store, settings: initial, host, win, preview = false }) {
+    let settings = initial;
     const remembered = store.load();
     const state = {
-      open: false,
+      open: preview,
       busy: false,
       /** @type {string | null} */
       stage: null,
@@ -491,10 +503,16 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
       pending: null,
     };
     const shadow = host.attachShadow({ mode: 'open' });
-    host.setAttribute('data-side', settings.side === 'left' ? 'left' : 'right');
-    const accent = /^#[0-9a-fA-F]{6}$/.test(settings.accent) ? settings.accent : '#5e6ad2';
-    shadow.innerHTML = `<style>${styles(accent)}</style><div class="root"></div>`;
+    shadow.innerHTML = `<style></style><div class="root"></div>`;
+    const styleEl = /** @type {HTMLStyleElement} */ (shadow.querySelector('style'));
     const rootEl = /** @type {HTMLElement} */ (shadow.querySelector('.root'));
+    /** Side and accent come from the settings; a preview changes them as the admin edits. */
+    function apply() {
+      host.setAttribute('data-side', settings.side === 'left' ? 'left' : 'right');
+      const accent = /^#[0-9a-fA-F]{6}$/.test(settings.accent) ? settings.accent : '#5e6ad2';
+      styleEl.textContent = styles(accent);
+    }
+    apply();
 
     const started = () => state.messages.some((m) => m.role === 'user');
     const persist = () => store.save({ conversation: state.conversation, messages: state.messages });
@@ -551,7 +569,7 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
     /** @param {string} question @param {boolean} [resent] */
     async function ask(question, resent = false) {
       const text = question.trim();
-      if (!text || state.busy || state.disabled) return;
+      if (preview || !text || state.busy || state.disabled) return;
       if (text.length > MAX_QUESTION) {
         state.error = COPY.too_long;
         render({ focusInput: true });
@@ -614,6 +632,7 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
 
     /** @param {number} index @param {'up' | 'down'} vote @param {string | null} [reason] */
     async function rate(index, vote, reason = null) {
+      if (preview) return;
       const message = state.messages[index];
       if (!message || !message.turnId || !state.conversation) return;
       message.vote = vote;
@@ -683,14 +702,71 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
       if (offline && state.pending) void ask(state.pending, true);
     });
 
+    /** A preview's new settings and messages, drawn without moving focus. @param {any} next @param {any[]} [messages] */
+    function update(next, messages) {
+      settings = next;
+      if (messages) state.messages = messages;
+      apply();
+      render();
+    }
+
     render();
-    return { state, open, close, ask, rate, render, shadow };
+    return { state, open, close, ask, rate, render, update, shadow };
+  }
+
+  // ---- the admin's preview (bot admin spec 6.2) ----
+
+  /** A bot client for the preview: it never reaches the network. */
+  function previewClient() {
+    const refuse = () => Promise.reject(new BotError('network', { code: 'preview', retryable: false }));
+    return { settings: refuse, start: refuse, ask: refuse, feedback: refuse };
+  }
+
+  /**
+   * What the preview shows: the welcome (greeting and starters), or a question the bot could
+   * not answer, with the contact route.
+   * @param {'start' | 'no_answer'} view
+   */
+  function previewMessages(view) {
+    if (view !== 'no_answer') return [];
+    return [
+      { role: 'user', text: 'Can I change the date my card payment is taken?' },
+      { role: 'bot', reply: { kind: 'no_answer', sentences: [], sources: [], personal_data_warning: false } },
+    ];
+  }
+
+  /**
+   * The real widget inside `host`, open, contained and inert, for the bot admin's Experience.
+   * @param {HTMLElement} host
+   * @param {any} settings
+   * @param {{ scheme?: 'light' | 'dark', view?: 'start' | 'no_answer' }} [options]
+   */
+  function preview(host, settings, options = {}) {
+    host.setAttribute('data-contained', '');
+    const scheme = (/** @type {string | undefined} */ value) => host.setAttribute('data-scheme', value === 'dark' ? 'dark' : 'light');
+    scheme(options.scheme);
+    const memory = createStore(undefined, 'preview');
+    const widget = createWidget({ client: previewClient(), store: memory, settings, host, win: globalThis, preview: true });
+    widget.update(settings, previewMessages(options.view || 'start'));
+    return {
+      /** @param {any} next @param {{ scheme?: 'light' | 'dark', view?: 'start' | 'no_answer' }} [o] */
+      update(next, o = {}) {
+        if (o.scheme) scheme(o.scheme);
+        widget.update(next, o.view ? previewMessages(o.view) : undefined);
+      },
+      shadow: widget.shadow,
+    };
   }
 
   /** Reads the script tag, loads the settings and mounts the widget. @param {any} win */
   async function boot(win) {
     const doc = win.document;
     const script = doc && doc.currentScript;
+    if (script && script.dataset && 'preview' in script.dataset) {
+      // The bot admin's own page: it renders previews, so hand it the module and mount nothing.
+      win.BrothBot = exported;
+      return;
+    }
     if (!script || win.__brothBot) return;
     win.__brothBot = true;
     const key = script.dataset.key || '';
@@ -724,7 +800,7 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
     else doc.addEventListener('DOMContentLoaded', mount, { once: true });
   }
 
-  return {
+  const exported = {
     COPY,
     MAX_QUESTION,
     BotError,
@@ -734,6 +810,11 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
     messageView,
     panelView,
     createWidget,
+    styles,
+    previewClient,
+    previewMessages,
+    preview,
     boot,
   };
+  return exported;
 });
