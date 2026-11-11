@@ -158,7 +158,6 @@ function head() {
     $('#libfolder').innerHTML = here ? esc(here.name) : pending ? '<i class="pvsk libhsk"></i><span class="sr">Loading the folder</span>' : '';
     $('#libcount').textContent = here ? pages(here.total) : '';
   }
-  S().route.title = here ? here.name : '';
   B.mbTitle();
 }
 function wireFilterMenu() {

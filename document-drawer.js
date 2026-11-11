@@ -50,6 +50,8 @@ async function openDocument(id, opts) {
     d = await B.api.get('/documents/' + id);
   } catch (error) {
     const body = $('#svbody');
+    const sys = $('#drawer .sv-sys');
+    if (sys && !c) sys.textContent = 'Document'; // the name placeholder does not wait for an answer that is not coming
     if (body) body.innerHTML = error.status === 404 ? emptyFrame('lock', 'Not available', 'This document is not available to you. It may have moved, or its access changed.') : errorFrame(error, 'docretry');
     const r = $('#docretry');
     if (r) r.onclick = () => openDocument(id, o);
@@ -58,8 +60,6 @@ async function openDocument(id, opts) {
   const drawer = $('#drawer');
   if (!drawer.classList.contains('on')) return;
   const scope = SCOPE[d.scope] || SCOPE.granular;
-  const lineage = B.hasRole('admin', 'compliance');
-  const canWiden = d.scope !== 'public';
   drawer.innerHTML = `<div class="sv"><div class="sv-top"><span class="sv-sys">${B.srcIcon(d.system, 20)}${esc(B.systemName(d.system))}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div>
     <div class="sv-body"><h2>${esc(d.title)}</h2>
       <div class="sv-tags">${d.domain ? `<span class="sv-team"><b>${esc(d.domain.name)}</b></span>` : ''}${authorityTag(d)}<span class="tag ${scope[1]}">${esc(scope[0])}</span>${d.sensitivity !== 'internal' ? `<span class="tag">${esc(B.clearanceName(d.sensitivity))}</span>` : ''}</div>
@@ -68,14 +68,11 @@ async function openDocument(id, opts) {
       ${d.owner ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b>${esc(d.owner.name)}</b><small>${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>` : ''}
       <dl class="kv svkv">${d.domain ? `<dt>Domain</dt><dd class="svcrumb">${domainCrumbs(d)}</dd>` : ''}${d.path ? `<dt>Location</dt><dd><button type="button" class="link" id="dlocation">${esc(d.path)}</button></dd>` : ''}<dt>Kind</dt><dd>${esc(kindName(d.kind))}</dd>${d.review_due_at ? `<dt>Review due</dt><dd>${B.when(d.review_due_at, B.fmtDate(d.review_due_at, true))}</dd>` : ''}${!d.owner && d.last_verified_at ? `<dt>Verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}</dl>
     </div>
-    <div class="sv-act"><a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${B.srcIcon(d.system, 16)}Open in ${esc(B.systemName(d.system))}${ICON('ext', 14)}</a>${canWiden ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}${lineage ? '<button type="button" class="btn" id="dlineage">Details and lineage</button>' : ''}</div></div>`;
+    <div class="sv-act"><a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${B.srcIcon(d.system, 16)}Open in ${esc(B.systemName(d.system))}${ICON('ext', 14)}</a><button type="button" class="btn" id="ddet">Details and lineage</button></div></div>`;
   $('[data-close-drawer]', drawer).onclick = B.closeDrawer;
   const where = $('#dlocation');
   if (where) where.onclick = () => { B.closeDrawer(); window.LIBRARY.showLocation(d.path); };
-  const share = $('#dshare');
-  if (share) share.onclick = () => shareModal(d);
-  const lin = $('#dlineage');
-  if (lin) lin.onclick = () => lineageModal(d);
+  $('#ddet').onclick = () => detailsModal(d);
 }
 
 /** Labels Broth ignored or adjusted on this page, for its author to fix in the source. */
@@ -105,14 +102,27 @@ function shareModal(d) {
 }
 
 const ACTIONS = { 'answer.served': 'Cited in an answer', 'promotion.requested': 'Wider sharing requested', 'promotion.approved': 'Sharing approved', 'promotion.rejected': 'Sharing rejected', 'promotion.revoked': 'Sharing revoked', 'promotion.needs_review': 'Sharing needs review' };
-async function lineageModal(d) {
-  B.openModal(`<div class="modal lineage" role="dialog" aria-label="Lineage"><div class="bar"><span>Lineage</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(d.title)}</h2><p class="sub">Answers that cited this document, and changes to how widely it is shared. Only admins and compliance see this.</p><div id="lin">${B.loadingBlock('Loading lineage', 3, 'actr')}</div></div></div>`);
+/** "Details and lineage", for everyone, as in the prototype: the document's tags and facts, then the
+ *  answers that cited it (admins and compliance read those; the audit is theirs). */
+async function detailsModal(d) {
+  const scope = SCOPE[d.scope] || SCOPE.granular;
+  const lineage = B.hasRole('admin', 'compliance');
+  const tag = (t, c) => `<span class="tag ${c || ''}">${esc(t)}</span>`;
+  const rows = `${d.owner ? `<dt>Owner</dt><dd>${PERSON(d.owner.name, 20)}${d.owner.title ? `, ${esc(d.owner.title)}` : ''}</dd>` : ''}${d.last_verified_at ? `<dt>Last verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}<dt>Sensitivity</dt><dd>${esc(B.clearanceName(d.sensitivity))}</dd><dt>Access</dt><dd>${esc(scope[0])}</dd><dt>External use</dt><dd>${d.scope === 'public' ? 'Approved' : 'Not approved'}</dd>`;
+  B.openModal(`<div class="modal lineage" role="dialog" aria-label="Details and lineage"><div class="bar"><span>${esc(d.title)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
+    <div class="sv-tags">${authorityTag(d) || tag('Approved', 'ok')}${tag(B.systemName(d.system))}${d.domain ? tag(d.domain.name, 'blue') : ''}</div>
+    <dl class="kv">${rows}</dl>
+    <h4 class="dlh">Lineage: answers that cited this</h4><div id="lin">${lineage ? B.loadingBlock('Loading lineage', 3, 'actr') : '<p class="amute">Admins and compliance see which answers cited this document.</p>'}</div>
+    <div class="actions"><a class="btn primary" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${B.srcIcon(d.system, 16)}Open in ${esc(B.systemName(d.system))}${ICON('ext', 14)}</a>${d.scope !== 'public' ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}</div></div></div>`);
+  const share = $('#dshare');
+  if (share) share.onclick = () => shareModal(d);
+  if (!lineage) return;
   try {
     const page = await B.api.get('/admin/audit', { document_id: d.id, limit: 50 });
     const box = $('#lin');
     if (!box) return;
     box.innerHTML = page.items.length
-      ? `<div class="actl">${page.items.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' · ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' · ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
+      ? `<div class="actl">${page.items.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' \u00b7 ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' \u00b7 ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
       : emptyFrame('chat', 'Nothing yet', 'Answers that cite this document appear here.');
   } catch (error) {
     const box = $('#lin');
