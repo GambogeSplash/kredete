@@ -1862,3 +1862,10 @@ html,body{height:100%}
 
 /* chat title text lines up with the New chat title (hover box hangs out by 6px) */
 .dchead>b.dtitle:first-child{margin-left:calc(var(--s-0) - var(--s-2))}
+
+/* step dots you can click: go back, or forward to a step you have already reached */
+.stp i[role=button]{cursor:pointer;position:relative}
+.stp i[role=button]::after{content:"";position:absolute;inset:-8px -4px}
+.stp i[role=button]:hover{background:var(--brand)}
+.stp i[role=button]:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+.stp i.lock{opacity:.45}

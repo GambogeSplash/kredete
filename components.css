@@ -891,3 +891,153 @@ html[data-mode=dark] body.noauth :is(.btn.primary,.si-btn,.oa-allow,.emchip.on){
 .pvmock .pvm{padding:0 40px}
 
 .svx .btn:hover,.svx .btn:focus-visible{color:var(--danger);border-color:var(--danger-line);background:var(--danger-soft)}
+
+/* bookmark sources: hover shows the source name */
+.svsrc{display:flex;gap:6px}
+.svs{position:relative;display:inline-flex}
+.svs em{position:absolute;left:50%;bottom:calc(100% + 6px);transform:translate(-50%,4px);padding:4px 8px;border-radius:var(--r-sm,6px);background:var(--ink);color:var(--bg,#fff);font:500 var(--fs-xs,12px)/1.2 inherit;font-style:normal;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s,transform .12s;z-index:5}
+.svs:hover em,.svs:focus-within em{opacity:1;transform:translate(-50%,0)}
+
+/* sign-in picture, final: one shell in the middle, four characters holding on to its edges */
+.pvlogo2{width:56cqh;height:35cqh;top:54cqh}
+.pvmock.pvw.pvfl{width:600px;height:375px;grid-template-columns:minmax(0,1fr);gap:0;transform:none;translate:-50% -50%;scale:var(--pvs,.7)}
+.pvmock .pvm{padding:0 48px;z-index:1}
+.pvlogo2 .pvcr.up{z-index:0;transform:translate(-50%,-62%) rotate(var(--r));transform-origin:50% 100%}
+.pvlogo2 .pvcr.hold{z-index:0;transform:translate(-50%,-50%) rotate(var(--r))}
+
+.pvlogo2{width:70cqh;height:43.75cqh;top:56cqh}
+.pvlogo2 .pvcr.up{z-index:2;translate:0 0;transform:translate(-50%,-93%) rotate(var(--r))}
+.pvlogo2 .pvcr.hold{z-index:2;transform:translate(-38%,-50%) rotate(var(--r))}
+.pvlogo2 .pvcr.hold.l{transform:translate(-62%,-50%) rotate(var(--r))}
+
+.pvlogo2 .pvcr.hold{transform:translate(-62%,-50%) rotate(var(--r))}
+.pvlogo2 .pvcr.hold.l{transform:translate(-30%,-50%) rotate(var(--r))}
+
+/* sign-in picture: Broth holds the dashboard up from behind, the way the reference holds its board */
+.pvlogo2{width:68cqh;height:32.3cqh;top:69cqh}
+.pvmock.pvw.pvfl{width:600px;height:285px}
+.pvholder{position:absolute;left:0;top:-143.76%;width:100%;height:auto;z-index:3;pointer-events:none;display:block;animation:pvhold 4.2s ease-in-out infinite,pvholdin .8s cubic-bezier(.2,.9,.25,1.1) backwards;transform-origin:50% 90%}
+@keyframes pvhold{0%,100%{translate:0 0}50%{translate:0 -.6cqh}}
+@keyframes pvholdin{from{opacity:0;scale:.94}}
+@media (prefers-reduced-motion:reduce){.pvholder{animation:none}}
+
+/* devices table columns */
+.dvcols{grid-template-columns:minmax(0,1fr) 90px 110px 120px 190px;padding-top:var(--s-2);padding-bottom:var(--s-2)}
+.dvcols .ltb{min-width:0;display:grid}.dvcols .ltb b{font-weight:500;font-size:var(--fs-md);line-height:20px;display:flex;align-items:center;gap:var(--s-2)}.dvcols .ltb small{font-size:var(--fs-xs);line-height:16px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dvcols .dvic{flex:none}.dvcols .dvme{margin:0}
+.dvact{display:flex;gap:var(--s-2);justify-content:flex-end}
+@media (max-width:900px){.dvcols{grid-template-columns:minmax(0,1fr) 190px}.dvcols>:nth-child(2),.dvcols>:nth-child(3),.dvcols>:nth-child(4){display:none}}
+
+/* the wider board: a small Broth behind a big dashboard */
+.pvlogo2{width:86cqh;height:32.7cqh;top:57cqh}
+.pvmock.pvw.pvfl{width:600px;height:228px}
+.pvholder{top:-54.58%}
+
+.pvmock.pvw.pvfl{width:600px;height:368px}
+
+.pvlogo2{width:107cqh;height:40.7cqh;top:61cqh}
+
+/* Broth a bit smaller than the dashboard's hole: scaled about the point where his hands meet the top edge */
+.pvholder{width:80%;left:10%;top:-43.66%}
+
+.pvholder{width:66%;left:17%;top:-36.02%}
+
+/* the dashboard card's send circle carries the arrow; the backdrop is a clean violet gradient instead of a soft photo */
+.pvc i{display:grid;place-items:center;color:#fff}.pvc i svg{display:block}
+.pvbgi,html[data-mode=dark] .pvbgi,html[data-mode=dark] body.noauth .pvbgi{background:linear-gradient(180deg,#7a4bff 0%,#5f33e6 42%,#3f1cb8 100%)}
+
+/* tags on the dark sign-in, sign-up and first-run screens (no page filter there, so they need their own dark colours) */
+html[data-mode=dark] body.noauth .tag.ok{background:rgba(63,185,120,.12);border-color:rgba(63,185,120,.3);color:#6fcf97}
+html[data-mode=dark] body.noauth .tag.warn{background:rgba(240,170,60,.12);border-color:rgba(240,170,60,.3);color:#f0b655}
+html[data-mode=dark] body.noauth .tag.bad{background:rgba(235,87,87,.12);border-color:rgba(235,87,87,.3);color:#f28b8b}
+html[data-mode=dark] body.noauth .tag.blue{background:rgba(110,120,230,.16);border-color:rgba(110,120,230,.35);color:#aab1ff}
+html[data-mode=dark] body.noauth .capp:not(.off):not(.soon) .tag.ok{box-shadow:none}
+
+/* back button and text links on the sign-in, sign-up and first-run screens: clear hover and focus */
+.ob-back{color:var(--mute);transition:color var(--dur-fast),background var(--dur-fast),border-color var(--dur-fast)}
+.ob-back:hover{color:var(--ink);background:var(--fill-1);border-color:var(--line-strong)}
+.ob-back:active{transform:scale(.97)}
+.si-in .link{cursor:pointer;transition:color var(--dur-fast)}
+.si-in .link:hover{color:var(--ink)}
+.si-in .link:focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:var(--r-sm)}
+.si-in .obout{display:inline-flex;margin-top:var(--s-4);color:var(--mute)}
+.si-in .obout:hover{color:var(--ink);background:var(--fill-1)}
+.si-in .obout{padding:4px 8px;margin-left:-8px;border-radius:var(--r-sm);transition:color var(--dur-fast),background var(--dur-fast)}
+
+/* the picture's backdrop gets a little depth: a soft lift behind the dashboard and a deeper corner at the bottom, still a smooth gradient */
+.pvbgi,html[data-mode=dark] .pvbgi,html[data-mode=dark] body.noauth .pvbgi{background:radial-gradient(75% 52% at 50% 42%,rgba(170,138,255,.34) 0%,rgba(170,138,255,0) 72%),radial-gradient(130% 70% at 50% 118%,rgba(24,6,86,.6) 0%,rgba(24,6,86,0) 62%),radial-gradient(60% 40% at 50% -8%,rgba(255,255,255,.12) 0%,rgba(255,255,255,0) 70%),linear-gradient(180deg,#7a4bff 0%,#5d31e4 44%,#3c1ab2 100%)}
+
+/* company logo: click the square to upload; shows the first letter until then */
+button.adlogo{border:0;padding:0;cursor:pointer;position:relative;overflow:hidden;font:inherit;font-size:28px;font-weight:600}
+.adlogo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.adlogoe{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,10,20,.5);color:#fff;opacity:0;transition:opacity var(--dur-fast);font-style:normal}
+button.adlogo:hover .adlogoe,button.adlogo:focus-visible .adlogoe{opacity:1}
+button.adlogo:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+
+/* the big sign-in / sign-up / first-run buttons are 2px taller; the back button beside them stretches to match */
+.si-btn{padding-top:calc(var(--s-3) + 1px);padding-bottom:calc(var(--s-3) + 1px)}
+.obnav{align-items:stretch}.ob-back{width:48px}
+
+/* input focus: a thin brand-coloured ring instead of the thick white one (half the thickness) */
+.eminp:focus,.eminp:focus-visible,.emw .eminp:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+
+/* the 'Is this you?' card gets a soft grey fill */
+.obid{background:var(--fill-1)}
+
+/* sign-in, sign-up and first-run: the big buttons share the field's 12px corner */
+.si-btn,.ob-back{border-radius:var(--r-md)}
+
+/* the 'Is this you?' card: a bit shorter */
+.obid{padding:var(--s-3) var(--s-4);gap:var(--s-3)}
+
+/* the big Continue button: 2px shorter again (45.5px) */
+.si-btn{padding-top:var(--s-3);padding-bottom:var(--s-3)}
+
+/* the big Continue button is exactly 42px tall; the back button beside it stretches to match */
+.si-btn{height:42px;padding-top:0;padding-bottom:0;box-sizing:border-box}
+
+.si-btn{height:40px}
+
+/* first question: the box for typing your own sits right under the examples */
+.obq{margin-top:var(--s-2)}
+
+/* the button row sits closer to the field above it: 12px field margin + 8px = 20px gap (was 36px) */
+.obnav{margin-top:var(--s-2)}
+
+/* sign-up: the company field carries its logo square */
+.colog{display:flex;align-items:center;gap:var(--s-2)}.colog .eminp{flex:1;min-width:0}
+button.adlogo.sm{width:42px;height:42px;font-size:17px;border-radius:30%;flex:none;box-shadow:none}
+
+.suslug+.obnav{margin-top:var(--s-4)}
+
+/* sign-up company row: the logo square is exactly the field's height and uses the same 12px corner; found logos sit on white, uploads fill the square */
+.colog{align-items:stretch}
+button.adlogo.sm{width:auto;height:auto;aspect-ratio:1/1;min-width:41px;border-radius:var(--r-md);font-size:17px}
+button.adlogo.sm.found{background:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+button.adlogo.sm.found img{inset:7px;width:calc(100% - 14px);height:calc(100% - 14px);object-fit:contain}
+button.adlogo.sm.busy{animation:logopulse 1s ease-in-out infinite}
+@keyframes logopulse{50%{opacity:.55}}
+.logomiss{margin:var(--s-2) 0 0;display:flex;align-items:center;gap:var(--s-2);font-size:var(--fs-xs);color:var(--mute)}
+.logomiss[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){button.adlogo.sm.busy{animation:none}}
+
+.colog{align-items:flex-start}
+button.adlogo.sm{width:41px;height:41px;min-width:0;aspect-ratio:auto;flex:none}
+
+/* found logos: no white tile, a thin stroke for contrast */
+button.adlogo.sm.found{background:var(--fill-1);box-shadow:none;border:1px solid var(--line-strong)}
+button.adlogo.sm.found img{inset:6px;width:calc(100% - 12px);height:calc(100% - 12px)}
+
+/* the logo mark sits in its own rounded corner inside the stroked tile */
+button.adlogo.sm.found img{border-radius:8px}
+button.adlogo.sm.has img{border-radius:inherit}
+
+/* home: the Broth panel starts closed; a small Broth avatar at the top right brings it out */
+.lhome{position:relative}
+.hometog{position:absolute;top:var(--s-3);right:var(--s-3);z-index:3;width:40px;height:40px;padding:0;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);display:grid;place-items:center;cursor:pointer;transition:background var(--dur-fast),border-color var(--dur-fast),transform var(--dur-fast)}
+.hometog:hover{background:var(--fill-1);border-color:var(--line-strong)}.hometog:active{transform:scale(.96)}
+.hometog:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.hav{position:relative;width:26px;height:26px;display:block}
+.hav img{width:100%;height:100%;object-fit:contain;display:block}
+.hdot{position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:50%;background:var(--green,#2f9e55);box-shadow:0 0 0 2px var(--surface)}
+.cx:not(.closed) .hometog{display:none}

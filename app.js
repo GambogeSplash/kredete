@@ -177,7 +177,8 @@ function renderAsk(){
   const side='<aside class="cxside" id="rsrc" aria-label="Sources"></aside>';
   if(!first) GR.on=false;
   $('#app').innerHTML = first ? `
-  <div class="cx ${panelOn()?'':'closed'}"><section class="cxmain"><div class="lhome">
+  <div class="cx ${S.ask.homeOpen?'':'closed'}"><section class="cxmain"><div class="lhome">
+    <button class="hometog" id="hometog" type="button" aria-label="Show Broth activity" title="Broth activity"><span class="hav"><img src="assets/brand/mascot-head.png" alt="" draggable="false"><i class="hdot"></i></span></button>
     <div class="dchead"><b>New chat</b></div>
     <div class="lh-in">
       <div class="lm" id="lm" role="img" aria-label="Broth"><svg viewBox="0 0 269 244" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M0.3 242.5 C-0.7 239.8 12.3 209.2 29.5 173.5 C41.1 149.5 50.7 128.0 75.6 69.6 C99.0 15.0 100.2 12.9 112.8 6.2 C124.0 0.2 128.1 -0.2 171.0 0.3 C213.8 0.7 217.0 1.1 230.4 8.3 C264.8 26.7 270.1 80.0 240.3 108.7 L234.9 113.8L240.7 117.8 C265.8 134.8 275.1 166.9 264.1 198.0 C255.8 221.5 238.8 236.0 213.0 241.8 C206.5 243.3 198.3 243.5 149.0 243.5 L92.5 243.5L92.2 241.0 C91.8 237.5 101.6 207.6 103.7 205.9 C105.0 204.8 114.7 204.4 153.4 204.0 C200.9 203.5 201.6 203.5 207.3 201.2 C232.7 190.9 234.4 153.1 209.9 140.5 C203.4 137.1 200.2 136.7 176.0 136.1 L151.5 135.5L151.2 118.1 C151.0 106.8 151.3 100.3 152.0 99.5 C152.8 98.5 158.7 98.1 175.3 97.8 C196.1 97.5 197.8 97.3 202.8 95.1 C221.0 86.9 225.7 60.6 211.4 46.3 C203.6 38.4 201.3 38.0 167.5 38.0 C131.3 38.0 135.2 35.8 124.7 62.0 C106.0 108.9 93.7 138.0 75.6 178.3 C69.7 191.5 61.6 210.9 52.8 233.0 C48.2 244.5 49.6 244.0 23.4 244.0 C4.1 244.0 0.9 243.8 0.3 242.5 Z"/></svg></div>
@@ -194,7 +195,7 @@ function renderAsk(){
      <div class="cxcomp">${composer(false,n,'Ask a follow-up')}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div>
    </section>${side}
   </div>`;
-  if(first){ S.ask.shut=false; renderPanel(); }
+  if(first){ renderPanel(); const ht=$('#hometog'); if(ht) ht.onclick=()=>{ const c=$('.cx'); S.ask.homeOpen=true; if(c) c.classList.remove('closed'); save(); }; }
   const nx=window.AUTH&&S.user?window.AUTH.nextStep():null;
   const go=$('#nxgo'); if(go&&nx) go.onclick=()=>{ window.AUTH.nextDone(nx.k); if(nx.pre) nx.pre(); if(nx.k==='ask'){ renderAsk(); ask(nx.l); } else if(nx.k==='report'){ report(); } else if(nx.stay){ nx.run(); renderAsk(); } else if(nx.ask){ renderAsk(); ask(nx.ask); } else { nx.run(); save(); route(); } };
   if(window.Motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches){ const nc=$('.nxt'); if(nc){ Motion.animate(nc,{opacity:[0,1],y:[-10,0],scale:[.98,1]},{type:'spring',stiffness:420,damping:28}); } const nb=$('#nxgo'); if(nb){ nb.addEventListener('pointerdown',()=>Motion.animate(nb,{scale:.94},{duration:.1})); ['pointerup','pointerleave'].forEach(e=>nb.addEventListener(e,()=>Motion.animate(nb,{scale:1},{type:'spring',stiffness:600,damping:18}))); } } const al=$('#nxall'); if(al) al.onclick=()=>{ S.surface='flows'; save(); route(); }; const sk=$('#nxskip'); if(sk&&nx) sk.onclick=()=>{ window.AUTH.nextDone(nx.k); renderAsk(); };
@@ -277,7 +278,7 @@ function renderPanel(){ const p=$('#rsrc'); if(!p) return;
       if(body&&!calm) body.animate([{opacity:0,transform:'translateX('+(dir*14)+'px)'},{opacity:1,transform:'none'}],{duration:240,easing:'cubic-bezier(.2,.8,.2,1)'});
       else if(body) body.animate([{opacity:0},{opacity:1}],{duration:160}); } })();
   p.querySelectorAll('[data-rs]').forEach(c=>{ c.onclick=()=>openSource(c.dataset.rs); c.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openSource(c.dataset.rs); } }; });
-  $('#cxclose',p).onclick=()=>{ setPanelOpen(false); S.ask.shut=true; save(); };
+  $('#cxclose',p).onclick=()=>{ setPanelOpen(false); S.ask.shut=true; S.ask.homeOpen=false; save(); };
   const wireSrc=()=>p.querySelectorAll('[data-sd]').forEach(c=>c.onchange=()=>{ S.ask.off[c.dataset.sd]=!c.checked; save(); const k=SRCDOCS.filter(id=>!S.ask.off[id]&&canSee(D[id])).length; const cx=$('#cxsrc'); if(cx) cx.innerHTML=ICON('stack',14)+' '+k+' sources'; const g=p.querySelector('.gall span'); if(g) g.textContent=k+' of '+VIS().length+' selected'; });
   wireSrc();
   const sq=$('#srcq',p); if(sq) sq.oninput=e=>{ $('#srclist').innerHTML=srcRows(e.target.value); wireSrc(); };

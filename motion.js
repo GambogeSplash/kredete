@@ -12,8 +12,8 @@ const viewKey=()=>{ const S=B.S; return [S.surface,S.mode,S.user?1:0].join('|');
 let lastKey='', seen=new Set();
 const sig=el=>{ if(el.matches('.m,.ans')) return el.tagName+'.'+el.className.replace(/\s*cursor/,'')+'|'+[...el.parentNode.children].indexOf(el); return el.tagName+'.'+(el.className||'')+'|'+(el.textContent||'').trim().slice(0,70); };
 function enter(nodes, full){
-  if(RM||!nodes.length) return;
-  const top=nodes.filter(n=>!nodes.some(o=>o!==n&&o.contains(n)));
+  if(RM||!nodes.length||window.__entering) return;
+  const top=nodes.filter(n=>!nodes.some(o=>o!==n&&o.contains(n))&&!n.closest('.si-in'));
   top.slice(0,60).forEach((el,i)=>{
     el.style.opacity='0';
     const d=Math.min(i,8)*0.018;

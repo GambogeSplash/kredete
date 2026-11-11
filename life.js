@@ -14,7 +14,7 @@ function flush(){ raf=0; const els=pending.filter(e=>e.isConnected); pending=[];
   const done=()=>els.forEach(e=>{ e.style.opacity=''; e.style.transform=''; });
   els.filter(e=>!leaf.includes(e)).forEach(e=>{ e.style.opacity=''; });
   animate(leaf,{opacity:[0,1],y:[12,0]},{delay:stagger(.028),duration:.4,ease:EASE}).finished.then(done).catch(done); }
-function queue(nodes){ if(RM) return; const ae=document.activeElement; if(ae&&/INPUT|TEXTAREA/.test(ae.tagName)&&app.contains(ae)) return; if(performance.now()-lastBatch<120&&pending.length===0&&false) return;
+function queue(nodes){ if(RM||window.__entering) return; const ae=document.activeElement; if(ae&&/INPUT|TEXTAREA/.test(ae.tagName)&&app.contains(ae)) return; if(performance.now()-lastBatch<120&&pending.length===0&&false) return;
   const fresh=nodes.filter(e=>!e.dataset.lf&&!e.closest('.fin,.stkl-side,#drawer,#modal')&&e.style.opacity!=='0'); if(!fresh.length) return;
   fresh.forEach(e=>{ e.dataset.lf='1'; e.style.opacity='0'; }); pending.push(...fresh); lastBatch=performance.now(); if(!raf) raf=requestAnimationFrame(flush); }
 
@@ -29,8 +29,8 @@ document.addEventListener('focusout',e=>{ const f=e.target.closest&&e.target.clo
 
 /* 4. onboarding: steps rise in one by one; the preview reacts when it learns who you are */
 let pvLast={g:'',u:''};
-function onboarding(added){ if(RM) return; added.forEach(n=>{
-  if(n.id==='sin'||(n.parentNode&&n.parentNode.id==='sin')){ const box=n.id==='sin'?n:n.parentNode; if(box._ob) return; box._ob=1; setTimeout(()=>{ box._ob=0; },60); const kids=[...box.children]; kids.forEach(k=>k.style.opacity='0'); animate(kids,{opacity:[0,1],y:[16,0]},{delay:stagger(.05),duration:.42,ease:EASE}).finished.then(()=>kids.forEach(k=>{ k.style.opacity=''; k.style.transform=''; })).catch(()=>kids.forEach(k=>k.style.opacity='')); }
+function onboarding(added){ if(RM||window.__entering) return; added.forEach(n=>{
+  if(n.id==='sin'||(n.parentNode&&n.parentNode.id==='sin')){ const box=n.id==='sin'?n:n.parentNode; if(box._ob||box._swap) return; box._ob=1; setTimeout(()=>{ box._ob=0; },60); const kids=[...box.children]; kids.forEach(k=>k.style.opacity='0'); animate(kids,{opacity:[0,1],y:[16,0]},{delay:stagger(.05),duration:.42,ease:EASE}).finished.then(()=>kids.forEach(k=>{ k.style.opacity=''; k.style.transform=''; })).catch(()=>kids.forEach(k=>k.style.opacity='')); }
   const pv=n.id==='sipv'?n:(n.parentNode&&n.parentNode.id==='sipv'?n.parentNode:null);
   if(pv){ const g=($('.pvg',pv)||{}).textContent||'', u=(($('.pvu b',pv)||{}).textContent)||''; if(!pv.dataset.first){ pv.dataset.first='1'; const w=$('.pvw',pv); if(w) animate(w,{opacity:[0,1],y:[26,0],scale:[.97,1]},{type:'spring',stiffness:260,damping:26}); }
    else { if(u&&u!==pvLast.u){ $$('.pvu,.pvg,.pvl',pv).forEach((el,i)=>animate(el,{opacity:[0,1],y:[8,0],scale:[.92,1]},{type:'spring',stiffness:520,damping:24,delay:i*.06})); } else if(g&&g!==pvLast.g&&u){ const el=$('.pvg',pv); if(el) animate(el,{y:[4,0]},{duration:.18}); } }
@@ -47,7 +47,7 @@ const sn=$('#surfaces'); if(sn){ let busy=false; new MutationObserver(ms=>{ if(b
 /* 6. the observer */
 new MutationObserver(ms=>{ const added=[]; ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType===1) added.push(n); }));
   if(!added.length) return; const hits=[]; added.forEach(n=>{ if(n.matches(NEW)) hits.push(n); $$(NEW,n).forEach(c=>hits.push(c)); });
-  chat(added); orb(added); onboarding(added); queue([...new Set(hits)]); }).observe(app,{childList:true,subtree:true});
+  chat(added); orb(added); onboarding(added); queue([...new Set(hits)].filter(n=>!n.closest('.si-in'))); }).observe(app,{childList:true,subtree:true});
 orb([app]);
 
 /* 7. press feel for the newer controls, and rows leave gracefully when you act on them */
