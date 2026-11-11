@@ -1,0 +1,46 @@
+/* Broth Library: the list view as a table, the document shell.
+   The values are the prototype's.
+/* the table: Name | Domain | Type | Owner | Updated | chevron. Values are the prototype's. */
+.libt{margin-bottom:var(--s-5)}
+.libcols{grid-template-columns:minmax(0,1fr) 120px 110px 90px 70px 20px}
+.ds-cap{min-height:48px;background:var(--fill-1);font-weight:500}.ds-cap+.ds-th{border-top:1px solid var(--line)}
+.libt .ltb{min-width:0;display:grid}
+.libt .ltb b{font-weight:500;font-size:var(--fs-md);line-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.libt .ltb small{font-size:var(--fs-xs);line-height:16px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.libt .lt1{display:flex;align-items:center;gap:var(--s-2);min-width:0}
+.libt .dmn svg,.libt .dmn img{flex:none}.libt .lfic{display:inline-flex;flex:none}
+.libt .lfic{color:var(--dc)}
+.libt .llab{display:inline-flex;align-items:center;gap:var(--s-2);color:var(--ink);font-size:var(--fs-sm);min-width:0}.libt .llab i{width:8px;height:8px;border-radius:50%;flex:none}
+.libt .llab{border:0!important;background:none!important;padding:0!important;border-radius:0!important;width:auto}
+.libt .lty{display:inline-flex;align-items:center;gap:var(--s-2)}
+.libt .lcv{justify-self:end}
+.libt .lown{display:inline-flex;align-items:center;min-width:0}
+.libt .ds-tr[data-open],.libt .ds-tr[data-folder]{cursor:pointer;text-decoration:none;color:inherit;transition:background var(--dur-fast)}
+.libt .ds-tr[data-open]:hover,.libt .ds-tr[data-folder]:hover{background:var(--fill-1)}
+.libt .ds-tr:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.libt .skrow-t .pvsk{display:block;height:8px;margin:4px 0;animation:skpulse 1.4s ease-in-out infinite}
+.libt .skrow-t .pvsk.sksub{height:6px;opacity:.7}
+.libt .skrow-t .skic{width:22px;height:22px;margin:0;border-radius:6px}
+.libferr{display:flex;align-items:center;gap:var(--s-3);margin:0 0 var(--s-3);font-size:var(--fs-sm);color:var(--mute)}
+.fbk{flex:none;width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:var(--r-md);background:none;color:var(--mute);cursor:pointer;text-decoration:none}.fbk:hover{background:var(--fill-1);color:var(--ink)}
+.fbk:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.libhsk{display:inline-block;width:140px;height:20px;vertical-align:middle}
+@media (prefers-reduced-motion:reduce){.libt .skrow-t .pvsk{animation:none}}
+@media (max-width:900px){.libcols{grid-template-columns:minmax(0,1fr) 70px 20px}.libcols>:nth-child(2),.libcols>:nth-child(3),.libcols>:nth-child(4){display:none}}
+
+/* a document opens as its own shell on the right, beside the page, like the other shells.
+   On a phone it stays the sheet. */
+@media (min-width:901px){
+ #drawer.shell{top:8px;right:8px;bottom:8px;width:min(400px,calc(100vw - 80px));padding:0;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:0 12px 32px -8px rgba(0,0,0,.35);transform:translateX(calc(100% + 16px));transition:transform .34s cubic-bezier(.2,.8,.2,1);z-index:30;overflow:hidden}
+ #drawer.shell.on{transform:none}
+ #drawer.shell~#scrim,body.dsopen #scrim{opacity:0!important;pointer-events:none!important}
+ body:not(.noauth) .mainpanel{transition:margin-right .34s cubic-bezier(.2,.8,.2,1)}
+ body.dsopen:not(.noauth) .mainpanel{margin-right:calc(8px + 400px + 8px)}
+ #drawer.shell .sv-top{padding:10px var(--s-2) 10px var(--s-4)}
+ #drawer.shell .sv-body{padding:var(--s-4)}
+ #drawer.shell .sv-act{padding:var(--s-3) var(--s-4)}
+}
+@media (prefers-reduced-motion:reduce){#drawer.shell,body:not(.noauth) .mainpanel{transition:none}}
+
+/* a long owner name stays on one line in a card's footer, so a card is the same height with any name */
+.gc-f>span:nth-child(2){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
