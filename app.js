@@ -7,7 +7,7 @@ const fresh = () => ({ role:'employee', mode:'ask', feeFixed:false, items: JSON.
 let S = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || '{}'));
 /* chats are keyed by id; migrate old question-keyed state once */
 const newCid=()=>'c_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-(()=>{ try{ S.qs=S.qs||{}; S.saved=S.saved||{}; S.titles=S.titles||{}; S.pins=S.pins||{}; const map={}; const hist=Array.isArray(S.history)?S.history:[];
+(()=>{ try{ if(!Array.isArray(S.audit)) S.audit=[]; S.qs=S.qs||{}; S.saved=S.saved||{}; S.titles=S.titles||{}; S.pins=S.pins||{}; const map={}; const hist=Array.isArray(S.history)?S.history:[];
   const idOf=q=>{ if(!map[q]) map[q]=newCid(); return map[q]; };
   S.history=hist.map(h=>{ if(typeof h==='string'&&h.slice(0,2)==='c_') return h; const q=(h&&h.q)||h; const id=idOf(q); S.qs[id]=q; return id; });
   [['saved'],['titles'],['pins']].forEach(([k])=>{ Object.keys(S[k]).forEach(key=>{ if(key.slice(0,2)==='c_'&&S.qs[key]!==undefined) return; if(key.slice(0,2)==='c_'&&k!=='saved') return; if(key.slice(0,2)==='c_') return; const id=idOf(key); S[k][id]=S[k][key]; delete S[k][key]; if(!S.qs[id]) S.qs[id]=key; if(k==='saved'&&!S.history.includes(id)) S.history.push(id); }); });
@@ -27,7 +27,7 @@ function haptic(kind){ try{ if(!matchMedia('(pointer:coarse)').matches) return; 
   let l=document.getElementById('hpt'); if(!l){ l=document.createElement('label'); l.id='hpt'; l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none'; l.innerHTML='<input type="checkbox" switch tabindex="-1">'; document.body.appendChild(l); } l.click(); }catch(e){} }
 function toast(m){ if(/copied|connected|updated|saved|deleted|pinned|flagged/i.test(String(m))) haptic('success'); const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('on'),2600); }
 
-function logAudit(e){ e.id='a'+Date.now()+Math.floor(Math.random()*99); const n=new Date(); e.ts=new Date(2026,10,1,n.getHours(),n.getMinutes()).getTime(); e.time='1 Nov, '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); S.audit.unshift(e); }
+function logAudit(e){ if(!Array.isArray(S.audit)) S.audit=[]; e.id='a'+Date.now()+Math.floor(Math.random()*99); const n=new Date(); e.ts=new Date(2026,10,1,n.getHours(),n.getMinutes()).getTime(); e.time='1 Nov, '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); S.audit.unshift(e); }
 /* ---------- answers ---------- */
 const MON={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
 function dateOk(d,w){ if(w==='all') return true; const [dd,mm,yy]=d.verified.split(' '); const age=(new Date(2026,10,1)-new Date(+yy,MON[mm],+dd))/864e5; return age<=(w==='90'?90:365); }
