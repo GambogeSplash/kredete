@@ -44,9 +44,9 @@ window.BROTH_RAIL = () => {
 const tip = document.createElement('div'); tip.id = 'rltip'; tip.className = 'rltip'; tip.setAttribute('role', 'tooltip');
 (document.body || document.documentElement).appendChild(tip);
 const tlabel = (el) => el.dataset.tip || el.getAttribute('aria-label') || '';
-const show = (el) => { const t = tlabel(el); if (!t) return; tip.innerHTML = '<span></span>' + (el.dataset.key ? '<kbd>' + el.dataset.key + '</kbd>' : ''); tip.firstChild.textContent = t; const r = el.getBoundingClientRect(); tip.style.left = (r.right + 10) + 'px'; tip.style.top = (r.top + r.height / 2) + 'px'; tip.classList.add('on'); };
+const show = (el) => { const t = tlabel(el); if (!t) return; tip.innerHTML = '<span></span>' + (el.dataset.key ? '<kbd>' + el.dataset.key + '</kbd>' : ''); tip.firstChild.textContent = t; const r = el.getBoundingClientRect(); const below = !!el.closest('.cxtabs'); tip.classList.toggle('below', below); tip.style.left = (below ? r.left + r.width / 2 : r.right + 10) + 'px'; tip.style.top = (below ? r.bottom + 8 : r.top + r.height / 2) + 'px'; tip.classList.add('on'); };
 const hide = () => tip.classList.remove('on');
-const TSEL = '.rail .rl, .rail .acct';
+const TSEL = '.rail .rl, .rail .acct, .cxtabs .ltab';
 document.addEventListener('pointerover', (e) => { const el = e.target.closest && e.target.closest(TSEL); if (el) show(el); else hide(); });
 document.addEventListener('focusin', (e) => { const el = e.target.closest && e.target.closest(TSEL); if (el && e.target.matches(':focus-visible')) show(el); });
 document.addEventListener('focusout', hide);
