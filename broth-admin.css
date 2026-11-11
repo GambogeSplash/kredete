@@ -115,9 +115,8 @@ code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:va
 .ixchip[aria-selected=true]{background:var(--fill-2);color:var(--ink);border-color:transparent}
 .adbar2 .btn{margin-left:auto}
 .adbar2 .ixchips{flex:1}
-/* sticky audit header; clip, not hidden, so sticky still works inside the rounded card */
+/* the audit header scrolls with the table; clip keeps the rounded card tidy */
 .audt{overflow:clip}
-.aud-h{position:sticky;top:0;z-index:2}
 .aud-e{grid-template-columns:1fr}
 .aud-r.skrow,.adrow.skrow{display:flex}
 .aud-r .audw small{margin-left:var(--s-2)}
@@ -298,9 +297,9 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 .ds-pop.menu .fchk{display:inline-flex;width:14px;color:var(--brand-strong)}
 .adbar2 .fbtn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .adbar2 .fbtn[aria-expanded=true]{background:var(--fill-1)}
-/* column titles over the People table, aligned with its rows; sticky like the Audit log header */
+/* column titles over the People table, aligned with its rows; it scrolls with the table */
 .adppl{overflow:clip}
-.adrow.adth{position:sticky;top:0;z-index:2;min-height:40px;padding-top:0;padding-bottom:0;background:var(--fill-1);color:var(--mute);font-size:var(--fs-xs);border-bottom:1px solid var(--line)}
+.adrow.adth{min-height:40px;padding-top:0;padding-bottom:0;background:var(--fill-1);color:var(--mute);font-size:var(--fs-xs);border-bottom:1px solid var(--line)}
 .adrow.adth:hover{background:var(--fill-1)}
 .adrow.skrow{display:flex}
 .actl .actth{min-height:40px;background:var(--fill-1);color:var(--mute);font-size:var(--fs-xs);padding-top:0;padding-bottom:0}
@@ -421,4 +420,33 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 @media (max-width:900px){
   .adbar2 .adsearch input,.adbar2 .fbtn,.adbar2 .btn.sm,.ds-act .btn.sm,.ds-act .seg{height:40px;min-height:40px}
   .ds-act .segb{height:38px;min-height:38px}
+}
+
+/* the pager under a table: rows per page, the range, the page, Previous and Next */
+.pager{display:flex;align-items:center;gap:var(--s-4);flex-wrap:wrap;margin-top:var(--s-4);color:var(--mute);font-size:var(--fs-sm)}
+.pager .pgsize{display:flex;align-items:center;gap:var(--s-2)}
+.pager .pgsize .ssel{min-width:84px}
+.pager .pgsize .ssel-btn{min-height:36px;border-radius:var(--r-md)}
+.pager .pgrange{color:var(--ink)}
+.pager .lsp{flex:1}
+.pager .pgbtns{display:flex;gap:var(--s-2)}
+.pager .btn.sm{height:36px;min-height:36px;padding:0 var(--s-4);border-radius:var(--r-md)}
+.pager .btn[disabled]{opacity:.45;cursor:default}
+@media (max-width:900px){
+  .pager{display:grid;grid-template-columns:1fr auto;gap:var(--s-3)}
+  .pager .pgsize{grid-column:1;grid-row:1}
+  .pager .pgrange{grid-column:2;grid-row:1;justify-self:end}
+  .pager .pgn{display:none}
+  .pager .lsp{display:none}
+  .pager .pgbtns{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:1fr 1fr}
+  .pager .btn.sm,.pager .pgsize .ssel-btn{height:40px;min-height:40px}
+}
+
+/* ===== every button in a title row, toolbar or pager: centred label, one height, one size ===== */
+.lset .ds-act .btn,.lset .ds-act .dclink.btn,.lset .adbar2 .btn,.lset .pager .btn,.lset .adbar2 .fbtn{display:inline-flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;height:36px;min-height:36px;box-sizing:border-box;padding:0 14px;border-radius:var(--r-md);font-size:13px;font-weight:500;line-height:1;white-space:nowrap}
+.lset .ds-act .btn.primary,.lset .adbar2 .btn.primary{display:inline-flex;align-items:center;justify-content:center}
+.lset .ds-act .btn svg,.lset .adbar2 .btn svg,.lset .ds-act .dclink svg{flex:none}
+.lset .adbar2 .fbtn{padding:0 var(--s-3)}
+@media (max-width:900px){
+  .lset .ds-act .btn,.lset .ds-act .dclink.btn,.lset .adbar2 .btn,.lset .pager .btn,.lset .adbar2 .fbtn{height:40px;min-height:40px;font-size:13px}
 }

@@ -50,7 +50,7 @@ function life(root) {
   if (!root || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const ease = 'cubic-bezier(.22,1,.36,1)';
   $$('.adseg i.on', root).forEach((i, k) => { if (i.animate) i.animate([{ transform: 'scaleY(.2)', opacity: 0.3 }, { transform: 'none', opacity: 1 }], { duration: 420, delay: k * 28, easing: ease, fill: 'backwards' }); });
-  $$('.adst,.adsc,.adrow,.addom,.adhero,.adrq', root).forEach((c, k) => { if (c.animate) c.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: Math.min(k, 12) * 34, easing: ease, fill: 'backwards' }); });
+  $$('.adst,.adsc,.adrow,.addom,.adhero,.adrq,.aud-r:not(.aud-h)', root).forEach((c, k) => { if (c.animate) c.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: Math.min(k, 12) * 34, easing: ease, fill: 'backwards' }); });
 }
 /* ---------- domain tiles: a favicon for a name that is a hostname, else the initial ----------
    A knowledge domain such as "Payments" has no host and makes no request. A name that is a host
@@ -221,9 +221,17 @@ const ACTIONS = [
   ['connection.warning_changed', 'Connection warning changed'],
 ];
 const actionName = (a) => (ACTIONS.find((x) => x[0] === a) || [a, a.replace(/[._]/g, ' ')])[1];
+const SIZES = [25, 50, 100];
+const SIZE_KEY = 'broth-audit-page';
+/** The page size, remembered in this browser as a convenience. */
+function storedSize() {
+  try { const n = Number(localStorage.getItem(SIZE_KEY)); return SIZES.includes(n) ? n : 25; } catch (e) { return 25; }
+}
+/* The audit API is cursor based and returns no total: each page is kept in memory, in order, for the
+   current filters and page size, so Previous never asks again. Cursors stay out of the address. */
 function auditState() {
   const c = B.S.cache;
-  if (!c.audit) c.audit = { action: '', from: '', to: '', items: [], next: null, loaded: false, loading: false, error: null, seq: 0 };
+  if (!c.audit) c.audit = { action: '', from: '', to: '', size: storedSize(), pages: [], page: 0, items: [], next: null, loaded: false, loading: false, error: null, seq: 0, animate: false };
   return c.audit;
 }
 function audit(el) {
@@ -235,31 +243,41 @@ function audit(el) {
   btn.onclick = () => {
     if (btn.getAttribute('aria-expanded') === 'true') { closePop(); return; }
     const p = pop(btn, `<form class="dmbody" id="audff" novalidate><div><p class="dmlab">Action</p><select id="audact" aria-label="Action"><option value="">Any action</option>${ACTIONS.map(([k, l]) => `<option value="${k}" ${a.action === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="audf2"><div><p class="dmlab">From</p><input type="date" id="audfrom" class="eminp" aria-label="From" value="${esc(a.from)}"></div><div><p class="dmlab">To</p><input type="date" id="audto" class="eminp" aria-label="To" value="${esc(a.to)}"></div></div><div class="actions"><button type="button" class="btn" id="audclr">Clear</button><span class="lsp"></span><button type="submit" class="btn primary">Show results</button></div></form>`, 'Filter the audit log');
-    $('#audclr', p).onclick = () => { a.action = ''; a.from = ''; a.to = ''; closePop(); audit(el); };
+    $('#audclr', p).onclick = () => { a.action = ''; a.from = ''; a.to = ''; closePop(); audit(el); restart(); };
     $('#audff', p).onsubmit = (e) => {
       e.preventDefault();
       a.action = $('#audact', p).value; a.from = $('#audfrom', p).value; a.to = $('#audto', p).value;
       closePop();
       audit(el);
-      load(true);
+      restart();
     };
   };
-  if (!a.loaded || a.error) load(true); else draw();
+  if (!a.loaded || a.error) restart(); else draw();
 }
-async function load(reset) {
+/** Filters or page size changed: forget the cached pages and start at the first. */
+function restart() {
   const a = auditState();
-  if (!reset && (a.loading || !a.next)) return;
+  a.pages = []; a.page = 0; a.items = []; a.next = null; a.loaded = false; a.error = null;
+  load(0);
+}
+/** Shows page `idx`: from memory when it was fetched, otherwise from the API with the cursor the page before it gave. */
+async function load(idx) {
+  const a = auditState();
+  if (a.pages[idx]) { a.page = idx; a.items = a.pages[idx].items; a.next = a.pages[idx].next; a.loaded = true; a.error = null; a.animate = true; draw(); return; }
+  const cursor = idx === 0 ? null : (a.pages[idx - 1] || {}).next;
+  if (idx > 0 && !cursor) return;
   const mine = ++a.seq;
-  a.loading = true; a.error = null;
-  if (reset) { a.items = []; a.next = null; a.loaded = false; }
+  const table = $('#audt');
+  if (table && a.loaded) table.style.minHeight = table.offsetHeight + 'px'; // rows never jump while the next page loads
+  a.loading = true; a.error = null; a.page = idx; a.loaded = false;
   draw();
   const day = (d, end) => (d ? new Date(d + (end ? 'T23:59:59.999' : 'T00:00:00')).toISOString() : null);
   try {
-    const [page] = await Promise.all([B.api.get('/admin/audit', { action: a.action || null, from: day(a.from, false), to: day(a.to, true), limit: 50, cursor: reset ? null : a.next }), names()]);
+    const [page] = await Promise.all([B.api.get('/admin/audit', { action: a.action || null, from: day(a.from, false), to: day(a.to, true), limit: a.size, cursor }), names()]);
     if (mine !== a.seq) return;
-    a.items = reset ? B.rows(page) : a.items.concat(B.rows(page));
-    a.next = B.cursorOf(page);
-    a.loaded = true;
+    a.pages[idx] = { items: B.rows(page), next: B.cursorOf(page) };
+    a.items = a.pages[idx].items; a.next = a.pages[idx].next;
+    a.loaded = true; a.animate = true;
   } catch (error) {
     if (mine !== a.seq) return;
     a.error = error;
@@ -303,21 +321,39 @@ function draw() {
   if (!t) return;
   const head = '<div class="aud-r aud-h" role="row"><span role="columnheader">Timestamp</span><span role="columnheader">Event</span><span role="columnheader">Actor</span><span role="columnheader">Resource</span><span role="columnheader">Outcome</span></div>';
   if (!a.loaded) {
-    // An error is one framed card in place of the table; loading keeps the table's shape.
+    // An error is one framed card in place of the table and pager; loading keeps the table's shape.
     t.classList.toggle('isempty', !!a.error);
+    if (a.error) t.style.minHeight = '';
     t.innerHTML = a.error ? `<div class="ds-empty">${B.errorBlock(a.error, 'audretry')}</div>` : head + B.skeletonRows(6, 'aud-r');
     const r = $('#audretry');
-    if (r) r.onclick = () => load(true);
+    if (r) r.onclick = () => load(a.page); // the same page again
     more.innerHTML = '';
     return;
   }
-  t.innerHTML = (a.items.length ? head : '') + (a.items.length
-    ? a.items.map((e) => `<div class="aud-r" role="row"><span class="amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="audw"><i class="audi">${ICON(actionIcon(e.action), 14)}</i><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="audwho">${actor(e.actor)}</span><span>${target(e)}</span><span><span class="tag ${outcomeTone(e.outcome)}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('')
-    : '<div class="ds-empty"><b>No events match</b><p>Try a different action or dates.</p></div>');
-  t.classList.toggle('isempty', a.loaded && !a.items.length);
-  more.innerHTML = a.next ? `<div class="audmore"><button type="button" class="btn sm" id="audload" ${a.loading ? 'disabled' : ''}>${a.loading ? 'Loading' : 'Show more'}</button></div>` : '';
-  const m = $('#audload');
-  if (m) m.onclick = () => load(false);
+  t.style.minHeight = '';
+  const empty = !a.items.length;
+  t.classList.toggle('isempty', empty);
+  // Nothing to show replaces the table, its header and the pager with one framed card.
+  if (empty) { t.innerHTML = '<div class="ds-empty"><b>No events match</b><p>Try a different action or dates.</p></div>'; more.innerHTML = ''; return; }
+  t.innerHTML = head + a.items.map((e) => `<div class="aud-r" role="row"><span class="amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="audw"><i class="audi">${ICON(actionIcon(e.action), 14)}</i><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="audwho">${actor(e.actor)}</span><span>${target(e)}</span><span><span class="tag ${outcomeTone(e.outcome)}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('');
+  const from = a.page * a.size + 1;
+  const hasNext = !!a.next;
+  more.innerHTML = `<div class="pager" role="navigation" aria-label="Audit log pages"><div class="pgsize"><label for="audsize">Rows per page</label><select id="audsize" aria-label="Rows per page">${SIZES.map((n) => `<option value="${n}" ${n === a.size ? 'selected' : ''}>${n}</option>`).join('')}</select></div><span class="pgrange" aria-live="polite">${from} to ${from + a.items.length - 1}</span><span class="pgn">Page ${a.page + 1}</span><span class="lsp"></span><div class="pgbtns"><button type="button" class="btn sm" id="audprev" ${a.page === 0 ? 'disabled aria-disabled="true"' : ''}>Previous</button><button type="button" class="btn sm" id="audnext" ${hasNext ? '' : 'disabled aria-disabled="true"'}>Next</button></div></div>`;
+  $('#audprev').onclick = () => { if (a.page > 0) { a.animate = true; load(a.page - 1); toTop(); } };
+  $('#audnext').onclick = () => { if (a.next) { load(a.page + 1); toTop(); } };
+  $('#audsize').onchange = (e) => {
+    a.size = Number(e.target.value);
+    try { localStorage.setItem(SIZE_KEY, String(a.size)); } catch (err) { /* storage unavailable */ }
+    restart();
+  };
+  if (a.animate) { a.animate = false; life(t); }
+}
+/** After a page change the table starts at the top of the view, smoothly unless motion is reduced. */
+function toTop() {
+  const t = $('#audt');
+  if (!t) return;
+  const r = t.getBoundingClientRect();
+  if (r.top < 0) t.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 }
 tabs.audit = { label: 'Audit log', roles: ['admin', 'compliance'], render: audit };
 
