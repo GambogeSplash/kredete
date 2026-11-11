@@ -261,7 +261,8 @@ function closeMenu(refocus) {
   if (!pm) return;
   const { el, a } = pm;
   pm = null;
-  el.remove();
+  const sheet = getComputedStyle(el).animationName === 'sheetUp';
+  if (B.leaveFx) B.leaveFx(el, sheet ? { opacity: 1, transform: 'translateY(110%)' } : { opacity: 0, transform: 'translateY(4px)' }, sheet ? 240 : 110); else el.remove();
   a.setAttribute('aria-expanded', 'false');
   document.removeEventListener('pointerdown', outside, true);
   window.removeEventListener('resize', onResize);

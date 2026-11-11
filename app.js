@@ -167,14 +167,59 @@ function closeDrawer() {
   // The shell keeps its class while it slides out.
   setTimeout(() => { if (!$('#drawer').classList.contains('on')) $('#drawer').classList.remove('shell'); }, 320);
 }
+/**
+ * Exits. Every overlay leaves the way it came in, played backwards, and is only taken away
+ * (or hidden) once that has finished. exitFx(el, to, ms, ease) freezes whatever is still playing
+ * on el, animates it to `to` and resolves when it is over. It resolves at once for reduced motion,
+ * an element that is not showing, or no WAAPI.
+ */
+function exitFx(el, to, ms, ease) {
+  if (!el || !el.isConnected || !el.animate || calm() || !el.getClientRects().length) return { done: Promise.resolve(), cancel() {} };
+  // Start from what is on screen now (an enter may still be playing), then drop what was playing.
+  const cs = getComputedStyle(el);
+  const from = { opacity: cs.opacity, transform: cs.transform === 'none' ? 'none' : cs.transform };
+  el.getAnimations().forEach((a) => a.cancel());
+  const a = el.animate([from, to], { duration: ms, easing: ease || 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+  return { done: a.finished.then(() => {}, () => {}), cancel() { a.cancel(); } };
+}
+/** Takes `el` out after its exit. Pointer events stop at once so a leaving menu cannot be clicked. */
+function leaveFx(el, to, ms, ease) {
+  if (!el || el.dataset.leaving) return;
+  el.dataset.leaving = '1';
+  el.style.pointerEvents = 'none';
+  exitFx(el, to, ms, ease).done.then(() => el.remove());
+}
+let modalExit = null;
 function openModal(html) {
   const m = $('#modal');
+  const exiting = !!modalExit;
+  if (exiting) { modalExit.cancel(); modalExit = null; }
   m.innerHTML = html;
+  if (exiting) { m.classList.remove('on'); void m.offsetWidth; }
   m.classList.add('on');
   m.setAttribute('aria-hidden', 'false');
   $$('[data-close-modal]', m).forEach((b) => { b.onclick = closeModal; });
 }
-function closeModal() { $('#modal').classList.remove('on'); }
+/**
+ * Closing a modal plays the enter backwards: the card fades and eases down (scale .94, 24 px on a
+ * desktop; off the bottom as a sheet on a phone) while the backdrop fades. `on` stays until it is
+ * over, so focus returns to the opener after, and a second close or a reopen in the middle neither
+ * stacks nor flashes.
+ */
+function closeModal() {
+  const m = $('#modal');
+  if (!m.classList.contains('on') || modalExit) return;
+  const box = $('.modal', m);
+  const hide = () => { m.classList.remove('on'); m.getAnimations().forEach((a) => a.cancel()); if (box) box.getAnimations().forEach((a) => a.cancel()); };
+  // A swipe has already carried the sheet off the screen: nothing is left to play.
+  if (!box || calm() || box.getBoundingClientRect().top >= innerHeight - 1) { hide(); return; }
+  const sheet = getComputedStyle(m).alignItems === 'flex-end';
+  const card = exitFx(box, sheet ? { opacity: 1, transform: 'translateY(100%)' } : { opacity: 0, transform: 'translateY(24px) scale(.94)' }, sheet ? 240 : 200);
+  const back = exitFx(m, { opacity: 0 }, sheet ? 240 : 200, 'ease-in');
+  const mine = { cancel() { card.cancel(); back.cancel(); } };
+  modalExit = mine;
+  Promise.all([card.done, back.done]).then(() => { if (modalExit !== mine) return; modalExit = null; hide(); });
+}
 $('#scrim').onclick = closeDrawer;
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeDrawer(); closeModal(); } });
 
@@ -254,6 +299,36 @@ document.addEventListener('click', (e) => {
 });
 
 let lastSurface = null;
+/**
+ * Page out. The router renders the next page in place, so what was on screen is copied first and
+ * laid over the same spot; it eases out (140 ms, ease-in) while the new page eases in beneath it
+ * (motion.js). Only the page area is copied: the rail, sidebar and top bar are never touched.
+ * A copy of a page that is itself still easing in starts from how visible it was.
+ */
+let routeKey = null;
+function pageGhost(key) {
+  const first = routeKey === null;
+  const same = routeKey === key;
+  routeKey = key;
+  const app = $('#app');
+  if (first || same || S.phase !== 'app' || calm() || /** @type {any} */ (window).__entering || !app || !app.firstElementChild || !app.animate) return;
+  if (document.body.classList.contains('noauth') || !app.getClientRects().length) return;
+  const r = app.getBoundingClientRect();
+  const g = document.createElement('div');
+  g.setAttribute('aria-hidden', 'true');
+  g.setAttribute('data-pgout', '1');
+  g.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;overflow:hidden;pointer-events:none;z-index:10`;
+  const copy = /** @type {HTMLElement} */ (app.cloneNode(true));
+  copy.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+  copy.querySelectorAll('[autofocus],a,button,input,textarea').forEach((el) => el.setAttribute('tabindex', '-1'));
+  copy.style.cssText = `position:absolute;left:0;top:0;width:${r.width}px;height:${r.height}px;overflow:hidden`;
+  g.appendChild(copy);
+  document.body.appendChild(g);
+  copy.scrollTop = app.scrollTop;
+  const from = Math.min(1, +getComputedStyle(app).opacity || 1);
+  const gone = () => g.remove();
+  g.animate([{ opacity: from }, { opacity: 0 }], { duration: 140, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }).finished.then(gone, gone);
+}
 function route() {
   const path = location.pathname.replace(/\/+$/, '') || '/';
   if (S.phase === 'boot') { renderBoot(); return; }
@@ -271,6 +346,7 @@ function route() {
   const found = match(path);
   if (!found || (found.allow && !found.allow())) { go('/', { replace: true }); return; }
   if (found.surface === 'setup' && S.phase === 'app' && !(isAdmin() && sandbox())) { go('/', { replace: true }); return; }
+  pageGhost(found.surface + '|' + path);
   // `from` is the surface shown before this one, so a surface can tell arriving from moving within it.
   S.route = { surface: found.surface, params: found.params, path, from: lastSurface };
   leaveGuard = null;
@@ -419,6 +495,29 @@ function forgetChat(id) {
 }
 const chatTitle = (c) => (c && c.title) || 'Untitled chat';
 
+/* Rename, subtly: the new title fades in and a thin brand line draws under it once, like a pen stroke. */
+function renamedFx(title) {
+  toast('Renamed');
+  if (calm()) return;
+  const t = String(title).trim().slice(0, 30);
+  requestAnimationFrame(() => {
+    const hits = [...document.querySelectorAll('.dtitle,#cxtitle,#surfaces .surf.chat,.chr .actt b')].filter((e) => e.textContent.trim().startsWith(t));
+    hits.forEach((e) => {
+      const txt = e.matches('.surf.chat') ? (e.querySelector('.chn') || e.querySelector('span') || e) : e;
+      if (!txt.animate) return;
+      txt.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 320, easing: 'ease-out' });
+      if (getComputedStyle(txt).position === 'static') /** @type {HTMLElement} */ (txt).style.position = 'relative';
+      const ln = document.createElement('i');
+      ln.setAttribute('aria-hidden', 'true');
+      ln.style.cssText = 'position:absolute;left:0;right:0;bottom:-2px;height:1.5px;border-radius:1px;background:var(--brand,#5e6ad2);transform-origin:left center;pointer-events:none';
+      txt.appendChild(ln);
+      const gone = () => ln.remove();
+      ln.animate([{ transform: 'scaleX(0)', opacity: 0.9 }, { transform: 'scaleX(1)', opacity: 0.9 }], { duration: 340, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' }).finished
+        .then(() => ln.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 360, easing: 'ease-out', fill: 'forwards' }).finished)
+        .then(gone, gone);
+    });
+  });
+}
 async function renameChat(id, title) {
   const updated = await API.patch(`/conversations/${id}`, { title });
   replaceChat(updated);
@@ -430,9 +529,51 @@ async function pinChat(id, pinned) {
   toast(pinned ? 'Pinned' : 'Unpinned');
   return updated;
 }
-async function deleteChat(id, row) {
-  await API.del(`/conversations/${id}`);
-  if (row && window.BROTH_FX) await window.BROTH_FX.trashRow(row);
+/**
+ * The delete animation from the prototype: the row sinks into a trash can that pops up, the can
+ * wobbles, the row collapses, the can leaves. Returns { done, abort }; done resolves when it has
+ * played out (immediately for no row or reduced motion), abort puts the row back untouched.
+ */
+function trashFx(rowEl) {
+  if (!rowEl || !rowEl.animate || calm()) return { done: Promise.resolve(), abort() {} };
+  rowEl.style.pointerEvents = 'none';
+  const r = rowEl.getBoundingClientRect();
+  const h = r.height;
+  const prevOverflow = rowEl.style.overflow;
+  rowEl.style.overflow = 'hidden';
+  const can = document.createElement('div');
+  can.className = 'trashfx';
+  can.setAttribute('aria-hidden', 'true');
+  can.innerHTML = ICON('trash', 22);
+  can.style.left = (r.left + Math.min(r.width / 2, 60) - 18) + 'px';
+  can.style.top = (r.top + h / 2 - 18) + 'px';
+  document.body.appendChild(can);
+  const anims = [];
+  const run = (el, kf, o) => { const a = el.animate(kf, o); anims.push(a); return a; };
+  run(can, [{ opacity: 0, transform: 'scale(.4) translateY(6px)' }, { opacity: 1, transform: 'scale(1) translateY(0)' }], { duration: 180, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'forwards' });
+  const sink = run(rowEl, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(' + (Math.min(r.width / 2, 60) - r.width / 2) + 'px) scale(.35)' }], { duration: 320, delay: 80, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+  let aborted = false;
+  const done = sink.finished
+    .then(() => {
+      if (aborted) return null;
+      run(can, [{ transform: 'rotate(0)' }, { transform: 'rotate(-12deg)' }, { transform: 'rotate(8deg)' }, { transform: 'rotate(0)' }], { duration: 220 });
+      return run(rowEl, [{ height: h + 'px', opacity: 0 }, { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginTop: '0px', marginBottom: '0px' }], { duration: 200, easing: 'ease-out', fill: 'forwards' }).finished;
+    })
+    .then(() => (aborted ? null : run(can, [{ opacity: 1 }, { opacity: 0, transform: 'scale(.8)' }], { duration: 160, fill: 'forwards' }).finished))
+    .then(() => { can.remove(); }, () => { can.remove(); });
+  const abort = () => {
+    aborted = true;
+    anims.forEach((a) => { try { a.cancel(); } catch (e) { /* already finished */ } });
+    can.remove();
+    rowEl.style.pointerEvents = '';
+    rowEl.style.overflow = prevOverflow;
+  };
+  return { done, abort };
+}
+async function deleteChat(id, rowEl) {
+  const fx = trashFx(rowEl);
+  try { await API.del(`/conversations/${id}`); } catch (error) { fx.abort(); throw error; }
+  await fx.done;
   forgetChat(id);
   toast('Chat deleted');
   if (S.conv && S.conv.id === id) { S.conv = null; go('/', { replace: true }); }
@@ -471,11 +612,7 @@ function editTitle(el, conv, onDone) {
     finished = true;
     const value = input.value.trim();
     if (save && value && value !== chatTitle(conv)) {
-      let renamed = false;
-      try { await renameChat(conv.id, value); toast('Renamed'); renamed = true; } catch (error) { toast(problem(error)); }
-      onDone();
-      if (renamed && window.BROTH_FX) window.BROTH_FX.renamed(value);
-      return;
+      try { await renameChat(conv.id, value); renamedFx(value); } catch (error) { toast(problem(error)); }
     }
     onDone();
   };
@@ -502,7 +639,7 @@ function chatMenu(anchor, conv, opts) {
   const below = r.bottom + m.offsetHeight + 10 < innerHeight;
   m.style.top = (below ? r.bottom + 6 : r.top - m.offsetHeight - 6) + 'px';
   if (m.animate && !calm()) m.animate([{ opacity: 0, transform: 'translateY(' + (below ? -4 : 4) + 'px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 150, easing: 'cubic-bezier(.2,.8,.2,1)' });
-  const close = () => { m.remove(); document.removeEventListener('mousedown', out, true); document.removeEventListener('keydown', key, true); };
+  const close = () => { leaveFx(m, { opacity: 0, transform: 'translateY(' + (below ? -4 : 4) + 'px) scale(.97)' }, 110); document.removeEventListener('mousedown', out, true); document.removeEventListener('keydown', key, true); };
   const out = (e) => { if (!m.contains(e.target)) close(); };
   const key = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); if (anchor.focus) anchor.focus(); } };
   document.addEventListener('mousedown', out, true);
@@ -514,11 +651,12 @@ function chatMenu(anchor, conv, opts) {
     const a = b.dataset.a;
     if (a === 'del' && !b.dataset.arm) { b.dataset.arm = '1'; $('span', b).textContent = 'Confirm delete'; return; }
     close();
+    const rowEl = anchor.closest('.surf,.chr,.lrow');
     try {
       if (a === 'ren') opts.rename();
       else if (a === 'pin') await pinChat(conv.id, !conv.pinned);
       else if (a === 'link') { try { await navigator.clipboard.writeText(location.origin + '/c/' + conv.id); } catch (err) { /* clipboard blocked */ } toast('Link copied'); }
-      else if (a === 'del') await deleteChat(conv.id, anchor.closest('.chr,.surf.chat'));
+      else if (a === 'del') await deleteChat(conv.id, rowEl);
     } catch (error) { toast(problem(error)); }
   };
 }
@@ -653,8 +791,8 @@ window.BRAIN = {
   api: API, esc, toast, haptic, problem, isAbort, busy, ICON: window.ICON,
   go, route, boot, signOut, loadMe, loadFacets, readFacets, refreshSetupProgress, clearServerState,
   hasRole, isAdmin, sandbox, setupPending,
-  openDrawer, closeDrawer, openModal, closeModal,
-  loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,
+  openDrawer, closeDrawer, openModal, closeModal, exitFx, leaveFx,
+  loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, trashFx, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,
   systemName, srcIcon, containerName, isPersonalSpace, SYSTEMS, ROLE_NAMES, CLEARANCES, clearanceName,
   fmtDate, fmtTime, ago, dayLabel, when,
   skeletonRows, loadingBlock, errorBlock, emptyBlock, CARET, setCrumb, mbTitle, guardLeaving, askToLeave,
