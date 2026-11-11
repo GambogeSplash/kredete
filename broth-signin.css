@@ -146,3 +146,4 @@ a.prov[aria-disabled=true]{pointer-events:none}
 .si.v2[data-nofade]:has(.si-r.pict){animation:none}
 .si[data-nofade] .si-in.in{animation:none}
 .pvmock.pvw.pvfl{align-items:stretch}
+.si-in .obq{margin-top:var(--s-2)}

@@ -163,7 +163,7 @@ AUTH.replayWelcome = () => {
 };
 let ob = null;
 /** Starting points for the first question. Nothing is selected until the person chooses one. */
-const FIRST_QUESTIONS = [['What changed in our policies recently?', 'shield'], ['Who owns our onboarding guide?', 'user'], ['Where do I find our brand guidelines?', 'search']];
+const FIRST_QUESTIONS = [['What changed in our policies recently?', 'shield'], ['Where do I find our brand guidelines?', 'search']];
 AUTH.welcome = () => {
   const me = B.S.me;
   if (!ob || ob.id !== me.id) ob = { id: me.id, step: 1, nick: me.nickname || String(me.name).split(' ')[0], pick: null, own: '' };
