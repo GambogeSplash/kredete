@@ -71,3 +71,6 @@ html[data-mode=dark] :is(.ssel-menu,.pmenu,.cmenu,.fmenu,.hiapop,.drawer,.modal,
 /* palette chat rows carry the Broth face, the same 18 px tile as a document's source logo */
 .kface{display:block;width:18px;height:18px;border-radius:5px;border:1px solid var(--line);box-sizing:border-box;object-fit:cover;background:var(--fill-1);flex:none}
 .pm-i.danger[data-arm]{background:var(--danger-soft)}
+
+/* a button's label is always centred: a button stretched taller by a flex or grid parent keeps its text in the middle, not at the top */
+.btn,a.btn{display:inline-flex;align-items:center;justify-content:center;text-align:center;box-sizing:border-box}

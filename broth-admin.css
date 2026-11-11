@@ -361,7 +361,7 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 .srcm .cndecl .btn{white-space:nowrap}
 
 /* ===== a connected source's own page ===== */
-.srcpage{max-width:880px}
+.srcpage{max-width:none}
 .ds-head .srcback{display:inline-flex;align-items:center;gap:var(--s-1);margin-right:var(--s-3);color:var(--mute);text-decoration:none;border-bottom:0;font-size:var(--fs-sm);white-space:nowrap}
 .ds-head .srcback:hover{color:var(--ink)}
 .ds-head .srcback:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
