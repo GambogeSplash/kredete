@@ -55,3 +55,9 @@ Prototype: /Users/fubara/enterprise-brain (branch broth-port). Status values: do
 | 49 | Sidebar Search button with the command key hint | app.js | yes | kept | present |
 
 Counts: 49 rows. Done 26, present 8 (rows 4, 26 to 29, 32, 48, 49), browser-only 7 (rows 5, 6, 33, 35, 36, 37, 43), needs-backend 8 (rows 3, 12, 14, 22, 23, 34, 44, 45).
+
+## Inbox as a personal feed (update)
+
+Real, from GET /v1/promotions: "Waiting on you" (open requests you can decide, not your own), "Your requests" (open, approved, declined, revoked, with who approved), "You approved" (requests you approved). Grouped Today and Earlier, unread dot, Later (a week) and Dismiss kept in this browser, rail count of unread items only, "See all requests" goes to Governance, Review request opens the shared modal.
+
+Needs backend, not faked: Conflict items (GET /v1/conflicts or an inbox feed with sources that disagree), Gap items (unanswered questions, for example GET /v1/questions/unanswered), Stale items (documents you own that are overdue for review: GET /v1/documents with owner and review_due filters, and a verify action), Feedback items (answers marked wrong), Decisions you declined (promotions carry approved_by but no decided_by), requester names for people who are not admins (people list is admin only).
