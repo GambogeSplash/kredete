@@ -44,9 +44,9 @@ function preview(person) {
 AUTH.preview = preview;
 
 /** The sign-in picture: a violet frame, Broth holding a dashboard card. Static markup, no data. */
-function picture() {
+function picture(first) {
   fitPicture();
-  return `<div class="pvbg" aria-hidden="true"><div class="pvbgi"></div></div><div class="pvp" aria-hidden="true"><div class="pvlogo2"><div class="pvw pvfl pvmock"><div class="pvm pvsh"><div class="pvg"><i class="pvsk" style="width:120px"></i></div><div class="pvc"><span>Ask a question</span><i>${ICON('send', 12)}</i></div><div class="pvf">${window.SRCICON('Confluence', 14)}${window.SRCICON('Google Drive', 14)}<span>Reading from your connected apps</span></div></div></div><img class="pvholder" src="/assets/crew/holder2.png" alt="" draggable="false"></div></div>`;
+  return `<div class="pvbg" aria-hidden="true"><div class="pvbgi"></div></div><div class="pvp" aria-hidden="true"><div class="pvlogo2"><div class="pvw pvfl pvmock"><div class="pvm pvsh"><div class="pvg">${first ? `Hello, ${esc(first)}` : `<i class="pvsk" style="width:120px"></i>`}</div><div class="pvc"><span>Ask a question</span><i>${ICON('send', 12)}</i></div><div class="pvf">${window.SRCICON('Confluence', 14)}${window.SRCICON('Google Drive', 14)}<span>Reading from your connected apps</span></div></div></div><img class="pvholder" src="/assets/crew/holder2.png" alt="" draggable="false"></div></div>`;
 }
 /** The card is drawn at a fixed size and scaled to the height of the screen. */
 function fitPicture() {
@@ -161,30 +161,28 @@ AUTH.replayWelcome = () => {
   B.go('/');
 };
 let ob = null;
+/** Starting points for the first question. Nothing is selected until the person chooses one. */
+const FIRST_QUESTIONS = [['What changed in our policies recently?', 'shield'], ['Who owns our onboarding guide?', 'user'], ['Where do I find our brand guidelines?', 'search']];
 AUTH.welcome = () => {
   const me = B.S.me;
-  if (!ob || ob.id !== me.id) ob = { id: me.id, step: 1, nick: me.nickname || String(me.name).split(' ')[0], theme: THEME() };
+  if (!ob || ob.id !== me.id) ob = { id: me.id, step: 1, nick: me.nickname || String(me.name).split(' ')[0], pick: null, own: '' };
   drawWelcome();
 };
 function drawWelcome() {
-  const me = B.S.me, TOTAL = 3;
-  const person = () => ({ name: me.name, first: ob.nick || me.name.split(' ')[0], team: me.team, clearance: me.clearance });
+  const me = B.S.me, TOTAL = 2;
   const nav = (label) => `<div class="obnav"><button class="btn ob-back" id="obb" type="button" aria-label="Back" ${ob.step === 1 ? 'style="display:none"' : ''}><span class="flipx">${ICON('arrow', 18)}</span></button><button class="btn primary si-btn obgo" id="obn" type="button"><span class="spin" aria-hidden="true"></span><span>${label || 'Continue'}</span></button></div>`;
   let left = '';
   if (ob.step === 1) {
     left = `<h1>Is this you?</h1><div class="obid">${AVATAR(me.name, 'avimg', 56)}<div class="obidt"><b>${esc(me.name)}</b><span>${esc(me.title || me.email)}</span><small>${esc([me.team, me.location].filter(Boolean).join(' · '))}</small></div></div><label class="emlab" for="obnick">What should we call you?</label><input id="obnick" class="eminp" value="${esc(ob.nick)}" maxlength="60" autocomplete="off"><div class="hse" id="obe" role="alert"></div>${nav()}<button class="link obout" id="obout" type="button">Not you? Sign out</button>`;
-  } else if (ob.step === 2) {
-    left = `<h1>How should it look?</h1><div class="obopts" role="radiogroup" aria-label="Appearance">${[['light', 'Light'], ['dark', 'Dark'], ['system', 'Match my device']].map(([k, l]) => `<button class="obopt ${ob.theme === k ? 'on' : ''}" role="radio" aria-checked="${ob.theme === k}" data-th="${k}" type="button"><span class="obsw ${k}"></span><b>${l}</b></button>`).join('')}</div>${nav()}`;
   } else {
-    const systems = (B.S.facets && B.S.facets.systems) || [];
-    left = `<h1>What Broth can read for you</h1>${systems.length ? `<div class="obapps">${systems.map((s) => `<div class="obapp">${B.srcIcon(s.value, 26)}<b>${esc(B.systemName(s.value))}</b><span class="tag ok">${s.count} ${s.count === 1 ? 'document' : 'documents'}</span></div>`).join('')}</div><p class="sub obnote">Only what you can already open there.</p>` : `<p class="sub">Nothing is connected yet. Answers appear once your admin connects a source.</p>`}${nav('Start asking')}`;
+    left = `<h1>Ask your first question</h1><div class="obcards" role="radiogroup" aria-label="First question">${FIRST_QUESTIONS.map(([q, icon], i) => `<button class="obcard ${ob.pick === i ? 'on' : ''}" role="radio" aria-checked="${ob.pick === i}" data-pk="${i}" type="button">${ICON(icon, 16)}<span>${esc(q)}</span></button>`).join('')}</div><input id="obq" class="eminp obq" type="text" placeholder="Or type your own question" aria-label="Type your own question" autocomplete="off" value="${esc(ob.own || '')}">${nav('Start asking')}<button class="link obout" id="obskip" type="button">Skip for now</button>`;
   }
-  shell(left, preview(person()), [ob.step, TOTAL]);
+  shell(left, picture(ob.nick || me.name.split(' ')[0]), [ob.step, TOTAL]);
   const step = (d) => { ob.step = Math.max(1, Math.min(TOTAL, ob.step + d)); drawWelcome(); };
   $('#obb').onclick = () => step(-1);
   if (ob.step === 1) {
     const n = $('#obnick');
-    n.oninput = () => { ob.nick = n.value.trim(); $('#sipv').innerHTML = preview(person()); };
+    n.oninput = () => { ob.nick = n.value.trim(); const g = $('#sipv .pvg'); if (g) g.textContent = 'Hello, ' + (ob.nick || me.name.split(' ')[0]); };
     n.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#obn').click(); } };
     n.focus();
     $('#obn').onclick = () => B.busy($('#obn'), async () => {
@@ -195,17 +193,19 @@ function drawWelcome() {
       step(1);
     }, (error) => { $('#obe').textContent = B.problem(error); });
     $('#obout').onclick = () => B.signOut();
-  } else if (ob.step === 2) {
-    $$('[data-th]').forEach((b) => {
-      b.onclick = () => {
-        ob.theme = b.dataset.th;
-        applyTheme(ob.theme);
-        $$('[data-th]').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
+  } else {
+    const own = $('#obq');
+    const finish = (question) => { markToured(me.id); ob = null; B.go('/'); if (question && window.ASK) setTimeout(() => window.ASK.askFresh(question), 120); };
+    $$('[data-pk]').forEach((c) => {
+      c.onclick = () => {
+        ob.pick = ob.pick === +c.dataset.pk ? null : +c.dataset.pk;
+        $$('[data-pk]').forEach((x) => { const on = +x.dataset.pk === ob.pick; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
       };
     });
-    $('#obn').onclick = () => step(1);
-  } else {
-    $('#obn').onclick = () => { markToured(me.id); ob = null; B.go('/'); };
+    own.oninput = () => { ob.own = own.value; };
+    own.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#obn').click(); } };
+    $('#obn').onclick = () => finish(ob.own.trim() || (ob.pick != null ? FIRST_QUESTIONS[ob.pick][0] : ''));
+    $('#obskip').onclick = () => finish('');
   }
 }
 
