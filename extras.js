@@ -184,7 +184,7 @@ function profileMenu(a){ if(pm){ closePM(true); return; } const s=S(), u=s.user;
  let h=`<div class="pm-head"><button type="button" class="pm-who" role="menuitem" data-pm="account">${AVATAR(u.name,'avimg',40)}<span><b>${esc(u.name)}</b><small>${esc(u.email||'')}</small><em>${esc(u.team||'')}</em></span></button><button type="button" class="pm-go" role="menuitem" data-pm="account" aria-label="Account settings">${ICON('chevr',16)}</button></div>`;
  h+='<div class="pm-s"></div>';
  h+=it('account','Account settings','user');
- if(adm) h+=it('admin','Admin settings','settings');
+ if(adm) h+=it('admin','Admin settings','gear');
  if(adm||dev) h+=it('bot','Support agent','headset');
  h+=it('docs','Docs and support','book');
 
