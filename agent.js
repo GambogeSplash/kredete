@@ -20,6 +20,22 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 
 const LABELS = { overview: 'Overview', knowledge: 'Knowledge', experience: 'Experience', products: 'Products' };
+/** The (i) hint beside each page title, and the docs section a page links to. */
+const HINTS = {
+  list: "A support bot answers customers on Broth's websites from pages approved for them, and offers your contact route when it can't.",
+  overview: 'Whether the bot is live, and what it still needs.',
+  knowledge: 'The bot answers only from Public pages in the sources you choose. Docs site pages are Public because they are published; any other page becomes Public when someone approves a Public promotion.',
+  experience: 'What visitors see and read in the chat, checked as you type.',
+  products: 'Each site the bot runs on is a product, with its own key and the sites it may load on.',
+};
+const DOCS = { list: 'botSources', knowledge: 'botSources', products: 'botSnippet' };
+const hint = (text) => `<span class="hint" tabindex="0" role="note" data-tip="${esc(text)}" aria-label="${esc(text)}">i</span>`;
+/** A framed empty state: icon tile, title, one line, optional action. */
+const empty = (title, text, action = '', icon = 'inbox') => `<div class="ds-empty" role="status"><span class="ds-empty-ic" aria-hidden="true">${window.ICON(icon, 20)}</span><b>${esc(title)}</b>${text ? `<p>${text}</p>` : ''}${action}</div>`;
+/** A framed error with retry. */
+const failed = (error, retryId) => empty(B.problem(error), error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.', `<button type="button" class="btn sm" id="${retryId}">Try again</button>`, 'refresh').replace('role="status"', 'role="alert"');
+/** The page title row: title, (i) hint, then the page's own controls. */
+const head = (title, key, actions = '') => `<div class="ds-head aghd"><h1 class="lcont-t">${esc(title)}</h1>${hint(HINTS[key])}<span class="lsp"></span><div class="ds-act">${actions}${DOCS[key] ? window.DOCS.link(DOCS[key]) : ''}</div></div>`;
 /** @type {Record<string, (el: HTMLElement, ctx: any) => void>} */
 const pages = {};
 
@@ -56,7 +72,7 @@ function render(params) {
   const app = $('#app');
   if (!s.loaded) {
     B.S.route.title = '';
-    app.innerHTML = `<div class="lcont agwide">${s.error ? B.errorBlock(s.error, 'agretry') : B.skeletonRows(4, 'dt-r')}</div>`;
+    app.innerHTML = `<div class="lcont agwide">${s.error ? failed(s.error, 'agretry') : B.skeletonRows(4, 'dt-r')}</div>`;
     const r = $('#agretry');
     if (r) r.onclick = () => { s.error = null; render(params); load(params); };
     return;
@@ -65,13 +81,13 @@ function render(params) {
   const bot = s.bots.find((b) => b.id === params.bot);
   if (!bot) {
     B.S.route.title = '';
-    app.innerHTML = `<div class="lcont agwide">${B.emptyBlock("This bot doesn't exist", 'It may have been removed, or the link is wrong.', '<a class="btn sm" href="/agent" data-link>All bots</a>')}</div>`;
+    app.innerHTML = `<div class="lcont agwide">${empty("This bot doesn't exist", 'It may have been removed, or the link is wrong.', '<a class="btn sm" href="/agent" data-link>All bots</a>', 'chat')}</div>`;
     return;
   }
   if (!params.page) { B.go(`/agent/${bot.id}/overview`, { replace: true }); return; }
   B.S.route.title = bot.name;
   B.setCrumb(); B.mbTitle();
-  app.innerHTML = `<div class="lset"><nav class="lrail" aria-label="Support agent"></nav><div class="lcont agwide"><div class="aghd"><h1 class="lcont-t">${LABELS[params.page]}</h1></div><div id="agpane"></div></div></div>`;
+  app.innerHTML = `<div class="lset"><nav class="lrail agtabs" aria-label="Support agent"></nav><div class="lcont agwide">${head(LABELS[params.page], params.page)}<div id="agpane"></div></div></div>`;
   rail(bot, params.page);
   const page = pages[params.page];
   if (page) page($('#agpane'), context(bot, params));
@@ -96,12 +112,31 @@ function context(bot, params) {
   };
 }
 
+/** Where the rail's highlight last sat, so a page change slides it from there. */
+/** @type {{ l: number, t: number, w: number, h: number } | null} */
+let pillAt = null;
 function rail(bot, current) {
   const nav = $('.lrail');
   if (!nav) return;
   const tab = (p) => `<button type="button" class="tab" data-ap="${p}" aria-current="${p === current ? 'page' : 'false'}">${LABELS[p]}</button>`;
-  nav.innerHTML = `<a class="tab agback" href="/agent" data-link>${window.ICON('chevl', 14)}<span>All bots</span></a><div class="lrail-h agname" title="${esc(bot.name)}">${esc(bot.name)}</div>${tab('overview')}<div class="lrail-g">Build</div>${['knowledge', 'experience', 'products'].map(tab).join('')}`;
+  nav.innerHTML = `<div class="lrail-h">Support agent</div>${bot ? `<a class="tab agback" href="/agent" data-link aria-current="false">All bots</a><div class="lrail-sep" role="separator"></div><div class="lrail-h agname" title="${esc(bot.name)}">${esc(bot.name)}</div>${tab('overview')}<div class="lrail-sep" role="separator"></div><div class="lrail-h">Build</div>${['knowledge', 'experience', 'products'].map(tab).join('')}` : '<a class="tab agback" href="/agent" data-link aria-current="page">All bots</a>'}`;
   $$('[data-ap]', nav).forEach((b) => { b.onclick = () => B.go(`/agent/${bot.id}/${b.dataset.ap}`); });
+  slidePill(nav);
+}
+/** The highlight under the current rail item; it slides from the last one when the page changes (the Sources panel pattern in ask.js). */
+function slidePill(nav) {
+  const on = $('[aria-current=page]', nav);
+  if (!on) { pillAt = null; return; }
+  const pill = document.createElement('span');
+  pill.className = 'agpill';
+  nav.append(pill);
+  const at = { l: on.offsetLeft, t: on.offsetTop, w: on.offsetWidth, h: on.offsetHeight };
+  pill.style.cssText = `left:${at.l}px;top:${at.t}px;width:${at.w}px;height:${at.h}px`;
+  const prev = pillAt;
+  pillAt = at;
+  if (prev && pill.animate && !/** @type {any} */ (window).__entering && !matchMedia('(prefers-reduced-motion: reduce)').matches && (prev.l !== at.l || prev.t !== at.t)) {
+    pill.animate([{ transform: `translate(${prev.l - at.l}px,${prev.t - at.t}px) scale(${prev.w / at.w},${prev.h / at.h})` }, { transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  }
 }
 
 /* ---- the bot list (spec 4.2) ---- */
@@ -111,14 +146,14 @@ function list(app) {
   const rows = s.bots.map((bot) => {
     const live = bot.products.filter((p) => p.status === 'live').length;
     const sites = F.liveSites(bot);
-    return `<a class="dt-r agrow" href="/agent/${bot.id}/overview" data-link><span class="dtp"><b>${esc(bot.name)}</b></span><span class="dtm">${count(bot.sources.length, 'source')}</span><span class="dtm">${live} of ${bot.products.length} live</span><span>${sites ? `<span class="tag ok">Live on ${count(sites, 'site')}</span>` : '<span class="tag">Not live</span>'}</span></a>`;
+    return `<a class="ds-tr agrow" href="/agent/${bot.id}/overview" data-link><span class="dmn"><span class="ds-ic" aria-hidden="true">${window.ICON('chat', 16)}</span><b>${esc(bot.name)}</b></span><span class="dtm">${count(bot.sources.length, 'source')}</span><span class="dtm">${live} of ${bot.products.length} live</span><span>${sites ? `<span class="tag ok">Live on ${count(sites, 'site')}</span>` : '<span class="tag warn">Needs setup</span>'}</span></a>`;
   }).join('');
-  app.innerHTML = `<div class="lcont agwide"><div class="aghd"><h1 class="lcont-t">Support agent</h1><span class="lsp"></span><button type="button" class="btn primary sm" id="agnew">New bot</button></div>
-    <p class="sub agintro">A support bot answers customers on Broth's websites from pages approved for them, and offers your contact route when it can't. ${window.DOCS.link('botSources')}</p>
+  app.innerHTML = `<div class="lset"><nav class="lrail agtabs" aria-label="Support agent"></nav><div class="lcont agwide">${head('Support agent', 'list', '<button type="button" class="btn primary sm" id="agnew">New bot</button>')}
     ${s.bots.length
-      ? `<div class="dt agbots" style="--cols:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 150px"><div class="dt-r dt-h"><span>Bot</span><span>Sources</span><span>Products</span><span>Status</span></div>${rows}</div>`
-      : `<div class="dt"><div class="dt-r dtempty">${B.emptyBlock('No bots yet', 'Create one, choose the sources it answers from, then put it on a site.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>')}</div></div>`}
-  </div>`;
+      ? `<div class="ds-table agbots" style="--cols:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 150px"><div class="ds-tr ds-th"><span>Bot</span><span>Sources</span><span>Products</span><span>Status</span></div>${rows}</div>`
+      : empty('No bots yet', 'Create one, choose the sources it answers from, then put it on a site.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>', 'chat')}
+  </div></div>`;
+  rail(null, '');
   $('#agnew').onclick = newBot;
   const again = $('#agnew2');
   if (again) again.onclick = newBot;
@@ -126,8 +161,8 @@ function list(app) {
 const count = (n, word) => `${n} ${n === 1 ? word : word + 's'}`;
 
 function newBot() {
-  B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="New bot"><div class="bar"><span>New bot</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
-    <form id="nbf" novalidate>
+  B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="New bot"><div class="bar"><span>New bot</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body dmbody">
+    <form id="nbf" class="dmbody" novalidate>
       ${field('name', 'Name', { placeholder: 'Help centre', hint: 'Shown in the chat header.', max: 32 })}
       ${field('contact_url', 'Contact link', { placeholder: 'https://kredete.com/support', hint: "A web page or a mailto: address, shown whenever the bot can't answer." })}
       ${field('privacy_url', 'Privacy link', { placeholder: 'https://kredete.com/privacy', hint: 'Where visitors read how their questions are used.' })}
@@ -171,7 +206,7 @@ function field(key, label, o = {}) {
   const attrs = `id="${id}" class="eminp" name="${esc(key)}" autocomplete="off"${o.placeholder ? ` placeholder="${esc(o.placeholder)}"` : ''} aria-describedby="${id}-h ${id}-e"`;
   const control = o.rows
     ? `<textarea ${attrs} rows="${o.rows}">${esc(value)}</textarea>`
-    : `<input ${attrs} type="${o.type || 'text'}" value="${esc(value)}"${o.type === 'number' ? ' inputmode="numeric" min="1" step="1"' : ''}>`;
+    : `<input ${attrs}${o.type ? ` type="${o.type}"` : ''} value="${esc(value)}"${o.type === 'number' ? ' inputmode="numeric" min="1" step="1"' : ''}>`;
   const counter = o.max ? `<span class="agcount" data-count="${id}" data-max="${o.max}" aria-hidden="true"></span>` : '';
   return `<div class="agfield" data-field="${esc(key)}"><div class="aglab"><label class="hsl" for="${id}">${esc(label)}</label>${counter}</div>${control}${o.hint ? `<p class="suhint" id="${id}-h">${esc(o.hint)}</p>` : ''}<p class="agerr" id="${id}-e" role="alert"></p></div>`;
 }
@@ -274,5 +309,5 @@ function confirmAction(o) {
   });
 }
 
-window.AGENT = { pages, field, showError, counters, serverErrors, saveBar, confirmAction, count };
+window.AGENT = { hint, empty, pages, field, showError, counters, serverErrors, saveBar, confirmAction, count };
 })();

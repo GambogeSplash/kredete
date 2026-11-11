@@ -38,20 +38,20 @@ A.pages.experience = (el, ctx) => {
   const f = (key, label, o) => A.field(key, label, { ...o, prefix: 'ex', value: form[key] });
   el.innerHTML = `<div class="agexp">
     <form class="agexf" id="exform" novalidate>
-      <fieldset class="agfs"><legend>Conversation</legend>
+      <fieldset class="agfs ds-card"><legend>Conversation${A.hint('What visitors read first: the name in the header, a greeting and up to three starter questions.')}</legend>
         ${f('name', 'Name', { max: F.LENGTHS.name[1], hint: 'Shown in the chat header.' })}
         ${f('greeting', 'Greeting', { max: F.LENGTHS.greeting[1], rows: 2, hint: 'The first thing visitors read. Leave it empty to start with the starters.' })}
         <div class="agfield" data-field="starters"><div class="aglab"><span class="hsl" id="exst-l">Starters</span></div><p class="suhint agst-h">Up to ${F.MAX_STARTERS} questions visitors can ask with one click.</p><div class="agstarters" id="exstarters" role="group" aria-labelledby="exst-l"></div></div>
       </fieldset>
-      <fieldset class="agfs"><legend>Getting help</legend><p class="suhint agfs-d">What visitors see when the bot can't answer. ${window.DOCS.link('botContact')}</p>
+      <fieldset class="agfs ds-card"><legend>Getting help${A.hint("What visitors see when the bot can't answer.")}${window.DOCS.link('botContact')}</legend>
         ${f('contact_label', 'Contact label', { max: F.LENGTHS.contact_label[1], hint: "Shown whenever the bot can't answer." })}
         ${f('contact_url', 'Contact link', { hint: 'A web page, or mailto: and an email address.', placeholder: 'https://kredete.com/support' })}
       </fieldset>
-      <fieldset class="agfs"><legend>Trust</legend>
+      <fieldset class="agfs ds-card"><legend>Trust${A.hint('A notice under the bot name and a link to how questions are used.')}</legend>
         ${f('notice', 'Notice', { max: F.LENGTHS.notice[1], rows: 2, hint: 'Always shown under the bot\'s name.' })}
         ${f('privacy_url', 'Privacy link', { hint: 'Where visitors read how their questions are used.', placeholder: 'https://kredete.com/privacy' })}
       </fieldset>
-      <fieldset class="agfs"><legend>Limit</legend>
+      <fieldset class="agfs ds-card"><legend>Limit${A.hint('How many questions the bot answers a day.')}</legend>
         ${f('daily_question_limit', 'Daily question limit', { type: 'number', hint: "This is also its daily spend cap. Past it, the bot says it's unavailable until midnight UTC." })}
       </fieldset>
     </form>

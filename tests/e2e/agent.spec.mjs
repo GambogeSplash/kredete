@@ -108,7 +108,7 @@ test.describe('Overview', () => {
 
   test('a new bot lists what it still needs, and each step opens its page', async ({ open, check }, info) => {
     const { page } = await newBot(open, info);
-    await expect(page.locator('.aghd .tag')).toHaveText('Not live');
+    await expect(page.locator('.aghd .tag')).toHaveText('Needs setup');
     const steps = page.getByRole('region', { name: 'Getting it live' });
     await expect(steps.getByRole('button')).toHaveText(['Go to Knowledge', 'Go to Products']);
     await check(page, 'agent-overview-new', { mask: ['.agname', '[aria-labelledby="agc-experience"] .agkv:first-child dd'] });
