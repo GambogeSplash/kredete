@@ -35,13 +35,16 @@ const fake = (page, s, action, body) => call(page, 'post', `/sandbox/fake-source
 const card = (page) => page.locator('.cnconn').filter({ hasText: SITE });
 const status = (page) => card(page).locator('.cnsync');
 const syncNow = (page) => card(page).getByRole('button', { name: 'Sync now' });
-const row = (page, name) => page.locator('[data-space]').filter({ hasText: name });
+// The Confluence card opens its connection and spaces in a dialog; until then they sit in a hidden holder.
+const openSource = async (page) => { await page.locator('[data-src="confluence"]').click(); return page; };
+// Only the connection's rows: the picker of spaces to include also has a [data-space] per space.
+const row = (page, name) => page.locator('.dt-r[data-space]').filter({ hasText: name });
 const spaceRun = (page, name) => row(page, name).locator('.cnsrun');
 const toast = (page) => page.locator('#toast.on');
 
 /** The page already open in the first view, and the Connectors page opened in each other view. */
 async function everyView(open, s, first, options = {}) {
-  const rest = await Promise.all(VIEWS.slice(1).map((view) => open('admin', PATH, { view, token: s.token(), ...options })));
+  const rest = await Promise.all(VIEWS.slice(1).map(async (view) => openSource(await open('admin', PATH, { view, token: s.token(), ...options }))));
   return [first, ...rest].map((page, i) => ({ view: VIEWS[i], page }));
 }
 /** Waits until every view shows the state, then compares each view's screenshot. */
@@ -75,7 +78,7 @@ test('Sync now checks for changes, and says when it found none', async ({ open, 
       return route.fulfill({ response, json: body });
     });
   };
-  const page = await open('admin', PATH, { view: VIEWS[0], token: s.token(), before: hold });
+  const page = await openSource(await open('admin', PATH, { view: VIEWS[0], token: s.token(), before: hold }));
   // The seed's first sync ran as the schedule runs it: no run, so only when it synced.
   await expect(status(page)).toHaveText(/^Synced (just now|\d+ min ago)$/);
 
@@ -99,7 +102,7 @@ test('Sync now checks for changes, and says when it found none', async ({ open, 
 test('Sync now shows its progress, carries on after a reload, and says what it updated', async ({ open, check }) => {
   test.setTimeout(300_000);
   const s = await fresh();
-  const page = await open('admin', PATH, { view: VIEWS[0], token: s.token() });
+  const page = await openSource(await open('admin', PATH, { view: VIEWS[0], token: s.token() }));
   // Five pages changed at the source: four are read together, the fifth after them.
   await fake(page, s, 'configure', { delay_ms: 30_000 });
   for (const id of ['pay-limits', 'pay-savings', 'pay-kyc', 'card-fees', 'eng-release']) await fake(page, s, 'edit', { external_id: id });
@@ -122,6 +125,7 @@ test('Sync now shows its progress, carries on after a reload, and says what it u
 
   // A reload picks the same run up again and follows it to the end.
   await page.reload();
+  await openSource(page);
   await expect(status(page)).toHaveText('Syncing 4 of 5 pages');
   await expect(syncNow(page)).toBeDisabled();
   await expect(toast(page)).toHaveText(`${SITE} synced. 5 pages updated.`, { timeout: 60_000 });
@@ -138,7 +142,7 @@ test('Sync now shows its progress, carries on after a reload, and says what it u
 test('each space being read shows its own progress, and a changed default reads it again', async ({ open, check }) => {
   test.setTimeout(420_000);
   const s = await fresh();
-  const page = await open('admin', PATH, { view: VIEWS[0], token: s.token() });
+  const page = await openSource(await open('admin', PATH, { view: VIEWS[0], token: s.token() }));
   // The spaces start excluded, as before their first read.
   for (const name of ['Payments (PAY)', 'Cards (CARD)', 'Engineering (ENG)']) {
     await row(page, name).getByRole('checkbox').uncheck();
@@ -201,7 +205,7 @@ test('each space being read shows its own progress, and a changed default reads 
 test('Sync now lists the pages it could not read, until a later sync reads them', async ({ open }) => {
   test.setTimeout(300_000);
   const s = await fresh();
-  const page = await open('admin', PATH, { view: VIEWS[0], token: s.token() });
+  const page = await openSource(await open('admin', PATH, { view: VIEWS[0], token: s.token() }));
   await fake(page, s, 'configure', { delay_ms: 0, fail: ['card-faq'] });
   for (const id of ['pay-limits', 'card-faq']) await fake(page, s, 'edit', { external_id: id });
   await syncNow(page).click();

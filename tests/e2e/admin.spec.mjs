@@ -4,9 +4,13 @@
 import { expect, test } from './fixtures.mjs';
 
 const phone = (page) => page.viewportSize().width < 900;
+/** The places: the menu on a phone, the icon rail on a desktop (the sidebar's list of places is hidden there). */
 async function nav(page) {
-  if (phone(page)) await page.getByRole('button', { name: 'Open menu' }).click();
-  return page.locator('#surfaces');
+  if (phone(page)) {
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    return page.locator('#surfaces');
+  }
+  return page.locator('#rail');
 }
 async function profileMenu(page) {
   await nav(page);
@@ -247,17 +251,19 @@ test.describe('domains', () => {
     const page = await open('admin', '/admin/domains', {
       before: (p) => p.route(DOMAINS, (route) => (route.request().method() === 'GET' ? route.fulfill({ json: { items: [], next_cursor: null } }) : route.fallback())),
     });
-    await expect(page.getByRole('heading', { name: 'No domains yet' })).toBeVisible();
+    await expect(page.locator('.ds-empty').getByText('No domains yet')).toBeVisible();
     await check(page, 'domains-empty');
   });
 });
 
 test.describe('connectors', () => {
+  // Each source is a card; its connection, spaces and credentials open in a dialog (they sit in a hidden holder until then).
+  const openSource = async (page, key = 'confluence') => { await page.locator(`[data-src="${key}"]`).click(); return page; };
   test('the Confluence connection, its spaces, Google Drive and the app credentials', async ({ open, check }) => {
     const page = await open('admin', '/admin/connectors');
+    await openSource(page);
     await expect(page.getByRole('heading', { name: 'Confluence' })).toBeVisible();
-    await expect(page.locator('[data-space]')).toHaveCount(3);
-    await expect(page.getByText('Needs Google Workspace')).toBeVisible();
+    await expect(page.locator('.dt-r[data-space]')).toHaveCount(3);
     await expect(page.locator('.cnc .tag.ok')).toHaveCount(2); // both OAuth clients configured
     // The seed synced the connection as the schedule does, which starts no run (sync runs
     // spec 2): the card says only when it synced, with no run status, bar or failed pages.
@@ -269,7 +275,12 @@ test.describe('connectors', () => {
     await expect(connection.locator('.cnsrun')).toHaveText(['', '', '']); // no space has a read of its own
     await expect(connection.getByRole('button', { name: 'Sync now' })).toBeEnabled();
     await check(page, 'connectors');
-    await page.getByRole('heading', { name: 'App credentials' }).scrollIntoViewIfNeeded();
+    await page.keyboard.press('Escape');
+    await openSource(page, 'gdrive');
+    await expect(page.getByText('Needs Google Workspace')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await openSource(page, 'creds');
+    await expect(page.getByRole('heading', { name: 'App credentials' })).toBeVisible();
     await check(page, 'connectors-credentials');
   });
 
@@ -282,6 +293,7 @@ test.describe('connectors', () => {
         await route.fulfill({ response, json: { ...body, items: [...body.items, personal] } });
       }),
     });
+    await openSource(page);
     const connection = page.locator('.cnconn').first();
     await expect(connection.getByRole('button', { name: 'Re-authorize' })).toBeVisible();
     await expect(connection.getByText('Ada Okafor (personal space)')).toBeVisible();
@@ -290,6 +302,7 @@ test.describe('connectors', () => {
 
   test("a space's default domain is chosen from the tree, each shown with its path (nested domains spec 4.6)", async ({ open }) => {
     const page = await open('admin', '/admin/connectors');
+    await openSource(page);
     await page.getByRole('button', { name: 'Settings for Engineering (ENG)' }).click();
     const drawer = page.getByRole('dialog', { name: 'Settings for Engineering (ENG)' });
     await expect(drawer.getByRole('button', { name: 'Default domain' })).toHaveText('No domain');
@@ -313,6 +326,7 @@ test.describe('connectors', () => {
         return route.fulfill({ json: { ...space, ...change } });
       }),
     });
+    await openSource(page);
     await page.getByRole('button', { name: 'Settings for Payments (PAY)' }).click();
     const drawer = page.getByRole('dialog', { name: 'Settings for Payments (PAY)' });
     await expect(drawer.getByRole('button', { name: 'Default authority' })).toBeVisible();
@@ -334,6 +348,7 @@ test.describe('connectors', () => {
         return route.fulfill({ status: 422, contentType: 'application/problem+json', json: { type: 'urn:broth:problem:validation_error', title: 'Validation error', status: 422, code: 'validation_error', detail: 'the default domain does not exist' } });
       }),
     });
+    await openSource(page);
     await page.getByRole('button', { name: 'Settings for Cards (CARD)' }).click();
     const drawer = page.getByRole('dialog', { name: 'Settings for Cards (CARD)' });
     await drawer.getByRole('spinbutton', { name: 'Review interval in months' }).fill('0');
@@ -355,6 +370,7 @@ test.describe('connectors', () => {
         return route.fulfill({ response, json: body });
       }),
     });
+    await openSource(page);
     await expect(page.locator('.cnwarn')).toHaveText('Only the indexer account should be in broth-indexer. Also in it: Kofi Asante, Eve Mensah. How to fix it');
     await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/docs/setting-up-spaces#warn-indexer-group-members');
     await check(page, 'connection-warnings');
@@ -370,6 +386,7 @@ test.describe('connectors', () => {
         return route.fulfill({ response, json: body });
       }),
     });
+    await openSource(page);
     await expect(page.locator('.cnwarn')).toHaveText('Create a broth-indexer group containing only the indexer account, so restricted pages can opt in. How to fix it');
     await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/docs/setting-up-spaces#warn-indexer-group-missing');
   });
@@ -402,6 +419,7 @@ test.describe('connectors', () => {
         });
       },
     });
+    await openSource(page);
     const connection = page.locator('.cnconn').first();
     await expect(connection.locator('.cnsync')).toHaveText(/^Synced, 3 failed (just now|\d+ min ago)\s·\s9\spages updated$/);
     expect(asked).toEqual([]); // nothing is fetched until the list opens
@@ -460,6 +478,7 @@ test.describe('connectors', () => {
         failures: FAILED,
       }),
     });
+    await openSource(page);
     const connection = page.locator('.cnconn').first();
     await expect(connection.locator('.cnsync')).toHaveText(/^Synced, 2 failed (just now|\d+ min ago)\s·\s6\spages updated, 1\sremoved$/);
     await expect(connection.locator('.cnsync .tag.warn')).toHaveText('Synced, 2 failed');
@@ -480,7 +499,8 @@ test.describe('connectors', () => {
         failures: FAILED.slice(1),
       }),
     });
-    const cards = page.locator('[data-space]').filter({ hasText: 'Cards (CARD)' });
+    await openSource(page);
+    const cards = page.locator('.dt-r[data-space]').filter({ hasText: 'Cards (CARD)' });
     await expect(cards.locator('.cnsrun')).toHaveText('1 page · 1 failed');
     await check(page, 'connectors-space-failed');
     await cards.getByRole('button', { name: '1 failed' }).click();
@@ -492,6 +512,7 @@ test.describe('connectors', () => {
     fixed = true;
     await page.evaluate(() => window.BRAIN.go('/admin/people'));
     await page.evaluate(() => window.BRAIN.go('/admin/connectors'));
+    await openSource(page);
     await expect(cards.locator('.cnsrun')).toHaveText('2 pages');
   });
 
@@ -507,6 +528,7 @@ test.describe('connectors', () => {
         }),
       }),
     });
+    await openSource(page);
     const connection = page.locator('.cnconn').first();
     await expect(connection.locator('.cnstate .tag.bad')).toHaveText('Failing');
     await expect(connection.locator('.cnerr')).toHaveText('Atlassian refused the refresh token; an admin must authorize again');
@@ -533,7 +555,7 @@ test.describe('governance', () => {
   test('an approver can decide on a request', async ({ open, check }) => {
     const page = await open('admin', '/governance');
     const request = page.locator('.govr').filter({ hasText: 'Engineering handbook' });
-    await expect(request).toContainText('requested by Eve Mensah');
+    await expect(request.locator('.adrqm')).toContainText('Eve Mensah');
     await expect(request.getByRole('button', { name: 'Approve' })).toBeVisible();
     await expect(request.getByRole('button', { name: 'Reject' })).toBeVisible();
     await check(page, 'governance-approver');
@@ -542,7 +564,7 @@ test.describe('governance', () => {
   test('the requester follows their request but cannot approve it', async ({ open, check }) => {
     const page = await open('employee', '/governance');
     const request = page.locator('.govr').filter({ hasText: 'Engineering handbook' });
-    await expect(request).toContainText('requested by you');
+    await expect(request.locator('.adrqm')).toContainText('you');
     await expect(request.getByRole('button')).toHaveText(['Engineering handbook']);
     await check(page, 'governance-requester');
   });
@@ -573,7 +595,7 @@ test.describe('people', () => {
         await route.fulfill({ response, json: { ...body, items } });
       }),
     });
-    const tag = finn(page).locator('.tag');
+    const tag = finn(page).locator('.adroles .tag');
     await expect(tag).toHaveText('Owns Cross-border');
     await expect(tag).toHaveAttribute('title', 'Payments / Payouts / Cross-border');
 
@@ -626,7 +648,7 @@ test.describe('people', () => {
     await finn(page).getByRole('button', { name: 'Edit' }).click();
     await dialog.getByRole('button', { name: 'Reactivate' }).click();
     await expect(finn(page).getByText('Suspended')).toHaveCount(0);
-    await expect(finn(page).locator('.acchips')).toHaveText('Employee');
+    await expect(finn(page).locator('.adroles')).toHaveText('Employee');
   });
 
   test('an invitation is created, listed and revoked', async ({ open, check }) => {
@@ -673,8 +695,10 @@ test.describe('people', () => {
 test('the audit log filters by action', async ({ open, check }) => {
   const page = await open('admin', '/admin/audit');
   await expect(page.locator('#audt .aud-r:not(.aud-h)').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Filter' }).click();
   await page.getByRole('button', { name: 'Action' }).click();
   await page.getByRole('option', { name: 'Connection created' }).click();
+  await page.getByRole('button', { name: 'Show results' }).click();
   await expect(page.locator('#audt .aud-r:not(.aud-h)')).toHaveCount(1);
   await expect(page.locator('#audt .audact')).toHaveText('Connection created');
   await check(page, 'audit');

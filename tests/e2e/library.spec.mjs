@@ -89,7 +89,7 @@ test('a link opens its folder, and back and forward step through folders from th
 test('a folder that does not exist, or holds nothing you can open, says so', async ({ open, check }) => {
   const page = await open('employee', '/library/collections'); // only a page Eve cannot open
   await expect(page.getByText('Folder not found', { exact: true })).toBeVisible();
-  await expect(heading(page)).toHaveText('Library');
+  await expect(page.locator('#libh1')).toHaveText('Library'); // #libfolder is only the folder's own name
   await check(page, 'library-folder-missing');
   await page.getByRole('link', { name: 'Go to the Library' }).click();
   await expect(page).toHaveURL(/\/library$/);
@@ -128,7 +128,8 @@ const failing = (route) => route.fulfill({
 test('when the folders cannot load, the pages still do, and Try again brings the folders', async ({ open, check }) => {
   const page = await open('employee', '/', { before: (p) => p.route('**/v1/facets', failing) });
   await page.evaluate(() => window.BRAIN.go('/library'));
-  await expect(page.getByRole('alert')).toHaveText(/^Couldn't load the folders\. Something went wrong on our side\./);
+  await expect(page.getByRole('alert')).toContainText("Couldn't load the folders");
+  await expect(page.getByRole('alert')).toContainText('Something went wrong on our side.');
   await expect(docRows(page)).toHaveCount(2);
   await check(page, 'library-folders-error');
   await page.unrouteAll({ behavior: 'ignoreErrors' });

@@ -50,7 +50,7 @@ test.describe('the bot list', () => {
 
   test('an unknown bot says so', async ({ open }) => {
     const page = await open('admin', '/agent/00000000-0000-4000-8000-000000000000/overview');
-    await expect(page.getByRole('heading', { name: "This bot doesn't exist" })).toBeVisible();
+    await expect(page.getByText("This bot doesn't exist")).toBeVisible();
   });
 
   test('New bot checks its fields, then opens Knowledge for the new bot', async ({ open, check }, info) => {
@@ -164,7 +164,7 @@ test.describe('Knowledge', () => {
     await expect(page.getByRole('button', { name: 'Remove filter Source: Payments (PAY)' })).toBeVisible();
     const rows = page.locator('#libbody [data-open]');
     await expect(rows.first()).toBeVisible();
-    for (const path of await rows.locator('.lpath').allTextContents()) expect(path).toMatch(/^Payments \(PAY\)/);
+    for (const path of await rows.locator('.ltb small').allTextContents()) expect(path).toMatch(/^Payments \(PAY\)/);
     await check(page, 'library-source-filter');
   });
 });
@@ -232,8 +232,9 @@ test.describe('Experience', () => {
 test.describe('Products', () => {
   test('a live product shows its snippet, the sites setup and its key; a revoked one is read only', async ({ open, check }) => {
     const page = await openSeeded(open, 'products');
-    const live = page.getByRole('region', { name: 'Help site' });
-    await expect(live.getByLabel('Snippet')).toContainText('data-key="bk_live_');
+    // A live product is three cards (Snippet, Settings, Key) in the detail; only a revoked one is a region named for the product.
+    const live = page.locator('#agpdetail');
+    await expect(live.locator('#agsnip')).toContainText('data-key="bk_live_');
     await expect(live).toContainText('script-src');
     await expect(live.getByRole('link', { name: 'Open the demo page' })).toBeVisible();
     await expect(live.getByRole('textbox', { name: 'Site 1' })).toHaveValue(new URL(page.url()).origin);
@@ -251,7 +252,7 @@ test.describe('Products', () => {
     await page.getByRole('region', { name: 'Unsaved changes' }).getByRole('button', { name: 'Save' }).click();
     await expect(page.getByRole('region', { name: 'Unsaved changes' })).toBeHidden();
     await page.getByRole('navigation', { name: 'Support agent' }).getByRole('button', { name: 'Products' }).click();
-    await expect(page.getByRole('heading', { name: 'No products yet' })).toBeVisible();
+    await expect(page.locator('#agpdetail').getByText('No products yet')).toBeVisible();
 
     // Adding a product checks its site first.
     await page.getByRole('button', { name: /Add a product/ }).click();
@@ -263,8 +264,8 @@ test.describe('Products', () => {
     await check(page, 'agent-add-product', { mask: ['.agname'] });
     await dialog.getByLabel('Site it runs on').fill(new URL(page.url()).origin);
     await dialog.getByRole('button', { name: 'Create key' }).click();
-    const product = page.getByRole('region', { name: 'Docs site' });
-    await expect(product.getByLabel('Snippet')).toContainText('data-key="bk_live_');
+    const product = page.locator('#agpdetail');
+    await expect(product.locator('#agsnip')).toContainText('data-key="bk_live_');
 
     // The demo page loads the new bot for a visitor.
     const demo = await product.getByRole('link', { name: 'Open the demo page' }).getAttribute('href');
@@ -276,12 +277,12 @@ test.describe('Products', () => {
     const oldKey = new URL(demo, page.url()).searchParams.get('key');
     await product.getByRole('button', { name: 'Replace key' }).click();
     await page.getByRole('alertdialog', { name: 'Replace this key?' }).getByRole('button', { name: 'Replace key' }).click();
-    await expect(page.getByRole('region', { name: 'Docs site' }).getByLabel('Snippet')).not.toContainText(oldKey);
+    await expect(product.locator('#agsnip')).not.toContainText(oldKey);
     const again = await open(null, demo);
     await expect(again.locator('#kredete-help')).toHaveCount(0);
 
     // Revoking cannot be undone, and says so first.
-    await page.getByRole('region', { name: 'Docs site' }).getByRole('button', { name: 'Revoke' }).click();
+    await product.getByRole('button', { name: 'Revoke' }).click();
     const sure = page.getByRole('alertdialog', { name: 'Revoke Docs site?' });
     await expect(sure).toContainText("This can't be undone.");
     await check(page, 'agent-revoke', { mask: ['.agname', '#agsnip', '.agkey-v'] });
@@ -297,7 +298,7 @@ test.describe('Products', () => {
     await dialog.getByLabel('Name').fill('App');
     await dialog.getByLabel('Site it runs on').fill('https://app.kredete.com');
     await dialog.getByRole('button', { name: 'Create key' }).click();
-    const product = page.getByRole('region', { name: 'App' });
+    const product = page.locator('#agpdetail');
     await product.getByRole('button', { name: 'Add a site' }).click();
     await product.getByRole('textbox', { name: 'Site 2' }).fill('HTTPS://Docs.Kredete.com:443/');
     await product.getByRole('textbox', { name: 'Site 2' }).blur();
@@ -310,7 +311,7 @@ test.describe('Products', () => {
     await page.getByRole('region', { name: 'Unsaved changes' }).getByRole('button', { name: 'Save' }).click();
     await expect(page.getByRole('region', { name: 'Unsaved changes' })).toBeHidden();
     await page.reload();
-    const saved = page.getByRole('region', { name: 'App' });
+    const saved = page.locator('#agpdetail');
     await expect(saved.getByRole('textbox', { name: 'Site 2' })).toHaveValue('https://docs.kredete.com');
     await expect(saved.getByRole('button', { name: 'Green' })).toHaveAttribute('aria-pressed', 'true');
     await expect(saved.getByRole('button', { name: 'Left' })).toHaveAttribute('aria-pressed', 'true');

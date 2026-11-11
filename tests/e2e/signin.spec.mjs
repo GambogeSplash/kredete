@@ -89,7 +89,19 @@ test('when Broth answers with a problem of its own, the boot screen shows it', a
 });
 
 test('the first-run welcome', async ({ open, check, seed }) => {
-  const page = await open('compliance', '/', { welcome: true });
+  // Finishing the tour stores onboarding.welcomed through PATCH /me; here it is answered, not saved, so the
+  // shared account is still new for the next project (the browser's own flag keeps the reload below quiet).
+  const patched = [];
+  const page = await open('compliance', '/', {
+    welcome: true,
+    before: (p) => p.route('**/v1/me', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      const change = route.request().postDataJSON();
+      patched.push(change);
+      const me = await (await route.fetch({ method: 'GET' })).json();
+      return route.fulfill({ json: { ...me, ...change } });
+    }),
+  });
   await expect(page.getByRole('heading', { name: 'Is this you?' })).toBeVisible();
   await expect(page.getByText(seed.people.compliance.email)).toBeVisible();
   await check(page, 'welcome-1');
@@ -98,6 +110,7 @@ test('the first-run welcome', async ({ open, check, seed }) => {
   await check(page, 'welcome-2');
   await page.getByRole('button', { name: 'Start asking' }).click();
   await expect(page.getByRole('textbox', { name: 'Ask a question' })).toBeVisible();
+  await expect.poll(() => patched.some((c) => c.onboarding && c.onboarding.welcomed === true)).toBe(true);
   await page.reload();
   await expect(page.getByRole('textbox', { name: 'Ask a question' })).toBeVisible(); // not shown again
 });

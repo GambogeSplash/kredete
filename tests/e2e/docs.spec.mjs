@@ -9,35 +9,39 @@ test('the contents, from the sidebar', async ({ open, check }) => {
   const page = await open('employee', '/');
   const mobile = (page.viewportSize() || { width: 1440 }).width < 900;
   if (mobile) await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.locator('#surfaces').getByRole('button', { name: 'Help center' }).click();
+  // The icon rail on a desktop, the menu on a phone.
+  await page.locator(mobile ? '#surfaces' : '#rail').getByRole('button', { name: 'Help center' }).click();
   await expect(page).toHaveURL(/\/docs$/);
-  await expect(page.locator('.dcchips').getByRole('button', { name: 'All', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(cards(page)).toHaveCount(6);
-  await expect(cards(page).first()).toContainText('Asking Broth');
+  await expect(cards(page).first()).toContainText('Getting started');
   const size = page.viewportSize() || { width: 1440, height: 900 };
   await page.mouse.move(size.width - 4, size.height - 4); // off the cards, so none shows its hover
   await check(page, 'docs');
 });
 
-test('admins start on their audience, and a chosen audience is remembered', async ({ open, check }) => {
+test('the contents are the same topics for everyone, and the search finds articles but never the hidden Inbox one', async ({ open, check }) => {
+  // The audience chips are gone: the contents list six topics, and the search reads what is inside the articles.
   const page = await open('admin', '/docs');
-  await expect(page.locator('.dcchips').getByRole('button', { name: 'Admin', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(cards(page).locator('b')).toHaveText(['Asking Broth', 'Labelling pages', 'Setting up spaces', 'Connecting docs repositories', 'Fixing label problems', 'Support bots']);
-  await page.locator('.dcchips').getByRole('button', { name: 'Asking', exact: true }).click();
-  await expect(cards(page).locator('b')).toHaveText(['Asking Broth']);
+  await expect(cards(page).locator('b')).toHaveText(['Getting started', 'Asking questions', 'Sources and connectors', 'Owners and conflicts', 'Admin', 'Privacy and security']);
+  const rows = page.locator('#dcgrid .dcrow');
+  await page.getByRole('searchbox', { name: 'Search the help center' }).fill('audit log');
+  await expect(rows.filter({ hasText: 'Read the audit log' })).toHaveCount(1);
   await check(page, 'docs-filtered');
-  await page.reload();
-  await expect(page.locator('.dcchips').getByRole('button', { name: 'Asking', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(cards(page)).toHaveCount(1);
+  await page.getByRole('searchbox', { name: 'Search the help center' }).fill('inbox');
+  await expect(rows.filter({ hasText: 'Work through your Inbox' })).toHaveCount(0);
+  await page.getByRole('searchbox', { name: 'Search the help center' }).fill('xylophone');
+  await expect(page.getByText('No articles match')).toBeVisible();
 });
 
 test('an article, its sections, and links between articles', async ({ open, check }) => {
   const page = await open('employee', '/docs');
-  await cards(page).filter({ hasText: 'Labelling pages' }).click();
+  // Labelling pages is listed in the Owners and conflicts topic: open the topic, then the article from its list.
+  await cards(page).filter({ hasText: 'Owners and conflicts' }).click();
+  await page.locator('.dcnav').getByRole('link', { name: 'Labelling pages' }).click();
   await expect(page).toHaveURL(/\/docs\/labelling-pages$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Labelling pages' })).toBeVisible();
   await expect(page.locator('.dcprose table')).toBeVisible();
-  await expect(page).toHaveTitle('Labelling pages - Broth docs');
+  await expect(page).toHaveTitle('Labelling pages - Broth help center');
   const mobile = (page.viewportSize() || { width: 1440 }).width < 900;
   if (mobile) {
     await expect(toc(page)).toBeHidden();
@@ -57,7 +61,7 @@ test('an article, its sections, and links between articles', async ({ open, chec
   await expect(page.getByRole('heading', { level: 1, name: 'Fixing label problems' })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: 'Labelling pages' })).toBeVisible();
-  await page.getByRole('link', { name: 'Help center' }).click();
+  await page.locator('.dcback').click();
   await expect(cards(page)).toHaveCount(6);
 });
 
@@ -65,7 +69,7 @@ test('an unknown section opens the article at the top, and an unknown article sa
   const page = await open('employee', '/docs/setting-up-spaces#no-such-section');
   await expect(page.getByRole('heading', { level: 1, name: 'Setting up spaces' })).toBeInViewport();
   const missing = await open('employee', '/docs/no-such-article');
-  await expect(missing.getByRole('heading', { name: "This article doesn't exist" })).toBeVisible();
+  await expect(missing.getByText("This article doesn't exist")).toBeVisible();
   await check(missing, 'docs-missing');
   await missing.getByRole('link', { name: 'See all help articles' }).click();
   await expect(cards(missing)).toHaveCount(6);
@@ -88,7 +92,8 @@ test('signed out, the docs open on their own with a way back', async ({ open, ch
   await expect(page.getByRole('heading', { level: 1, name: 'Help center' })).toBeVisible();
   await expect(page.locator('#surfaces .surf')).toHaveCount(0);
   await check(page, 'docs-signed-out');
-  await cards(page).filter({ hasText: 'Setting up spaces' }).click();
+  await cards(page).filter({ hasText: 'Sources and connectors' }).click();
+  await page.locator('.dcnav').getByRole('link', { name: 'Setting up spaces' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Setting up spaces' })).toBeVisible();
   await check(page, 'docs-signed-out-article');
   await page.getByRole('link', { name: 'Back to sign in' }).click();

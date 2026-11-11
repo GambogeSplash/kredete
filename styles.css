@@ -75,6 +75,8 @@ mark{background:#ffd9a3;border-radius:var(--r-xs);padding:0 var(--s-1)}
 .scrim{position:fixed;inset:0;background:rgba(22,22,15,.25);opacity:0;pointer-events:none;transition:var(--dur-base);z-index:20}
 .scrim.on{opacity:1;pointer-events:auto}
 .drawer{position:fixed;right:0;top:0;bottom:0;width:min(420px,100%);background:var(--surface);border-left:1px solid var(--line);transform:translateX(100%);transition:var(--dur-base);z-index:21;padding:var(--s-6);overflow:auto}
+.scrim.over{z-index:31}
+.drawer.over{z-index:32}
 .drawer.on{transform:none}
 .drawer h3{margin:var(--s-2) 0 var(--s-1);font-weight:500;font-size:var(--fs-xl)}
 .passage{border-left:3px solid var(--blue);background:var(--blue-w);padding:var(--s-3) 14px;border-radius:0 var(--r-md) var(--r-md) 0;margin:var(--s-4) 0;font-size:var(--fs-xl)}

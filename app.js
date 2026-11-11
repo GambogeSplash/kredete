@@ -154,6 +154,10 @@ function openDrawer(html, wide) {
   const shell = !wide && S.route && S.route.surface === 'library';
   d.classList.toggle('shell', shell);
   document.body.classList.toggle('dsopen', shell);
+  // A drawer opened from inside a dialog (a source's Settings) has to sit above that dialog.
+  const over = $('#modal').classList.contains('on');
+  d.classList.toggle('over', over);
+  $('#scrim').classList.toggle('over', over);
   d.classList.add('on');
   $('#scrim').classList.add('on');
   d.setAttribute('aria-hidden', 'false');
@@ -163,6 +167,7 @@ function openDrawer(html, wide) {
 function closeDrawer() {
   $('#drawer').classList.remove('on', 'wide');
   $('#scrim').classList.remove('on');
+  setTimeout(() => { if (!$('#drawer').classList.contains('on')) { $('#drawer').classList.remove('over'); $('#scrim').classList.remove('over'); } }, 320);
   document.body.classList.remove('dsopen');
   // The shell keeps its class while it slides out.
   setTimeout(() => { if (!$('#drawer').classList.contains('on')) $('#drawer').classList.remove('shell'); }, 320);

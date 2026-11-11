@@ -293,6 +293,8 @@ body .mainpanel{min-height:100dvh}
    must not stay clickable behind a modal. */
 .scrim{z-index:55}
 .drawer{z-index:60}
+.scrim.over{z-index:61}
+.drawer.over{z-index:62}
 .modal-wrap{z-index:60}
 /* Table headers do not apply to the card layout ("tables become cards" forces every row
    to display:grid, which used to bring the header back). */
