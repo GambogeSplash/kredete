@@ -567,3 +567,5 @@ code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:va
 
 .audf label{min-width:150px}.audf select,.audf .select,.audf .pselect{height:36px}
 @media (max-width:900px){.audf{display:grid;grid-template-columns:1fr 1fr}.audf label:first-child{grid-column:1/-1}.audd{min-width:0;width:100%;box-sizing:border-box}}
+
+.adfav{position:relative;overflow:hidden;font-weight:600;font-size:15px;color:var(--blue,#5e6ad2)}.adfav::before{content:attr(data-l)}.adfav img{position:absolute;inset:0;margin:auto;width:22px;height:22px;border-radius:6px;background:var(--surface)}
