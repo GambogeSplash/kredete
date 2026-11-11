@@ -13,7 +13,7 @@ const back = (page) => page.locator('#libback');
 const heading = (page) => page.locator('#libfolder');
 const phone = (page) => page.viewportSize().width < 900;
 /** The folder's name: the heading on a desktop, the top bar on a phone (the heading is hidden). */
-const title = (page) => (phone(page) ? page.locator('#mbtitle') : heading(page));
+const title = (page) => heading(page);
 const search = (page) => page.locator('#libq');
 async function filter(page, option) {
   await page.getByRole('button', { name: 'Filter', exact: true }).click();
@@ -278,8 +278,10 @@ test("a document's details, its domain as folders, and its location as a filter"
   const drawer = page.locator('#drawer');
   await expect(drawer.getByRole('heading', { name: 'KYC onboarding procedure' })).toBeVisible();
   await expect(drawer.getByRole('link', { name: /Open in Confluence/ })).toHaveAttribute('target', '_blank');
-  await expect(drawer.getByRole('button', { name: 'Share more widely' })).toBeVisible();
-  await expect(drawer.getByRole('button', { name: 'Lineage' })).toHaveCount(0); // admins and compliance only
+  await drawer.getByRole('button', { name: 'Details and lineage' }).click(); // everyone reads the details
+  await expect(page.locator('#modal')).toContainText('Admins and compliance see which answers cited this document.'); // the lineage is theirs
+  await expect(page.locator('#modal').getByRole('button', { name: 'Share more widely' })).toBeVisible(); // asking for wider sharing lives with the details
+  await page.locator('#modal [data-close-modal]').click();
   await expect(drawer.locator('.svcrumb a')).toHaveText(['Payments']);
   await check(page, 'document');
 

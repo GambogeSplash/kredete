@@ -75,3 +75,5 @@ html[data-mode=dark] :is(.fmenu,.drawer){box-shadow:var(--e3)}
 .ds-empty p{margin:0;font-size:var(--fs-sm)}
 .ds-empty .btn,.ds-empty a.btn{margin-top:var(--s-2)}
 #drawer .ds-empty{padding:32px var(--s-4);margin:var(--s-3) 0}
+.dlh{font-weight:500;margin:var(--s-4) 0 var(--s-2);font-size:var(--fs-md)}
+.modal.lineage .sv-tags{margin-bottom:var(--s-3)}
