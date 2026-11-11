@@ -69,8 +69,8 @@ function updateChecklist(current) {
   const prog = $('.pvsup .suprog');
   if (prog) prog.textContent = progLabel(current, at);
 }
-/** A page title with its (i) hint; the hint carries what used to be a subtitle. */
-const head = (title, hint) => `<div class="suhd"><h1>${esc(title)}</h1>${hint ? `<span class="hint" tabindex="0" data-tip="${esc(hint)}" aria-label="${esc(hint)}">i</span>` : ''}</div>`;
+/** A page title. No subtitle and no (i) hint: the prototype's sign-up pages have none. */
+const head = (title) => `<div class="suhd"><h1>${esc(title)}</h1></div>`;
 /** The step swap, as in the prototype: the old form fades out where it stood, the new one fades in
  * rising 5 px, and the picture is left alone. */
 function swapIn(old) {
