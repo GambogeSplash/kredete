@@ -16,7 +16,7 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':
 const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- storage: only the three keys the spec allows ---------- */
-const KEEP = ['brain-theme', 'brain-sbc', 'brain-tour', 'brain-docs-audience'];
+const KEEP = ['brain-theme', 'brain-sbc', 'brain-tour', 'brain-docs-audience', 'brain-libview'];
 function cleanStorage() {
   try {
     const stale = [];

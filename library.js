@@ -21,9 +21,17 @@ const S = () => B.S;
 const T = window.DOMAIN_TREE;
 const LB = window.LIBRARY_BROWSE;
 
+/** The list or grid choice is a display preference, like the sidebar's: it lives in this browser only. */
+const VIEW_KEY = 'brain-libview';
+function savedView() {
+  try { return localStorage.getItem(VIEW_KEY) === 'grid' ? 'grid' : 'list'; } catch (e) { return 'list'; }
+}
+function saveView(view) {
+  try { localStorage.setItem(VIEW_KEY, view); } catch (e) { /* storage unavailable: the choice lasts this visit */ }
+}
 function state() {
   const s = S();
-  if (!s.lib) s.lib = { folder: '', q: '', system: '', path: '', source: '', sourceName: '', problems: '', view: 'list', items: [], next: null, loaded: false, loading: false, error: null, seq: 0, facets: { loading: false, error: null }, facetsRoute: null };
+  if (!s.lib) s.lib = { folder: '', q: '', system: '', path: '', source: '', sourceName: '', problems: '', view: savedView(), items: [], next: null, loaded: false, loading: false, error: null, seq: 0, facets: { loading: false, error: null }, facetsRoute: null };
   return s.lib;
 }
 const { authorityTag, domainCol, domainLabel, kindName, KIND_ICON } = window.DOCUMENTS;
@@ -35,7 +43,18 @@ const pages = (n) => `${n} ${n === 1 ? 'page' : 'pages'}`;
 /* The list view is a table: one header row, then a clickable row per folder or page, on the same
    columns (.libcols in broth-library.css). Folders come first. */
 const THEAD = '<div class="ds-tr ds-th libcols" role="row"><span role="columnheader">Name</span><span role="columnheader">Domain</span><span role="columnheader">Type</span><span role="columnheader">Owner</span><span role="columnheader">Updated</span><span aria-hidden="true"></span></div>';
-const table = (inner) => `<div class="ds-table libt" role="table" aria-label="Library">${THEAD}${inner}</div>`;
+const table = (inner, cap) => `<div class="ds-table libt" role="table" aria-label="Library">${cap || ''}${THEAD}${inner}</div>`;
+/** A source's (or the folders') heading: a caption row over its table, a bar over its cards. */
+const capRow = (icon, name, n) => `<div class="ds-tr ds-cap" role="row"><span class="dmn" role="cell">${icon}<b>${esc(name)}</b><span class="lcount">${n}</span></span></div>`;
+const grp = (icon, name, n, key) => `<div class="lgrp lgapp" data-app="${esc(key)}"><span class="lst">${icon}</span><b>${esc(name)}</b><span class="lcount">${n}</span></div>`;
+/** The pages by source, in the order the facets list the sources, then as they come. */
+function bySystem(items) {
+  const order = ((S().facets && S().facets.systems) || []).map((x) => x.value);
+  const groups = new Map();
+  items.forEach((d) => { if (!groups.has(d.system)) groups.set(d.system, []); groups.get(d.system).push(d); });
+  return [...groups.entries()].sort((a, b) => (order.indexOf(a[0]) + 1 || 99) - (order.indexOf(b[0]) + 1 || 99));
+}
+const TINT = { confluence: '#eef3ff', gdrive: '#eef8f2' };
 /** A document row. While browsing, every page shown is filed in the folder itself (or, at the
  *  root, in no domain), so its domain label would only repeat the heading. */
 function row(d) {
@@ -44,7 +63,7 @@ function row(d) {
   return `<div class="ds-tr lift libcols" data-open="${d.id}" role="row" tabindex="0"><span class="dmn" role="cell">${B.srcIcon(d.system, 22)}<span class="ltb"><span class="lt1"><b>${esc(d.title)}</b>${authorityTag(d)}</span><small>${subline(d)}</small></span></span><span class="llab-c" role="cell">${label}</span><span class="amute lty" role="cell">${ICON(KIND_ICON[d.kind] || 'doc', 14)}${esc(kindName(d.kind))}</span>${owner}<span class="amute" role="cell">${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span><span class="amute lcv" aria-hidden="true">${ICON('chevr', 14)}</span></div>`;
 }
 function card(d) {
-  return `<button type="button" class="gcard" data-open="${d.id}"><span class="gc-p" style="background:${d.system === 'confluence' ? '#eef3ff' : '#eef8f2'}"><span class="gc-l"><i></i><i></i><i></i></span>${B.srcIcon(d.system, 30)}<span class="gc-k">${esc(kindName(d.kind))}</span></span><span class="gc-t">${esc(d.title)}</span><small>${subline(d)}</small><span class="gc-f">${d.owner ? AVATAR(d.owner.name, 'lav', 20) : ''}<span>${esc(d.owner ? d.owner.name : '')}</span><span class="lsp"></span><span>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span></span></button>`;
+  return `<button type="button" class="gcard" data-open="${d.id}"><span class="gc-p" style="background:${TINT[d.system] || '#f4f4f5'}"><span class="gc-l"><i></i><i></i><i></i></span>${B.srcIcon(d.system, 30)}<span class="gc-k">${esc(kindName(d.kind))}</span></span><span class="gc-t">${esc(d.title)}</span><small>${subline(d)}</small><span class="gc-f">${d.owner ? AVATAR(d.owner.name, 'lav', 20) : ''}<span>${esc(d.domain ? d.domain.name : d.owner ? d.owner.name : '')}</span><span class="lsp"></span><span>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span></span></button>`;
 }
 /** The folder drawing from the prototype: a back, a front and a lighter stripe, in the folder's colour. */
 const fsvg = (c, px) => `<svg class="fsvg" width="${px}" height="${px}" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 9a3 3 0 0 1 3-3h4.2a2 2 0 0 1 1.5.7l1.3 1.5H22a3 3 0 0 1 3 3v1H3V9z" fill="${c}" opacity=".55"/><rect x="3" y="11" width="22" height="12" rx="3" fill="${c}"/><rect x="3" y="11" width="22" height="3" rx="1.5" fill="#fff" opacity=".22"/></svg>`;
@@ -52,7 +71,8 @@ function folderRow(f) {
   return `<a class="ds-tr lift libcols lfold" href="/library/${esc(f.slug)}" data-link data-folder role="row" style="--dc:${domainCol(f.slug)}"><span class="dmn" role="cell"><span class="lfic">${fsvg(domainCol(f.slug), 22)}</span><span class="ltb"><b>${esc(f.name)}</b><small>${pages(f.total)}</small></span></span><span role="cell"></span><span class="amute lty" role="cell">${ICON('folder', 14)}Folder</span><span class="lown" role="cell"></span><span role="cell"></span><span class="amute lcv lchev" aria-hidden="true">${ICON('chevr', 14)}</span></a>`;
 }
 function folderCard(f) {
-  return `<a class="gcard gfold" href="/library/${esc(f.slug)}" data-link data-folder style="--dc:${domainCol(f.slug)}"><span class="gc-p">${ICON('folder', 30)}<span class="gc-k">Folder</span></span><span class="gc-t">${esc(f.name)}</span><small>${pages(f.total)}</small></a>`;
+  const c = domainCol(f.slug);
+  return `<a class="gcard fcard gfold" href="/library/${esc(f.slug)}" data-link data-folder style="--c:${c}" aria-label="${esc(f.name)}, ${pages(f.total)}"><span class="fc-art"><span class="fc-back"></span><span class="fc-sheet s1"><i></i><i></i><i></i></span><span class="fc-sheet s2"><i></i><i></i></span><span class="fc-sheet s3"><i></i><i></i><i></i></span><span class="fc-front"><span class="fc-count">${f.total}</span><span class="fc-app">${ICON('folder', 18)}</span></span></span><span class="gc-t">${esc(f.name)}</span><small>${pages(f.total)}</small></a>`;
 }
 
 /* ---------- folders ---------- */
@@ -89,13 +109,13 @@ function page(params) {
   const still = L.pop ? ' data-lf="1"' : '';
   $('#app').innerHTML = `<div class="pg"><h1 id="libh1">Library</h1>
     <div class="libbar"><div class="libs"${still}><span class="libs-i">${ICON('search', 15)}</span><input id="libq" type="search" autocomplete="off" value="${esc(L.q)}"></div>
-      <div class="fwrap"><button type="button" class="fbtn ${L.system || L.problems ? 'on' : ''}" id="lfbtn" aria-label="Filter" aria-haspopup="true" aria-expanded="false">${ICON('filter', 15)}<span>Filter</span></button><div class="fmenu" id="lfmenu" hidden></div></div>
+      <div class="fwrap"><button type="button" class="fbtn ${L.system || L.problems ? 'on' : ''}" id="lfbtn" aria-label="Filter" aria-haspopup="true" aria-expanded="false">${ICON('filter', 15)}<span>${L.system ? esc(B.systemName(L.system)) : 'Filter'}</span></button><div class="fmenu" id="lfmenu" hidden></div></div>
       <div class="seg" role="group" aria-label="View"><button type="button" class="segb ${L.view === 'list' ? 'on' : ''}" data-v="list" aria-label="List view" aria-pressed="${L.view === 'list'}">${ICON('rows', 15)}</button><button type="button" class="segb ${L.view === 'grid' ? 'on' : ''}" data-v="grid" aria-label="Grid view" aria-pressed="${L.view === 'grid'}">${ICON('grid', 15)}</button></div></div>
     <div class="libchips" id="libchips"${still}></div>${L.folder ? `<div class="fhead" id="libhead"${still}><a class="fbk" id="libback" href="/library" data-link title="Back">${ICON('chevl', 18)}</a><span class="fh-i" id="libfi"></span><div class="fh-t"><h2 id="libfolder"></h2><small id="libcount"></small></div></div>` : ''}
     <div class="lbody ${L.view === 'grid' ? 'isgrid' : ''}${L.pop ? ' fin' : ''}" id="libbody"></div><div class="chmore" id="libmore"></div></div>`;
   let timer = 0;
   $('#libq').oninput = (e) => { clearTimeout(timer); timer = setTimeout(() => { L.q = e.target.value.trim(); load(true); }, 220); };
-  $$('[data-v]').forEach((b) => { b.onclick = () => { L.view = b.dataset.v; page({ domain: L.folder }); }; });
+  $$('[data-v]').forEach((b) => { b.onclick = () => { L.view = b.dataset.v; saveView(L.view); page({ domain: L.folder }); }; });
   wireFilterMenu();
   // Once per visit: arriving from another screen, not moving between folders or toggling views.
   L.pop = false;
@@ -252,8 +272,26 @@ function draw() {
   }
   // Folders still loading hold their place as rows (a grid shows none), inside the one table.
   const lead = skeletonFolders && !grid ? skeletonTr(3) : '';
-  const rows = lead + folderHtml + docHtml;
-  body.innerHTML = before + (rows ? cards(rows) : '') + after;
+  // At the top of the Library the pages sit under their source, as the prototype groups them;
+  // the folders (domains span sources) get their own group first. Inside a folder, or with a
+  // source filter, it is one flat list.
+  const grouped = !here && !L.folder && !L.system && !L.source && !L.path && L.items.length > 0;
+  let main;
+  if (grouped) {
+    const parts = [];
+    if (lead) parts.push(table(lead));
+    if (folders.length) parts.push(grid ? grp(ICON('folder', 16), 'Folders', folders.length, 'folders') + `<div class="ggrid">${folderHtml}</div>` : table(folderHtml, capRow(ICON('folder', 20), 'Folders', folders.length)));
+    bySystem(L.items).forEach(([sys, items]) => {
+      const icon = B.srcIcon(sys, grid ? 16 : 20);
+      const name = B.systemName(sys);
+      parts.push(grid ? grp(icon, name, items.length, sys) + `<div class="ggrid">${items.map(card).join('')}</div>` : table(items.map(row).join(''), capRow(icon, name, items.length)));
+    });
+    main = parts.join('');
+  } else {
+    const rows = lead + folderHtml + docHtml;
+    main = rows ? cards(rows) : '';
+  }
+  body.innerHTML = before + main + after;
 
   const fretry = $('#libfretry');
   if (fretry) fretry.onclick = () => { loadFacets(); draw(); };
