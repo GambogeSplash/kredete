@@ -350,5 +350,5 @@ function drawLinks() {
   });
 }
 
-window.ADMIN.tabs.people = { label: 'People and access', hint: 'Who can use Broth, and what each person can do.', roles: ['admin'], render };
+window.ADMIN.tabs.people = { label: 'People and access', roles: ['admin'], render };
 })();

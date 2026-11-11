@@ -187,5 +187,5 @@ async function editModal(domain) {
   }, (error) => { $('#dme').textContent = message(error); });
 }
 
-window.ADMIN.tabs.domains = { label: 'Domains', hint: 'A domain groups pages by subject, such as Payments or Cards. Give a page its domain with its label, or set a space\'s default in Connectors.', roles: ['admin'], render };
+window.ADMIN.tabs.domains = { label: 'Domains', roles: ['admin'], render };
 })();

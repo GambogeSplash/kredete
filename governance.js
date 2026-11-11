@@ -31,8 +31,7 @@ const who = (id, names) => (id === B.S.me.id ? 'you' : names[id] || 'a colleague
 
 function page() {
   const g = state();
-  const tip = 'Requests to share a document, or a whole docs repository, more widely. Its owner, a domain owner of its domain, or an admin decides; nobody approves their own request.';
-  const inner = `<div class="ds-head"><h1 class="lcont-t">Sharing requests<span class="hint" tabindex="0" data-tip="${esc(tip)}" aria-label="${esc(tip)}">i</span></h1></div>
+  const inner = `<div class="ds-head"><h1 class="lcont-t">Sharing requests</h1></div>
     <div class="ixchips govtabs" role="tablist" aria-label="Status">${STATUSES.map(([k, l]) => `<button type="button" class="ixchip ${g.status === k ? 'on' : ''}" role="tab" aria-selected="${g.status === k}" data-st="${k}">${l}</button>`).join('')}</div>
     <div class="adreq govlist" id="govlist"></div><div class="chmore" id="govmore"></div>`;
   // Admins and compliance see the same left menu as the Admin screens; everyone else the plain page.
@@ -186,23 +185,24 @@ function reviewPopup(request, anchor, onDone) {
     else if (request.status === 'approved') buttons = '<button type="button" class="btn" id="revoke">Revoke</button>';
   }
   const note = !request.can_decide ? 'Only its owner, a domain owner or an admin can decide this.' : open && mine ? 'You cannot approve your own request.' : '';
-  const pop = window.ADMIN.pop(anchor, `<div class="dmbody revpop"><div class="revh"><b>Review request</b><span class="tag ${tag[1]}">${tag[0]}</span></div>
+  B.openModal(`<div class="modal bt" style="max-width:480px" role="dialog" aria-label="Review request"><div class="bar"><span>Review request</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><div class="dmbody revpop"><div class="revh"><b>${esc(title)}</b><span class="tag ${tag[1]}">${tag[0]}</span></div>
     <div class="revwho">${AVATAR(who(request.requested_by), 'lav', 28)}<span><b>${esc(who(request.requested_by))}</b><small>${request.created_at ? B.when(request.created_at, B.ago(request.created_at)) : ''}</small></span></div>
     ${doc}
     <div class="revchg" role="group" aria-label="Access change"><span class="tag">${esc(from)}</span><i aria-hidden="true">${ICON('arrow', 14)}</i><span class="tag ${to === 'Public' ? 'warn' : 'blue'}">${esc(to)}</span></div>
     ${request.reason ? `<p class="revnote">${esc(request.reason)}</p>` : ''}
     ${note ? `<p class="ds-msg">${esc(note)}</p>` : ''}
     <div class="hse ds-msg bad" id="reve" role="alert"></div>
-    ${buttons ? `<div class="actions"><span class="lsp"></span>${buttons}</div>` : ''}</div>`, 'Review request', { scrim: true, sheet: true });
+    ${buttons ? `<div class="actions"><span class="lsp"></span>${buttons}</div>` : ''}</div></div></div>`);
+  const pop = $('#modal');
   if (!repo) {
-    $('#revopen', pop).onclick = () => { window.ADMIN.closePop(); window.DOCUMENTS.openDocument(request.document_id); };
+    $('#revopen', pop).onclick = () => { B.closeModal(); window.DOCUMENTS.openDocument(request.document_id); };
     // The document's source and folder, when it can be read.
     B.api.get('/documents/' + request.document_id).then((d) => {
-      if (!pop.isConnected) return;
+      if (!pop.classList.contains('on')) return;
       if (d.system) $('#revlogo', pop).innerHTML = B.srcIcon(d.system, 28);
       const path = d.domain && d.domain.path ? d.domain.path.map((c) => c.name).join(' / ') : '';
       $('#revpath', pop).textContent = path || B.systemName(d.system);
-    }).catch(() => { if (pop.isConnected) $('#revpath', pop).textContent = ''; });
+    }).catch(() => { if (pop.classList.contains('on')) $('#revpath', pop).textContent = ''; });
   }
   const fail = (error) => { $('#reve', pop).textContent = B.problem(error); };
   const decide = (act, button) => B.busy(button, async () => {
@@ -217,7 +217,7 @@ function reviewPopup(request, anchor, onDone) {
     B.toast(repo
       ? { approve: 'Approved. The repository\'s published pages are Public now.', reject: 'Declined', revoke: 'Revoked. The repository\'s pages are Internal again.' }[act]
       : { approve: 'Approved. It is shared more widely now.', reject: 'Declined', revoke: 'Revoked. Access is back to its source.' }[act]);
-    window.ADMIN.closePop();
+    B.closeModal();
     if (onDone) onDone(updated);
     draw();
   }, fail);

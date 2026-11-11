@@ -176,7 +176,6 @@ button.ds-card.add,button.ds-card.addom{font:inherit}
 .ixchips.govtabs{padding:0;margin:var(--s-4) 0}
 
 /* Sources: nothing connected yet */
-.cnnone #cnconf,.cnnone #cndocs{display:none}
 .cnneed{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-3);border:1px solid var(--line);border-radius:var(--r-md)}
 .cnneed .ltb{flex:1;min-width:0;display:grid}.cnneed .ltb small{color:var(--mute);font-size:var(--fs-xs)}
 /* the left menu's group headings, as in the prototype */
@@ -256,3 +255,30 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 .ds-pop>.dmbody{width:100%;box-sizing:border-box}
 .ds-pop{display:block}
 @media (max-width:900px){.hint:hover::after,.hint:focus::after{width:200px}}
+
+/* ===== source dialogs: a section moved into the centred modal ===== */
+.srcm .cnsec{border:0;padding:0;margin:0;background:none;max-width:none;border-radius:0}
+.srcm .cnsec-h h2,.srcm .cnsec-h>img,.srcm .cnsec-h>svg,.srcm .cnsec-h>.cnsec-i{display:none}
+.srcm .cnsec-h{margin-bottom:var(--s-3);justify-content:space-between}
+.srcm .cnsec-h>div:empty{display:none}
+.srcm .modal-body,.modal.srcm .body{max-height:calc(100dvh - 160px);overflow:auto}
+.srcm .dt-h{display:none}
+.srcm .dt-r{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:var(--s-1) var(--s-3)!important;align-items:center}
+.srcm .dt-r>.dtp{grid-column:1;grid-row:1;min-width:0}
+.srcm .dt-r>span:last-child:not(.dtp):not(.dtm){grid-column:2;grid-row:1;justify-self:end}
+.srcm .cnspaces .dt-r>.cnown{grid-column:1;grid-row:2}
+.srcm .cnspaces .dt-r>.cninc{grid-column:2;grid-row:2;justify-self:end}
+.srcm .cnspaces .dt-r>.cndecl{grid-column:1/-1;grid-row:3}
+.srcm .cnspaces .ssel{max-width:none}
+.srcm .cncheck{margin:0}
+.slist .srow .btn{flex:none}
+.srcm .dt-r.dt-h{display:none!important}
+/* the shared modal hides a title when its body has a heading; a source dialog keeps its title bar */
+.modal.srcm:has(.body h2)>.bar{position:static!important;padding:var(--s-4) var(--s-4) 0 var(--s-6)!important;min-height:44px}
+.modal.srcm:has(.body h2)>.bar>span{display:inline-flex!important}
+.modal.srcm:has(.body h2) .body{padding-top:var(--s-4)}
+
+/* every source card is the same component: logo tile, name, one status line, state tag */
+.srccard{min-height:74px;align-content:center}
+.srccard .adsch>div{min-width:0}
+.srccard .adsch b,.srccard .adsch small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

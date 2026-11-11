@@ -23,7 +23,7 @@ window.SURFACES.admin = (params) => {
   const tab = params.tab;
   if (!tab || !mine.includes(tab)) { B.go('/admin/' + (mine[0] || ''), { replace: true }); return; }
   closePop();
-  $('#app').innerHTML = `<div class="lset">${railHtml(tab)}<div class="lcont"><div class="ds-head"><h1 class="lcont-t">${tabs[tab].label}${tabs[tab].hint ? hint(tabs[tab].hint) : ''}</h1><div class="ds-act" id="adact"></div></div><div id="adpane"></div></div></div>`;
+  $('#app').innerHTML = `<div class="lset">${railHtml(tab)}<div class="lcont"><div class="ds-head"><h1 class="lcont-t">${tabs[tab].label}</h1><div class="ds-act" id="adact"></div></div><div id="adpane"></div></div></div>`;
   wireRail($('.lrail'));
   tabs[tab].render($('#adpane'));
 };
@@ -264,7 +264,7 @@ function draw() {
   const m = $('#audload');
   if (m) m.onclick = () => load(false);
 }
-tabs.audit = { label: 'Audit log', hint: 'Every sign-in, answer and change, newest first.', roles: ['admin', 'compliance'], render: audit };
+tabs.audit = { label: 'Audit log', roles: ['admin', 'compliance'], render: audit };
 
 window.ADMIN = { tabs, names, hint, actions, pop, closePop, life, railHtml, wireRail };
 })();

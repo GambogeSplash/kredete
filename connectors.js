@@ -93,19 +93,21 @@ function readReturn() {
 /* Every source Broth can read now or will: the real ones show their state from the API; the rest
    are honest Coming soon cards. */
 const SOURCES = [
-  { key: 'confluence', name: 'Confluence', logo: 'confluence', systems: ['confluence'], real: true, blurb: "Read your wiki, with each person's own access." },
-  { key: 'github', name: 'Docs repositories', logo: 'github', systems: ['github_docs'], real: true, blurb: 'Read product docs from GitHub.' },
-  { key: 'gdrive', name: 'Google Drive', logo: 'google-drive', systems: ['gdrive'], real: false, blurb: 'Read your shared drives.' },
+  { key: 'confluence', name: 'Confluence', logo: 'confluence', systems: ['confluence'], real: true, blurb: 'Read your wiki.' },
+  { key: 'github', name: 'Docs repositories', logo: 'github', systems: ['github_docs'], real: true, blurb: 'Read docs from GitHub.' },
+  { key: 'gdrive', name: 'Google Drive', logo: 'google-drive', systems: ['gdrive'], real: true, blurb: 'Read your shared drives.' },
   { key: 'notion', name: 'Notion', logo: 'notion', systems: [], real: false, blurb: 'Read your notes.' },
+  { key: 'gcs', name: 'Google Cloud Storage', logo: 'google-cloud-storage', systems: [], real: false, blurb: 'Read your buckets.' },
   { key: 'slack', name: 'Slack', logo: 'slack', systems: [], real: false, blurb: 'Read your channels.' },
   { key: 'sharepoint', name: 'SharePoint', logo: 'sharepoint', systems: [], real: false, blurb: 'Read your sites.' },
-  { key: 'gcs', name: 'Google Cloud Storage', logo: 'google-cloud-storage', systems: [], real: false, blurb: 'Read your buckets.' },
+  { key: 'creds', name: 'App credentials', logo: null, systems: [], real: false, blurb: 'The apps Broth uses in this sandbox.' },
 ];
 const liveOf = (src) => data.connections.filter((c) => src.systems.includes(c.system) && c.status !== 'disconnected');
 const needsAuth = (c) => (c.system === 'confluence' || c.system === 'github_docs') && !c.authorized;
 const warned = (c) => Object.values(c.warnings || {}).some(Boolean);
 /** The card's state: a tag, one short line, and a progress fraction while a read is running. */
 function stateOf(src) {
+  if (src.key === 'creds') { const todo = data.credentials.some((c) => !c.configured); return { tag: todo ? ['Needs setup', 'warn'] : ['Configured', 'ok'], line: src.blurb, fraction: null, conns: [] }; }
   const conns = liveOf(src);
   if (!conns.length) return src.real ? { tag: ['Not connected', ''], line: src.blurb, fraction: null, conns } : { tag: ['Soon', ''], line: 'Coming soon.', fraction: null, conns, soon: true };
   const running = conns.find((c) => c.active_run && c.active_run.status === 'running');
@@ -124,7 +126,7 @@ function stateOf(src) {
 }
 function sourceCard(src) {
   const st = stateOf(src);
-  return `<button type="button" class="ds-card lift adsc srccard${st.soon ? ' soonc' : ''}" data-src="${src.key}" aria-haspopup="dialog" aria-label="${esc(src.name)}, ${esc(st.tag[0])}"><div class="adsch"><span class="adsl">${B.srcIcon(src.logo, 28)}</span><div><b>${esc(src.name)}</b><small>${esc(st.line)}</small></div><span class="tag ${st.tag[1]}">${st.tag[0]}</span></div>${st.fraction !== null ? `<span class="adbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(st.fraction * 100)}"><i style="width:${Math.round(st.fraction * 100)}%"></i></span>` : ''}</button>`;
+  return `<button type="button" class="ds-card lift adsc srccard${st.soon ? ' soonc' : ''}" data-src="${src.key}" aria-haspopup="dialog" aria-label="${esc(src.name)}, ${esc(st.tag[0])}"><div class="adsch"><span class="adsl">${src.logo ? B.srcIcon(src.logo, 28) : ICON('lock', 20)}</span><div><b>${esc(src.name)}</b><small>${esc(st.line)}</small></div><span class="tag ${st.tag[1]}">${st.tag[0]}</span></div></button>`;
 }
 /* "Notify me" for a source that is not supported yet is kept in this browser only. */
 const NOTIFY = 'broth-notify';
@@ -134,78 +136,100 @@ function notify(key) {
   if (!list.includes(key)) { try { localStorage.setItem(NOTIFY, JSON.stringify(list.concat(key))); } catch (e) { /* storage unavailable */ } }
   B.toast('Noted');
 }
-/** The popup a card opens: the logo and state, and the actions that already exist on this page. */
+/** What a card opens: its setup section when it has one, its first step when it is not connected, or the Coming soon dialog. */
 function sourcePop(anchor, src) {
   const st = stateOf(src);
-  const head = `<div class="addh srcph"><span class="adsl">${B.srcIcon(src.logo, 28)}</span><div><b>${esc(src.name)}</b><small>${esc(st.soon ? 'Coming soon.' : st.line)}</small></div><span class="tag ${st.tag[1]}">${st.tag[0]}</span></div>`;
-  let body;
-  if (st.soon || !src.real && !st.conns.length) {
-    const done = notified().includes(src.key);
-    body = `<p class="ds-msg srcsoon">${esc(src.name)} is coming soon. We can tell you when it is ready.</p><div class="actions"><span class="lsp"></span><button type="button" class="btn primary" id="srcnotify" ${done ? 'disabled' : ''}>${done ? 'Noted' : 'Notify me'}</button></div>`;
-  } else if (!st.conns.length) {
-    const missing = B.sandbox() && data.credentials.some((c) => c.name === (src.key === 'github' ? 'github_app' : 'confluence_oauth') && !c.configured);
-    body = `<p class="ds-msg srcsoon">${esc(src.blurb)}</p><div class="actions"><span class="lsp"></span>${missing ? `<button type="button" class="btn primary" data-pc="cred">${src.key === 'github' ? 'Add the GitHub App' : 'Add the Confluence app'}</button>` : '<button type="button" class="btn primary" data-pc="add">Connect</button>'}</div>`;
-  } else {
-    body = `<div class="srcconns">${st.conns.map((c) => {
-      const run = c.active_run && c.active_run.status === 'running' ? c.active_run : c.last_run;
-      const view = run ? SYNC.runView(run) : null;
-      const spaces = data.containers.filter((x) => x.connection_id === c.id);
-      const failed = spaces.reduce((n, x) => n + ((x.last_run && x.last_run.counts && x.last_run.counts.failed) || 0), 0);
-      const act = (id, label, primary) => `<button type="button" class="btn sm ${primary ? 'primary' : ''}" data-pc="${id}" data-cid="${c.id}">${label}</button>`;
-      const btns = needsAuth(c)
-        ? act(c.system === 'github_docs' ? 'install' : 'authorize', c.system === 'github_docs' ? 'Install on GitHub' : 'Authorise', true)
-        : `${act('verify', c.system === 'github_docs' ? 'Find repositories' : 'Find spaces')}${act('sync', 'Sync now', true)}${c.system === 'confluence' ? act('authorize', 'Re-authorise') : ''}${act('manage', 'Manage')}`;
-      return `<div class="srcc"><div class="srcct"><b>${esc(c.site)}</b><small>${view ? `Last read: ${esc(view.label)}${view.detail ? ' · ' + esc(view.detail) : ''}` : 'Not read yet'}${failed ? ` · ${failed} ${failed === 1 ? 'page' : 'pages'} could not be read` : ''}</small></div><div class="srcca">${btns}</div></div>`;
-    }).join('')}</div><div class="actions"><span class="lsp"></span><button type="button" class="btn" data-pc="add">Connect another</button></div>`;
-  }
-  const pop = window.ADMIN.pop(anchor, `<div class="dmbody srcpop">${head}${body}</div>`, `${src.name}`);
-  const nb = $('#srcnotify', pop);
-  if (nb) nb.onclick = () => { notify(src.key); nb.disabled = true; nb.textContent = 'Noted'; };
-  $$('[data-pc]', pop).forEach((b) => {
-    b.onclick = () => {
-      const act = b.dataset.pc;
-      if (act === 'add') { window.ADMIN.closePop(); addSource(); return; }
-      if (act === 'cred') { window.ADMIN.closePop(); credentialForm(src.key === 'github' ? 'github_app' : 'confluence_oauth'); return; }
-      const section = $(`[data-conn="${b.dataset.cid}"]`);
-      if (act === 'manage') { window.ADMIN.closePop(); if (section) { section.scrollIntoView({ block: 'start', behavior: 'auto' }); const f = $('button', section); if (f) f.focus({ preventScroll: true }); } return; }
-      const own = section && $(`[data-cact="${act}"]`, section);
-      if (own) own.click();
-      if (act === 'sync' || act === 'verify') window.ADMIN.closePop();
-    };
-  });
+  if (src.key === 'creds' || st.conns.length || src.key === 'gdrive') { if (openSection(src)) return; }
+  if (src.real) { connectForm(src); return; }
+  openModal(shell(src.name, `<div class="dmbody"><div class="slist">${soonRow(src)}</div></div>`, 480, B.srcIcon(src.logo, 22)));
+  wireNotify();
 }
-/** The Add a source dialog: a Confluence site or a GitHub account to connect, then what is coming. */
+/* Every dialog here is the prototype's: a centred .modal in the shared #modal host, a title bar with a
+   Close link, a body. A source's setup (its section: connections, spaces, steps, credentials) is moved
+   into the dialog while it is open and back into the page's holder when it closes, so its buttons, its
+   run status and its polling stay the page's own code. */
+const shell = (label, inner, width, lead) => `<div class="modal bt srcm" style="max-width:${width || 480}px" role="dialog" aria-label="${esc(label)}"><div class="bar"><span class="dmttl">${lead || ''}${esc(label)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">${inner}</div></div>`;
+/** @type {{ sec: HTMLElement, key: string } | null} */
+let secHome = null;
+function restoreSec() {
+  if (!secHome) return;
+  const hold = $('#cnhold');
+  if (hold && secHome.sec) hold.appendChild(secHome.sec);
+  secHome = null;
+}
+/** Every dialog of this page goes through here, so an open section always goes home first. */
+const openModal = (html) => { restoreSec(); B.openModal(html); };
+new MutationObserver(() => { if (!$('#modal').classList.contains('on')) restoreSec(); }).observe($('#modal'), { attributes: true, attributeFilter: ['class'] });
+const SECTIONS = { confluence: 'confluence', github: 'docs', gdrive: 'drive', creds: 'creds' };
+function openSection(src) {
+  const key = SECTIONS[src.key];
+  const sec = key && $(`#cnhold [data-sec="${key}"]`);
+  if (!sec) return false;
+  openModal(shell(src.name, '<div id="srcbody"></div>', 560, src.logo ? B.srcIcon(src.logo, 22) : ICON('lock', 18)));
+  const box = $('#srcbody');
+  box.appendChild(sec);
+  // The failed-pages link inside a section is handled by the page's delegated click.
+  box.onclick = (e) => { const page = $('#cnbody'); if (page && page.onclick) page.onclick(e); };
+  secHome = { sec, key };
+  return true;
+}
+const missingApp = (name) => B.sandbox() && data && data.credentials.some((c) => c.name === name && !c.configured);
+const row = (logo, name, line, action) => `<div class="srow"><span class="adsl">${logo}</span><span class="ltb"><b>${esc(name)}</b><small>${esc(line)}</small></span>${action}</div>`;
+/** The sources not yet connected, in this order. A connected source has its card and is not offered again. */
+const PICK_ORDER = ['confluence', 'github', 'gdrive', 'notion', 'gcs', 'slack', 'sharepoint'];
+const offered = () => PICK_ORDER.map((k) => SOURCES.find((x) => x.key === k)).filter((src) => src && !stateOf(src).conns.length);
+const soonRow = (src) => { const done = notified().includes(src.key); return row(B.srcIcon(src.logo, 28), src.name, 'Coming soon.', `<button type="button" class="btn sm" data-nt="${src.key}" ${done ? 'disabled' : ''}>${done ? 'We will tell you' : 'Notify me'}</button>`); };
+/** Add a source: a picker. Choosing a real source opens its own setup. */
 function addSource() {
-  const confluence = data ? data.connections.some((c) => c.system === 'confluence' && c.status !== 'disconnected') : false;
-  const docs = data ? data.connections.some((c) => c.system === 'github_docs' && c.status !== 'disconnected') : false;
-  const missing = (name) => B.sandbox() && data && data.credentials.some((c) => c.name === name && !c.configured);
-  const needApp = (name, what, label) => `<div class="cnneed"><span class="ltb"><b>${what}</b><small>Add the app first, then connect.</small></span><button type="button" class="btn sm primary" data-cneed="${name}">${label}</button></div>`;
-  B.openModal(`<div class="modal bt" style="max-width:480px" role="dialog" aria-label="Add a source"><div class="bar"><span>Add a source</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><div class="dmbody cnpop">${missing('confluence_oauth') ? needApp('confluence_oauth', 'Confluence', 'Add the Confluence app') : `<form id="cnadd" novalidate><label class="dmlab" for="cnsite">${confluence ? 'Connect another Confluence site' : 'Confluence site'}</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse ds-msg bad" id="cnadde" role="alert"></div></form>`}
-    ${missing('github_app') ? needApp('github_app', 'GitHub docs', 'Add the GitHub App') : `<form id="ghadd" novalidate><label class="dmlab" for="ghlogin">${docs ? 'Connect another GitHub account' : 'GitHub docs'}</label><div class="cnaddrow"><input id="ghlogin" class="eminp" placeholder="Organization or user, like kredete" autocomplete="off" spellcheck="false"><button type="submit" class="btn primary" id="ghaddgo">Connect</button></div><div class="hse ds-msg bad" id="ghadde" role="alert"></div></form>`}
-    <div class="slist"><div class="srow"><span class="adsl">${B.srcIcon('gdrive', 28)}</span><span class="ltb"><b>Google Drive</b><small>${B.sandbox() ? 'Needs Google Workspace.' : 'Set up under Google Drive below.'}</small></span>${B.sandbox() ? '<span class="tag">Unavailable</span>' : ''}</div>${SOURCES.filter((x) => !x.real && x.key !== 'gdrive').map((x) => `<div class="srow"><span class="adsl">${B.srcIcon(x.logo, 28)}</span><span class="ltb"><b>${x.name}</b><small>Coming soon.</small></span><span class="tag">Soon</span></div>`).join('')}</div></div></div></div>`);
-  $$('[data-cneed]').forEach((b) => { b.onclick = () => { B.closeModal(); credentialForm(b.dataset.cneed); }; });
+  const list = offered();
+  const rows = list.map((src) => (src.real || src.key === 'gdrive'
+    ? row(B.srcIcon(src.logo, 28), src.name, src.blurb, `<button type="button" class="btn sm primary" data-pickgo="${src.key}">${src.key === 'gdrive' ? 'Set up' : 'Connect'}</button>`)
+    : soonRow(src))).join('');
+  openModal(shell('Add a source', list.length ? `<div class="dmbody"><div class="slist">${rows}</div></div>` : '<div class="ds-empty"><b>Every source is connected</b></div>'));
+  $$('[data-pickgo]', $('#modal')).forEach((b) => { b.onclick = () => { const src = SOURCES.find((x) => x.key === b.dataset.pickgo); sourcePop(null, src); }; });
+  wireNotify();
+}
+function wireNotify() {
+  $$('[data-nt]', $('#modal')).forEach((b) => { b.onclick = () => { notify(b.dataset.nt); b.disabled = true; b.textContent = 'We will tell you'; }; });
+}
+/** A real source that is not connected yet: its first step (the app, or the site) in the dialog. */
+function connectForm(src) {
+  const github = src.key === 'github';
+  const app = github ? 'github_app' : 'confluence_oauth';
+  const lead = B.srcIcon(src.logo, 22);
+  if (missingApp(app)) {
+    openModal(shell(src.name, `<div class="dmbody"><div class="slist">${row(B.srcIcon(src.logo, 28), src.name, 'Add the app first, then connect.', `<button type="button" class="btn sm primary" id="srcapp">${github ? 'Add the GitHub App' : 'Add the Confluence app'}</button>`)}</div></div>`, 480, lead));
+    $('#srcapp').onclick = () => { B.closeModal(); credentialForm(app); };
+    return;
+  }
+  openModal(shell(src.name, github
+    ? `<form id="ghadd" class="dmbody" novalidate><div><label class="dmlab" for="ghlogin">GitHub organization or user</label><div class="cnaddrow"><input id="ghlogin" class="eminp" placeholder="Organization or user, like kredete" autocomplete="off" spellcheck="false"><button type="submit" class="btn primary" id="ghaddgo">Connect</button></div><div class="hse ds-msg bad" id="ghadde" role="alert"></div></div></form>`
+    : `<form id="cnadd" class="dmbody" novalidate><div><label class="dmlab" for="cnsite">Confluence site</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse ds-msg bad" id="cnadde" role="alert"></div></div></form>`, 480, lead));
   const flag = (id, msg) => { const f = $(id === 'cn' ? '#cnsite' : '#ghlogin'); $(`#${id}adde`).textContent = msg; if (msg) f.setAttribute('aria-invalid', 'true'); else f.removeAttribute('aria-invalid'); };
-  if ($('#cnsite')) setTimeout(() => $('#cnsite').focus(), 80);
-  const cs = $('#cnsite'), gl = $('#ghlogin');
-  if (cs) cs.oninput = () => flag('cn', '');
-  if (gl) gl.oninput = () => flag('gh', '');
-  if ($('#cnadd')) $('#cnadd').onsubmit = (e) => {
-    e.preventDefault();
-    // SOURCES checks the address, creates the connection and sends the admin to Atlassian.
-    B.busy($('#cnaddgo'), async () => {
-      const id = await window.SOURCES.createConnection($('#cnsite').value);
-      await window.SOURCES.authorize(id);
-    }, (error) => { flag('cn', B.problem(error)); if (error && error.status) refresh(); });
-  };
-  if ($('#ghadd')) $('#ghadd').onsubmit = (e) => {
-    e.preventDefault();
-    const login = $('#ghlogin').value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/.*$/, '');
-    if (!GITHUB_LOGIN.test(login)) { flag('gh', 'Enter the GitHub organization or user name, like kredete'); return; }
-    B.busy($('#ghaddgo'), async () => {
-      const created = await B.api.post('/admin/connections', { system: 'github_docs', site: login });
-      await install(created.id);
-    }, (error) => { flag('gh', B.problem(error)); refresh(); });
-  };
+  if (github) {
+    setTimeout(() => $('#ghlogin').focus(), 80);
+    $('#ghlogin').oninput = () => flag('gh', '');
+    $('#ghadd').onsubmit = (e) => {
+      e.preventDefault();
+      const login = $('#ghlogin').value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/.*$/, '');
+      if (!GITHUB_LOGIN.test(login)) { flag('gh', 'Enter the GitHub organization or user name, like kredete'); return; }
+      B.busy($('#ghaddgo'), async () => {
+        const created = await B.api.post('/admin/connections', { system: 'github_docs', site: login });
+        await install(created.id);
+      }, (error) => { flag('gh', B.problem(error)); refresh(); });
+    };
+  } else {
+    setTimeout(() => $('#cnsite').focus(), 80);
+    $('#cnsite').oninput = () => flag('cn', '');
+    $('#cnadd').onsubmit = (e) => {
+      e.preventDefault();
+      // SOURCES checks the address, creates the connection and sends the admin to Atlassian.
+      B.busy($('#cnaddgo'), async () => {
+        const id = await window.SOURCES.createConnection($('#cnsite').value);
+        await window.SOURCES.authorize(id);
+      }, (error) => { flag('cn', B.problem(error)); if (error && error.status) refresh(); });
+    };
+  }
 }
 
 async function render(el) {
@@ -230,34 +254,40 @@ async function render(el) {
 function draw() {
   const body = $('#cnbody');
   if (!body || !data) return;
+  const open = secHome ? secHome.key : null;
   const confluence = data.connections.filter((c) => c.system === 'confluence' && c.status !== 'disconnected');
   const drive = data.connections.filter((c) => c.system === 'gdrive' && c.status !== 'disconnected');
   const conf = data.credentials.find((c) => c.name === 'confluence_oauth');
   const docs = data.connections.filter((c) => c.system === 'github_docs' && c.status !== 'disconnected');
   const app = data.credentials.find((c) => c.name === 'github_app');
   const conns = data.connections.filter((c) => c.status !== 'disconnected' && ['confluence', 'gdrive', 'github_docs'].includes(c.system));
-  const cards = `<div class="ds-grid c3 cnover"><button type="button" class="ds-card add" id="cnaddcard"><span class="ds-ic adsti">${ICON('plus', 18)}</span><b>Add a source</b><small>Confluence, Docs repositories</small></button>${SOURCES.map((src) => sourceCard(src)).join('')}</div>`;
-  // Nothing connected yet (an admin right after setup): one clear way in, and the per-source sections wait.
-  const none = conns.length === 0;
-  const first = none ? window.SOURCES.emptyHtml().replace('class="ds-empty suempty"', 'class="ds-empty suempty cnfirst"') : '';
-  body.classList.toggle('cnnone', none);
-  body.innerHTML = first + cards + '<div id="cnpick"></div>' + `<section class="cnsec" id="cnconf"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence${window.ADMIN.hint("Broth reads the spaces you include, with each person's Confluence access.")}</h2></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
+  const cards = `<div class="ds-grid c3 cnover"><button type="button" class="ds-card add" id="cnaddcard"><span class="ds-ic adsti">${ICON('plus', 18)}</span><b>Add a source</b><small>Confluence, Docs repositories</small></button>${SOURCES.filter((src) => src.key !== 'creds' || B.sandbox()).map((src) => sourceCard(src)).join('')}</div>`;
+  // Nothing connected yet (an admin right after setup): the framed header card, about sources in general.
+  const none = !SOURCES.some((src) => liveOf(src).length);
+  const first = none ? `<div class="ds-empty suempty cnfirst"><span class="ds-empty-ic">${ICON('plug', 20)}</span><b>Connect your first source</b><p>Broth reads the pages you connect.</p><button type="button" class="btn primary" id="cnfirst">Add a source</button></div>` : '';
+  body.innerHTML = first + cards + '<div id="cnpick"></div><div id="cnhold" hidden>' + `<section class="cnsec" data-sec="confluence"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && conf && !conf.configured ? `<div class="notice low"><span>Add the Confluence app below before connecting a site.</span></div>` : ''}
+      ${B.sandbox() && conf ? `<div class="fgroup cncreds">${credentialRow(conf)}</div>` : ''}
       ${confluence.map(connectionHtml).join('') || `<div class="ds-empty"><b>No Confluence site is connected</b><p>Use Add a source to connect one.</p></div>`}
 </section>
-    <section class="cnsec"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive${window.ADMIN.hint(B.sandbox() ? 'Unavailable in this sandbox.' : 'Broth reads the shared drives you include.')}</h2></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : drive.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
+    <section class="cnsec" data-sec="drive"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive</h2></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : drive.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() ? '<div class="notice none"><span>Google Drive needs a Google Workspace account: Broth reads Drive through domain-wide delegation, which a personal Google account does not have.</span></div>' : ''}
       <ol class="cncheck ${B.sandbox() ? 'off' : ''}"><li><b>Authorize Broth in the Google Admin console</b><span>Add Broth's client ID with the Drive and Admin SDK read scopes under domain-wide delegation.</span></li><li><b>Add the indexer to each shared drive</b><span>Invite broth-indexer@ as a viewer on every shared drive Broth should read.</span></li><li><b>Verify</b><span>Broth checks that it can see each shared drive, then you include them.</span></li></ol>
       ${drive.map(connectionHtml).join('')}</section>
-    <section class="cnsec" id="cndocs"><div class="cnsec-h">${B.srcIcon('github_docs', 32)}<div><h2>Docs repositories${window.ADMIN.hint('Broth reads the product docs from the GitHub repositories you include, and links each answer to the page on the docs site.')}</h2>${window.DOCS.link('docsInstall', 'How to connect')}</div>${docs.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
+    <section class="cnsec" data-sec="docs"><div class="cnsec-h">${B.srcIcon('github_docs', 32)}<div><h2>Docs repositories</h2>${window.DOCS.link('docsInstall', 'How to connect')}</div>${docs.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && app && !app.configured ? `<div class="notice low"><span>Add the GitHub App below before connecting an account.</span></div>` : ''}
+      ${B.sandbox() && app ? `<div class="fgroup cncreds">${credentialRow(app)}</div>` : ''}
       ${docs.map(connectionHtml).join('') || `<div class="ds-empty"><b>No GitHub account is connected</b><p>Use Add a source to connect one.</p></div>`}
 </section>
-    ${B.sandbox() ? `<section class="cnsec"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials${window.ADMIN.hint('The apps Broth uses in this sandbox. Secrets are stored encrypted and never shown again.')}</h2></div></div><div class="fgroup cncreds">${data.credentials.map(credentialRow).join('')}</div></section>` : ''}`;
+    ${B.sandbox() ? `<section class="cnsec" data-sec="creds"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials</h2></div></div><div class="fgroup cncreds">${data.credentials.filter((c) => c.name === 'google_oauth').map(credentialRow).join('')}</div></section>` : ''}</div>`;
+  if (open) {
+    const fresh = $(`#cnhold [data-sec="${open}"]`);
+    const box = $('#srcbody');
+    if (fresh && box) { box.replaceChildren(fresh); secHome = { sec: fresh, key: open }; } else secHome = null;
+  }
   $('#cnaddcard').onclick = addSource;
-  // Connect your first source: the first step still missing (the Atlassian app, then the site).
-  const fb = $('#susrc');
-  if (fb) fb.onclick = () => { if (B.sandbox() && conf && !conf.configured) credentialForm('confluence_oauth'); else addSource(); };
+  const fb = $('#cnfirst');
+  if (fb) fb.onclick = addSource;
   pickSpaces(body, conf);
   if (!riseDone) { riseDone = true; window.ADMIN.life($('.cnover', body)); }
   $$('[data-src]', body).forEach((b) => { b.onclick = () => sourcePop(b, SOURCES.find((x) => x.key === b.dataset.src)); });
@@ -376,7 +406,7 @@ function pickSpaces(body, conf) {
     return;
   }
   const containers = mine();
-  slot.innerHTML = `<div class="ds-card cnpick"><h2>Pick the spaces Broth reads${window.ADMIN.hint('People still only see the pages they can open in Confluence.')}</h2><div id="supick"></div><div class="hse ds-msg bad" id="sue" role="alert"></div><div class="actions"><button type="button" class="btn" id="surefresh">Look again</button><span class="lsp"></span><button type="button" class="btn primary" id="sugo" disabled><span>Pick at least one space</span></button></div></div>`;
+  slot.innerHTML = `<div class="ds-card cnpick"><h2>Pick the spaces Broth reads</h2><div id="supick"></div><div class="hse ds-msg bad" id="sue" role="alert"></div><div class="actions"><button type="button" class="btn" id="surefresh">Look again</button><span class="lsp"></span><button type="button" class="btn primary" id="sugo" disabled><span>Pick at least one space</span></button></div></div>`;
   const list = $('#supick', slot), go = $('#sugo', slot), err = $('#sue', slot);
   const ticked = new Map();
   const label = () => { const n = S.countPicked(slot); go.disabled = !n; $('span', go).textContent = n ? `Include ${n} ${n === 1 ? 'space' : 'spaces'}` : 'Pick at least one space'; };
@@ -404,7 +434,7 @@ async function install(id) {
 }
 function declarationForm(repo) {
   const name = B.containerName(repo.path);
-  B.openModal(`<div class="modal" role="dialog" aria-label="Request public for ${esc(name)}"><div class="bar"><span>Request public</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>Make ${esc(name)} Public</h2><p class="sub">Every page this repository publishes becomes Public once another admin, or an owner of its domain, approves. Bots can then answer from it, and later changes need no new approval. ${window.DOCS.link('docsDeclaration')}</p><form id="declf" novalidate><label class="hsl" for="declwhy">Why</label><textarea id="declwhy" class="eminp" rows="3" maxlength="500" placeholder="Published at docs.kredete.com"></textarea><div class="hse" id="decle" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="declgo">Request</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
+  openModal(`<div class="modal" role="dialog" aria-label="Request public for ${esc(name)}"><div class="bar"><span>Request public</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>Make ${esc(name)} Public</h2><p class="sub">Every page this repository publishes becomes Public once another admin, or an owner of its domain, approves. Bots can then answer from it, and later changes need no new approval. ${window.DOCS.link('docsDeclaration')}</p><form id="declf" novalidate><label class="hsl" for="declwhy">Why</label><textarea id="declwhy" class="eminp" rows="3" maxlength="500" placeholder="Published at docs.kredete.com"></textarea><div class="hse" id="decle" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="declgo">Request</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
   $('#declwhy').focus();
   $('#declf').onsubmit = (e) => {
     e.preventDefault();
@@ -672,7 +702,7 @@ function settingsDrawer(space) {
 
 function githubAppForm() {
   const [title] = CREDENTIALS.github_app;
-  B.openModal(`<div class="modal" role="dialog" aria-label="${esc(title)}"><div class="bar"><span>${esc(title)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(title)}</h2><p class="sub">The new app replaces the current one right away. The private key and webhook secret are never shown again. ${window.DOCS.link('docsPrivateKey', 'Getting the key')}</p><form id="credf" novalidate><label class="hsl" for="credapp">App ID</label><input id="credapp" class="eminp" inputmode="numeric" autocomplete="off" spellcheck="false"><label class="hsl" for="credkey">Private key</label><textarea id="credkey" class="eminp cnkey" rows="5" autocomplete="off" spellcheck="false" placeholder="-----BEGIN RSA PRIVATE KEY-----"></textarea><label class="hsl" for="credhook">Webhook secret</label><input id="credhook" class="eminp" type="password" autocomplete="off" spellcheck="false"><div class="hse" id="crede" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="credgo">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
+  openModal(`<div class="modal" role="dialog" aria-label="${esc(title)}"><div class="bar"><span>${esc(title)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(title)}</h2><p class="sub">The new app replaces the current one right away. The private key and webhook secret are never shown again. ${window.DOCS.link('docsPrivateKey', 'Getting the key')}</p><form id="credf" novalidate><label class="hsl" for="credapp">App ID</label><input id="credapp" class="eminp" inputmode="numeric" autocomplete="off" spellcheck="false"><label class="hsl" for="credkey">Private key</label><textarea id="credkey" class="eminp cnkey" rows="5" autocomplete="off" spellcheck="false" placeholder="-----BEGIN RSA PRIVATE KEY-----"></textarea><label class="hsl" for="credhook">Webhook secret</label><input id="credhook" class="eminp" type="password" autocomplete="off" spellcheck="false"><div class="hse" id="crede" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="credgo">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
   $('#credapp').focus();
   $('#credf').onsubmit = (e) => {
     e.preventDefault();
@@ -690,7 +720,7 @@ function githubAppForm() {
 function credentialForm(name) {
   if (name === 'github_app') { githubAppForm(); return; }
   const [title] = CREDENTIALS[name] || [name];
-  B.openModal(`<div class="modal" role="dialog" aria-label="${esc(title)}"><div class="bar"><span>${esc(title)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(title)}</h2><p class="sub">The new client replaces the current one right away.</p><form id="credf" novalidate><label class="hsl" for="credid">Client ID</label><input id="credid" class="eminp" autocomplete="off" spellcheck="false"><label class="hsl" for="credsecret">Client secret</label><input id="credsecret" class="eminp" type="password" autocomplete="off" spellcheck="false"><div class="hse" id="crede" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="credgo">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
+  openModal(`<div class="modal" role="dialog" aria-label="${esc(title)}"><div class="bar"><span>${esc(title)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(title)}</h2><p class="sub">The new client replaces the current one right away.</p><form id="credf" novalidate><label class="hsl" for="credid">Client ID</label><input id="credid" class="eminp" autocomplete="off" spellcheck="false"><label class="hsl" for="credsecret">Client secret</label><input id="credsecret" class="eminp" type="password" autocomplete="off" spellcheck="false"><div class="hse" id="crede" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="credgo">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
   $('#credid').focus();
   $('#credf').onsubmit = (e) => {
     e.preventDefault();
@@ -709,5 +739,5 @@ async function refresh() {
   try { data = await fetchAll(); draw(); } catch (error) { B.toast(B.problem(error)); }
 }
 
-window.ADMIN.tabs.connectors = { label: 'Sources', hint: 'Where Broth reads from. People still only see what they can already open.', roles: ['admin'], render };
+window.ADMIN.tabs.connectors = { label: 'Sources', roles: ['admin'], render };
 })();
