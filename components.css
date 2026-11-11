@@ -702,3 +702,5 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 .dccard:hover .dcimg img{transform:scale(1.04)}
 .dcimg.sm{width:120px;aspect-ratio:16/10;flex:none}
 .dctopic{display:flex;align-items:center;gap:var(--s-4);margin:var(--s-3) 0 var(--s-5)}.dctopic h1{margin:0 0 4px}.dctopic p{margin:0}
+
+.soonc{opacity:.78;min-height:0}.soonc:hover{transform:none}
