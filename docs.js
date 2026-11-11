@@ -54,6 +54,13 @@ const TOPICS = [
   { id: 'trust', icon: 'shield', title: 'Privacy and security', blurb: 'Who can see what.', audiences: ['compliance'] },
 ];
 const TOPIC_KEY = 'brain-docs-topic';
+/* Motion carried over from the prototype: a card's picture travels to the article list, the list and
+ * the article rise in behind it, a new article fades in on its own, and the cards rise on the way back. */
+const calmMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const EASE = 'cubic-bezier(.2,.8,.2,1)';
+let flyFrom = null;     // the clicked card's picture rect, for one article paint
+let cameBack = false;   // the Help center link was pressed, so the cards rise in
+let wasArticle = false; // the last paint was an article, so the next article swaps rather than arrives
 const topicOf = (id) => TOPICS.find((t) => t.id === id);
 const inTopic = (a, t) => a.audiences.some((x) => t.audiences.includes(x));
 const imageOf = (audiences) => ({ askers: 'ask', authors: 'sources', admins: 'admin', compliance: 'trust' }[(audiences || [])[0]] || 'start');
@@ -85,6 +92,7 @@ function frame(inner) {
   return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/docs" data-link><span class="pvk" aria-hidden="true">K</span><b>Broth</b><span>Help center</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
 }
 function paint(inner) {
+  if (!/\bdcart\b/.test(inner)) wasArticle = false;
   const app = $('#app');
   app.className = standalone() ? 'dcapp' : '';
   app.innerHTML = frame(inner);
@@ -144,8 +152,14 @@ function drawCards() {
     const open = list[0] ? `/docs/${esc(list[0].slug)}` : '/docs';
     return `<a class="dccard" href="${open}" data-link data-topic="${t.id}" ${n ? '' : 'aria-disabled="true"'}><span class="dcimg"><img src="/assets/help/${t.id}.jpg" alt="" loading="lazy" draggable="false"></span><b>${esc(t.title)}</b><p>${esc(t.blurb)}</p><small class="dccount">${n} ${n === 1 ? 'article' : 'articles'}</small></a>`;
   }).join('')}</div>`;
+  if (cameBack && !calmMotion()) $$('.dccard', grid).forEach((c, i) => c.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: i * 45, easing: EASE, fill: 'backwards' }));
+  cameBack = false;
   $$('[data-topic]', grid).forEach((c) => {
-    c.addEventListener('click', () => { try { localStorage.setItem(TOPIC_KEY, c.dataset.topic); } catch (e) { /* storage unavailable */ } });
+    c.addEventListener('click', () => {
+      try { localStorage.setItem(TOPIC_KEY, c.dataset.topic); } catch (e) { /* storage unavailable */ }
+      const im = $('.dcimg', c);
+      if (im) { const r = im.getBoundingClientRect(); flyFrom = { left: r.left, top: r.top, width: r.width, height: r.height, at: Date.now() }; }
+    });
   });
 }
 
@@ -190,6 +204,8 @@ function sectionList(a, cls) {
   return `<ul class="${cls}">${a.sections.map((x) => `<li class="l${x.level}"><a href="#${esc(x.anchor)}" data-sec="${esc(x.anchor)}">${esc(x.title)}</a></li>`).join('')}</ul>`;
 }
 function drawArticle(a) {
+  const swap = wasArticle;
+  wasArticle = true;
   setTitle(a.title);
   const tags = a.audiences.map((x) => `<span class="tag">${esc(AUDIENCE_NAME[x] || x)}</span>`).join('');
   const has = a.sections.length > 0;
@@ -209,7 +225,34 @@ function drawArticle(a) {
   });
   reveal(decodeURIComponent(location.hash.slice(1)), false);
   markCurrent();
-  if (!state().index && !state().loading) loadIndex().then(() => { const nav = $('.dcnav'); if (nav && B.S.route.surface === 'docs' && B.S.route.params.slug === a.slug) nav.outerHTML = navHtml(a); });
+  const back = $('.dcback');
+  if (back) back.addEventListener('click', (e) => {
+    cameBack = true;
+    const pg = $('.dcart');
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button || !pg || !pg.animate || calmMotion()) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    const go = () => B.go('/docs');
+    pg.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(6px)' }], { duration: 140, easing: 'ease-in', fill: 'forwards' }).finished.then(go, go);
+  });
+  enter(swap);
+  if (!state().index && !state().loading) loadIndex().then(() => { const nav = $('.dcnav'); if (nav && B.S.route.surface === 'docs' && B.S.route.params.slug === a.slug) { nav.outerHTML = navHtml(a); enter(false); } });
+}
+/** The article's entrance: the picture flies in from its card, or an article picked from the list fades in alone. */
+function enter(swap) {
+  if (calmMotion()) { flyFrom = null; return; }
+  const nav = $('.dcnav'), body = $('.dcdoc'), im = nav && $('.dcimg', nav);
+  const from = flyFrom && Date.now() - flyFrom.at < 2500 ? flyFrom : null;
+  if (from && im && im.animate) {
+    flyFrom = null;
+    const to = im.getBoundingClientRect();
+    const dx = from.left - to.left, dy = from.top - to.top, sx = from.width / to.width, sy = from.height / to.height;
+    im.style.transformOrigin = 'top left';
+    im.animate([{ transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})` }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.85,.2,1)' });
+    [...nav.children].filter((el) => el !== im).forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 200 + i * 40, easing: EASE, fill: 'backwards' }));
+    if (body) body.animate([{ opacity: 0, transform: 'translateX(18px)' }, { opacity: 1, transform: 'none' }], { duration: 440, delay: 260, easing: EASE, fill: 'backwards' });
+  } else if (swap && body && body.animate) {
+    body.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: EASE });
+  }
 }
 /** Scrolls to a section; an unknown or empty anchor shows the article from the top. */
 function reveal(anchor, record) {

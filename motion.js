@@ -8,7 +8,7 @@ const app=$('#app');
 
 /* ---------- entrance system ---------- */
 const SEL='h1,.sub,.stat,.cell,.panel,.card,.audrow,.optcard,.tgl,tbody tr,table tr,.chunk,.stg,.banner,.notice,.conflict,.tour,.entry button,.dnav button,.thread>article,.state-list li,.hist button,.cellm,.detail,.slack .sm,.phone,.doc>p,.doc>h2,.doc>ul,.doc>pre,.doc>table,.toolbar,.askbox,.form,.side,.step,.swatch,.docs-side,.empty,.flt,.chips,.ans';
-const viewKey=()=>{ const S=B.S; return [S.route.surface,S.route.params.id||'',S.me?1:0].join('|'); };
+const viewKey=()=>{ const S=B.S; return [S.route.surface,S.route.path||S.route.params.id||'',S.me?1:0].join('|'); };
 let lastKey='', seen=new Set();
 const sig=el=>{ if(el.matches('.m,.ans')) return el.tagName+'.'+el.className.replace(/\s*cursor/,'')+'|'+[...el.parentNode.children].indexOf(el); return el.tagName+'.'+(el.className||'')+'|'+(el.textContent||'').trim().slice(0,70); };
 function enter(nodes, full){
@@ -26,12 +26,19 @@ function enter(nodes, full){
 function countUp(n){ if(n._cu) return; const t=n.textContent.trim(); const m=t.match(/^(\d[\d,]*)(%?)$/); if(!m) return; n._cu=1; const to=+m[1].replace(/,/g,''); animate(0,to,{duration:.5,ease:EASE,onUpdate:v=>{n.textContent=Math.round(v).toLocaleString('en-US')+m[2];}}); }
 const isInd=n=>n.nodeType===1&&(n.classList.contains('ind-pill')||n.classList.contains('ind-line')||n.classList.contains('snav-pill'));
 const real=ms=>ms.filter(r=>![...r.addedNodes,...r.removedNodes].every(isInd)||(!r.addedNodes.length&&!r.removedNodes.length));
+/* A route change eases the whole page area in (opacity only, the cards and rows rise on their own below),
+   while the page that was there eases out as a copy (app.js pageGhost). On a phone main#app>* already rises in CSS. */
+function pageIn(){ if(RM||window.__entering||!app.animate) return; const f=app.firstElementChild; if(f&&getComputedStyle(f).animationName==='pgIn') return;
+  animate(app,{opacity:[0,1]},{duration:.26,ease:EASE}).finished.then(()=>{ app.style.opacity=''; }).catch(()=>{ app.style.opacity=''; }); }
+const SKEL='.skwrap,.dcload,.dcsk,.dcskl,.sksug,.sktturn,.skgsrc,.pvsk';
 function collect(muts0){
   const muts=real(muts0); if(!muts.length) return;
-  const key=viewKey(); const full=key!==lastKey; if(full){ seen=new Set(); lastKey=key; }
+  const key=viewKey(); const full=key!==lastKey; if(full){ seen=new Set(); lastKey=key; pageIn(); }
   const out=[];
+  /* content arriving where a skeleton was fades in, instead of popping */
+  muts.forEach(m=>{ if(![...m.removedNodes].some(n=>n.nodeType===1&&(n.matches(SKEL)||n.querySelector(SKEL)))) return; m.addedNodes.forEach(n=>{ if(n.nodeType===1&&!n.matches(SKEL)&&!out.includes(n)){ out.push(n); n.dataset.skin='1'; } }); });
   muts.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType!==1) return; if(n.matches(SEL)) out.push(n); $$(SEL,n).forEach(c=>out.push(c)); }));
-  const fresh=[...new Set(out)].filter(el=>{ const s=sig(el); if(!full&&seen.has(s)) return false; seen.add(s); return true; });
+  const fresh=[...new Set(out)].filter(el=>{ if(el.dataset&&el.dataset.skin){ delete el.dataset.skin; return true; } const s=sig(el); if(!full&&seen.has(s)) return false; seen.add(s); return true; });
   enter(fresh,full); indicators();
 }
 new MutationObserver(collect).observe(app,{childList:true,subtree:true});
@@ -51,7 +58,7 @@ new MutationObserver(ms=>{ if(real(ms).length) indicators(); }).observe($('#surf
 document.fonts&&document.fonts.ready.then(indicators); addEventListener('resize',()=>{Object.keys(last).forEach(k=>delete last[k]);indicators();});
 
 /* ---------- overlays ---------- */
-new MutationObserver(()=>{ const m=$('#modal'); if(m.classList.contains('on')&&!RM){ const box=$('.modal',m); if(box) animate(box,{opacity:[0,1],scale:[.94,1],y:[24,0]},{type:'spring',stiffness:380,damping:30}); } }).observe($('#modal'),{attributes:true,attributeFilter:['class']});
+new MutationObserver(()=>{ const m=$('#modal'); if(m.classList.contains('on')&&!RM){ const box=$('.modal',m); if(getComputedStyle(m).animationName==='none') m.animate([{opacity:0},{opacity:1}],{duration:160,easing:'ease-out'}); if(box) animate(box,{opacity:[0,1],scale:[.94,1],y:[24,0]},{type:'spring',stiffness:380,damping:30}); } }).observe($('#modal'),{attributes:true,attributeFilter:['class']});
 new MutationObserver(()=>{ const d=$('#drawer'); if(d.classList.contains('on')&&!RM) animate(d.children,{opacity:[0,1],y:[14,0]},{delay:stagger(.03,{startDelay:.06}),duration:.22,ease:EASE}); }).observe($('#drawer'),{attributes:true,attributeFilter:['class']});
 new MutationObserver(()=>{ const t=$('#toast'); if(t.classList.contains('on')&&!RM) animate(t,{scale:[.9,1]},{type:'spring',stiffness:500,damping:22}); }).observe($('#toast'),{attributes:true,attributeFilter:['class']});
 // pipeline stage dots
@@ -72,10 +79,10 @@ document.addEventListener('pointerout',e=>{ const p=e.target.closest&&e.target.c
 let pop=null;
 document.addEventListener('mouseover',e=>{ const c=e.target.closest('.cite[data-cite]'); if(!c||c.contains(e.relatedTarget)||!window.ASK) return; const d=window.ASK.citation(c); if(!d) return; closePop(); pop=document.createElement('div'); pop.className='pop';
   pop.innerHTML=`<div class="pt">${B.srcIcon(d.system,18)}<b>${B.esc(d.title)}</b></div>${d.quote?`<div class="pq">${B.esc(d.quote)}</div>`:'<div class="pq pqgone">This passage is no longer available.</div>'}<div class="pf">${d.owner?window.AVATAR(d.owner.name,'lav',22):''}<span class="pw"><b>${B.esc(d.owner?d.owner.name:B.systemName(d.system))}</b><small>${d.last_verified_at?'Verified '+B.when(d.last_verified_at,B.fmtDate(d.last_verified_at)):''}</small></span></div>`;
-  document.body.appendChild(pop); const r=c.getBoundingClientRect(); pop.style.left=Math.max(8,Math.min(innerWidth-296,r.left-20))+'px'; const below=r.bottom+pop.offsetHeight+12<innerHeight; pop.style.top=(below?r.bottom+8:r.top-pop.offsetHeight-8)+'px';
+  document.body.appendChild(pop); const r=c.getBoundingClientRect(); pop.style.left=Math.max(8,Math.min(innerWidth-296,r.left-20))+'px'; const below=r.bottom+pop.offsetHeight+12<innerHeight; pop.dataset.below=below?'1':'0'; pop.style.top=(below?r.bottom+8:r.top-pop.offsetHeight-8)+'px';
   if(!RM) animate(pop,{opacity:[0,1],y:[below?8:-8,0],scale:[.96,1]},{type:'spring',stiffness:500,damping:30}); });
 document.addEventListener('mouseout',e=>{ const c=e.target.closest('.cite[data-cite]'); if(c&&!c.contains(e.relatedTarget)) closePop(); });
-function closePop(){ if(pop){pop.remove();pop=null;} }
+function closePop(){ if(pop){ const p=pop; pop=null; if(B.leaveFx) B.leaveFx(p,{opacity:0,transform:'translateY('+(p.dataset.below==='1'?8:-8)+'px) scale(.96)'},110); else p.remove(); } }
 
 /* ---------- scroll progress ---------- */
 const bar=document.createElement('div'); bar.className='scrollbar'; document.body.appendChild(bar);
@@ -115,8 +122,13 @@ let sel=0, list=[];
 const draw=()=>{ const g=build(); list=g.flatMap(x=>x[1]); sel=Math.min(sel,Math.max(0,list.length-1)); let n=0;
   $('#kl').innerHTML=list.length?g.map(([h,items])=>`<div class="kg"><div class="kh">${h}</div>${items.map(i=>{ const idx=n++; return `<div class="kr ${i.ask?'kask':''}" role="option" aria-selected="${idx===sel}" data-n="${idx}"><span class="ki">${i.ic}</span><span class="kt">${esc(i.t)}</span>${i.s?`<small>${esc(i.s)}</small>`:''}</div>`; }).join('')}</div>`).join(''):'<div class="ds-empty kempty"><span class="ds-empty-ic">'+B.ICON('search',20)+'</span><b>Nothing found</b></div>';
   $$('#kl .kr').forEach(li=>{ li.onclick=()=>run(+li.dataset.n); li.onmousemove=()=>{ if(sel===+li.dataset.n) return; sel=+li.dataset.n; $$('#kl .kr').forEach((x,i)=>x.setAttribute('aria-selected',i===sel)); }; }); };
-const open=()=>{ if(!B.S.me) return; found={q:'',conversations:[],documents:[]}; k._op=document.activeElement; k.classList.add('on'); $('#kq').value=''; sel=0; draw(); $('#kq').focus(); if(!RM){ animate($('.box',k),{opacity:[0,1],scale:[.96,1],y:[-8,0]},{duration:.18,ease:[.2,.8,.2,1]}); animate(k,{opacity:[0,1]},{duration:.14}); } };
-const close=()=>{ k.classList.remove('on'); const o=k._op; if(o&&o!==document.body&&document.contains(o)&&o.focus) o.focus({preventScroll:true}); };
+const open=()=>{ if(!B.S.me) return; if(kx){ kx.cancel(); kx=null; k.classList.remove('on'); void k.offsetWidth; } found={q:'',conversations:[],documents:[]}; k._op=document.activeElement; k.classList.add('on'); $('#kq').value=''; sel=0; draw(); $('#kq').focus(); if(!RM){ animate($('.box',k),{opacity:[0,1],scale:[.96,1],y:[-8,0]},{duration:.18,ease:[.2,.8,.2,1]}); animate(k,{opacity:[0,1]},{duration:.14}); } };
+let kx=null;
+const kdone=()=>{ k.classList.remove('on'); k.getAnimations().forEach(a=>a.cancel()); const bx=$('.box',k); if(bx) bx.getAnimations().forEach(a=>a.cancel()); };
+const close=()=>{ if(!k.classList.contains('on')||kx) return; const o=k._op; if(o&&o!==document.body&&document.contains(o)&&o.focus) o.focus({preventScroll:true});
+  const bx=$('.box',k); if(RM||!B.exitFx||!bx){ kdone(); return; }
+  const c1=B.exitFx(bx,{opacity:0,transform:'translateY(-8px) scale(.96)'},120), c2=B.exitFx(k,{opacity:0},120,'ease-in'); const mine={cancel(){ c1.cancel(); c2.cancel(); }}; kx=mine;
+  Promise.all([c1.done,c2.done]).then(()=>{ if(kx!==mine) return; kx=null; kdone(); }); };
 const run=n=>{ const i=list[n]; if(!i) return; const typed=$('#kq').value.trim(); $('#kq').dataset.last=typed; close(); i.f(); };
 $('#kq').oninput=()=>{sel=0;search();}; $('#kx').onclick=close;
 $('#kq').onkeydown=e=>{ if(e.key==='Tab'){ e.preventDefault(); return; } if(e.key==='ArrowDown'){sel=Math.min(list.length-1,sel+1);e.preventDefault();} else if(e.key==='ArrowUp'){sel=Math.max(0,sel-1);e.preventDefault();} else if(e.key==='Enter'){ e.preventDefault(); run(sel); return;} else if(e.key==='Escape'){close();return;} else return; $$('#kl .kr').forEach((x,n)=>x.setAttribute('aria-selected',n===sel)); const a=$('#kl .kr[aria-selected=true]'); if(a) a.scrollIntoView({block:'nearest'}); };
