@@ -69,3 +69,47 @@ test.describe('the bot list', () => {
     await expect(page.getByRole('navigation', { name: 'Support agent' })).toContainText(name);
   });
 });
+
+/** A new bot of the test's own, opened on `page`; returns the page and its name. */
+async function newBot(open, info, page = 'overview') {
+  const p = await open('admin', '/agent');
+  await p.getByRole('button', { name: 'New bot' }).first().click();
+  const dialog = p.getByRole('dialog', { name: 'New bot' });
+  const name = unique('Bot', info);
+  await dialog.getByLabel('Name').fill(name);
+  await dialog.getByLabel('Contact link').fill('https://kredete.com/support');
+  await dialog.getByLabel('Privacy link').fill('https://kredete.com/privacy');
+  await dialog.getByRole('button', { name: 'Create bot' }).click();
+  await expect(p).toHaveURL(/\/knowledge$/);
+  if (page !== 'knowledge') {
+    await p.getByRole('navigation', { name: 'Support agent' }).getByRole('button', { name: new RegExp(page, 'i') }).click();
+    await expect(p).toHaveURL(new RegExp(`/${page}$`));
+  }
+  return { page: p, name };
+}
+
+test.describe('Overview', () => {
+  test('a live bot shows its sources, experience and products, with nothing left to do', async ({ open, check }) => {
+    const page = await openSeeded(open);
+    await expect(page.locator('.aghd .tag')).toHaveText('Live on 1 site');
+    await expect(page.getByRole('heading', { name: 'Getting it live' })).toHaveCount(0);
+    const knowledge = page.getByRole('region', { name: 'Knowledge' });
+    await expect(knowledge).toContainText('Sources1');
+    await expect(knowledge).toContainText('Public pages2');
+    const products = page.getByRole('region', { name: 'Products' });
+    await expect(products.locator('li')).toHaveCount(2);
+    await expect(products.locator('li').first()).toContainText('Help site');
+    await expect(products.locator('li').last()).toContainText('Revoked');
+    await check(page, 'agent-overview');
+  });
+
+  test('a new bot lists what it still needs, and each step opens its page', async ({ open, check }, info) => {
+    const { page } = await newBot(open, info);
+    await expect(page.locator('.aghd .tag')).toHaveText('Not live');
+    const steps = page.getByRole('region', { name: 'Getting it live' });
+    await expect(steps.getByRole('button')).toHaveText(['Go to Knowledge', 'Go to Products']);
+    await check(page, 'agent-overview-new', { mask: ['.agname', '[aria-labelledby="agc-experience"] .agkv:first-child dd'] });
+    await steps.getByRole('button', { name: 'Go to Products' }).click();
+    await expect(page).toHaveURL(/\/products$/);
+  });
+});

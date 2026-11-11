@@ -921,7 +921,6 @@ body[data-sf=bot] #crumb{display:none}
 .agr>i{width:10px;height:10px;border-radius:50%;flex:none}
 .agc-h{display:flex;align-items:center;gap:var(--s-2);margin-bottom:var(--s-2)}.agc-h h3{margin:0;font-size:var(--fs-md);font-weight:600}
 .agh{font-size:var(--fs-sm);font-weight:500;margin:22px 0 var(--s-2)}
-.agt{width:100%;border-collapse:collapse}
 .agsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s-4);align-items:start}
 .agl{display:flex;flex-direction:column;gap:var(--s-2)}
 .agd{border:1px solid var(--line);border-radius:var(--r-lg);padding:14px var(--s-4);background:var(--surface);position:sticky;top:8px}.agd h3{font-size:var(--fs-md);margin:0 0 var(--s-2)}
@@ -1037,7 +1036,7 @@ body[data-sf=library] #crumb,body[data-sf=connectors] #crumb{display:none}
 @media (max-width:560px){.pg .libbar{padding:0 0 var(--s-3)}.pg .ggrid{padding:var(--s-3) 0 var(--s-2)}}
 
 /* ---- Admin redesign ---- */
-.lrail-g{font-size:var(--fs-2xs);color:var(--mute-2);font-weight:500;padding:14px 10px var(--s-1)}
+.lrail-g{font-size:var(--fs-2xs);color:var(--mute);font-weight:500;padding:14px 10px var(--s-1)}
 .lrail .lrail-g:first-of-type{padding-top:var(--s-2)}
 .astat{display:flex;flex-direction:column;gap:2px;text-align:left;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:14px var(--s-4)}
 button.astat:hover{background:var(--fill-1);border-color:var(--line-strong)}
@@ -1056,9 +1055,6 @@ button.astat:hover{background:var(--fill-1);border-color:var(--line-strong)}
 
 /* ---- Support agent redesign ---- */
 .aghd{display:flex;align-items:center;gap:var(--s-3);margin-bottom:var(--s-4)}.aghd .lcont-t{margin:0}
-.agstep{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-3) 0;border-top:1px solid var(--line2)}.agstep:first-of-type{border-top:0}
-.agst{width:18px;height:18px;border-radius:50%;border:1.5px solid #cfcfd5;display:inline-flex;align-items:center;justify-content:center;color:var(--surface);flex:none}.agstep.ok .agst{background:#26a269;border-color:#26a269}
-.agt{flex:1;display:grid}.agt b{font-weight:500;font-size:var(--fs-md)}.agt small{color:var(--mute);font-size:var(--fs-xs)}
 .dt-r.on{background:var(--brand-wash)}.dtr{text-align:right}
 @media (max-width:900px){.aghd{flex-wrap:wrap}}
 
@@ -1094,7 +1090,7 @@ button.astat:hover{background:var(--fill-1);border-color:var(--line-strong)}
 
 /* ---- dark mode: tuned invert, pictures and brand colours kept true ---- */
 html[data-mode=dark]{filter:invert(.93) hue-rotate(180deg);background:var(--surface);color-scheme:dark}
-html[data-mode=dark] :is(img,video,canvas,.stile,.wsav,.avimg,.lav,.kav,.adot,.dsend,.btn.primary,.btn.blue,.lbadge,.obsw,.agst,.lvs i,.cmp-tick){filter:invert(1) hue-rotate(180deg)}
+html[data-mode=dark] :is(img,video,canvas,.stile,.wsav,.avimg,.lav,.kav,.adot,.dsend,.btn.primary,.btn.blue,.lbadge,.obsw,.lvs i,.cmp-tick){filter:invert(1) hue-rotate(180deg)}
 html[data-mode=dark]{--e1:0 1px 2px rgba(255,255,255,.12);--e2:0 8px 16px -4px rgba(255,255,255,.2);--e3:0 16px 40px -8px rgba(255,255,255,.35)}
 html[data-mode=dark] .scrim{background:rgba(255,255,255,.4)}
 html[data-mode=dark] .modal-wrap{background:rgba(255,255,255,.55)}
@@ -1219,7 +1215,6 @@ html[data-mode=dark] :is(.fc-art,.fsvg,.fh-i){filter:invert(1) hue-rotate(180deg
 /* Account: a ring around your photo */
 .acid .avimg,.acid img{box-shadow:0 0 0 3px var(--surface),0 0 0 5px rgba(94,106,210,.45),0 10px 24px -8px rgba(94,106,210,.5);border-radius:50%}
 /* Support agent: readiness fills with colour */
-.agstep.ok .agst{box-shadow:0 0 0 3px rgba(38,162,105,.16)}
 /* sign-in and onboarding: a soft colour field behind the preview */
 .si-r.pv{background:radial-gradient(ellipse 70% 55% at 70% 20%,rgba(94,106,210,.18),transparent 70%),radial-gradient(ellipse 60% 50% at 20% 90%,rgba(217,70,168,.12),transparent 70%),var(--wash)}
 .si-in.in{animation:none}
