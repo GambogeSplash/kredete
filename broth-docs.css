@@ -88,3 +88,15 @@
   .dclay .dcnav:empty{display:none}
   .dcnav .dcbl{margin-bottom:var(--s-2)}
 }
+
+/* How this works: always a framed small button, never underlined; hovering shows a preview card */
+.dclink.btn,.dclink.btn:hover,.dclink.btn:focus,.dclink.btn:focus-visible,.dclink.btn:active{text-decoration:none!important}
+.dclink.btn{display:inline-flex;align-items:center;gap:var(--s-1);padding:0 var(--s-3);color:var(--ink);white-space:nowrap;vertical-align:middle}
+.dclink.btn svg{margin:0;vertical-align:0}
+.dclink.btn:hover{background:var(--fill-1);color:var(--ink)}
+.pop.hcard{width:320px;pointer-events:auto;padding:var(--s-4);z-index:100003}
+.hcard .hc-top{display:flex;align-items:center;gap:var(--s-2);color:var(--mute);font-size:var(--fs-xs);margin-bottom:var(--s-2)}
+.hcard .hc-t{display:block;font-weight:500;font-size:var(--fs-md);color:var(--ink)}
+.hcard .hc-s{margin:var(--s-1) 0 0;color:var(--mute);font-size:var(--fs-sm);line-height:1.5}
+.hcard .hc-st{margin:var(--s-3) 0 0;padding-left:var(--s-5);color:var(--ink-2);font-size:var(--fs-sm);line-height:1.5}
+.hcard .hc-go{margin-top:var(--s-3);display:inline-flex;align-items:center;gap:var(--s-1);text-decoration:none}

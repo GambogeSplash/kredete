@@ -33,7 +33,7 @@ test.describe('surfaces follow roles', () => {
     await expect(menu.getByRole('menuitem', { name: 'Account settings' })).toBeVisible();
     await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
     await check(page, 'menu-employee', { mask: ['.lh-t'], chats: true });
-    for (const path of ['/admin', '/admin/people', '/agent', '/setup']) {
+    for (const path of ['/admin', '/admin/people', '/support-agent', '/setup']) {
       await page.evaluate((p) => window.BRAIN.go(p), path);
       await expect(page).toHaveURL(/\/$/);
     }
@@ -56,8 +56,8 @@ test.describe('surfaces follow roles', () => {
     await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
     // The bot admin API is admin only, and so are its screens (bot admin spec 4.1).
     await page.keyboard.press('Escape');
-    await page.evaluate(() => window.BRAIN.go('/agent'));
-    await expect(page).not.toHaveURL(/\/agent/);
+    await page.evaluate(() => window.BRAIN.go('/support-agent'));
+    await expect(page).not.toHaveURL(/\/support-agent/);
   });
 
   test('a developer has neither Admin nor the Support agent', async ({ open }) => {
@@ -68,7 +68,7 @@ test.describe('surfaces follow roles', () => {
     const menu = await profileMenu(page);
     await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
     await page.keyboard.press('Escape');
-    for (const path of ['/admin', '/agent']) {
+    for (const path of ['/admin', '/support-agent']) {
       await page.evaluate((p) => window.BRAIN.go(p), path);
       await expect(page).toHaveURL(/\/$/);
     }
@@ -260,7 +260,7 @@ test.describe('connectors', () => {
   // Each source is a card; its connection, spaces and credentials open in a dialog (they sit in a hidden holder until then).
   const openSource = async (page, key = 'confluence') => { await page.locator(`[data-src="${key}"]`).click(); return page; };
   test('the Confluence connection, its spaces, Google Drive and the app credentials', async ({ open, check }) => {
-    const page = await open('admin', '/admin/connectors');
+    const page = await open('admin', '/admin/sources');
     await openSource(page);
     await expect(page.getByRole('heading', { name: 'Confluence' })).toBeVisible();
     await expect(page.locator('.dt-r[data-space]')).toHaveCount(3);
@@ -285,7 +285,7 @@ test.describe('connectors', () => {
   });
 
   test('an authorized connection can be authorized again, and personal spaces read as such', async ({ open }) => {
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => p.route('**/v1/admin/containers', async (route) => {
         const response = await route.fetch();
         const body = await response.json();
@@ -301,7 +301,7 @@ test.describe('connectors', () => {
   });
 
   test("a space's default domain is chosen from the tree, each shown with its path (nested domains spec 4.6)", async ({ open }) => {
-    const page = await open('admin', '/admin/connectors');
+    const page = await open('admin', '/admin/sources');
     await openSource(page);
     await page.getByRole('button', { name: 'Settings for Engineering (ENG)' }).click();
     const drawer = page.getByRole('dialog', { name: 'Settings for Engineering (ENG)' });
@@ -316,7 +316,7 @@ test.describe('connectors', () => {
 
   test("a space's settings save only what changed, and Broth re-reads it", async ({ open, check }) => {
     const sent = [];
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => p.route('**/v1/admin/containers/*', async (route) => {
         if (route.request().method() !== 'PATCH') return route.fallback();
         const change = route.request().postDataJSON();
@@ -341,7 +341,7 @@ test.describe('connectors', () => {
 
   test("a space's settings explain what they cannot save", async ({ open }) => {
     const sent = [];
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => p.route('**/v1/admin/containers/*', (route) => {
         if (route.request().method() !== 'PATCH') return route.fallback();
         sent.push(route.request().postDataJSON());
@@ -361,7 +361,7 @@ test.describe('connectors', () => {
   });
 
   test('a connection says what to fix about the indexer group', async ({ open, check }) => {
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => p.route('**/v1/admin/connections', async (route) => {
         if (route.request().method() !== 'GET') return route.fallback();
         const response = await route.fetch();
@@ -372,12 +372,12 @@ test.describe('connectors', () => {
     });
     await openSource(page);
     await expect(page.locator('.cnwarn')).toHaveText('Only the indexer account should be in broth-indexer. Also in it: Kofi Asante, Eve Mensah. How to fix it');
-    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/docs/setting-up-spaces#warn-indexer-group-members');
+    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/help/setting-up-spaces#warn-indexer-group-members');
     await check(page, 'connection-warnings');
   });
 
   test('a connection says when the indexer group is missing', async ({ open }) => {
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => p.route('**/v1/admin/connections', async (route) => {
         if (route.request().method() !== 'GET') return route.fallback();
         const response = await route.fetch();
@@ -388,7 +388,7 @@ test.describe('connectors', () => {
     });
     await openSource(page);
     await expect(page.locator('.cnwarn')).toHaveText('Create a broth-indexer group containing only the indexer account, so restricted pages can opt in. How to fix it');
-    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/docs/setting-up-spaces#warn-indexer-group-missing');
+    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/help/setting-up-spaces#warn-indexer-group-missing');
   });
 
   test('failed pages load a page at a time when the list opens', async ({ open }) => {
@@ -398,7 +398,7 @@ test.describe('connectors', () => {
       { items: [{ external_id: 'p3', title: null, url: null, error: null, change: 'content' }], next_cursor: null },
     ];
     const asked = [];
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: async (p) => {
         await p.route('**/v1/admin/connections', async (route) => {
           if (route.request().method() !== 'GET') return route.fallback();
@@ -472,7 +472,7 @@ test.describe('connectors', () => {
   ];
 
   test('a sync that could not read some pages says how many, and lists them', async ({ open, check }) => {
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => withRuns(p, {
         connection: (c) => ({ ...c, last_run: run({ connection_id: c.id, status: 'partial', pages_total: 9, pages_done: 7, pages_failed: 2, failing: 2, updated: 6, removed: 1 }) }),
         failures: FAILED,
@@ -493,7 +493,7 @@ test.describe('connectors', () => {
 
   test("a space's read that could not read a page links to it, until a later sync reads it", async ({ open, check }) => {
     let fixed = false;
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => withRuns(p, {
         space: (s) => (s.path !== 'Cards (CARD)' ? s : { ...s, last_run: run({ trigger: 'space_read', connection_id: s.connection_id, container_id: s.id, status: 'partial', tasks_total: 1, tasks_done: 1, pages_total: 2, pages_done: 1, pages_failed: 1, failing: fixed ? 0 : 1, updated: 1 }) }),
         failures: FAILED.slice(1),
@@ -511,14 +511,14 @@ test.describe('connectors', () => {
     // A later Sync now read the page: the space's own count stays, its amber state goes (spec 3.4.1).
     fixed = true;
     await page.evaluate(() => window.BRAIN.go('/admin/people'));
-    await page.evaluate(() => window.BRAIN.go('/admin/connectors'));
+    await page.evaluate(() => window.BRAIN.go('/admin/sources'));
     await openSource(page);
     await expect(cards.locator('.cnsrun')).toHaveText('2 pages');
   });
 
   test('a sync that the connection failing ended says so under the connection error', async ({ open, check }) => {
     // As the worker leaves a connection after Atlassian refused its grant (sync runs spec 5.5).
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => withRuns(p, {
         connection: (c) => ({
           ...c,
@@ -538,7 +538,7 @@ test.describe('connectors', () => {
   });
 
   test('a failed Confluence authorization says what to do', async ({ open, check }) => {
-    const page = await open('admin', '/admin/connectors?error=invalid_state');
+    const page = await open('admin', '/admin/sources?error=invalid_state');
     await expect(page.getByRole('alert')).toHaveText('The Confluence authorization expired or was started in another browser. Authorize again.');
     await expect(page).toHaveURL(/\/admin\/connectors$/);
     await check(page, 'connectors-authorization-failed');

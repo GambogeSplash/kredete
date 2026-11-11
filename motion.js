@@ -75,14 +75,19 @@ document.addEventListener('mouseout',e=>{ if(RM) return; const t=e.target.closes
 document.addEventListener('pointermove',e=>{ if(RM) return; const p=e.target.closest&&e.target.closest('.phone'); if(!p||e.pointerType==='touch') return; const r=p.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5; p.style.transform=`perspective(900px) rotateY(${x*7}deg) rotateX(${-y*5}deg)`; });
 document.addEventListener('pointerout',e=>{ const p=e.target.closest&&e.target.closest('.phone'); if(p&&!p.contains(e.relatedTarget)&&!RM) animate(p,{transform:'perspective(900px) rotateY(0deg) rotateX(0deg)'},{type:'spring',stiffness:200,damping:18}); });
 
-/* ---------- citation hover card: the quote, its source and its owner ---------- */
+/* ---------- hover cards: one shared card for citations and the Help center links ---------- */
+/** hoverCard(anchor, html, opts) floats `html` in a card beside `anchor`, above or below so it stays on screen.
+ *  opts: {cls, width}. The card enters with a spring and leaves with the shared exit animation. */
 let pop=null;
-document.addEventListener('mouseover',e=>{ const c=e.target.closest('.cite[data-cite]'); if(!c||c.contains(e.relatedTarget)||!window.ASK) return; const d=window.ASK.citation(c); if(!d) return; closePop(); pop=document.createElement('div'); pop.className='pop';
-  pop.innerHTML=`<div class="pt">${B.srcIcon(d.system,18)}<b>${B.esc(d.title)}</b></div>${d.quote?`<div class="pq">${B.esc(d.quote)}</div>`:'<div class="pq pqgone">This passage is no longer available.</div>'}<div class="pf">${d.owner?window.AVATAR(d.owner.name,'lav',22):''}<span class="pw"><b>${B.esc(d.owner?d.owner.name:B.systemName(d.system))}</b><small>${d.last_verified_at?'Verified '+B.when(d.last_verified_at,B.fmtDate(d.last_verified_at)):''}</small></span></div>`;
-  document.body.appendChild(pop); const r=c.getBoundingClientRect(); pop.style.left=Math.max(8,Math.min(innerWidth-296,r.left-20))+'px'; const below=r.bottom+pop.offsetHeight+12<innerHeight; pop.dataset.below=below?'1':'0'; pop.style.top=(below?r.bottom+8:r.top-pop.offsetHeight-8)+'px';
-  if(!RM) animate(pop,{opacity:[0,1],y:[below?8:-8,0],scale:[.96,1]},{type:'spring',stiffness:500,damping:30}); });
+function hoverCard(anchor,html,opts){ opts=opts||{}; closePop(true); pop=document.createElement('div'); pop.className='pop'+(opts.cls?' '+opts.cls:''); pop.innerHTML=html;
+  document.body.appendChild(pop); const w=opts.width||280; const r=anchor.getBoundingClientRect(); pop.style.left=Math.max(8,Math.min(innerWidth-w-16,r.left-20))+'px'; const below=r.bottom+pop.offsetHeight+12<innerHeight; pop.dataset.below=below?'1':'0'; pop.style.top=(below?r.bottom+8:r.top-pop.offsetHeight-8)+'px';
+  if(!RM) animate(pop,{opacity:[0,1],y:[below?8:-8,0],scale:[.96,1]},{type:'spring',stiffness:500,damping:30}); return pop; }
+B.hoverCard={ open:hoverCard, close:()=>closePop(), current:()=>pop };
+/* the citation card: the quote, its source and its owner */
+document.addEventListener('mouseover',e=>{ const c=e.target.closest('.cite[data-cite]'); if(!c||c.contains(e.relatedTarget)||!window.ASK) return; const d=window.ASK.citation(c); if(!d) return;
+  hoverCard(c,`<div class="pt">${B.srcIcon(d.system,18)}<b>${B.esc(d.title)}</b></div>${d.quote?`<div class="pq">${B.esc(d.quote)}</div>`:'<div class="pq pqgone">This passage is no longer available.</div>'}<div class="pf">${d.owner?window.AVATAR(d.owner.name,'lav',22):''}<span class="pw"><b>${B.esc(d.owner?d.owner.name:B.systemName(d.system))}</b><small>${d.last_verified_at?'Verified '+B.when(d.last_verified_at,B.fmtDate(d.last_verified_at)):''}</small></span></div>`); });
 document.addEventListener('mouseout',e=>{ const c=e.target.closest('.cite[data-cite]'); if(c&&!c.contains(e.relatedTarget)) closePop(); });
-function closePop(){ if(pop){ const p=pop; pop=null; if(B.leaveFx) B.leaveFx(p,{opacity:0,transform:'translateY('+(p.dataset.below==='1'?8:-8)+'px) scale(.96)'},110); else p.remove(); } }
+function closePop(now){ if(pop){ const p=pop; pop=null; if(now){ p.remove(); return; } if(B.leaveFx) B.leaveFx(p,{opacity:0,transform:'translateY('+(p.dataset.below==='1'?8:-8)+'px) scale(.96)'},110); else p.remove(); } }
 
 /* ---------- scroll progress ---------- */
 const bar=document.createElement('div'); bar.className='scrollbar'; document.body.appendChild(bar);

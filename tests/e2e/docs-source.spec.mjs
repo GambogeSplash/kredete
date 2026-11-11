@@ -135,7 +135,7 @@ test.describe('docs repositories', () => {
     await check(page, 'docs-repositories');
     await rows.nth(0).getByRole('button', { name: 'Request public for kredete/docs' }).click();
     const dialog = page.getByRole('dialog', { name: 'Request public for kredete/docs' });
-    await expect(dialog.locator('a')).toHaveAttribute('href', '/docs/connecting-docs-repositories#public-declaration');
+    await expect(dialog.locator('a')).toHaveAttribute('href', '/help/connecting-docs-repositories#public-declaration');
     await dialog.getByLabel('Why').fill('Published at docs.kredete.com');
     await dialog.getByRole('button', { name: 'Request' }).click();
     await expect(page.locator('#toast')).toContainText('Requested. Another admin or a domain owner approves it in Governance.');
@@ -173,7 +173,7 @@ test.describe('docs repositories', () => {
     await section.getByText('Show failed and held-back pages').click();
     await expect(section.locator('.cnnh')).toHaveText('Kept out of Public');
     await expect(section.locator('.cnnbox li')).toHaveText(/Renew a card\s*Not public: a card number found\./);
-    await expect(section.getByRole('link', { name: 'What these mean' })).toHaveAttribute('href', '/docs/connecting-docs-repositories#problems');
+    await expect(section.getByRole('link', { name: 'What these mean' })).toHaveAttribute('href', '/help/connecting-docs-repositories#problems');
     await section.scrollIntoViewIfNeeded();
     await check(page, 'docs-held-back');
   });

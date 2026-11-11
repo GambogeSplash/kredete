@@ -15,9 +15,9 @@ const phone = (page) => page.viewportSize().width < 700;
 const unique = (base, info) => `${base} for ${info.project.name}`.slice(0, 32);
 
 async function openSeeded(open, page = 'overview') {
-  const p = await open('admin', '/agent');
+  const p = await open('admin', '/support-agent');
   await p.getByRole('link', { name: new RegExp(SEEDED) }).click();
-  await expect(p).toHaveURL(/\/agent\/[0-9a-f-]{36}\/overview$/);
+  await expect(p).toHaveURL(/\/support-agent\/[0-9a-f-]{36}\/overview$/);
   if (page !== 'overview') {
     await p.getByRole('navigation', { name: 'Support agent' }).getByRole('button', { name: new RegExp(page, 'i') }).click();
     await expect(p).toHaveURL(new RegExp(`/${page}$`));
@@ -28,7 +28,7 @@ async function openSeeded(open, page = 'overview') {
 test.describe('the bot list', () => {
   test('lists every bot with its sources, products and status', async ({ open, check }) => {
     // Other views add bots to the shared stack; the snapshot shows the seeded one alone.
-    const page = await open('admin', '/agent', { before: (p) => p.route(/\/v1\/admin\/bots$/, async (route) => {
+    const page = await open('admin', '/support-agent', { before: (p) => p.route(/\/v1\/admin\/bots$/, async (route) => {
       const response = await route.fetch();
       const body = await response.json();
       await route.fulfill({ response, json: { ...body, items: body.items.filter((b) => b.name === SEEDED) } });
@@ -44,17 +44,17 @@ test.describe('the bot list', () => {
     const page = await openSeeded(open);
     await expect(page.getByRole('navigation', { name: 'Support agent' })).toContainText(SEEDED);
     await page.getByRole('link', { name: 'All bots' }).click();
-    await expect(page).toHaveURL(/\/agent$/);
+    await expect(page).toHaveURL(/\/support-agent$/);
     await expect(page.getByRole('link', { name: new RegExp(SEEDED) })).toBeVisible();
   });
 
   test('an unknown bot says so', async ({ open }) => {
-    const page = await open('admin', '/agent/00000000-0000-4000-8000-000000000000/overview');
+    const page = await open('admin', '/support-agent/00000000-0000-4000-8000-000000000000/overview');
     await expect(page.getByText("This bot doesn't exist")).toBeVisible();
   });
 
   test('New bot checks its fields, then opens Knowledge for the new bot', async ({ open, check }, info) => {
-    const page = await open('admin', '/agent');
+    const page = await open('admin', '/support-agent');
     await page.getByRole('button', { name: 'New bot' }).first().click();
     const dialog = page.getByRole('dialog', { name: 'New bot' });
     await dialog.getByLabel('Contact link').fill('http://kredete.com/support');
@@ -68,14 +68,14 @@ test.describe('the bot list', () => {
     await dialog.getByLabel('Contact link').fill('mailto:help@kredete.com');
     await dialog.getByLabel('Privacy link').fill('https://kredete.com/privacy');
     await dialog.getByRole('button', { name: 'Create bot' }).click();
-    await expect(page).toHaveURL(/\/agent\/[0-9a-f-]{36}\/knowledge$/);
+    await expect(page).toHaveURL(/\/support-agent\/[0-9a-f-]{36}\/knowledge$/);
     await expect(page.getByRole('navigation', { name: 'Support agent' })).toContainText(name);
   });
 });
 
 /** A new bot of the test's own, opened on `page`; returns the page and its name. */
 async function newBot(open, info, page = 'overview') {
-  const p = await open('admin', '/agent');
+  const p = await open('admin', '/support-agent');
   await p.getByRole('button', { name: 'New bot' }).first().click();
   const dialog = p.getByRole('dialog', { name: 'New bot' });
   const name = unique('Bot', info);

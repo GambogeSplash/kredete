@@ -182,7 +182,7 @@ function signinStep() {
 }
 /** The first admin is signed in and the wizard is over: on to Sources, where a source is connected. */
 async function finish() {
-  let target = '/admin/connectors';
+  let target = '/admin/sources';
   try { if ((await window.SOURCES.progress()).step === 'done') target = '/'; } catch (e) { /* Sources shows its own state */ }
   B.go(target, { replace: true });
 }

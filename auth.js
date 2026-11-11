@@ -321,7 +321,7 @@ function profileMenu(a) {
       if (k === 'out') { B.haptic('light'); B.armPress(b, 'Confirm sign out', () => { closeMenu(false); B.signOut(); }); return; }
       closeMenu(false);
       B.haptic('light');
-      B.go({ bot: '/agent', admin: '/admin', docs: '/docs' }[k] || '/account');
+      B.go({ bot: '/support-agent', admin: '/admin', docs: '/help' }[k] || '/account');
       window.scrollTo(0, 0);
     };
   });

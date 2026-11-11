@@ -366,7 +366,7 @@ const READ_APPS = [
   { value: 'sharepoint', name: 'SharePoint', logo: 'sharepoint', unit: '', soon: true },
 ];
 function connectorsPage() {
-  if (B.hasRole('admin')) { B.go('/admin/connectors'); return; }
+  if (B.hasRole('admin')) { B.go('/admin/sources'); return; }
   const draw = () => {
     const live = (S().facets && S().facets.systems) || [];
     const card = (app) => {

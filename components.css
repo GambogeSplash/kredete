@@ -530,7 +530,7 @@ time{white-space:nowrap}
 .dcprose tr:last-child td{border-bottom:0}
 .dcprose td code{white-space:nowrap;overflow-wrap:normal}
 .dclink{display:inline;padding:5px 0;color:var(--brand-strong);font-size:var(--fs-sm);text-decoration:none}
-.dclink:hover{text-decoration:underline;text-underline-offset:3px}
+.dclink:hover{text-decoration:none}
 .dclink svg{vertical-align:-2px;margin-right:var(--s-1)}
 /* On its own (signed out or during setup): a slim bar, then the same page. */
 #app.dcapp{overflow:auto;height:100%}
@@ -542,7 +542,7 @@ time{white-space:nowrap}
 .dcsolo-b{padding:var(--s-7) var(--s-7) var(--s-8)}
 .dcsolo .dctoc{top:calc(56px + var(--s-6))}
 .dcsolo .dcprose h2,.dcsolo .dcprose h3{scroll-margin-top:calc(56px + var(--s-5))}
-.svwarn .dclink{color:inherit;text-decoration:underline;text-underline-offset:3px}
+.svwarn .dclink{color:inherit;text-decoration:none}
 .cnwarn .dclink{margin-left:var(--s-1);white-space:nowrap}
 .cndoc{margin:calc(var(--s-3) * -1) 0 var(--s-4)}
 .sudoc{color:var(--mute);font-size:var(--fs-sm);margin:0 0 var(--s-5);line-height:var(--lh-base)}

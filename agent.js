@@ -73,10 +73,10 @@ function render(params) {
   const bot = s.bots.find((b) => b.id === params.bot);
   if (!bot) {
     B.S.route.title = '';
-    app.innerHTML = `<div class="lcont agwide">${empty("This bot doesn't exist", 'It may have been removed, or the link is wrong.', '<a class="btn sm" href="/agent" data-link>All bots</a>', 'chat')}</div>`;
+    app.innerHTML = `<div class="lcont agwide">${empty("This bot doesn't exist", 'It may have been removed, or the link is wrong.', '<a class="btn sm" href="/support-agent" data-link>All bots</a>', 'chat')}</div>`;
     return;
   }
-  if (!params.page) { B.go(`/agent/${bot.id}/overview`, { replace: true }); return; }
+  if (!params.page) { B.go(`/support-agent/${bot.id}/overview`, { replace: true }); return; }
   B.S.route.title = bot.name;
   B.setCrumb(); B.mbTitle();
   app.innerHTML = `<div class="lset"><nav class="lrail agtabs" aria-label="Support agent"></nav><div class="lcont agwide">${head(LABELS[params.page], params.page)}<div id="agpane"></div></div></div>`;
@@ -100,7 +100,7 @@ function context(bot, params) {
       rail(next, params.page);
       B.setCrumb(); B.mbTitle();
     },
-    go: (page) => B.go(`/agent/${bot.id}/${page}`),
+    go: (page) => B.go(`/support-agent/${bot.id}/${page}`),
   };
 }
 
@@ -111,8 +111,8 @@ function rail(bot, current) {
   const nav = $('.lrail');
   if (!nav) return;
   const tab = (p) => `<button type="button" class="tab" data-ap="${p}" aria-current="${p === current ? 'page' : 'false'}">${LABELS[p]}</button>`;
-  nav.innerHTML = `<div class="lrail-h">Support agent</div>${bot ? `<a class="tab agback" href="/agent" data-link aria-current="false">All bots</a><div class="lrail-sep" role="separator"></div><div class="lrail-h agname" title="${esc(bot.name)}">${esc(bot.name)}</div>${tab('overview')}<div class="lrail-sep" role="separator"></div><div class="lrail-h">Build</div>${['knowledge', 'experience', 'products'].map(tab).join('')}` : '<a class="tab agback" href="/agent" data-link aria-current="page">All bots</a>'}`;
-  $$('[data-ap]', nav).forEach((b) => { b.onclick = () => B.go(`/agent/${bot.id}/${b.dataset.ap}`); });
+  nav.innerHTML = `<div class="lrail-h">Support agent</div>${bot ? `<a class="tab agback" href="/support-agent" data-link aria-current="false">All bots</a><div class="lrail-sep" role="separator"></div><div class="lrail-h agname" title="${esc(bot.name)}">${esc(bot.name)}</div>${tab('overview')}<div class="lrail-sep" role="separator"></div><div class="lrail-h">Build</div>${['knowledge', 'experience', 'products'].map(tab).join('')}` : '<a class="tab agback" href="/support-agent" data-link aria-current="page">All bots</a>'}`;
+  $$('[data-ap]', nav).forEach((b) => { b.onclick = () => B.go(`/support-agent/${bot.id}/${b.dataset.ap}`); });
   slidePill(nav);
 }
 /** The highlight under the current rail item; it slides from the last one when the page changes (the Sources panel pattern in ask.js). */
@@ -138,7 +138,7 @@ function list(app) {
   const rows = s.bots.map((bot) => {
     const live = bot.products.filter((p) => p.status === 'live').length;
     const sites = F.liveSites(bot);
-    return `<a class="ds-tr agrow" href="/agent/${bot.id}/overview" data-link><span class="dmn"><span class="ds-ic" aria-hidden="true">${window.ICON('chat', 16)}</span><b>${esc(bot.name)}</b></span><span class="dtm">${count(bot.sources.length, 'source')}</span><span class="dtm">${live} of ${bot.products.length} live</span><span>${sites ? `<span class="tag ok">Live on ${count(sites, 'site')}</span>` : '<span class="tag warn">Needs setup</span>'}</span></a>`;
+    return `<a class="ds-tr agrow" href="/support-agent/${bot.id}/overview" data-link><span class="dmn"><span class="ds-ic" aria-hidden="true">${window.ICON('chat', 16)}</span><b>${esc(bot.name)}</b></span><span class="dtm">${count(bot.sources.length, 'source')}</span><span class="dtm">${live} of ${bot.products.length} live</span><span>${sites ? `<span class="tag ok">Live on ${count(sites, 'site')}</span>` : '<span class="tag warn">Needs setup</span>'}</span></a>`;
   }).join('');
   app.innerHTML = `<div class="lset"><nav class="lrail agtabs" aria-label="Support agent"></nav><div class="lcont agwide">${head('Support agent', 'list', '<button type="button" class="btn primary sm" id="agnew">New bot</button>')}
     ${s.bots.length
@@ -179,7 +179,7 @@ function newBot() {
       state().bots.push(bot);
       B.closeModal();
       B.toast(`${bot.name} is ready. Choose what it answers from.`);
-      B.go(`/agent/${bot.id}/knowledge`);
+      B.go(`/support-agent/${bot.id}/knowledge`);
     }, (error) => serverErrors(form, error, $('#nbe')));
   };
 }

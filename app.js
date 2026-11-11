@@ -150,8 +150,8 @@ function openDrawer(html, wide) {
   const d = $('#drawer');
   d.innerHTML = html;
   d.classList.toggle('wide', !!wide);
-  // In the Library a document opens as its own shell beside the page (broth-library.css); elsewhere it stays a sheet.
-  const shell = !wide && S.route && S.route.surface === 'library';
+  // In the Library a document, and on Sources a space's settings, open as their own shell beside the page (broth-library.css); elsewhere it stays a sheet.
+  const shell = !wide && S.route && (S.route.surface === 'library' || (S.route.surface === 'admin' && ['connectors', 'sources'].includes(S.route.params.tab)));
   d.classList.toggle('shell', shell);
   document.body.classList.toggle('dsopen', shell);
   // A drawer opened from inside a dialog (a source's Settings) has to sit above that dialog.
@@ -229,18 +229,35 @@ $('#scrim').onclick = closeDrawer;
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeDrawer(); closeModal(); } });
 
 /* ---------- router ---------- */
+/** The address follows the label on the page. Old addresses keep working: the router rewrites them in place
+ *  (no history entry) and keeps the query string and hash, because the Google, Atlassian and GitHub returns land on them. */
+/** @type {[RegExp, string][]} */
+const MOVED = [
+  [/^\/admin\/connectors(\/.*)?$/, '/admin/sources$1'],
+  [/^\/connectors$/, '/sources'],
+  [/^\/docs(\/.*)?$/, '/help$1'],
+  [/^\/agent(\/.*)?$/, '/support-agent$1'],
+  [/^\/inbox$/, '/governance'],
+  [/^\/admin\/sharing-requests$/, '/governance'],
+  [/^\/account\/inbox$/, '/governance'],
+];
+/** The new address for an old one, or null. */
+function movedTo(path) {
+  for (const [re, to] of MOVED) if (re.test(path)) return path.replace(re, to);
+  return null;
+}
 const ROUTES = [
   { re: /^\/$/, surface: 'ask' },
   { re: /^\/c\/([0-9a-f-]{36})$/i, surface: 'ask', keys: ['id'] },
   { re: /^\/chats$/, surface: 'chats' },
   { re: /^\/bookmarks$/, surface: 'bookmarks' },
   { re: /^\/library(?:\/([a-z0-9-]+))?$/, surface: 'library', keys: ['domain'] },
-  { re: /^\/connectors$/, surface: 'connectors' },
+  { re: /^\/sources$/, surface: 'connectors' },
   { re: /^\/governance$/, surface: 'governance' },
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
-  { re: /^\/admin(?:\/(workspace|connectors|people|domains|audit))?$/, surface: 'admin', keys: ['tab'], allow: () => hasRole('admin', 'compliance') },
-  { re: /^\/agent(?:\/([0-9a-f-]{36})(?:\/(overview|knowledge|experience|products))?)?$/i, surface: 'bot', keys: ['bot', 'page'], allow: () => hasRole('admin') },
-  { re: /^\/docs(?:\/([a-z0-9-]+))?$/, surface: 'docs', keys: ['slug'] },
+  { re: /^\/admin(?:\/(workspace|connectors|sources|people|domains|audit)(?:\/(confluence|docs-repositories|google-drive))?)?$/, surface: 'admin', keys: ['tab', 'source'], allow: () => hasRole('admin', 'compliance') },
+  { re: /^\/support-agent(?:\/([0-9a-f-]{36})(?:\/(overview|knowledge|experience|products))?)?$/i, surface: 'bot', keys: ['bot', 'page'], allow: () => hasRole('admin') },
+  { re: /^\/help(?:\/([a-z0-9-]+))?$/, surface: 'docs', keys: ['slug'] },
   { re: /^\/setup$/, surface: 'setup' },
   { re: /^\/signin$/, surface: 'signin' },
 ];
@@ -334,11 +351,13 @@ function pageGhost(key) {
   g.animate([{ opacity: from }, { opacity: 0 }], { duration: 140, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }).finished.then(gone, gone);
 }
 function route() {
-  const path = location.pathname.replace(/\/+$/, '') || '/';
+  let path = location.pathname.replace(/\/+$/, '') || '/';
+  const newPath = movedTo(path);
+  if (newPath) { history.replaceState(history.state, '', newPath + location.search + location.hash); path = newPath; }
   if (S.phase === 'boot') { renderBoot(); return; }
   if (S.phase === 'error') { renderBootError(); return; }
   // The docs are public, so they open signed out and during setup as well.
-  const docs = path === '/docs' || path.startsWith('/docs/');
+  const docs = path === '/help' || path.startsWith('/help/');
   // The setup wizard is never offered: it opens only from its own address. Leaving it lands on sign-in.
   if (S.phase === 'setup' && path !== '/setup' && !docs) { S.phase = 'signedout'; go('/signin', { replace: true }); return; }
   if (S.phase === 'signedout' && path === '/setup') {
@@ -682,7 +701,7 @@ function renderSurfaces() {
   h += navItem('data-go="/bookmarks"', 'bookmark', 'Bookmarks', r.surface === 'bookmarks');
   const gw = window.GOVBADGE ? window.GOVBADGE.count() : 0;
   h += navItem(`data-go="/governance"${gw ? ` data-badge="${gw > 9 ? '9+' : gw}" data-waiting="${gw}"` : ''}`, 'shield', 'Governance', r.surface === 'governance', gw ? `<span class="lbadge">${gw > 9 ? '9+' : gw}</span>` : '');
-  h += navItem('data-go="/docs"', 'book', 'Help center', r.surface === 'docs');
+  h += navItem('data-go="/help"', 'book', 'Help center', r.surface === 'docs');
   $('#surfaces').innerHTML = `<div class="snav">${h}</div><div class="srec" id="srec" role="list" aria-label="Chats"></div>`;
   // The chats shell belongs to the chat pages; the icon rail (rail.js) stands in for the places list.
   document.body.classList.toggle('nochats', r.surface !== 'ask' && r.surface !== 'chats');
@@ -749,7 +768,7 @@ function newChat() {
 }
 
 /* ---------- breadcrumb and mobile title ---------- */
-const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Connectors'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
+const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Sources'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
   const label = S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
@@ -763,7 +782,7 @@ function setCrumb() {
 function mbTitle() {
   const t = $('#mbtitle');
   if (!t) return;
-  const names = { library: 'Library', connectors: 'Connectors', governance: 'Governance', docs: 'Help center', account: 'Account', chats: 'Chats', bookmarks: 'Bookmarks', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
+  const names = { library: 'Library', connectors: 'Sources', governance: 'Governance', docs: 'Help center', account: 'Account', chats: 'Chats', bookmarks: 'Bookmarks', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
   t.textContent = S.route.title || names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
 }
 

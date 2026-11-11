@@ -101,14 +101,78 @@ const standalone = () => B.S.phase !== 'app';
 function docsLink(name, text, newTab) {
   const target = DOCS[name];
   const attrs = newTab ? 'target="_blank" rel="noopener"' : 'data-link';
-  return `<a class="dclink" href="/docs/${target}" ${attrs}>${ICON('book', 14)}<span>${esc(text || 'How this works')}</span></a>`;
+  // Always a framed small button, never an underlined link; hovering or focusing it opens a preview of the article.
+  return `<a class="dclink btn sm" href="/help/${target}" ${attrs} data-doc="${esc(name)}">${ICON('book', 14)}<span>${esc(text || 'How this works')}</span></a>`;
 }
+
+/* ---------- the preview card on a "How this works" button ---------- */
+/** What the card shows, from what is already in the page: no request is made on hover. */
+const SERVICE_TITLE = { 'labelling-pages': 'Labelling pages', 'setting-up-spaces': 'Setting up spaces', 'fixing-label-problems': 'Fixing label problems', 'support-bots': 'Support bots', 'connecting-docs-repositories': 'Connecting docs repositories' };
+function previewFor(key) {
+  const target = DOCS[key];
+  if (!target) return null;
+  const slug = target.split('#')[0];
+  const local = LOCAL_BY_SLUG[slug];
+  const st = state();
+  const item = st.index && st.index.find((x) => x.slug === slug);
+  const full = st.articles[slug] && !st.articles[slug].error ? st.articles[slug] : null;
+  const topic = topicOf(topicIdOf(slug));
+  const title = local ? local.title : (item && item.title) || (full && full.title) || SERVICE_TITLE[slug] || 'Help center';
+  const sum = local ? local.sum : (item && item.summary) || (full && full.summary) || '';
+  const steps = local ? local.steps.slice(0, 3).map((x) => x[0]) : ((full && full.sections) || []).filter((x) => x.level === 2).slice(0, 3).map((x) => x.title);
+  return { slug, target, topic, title, sum, steps };
+}
+let cardTimer = 0, cardAnchor = null;
+const cardOff = () => matchMedia('(hover:none), (max-width:900px)').matches;
+function closeCard() {
+  clearTimeout(cardTimer);
+  if (cardAnchor) { cardAnchor.removeAttribute('aria-describedby'); cardAnchor = null; }
+  if (B.hoverCard) B.hoverCard.close();
+}
+function openCard(a) {
+  if (cardOff() || !B.hoverCard) return;
+  const p = previewFor(a.dataset.doc);
+  if (!p) return;
+  closeCard();
+  const html = `<div class="hc-top">${p.topic ? ICON(p.topic.icon, 16) : ICON('book', 16)}<span>${esc(p.topic ? p.topic.title : 'Help center')}</span></div><b class="hc-t">${esc(p.title)}</b>${p.sum ? `<p class="hc-s">${esc(p.sum)}</p>` : ''}${p.steps.length ? `<ol class="hc-st">${p.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}<a class="btn sm hc-go" href="/help/${esc(p.target)}" data-link>Read the article${ICON('chevr', 14)}</a>`;
+  const card = B.hoverCard.open(a, html, { cls: 'hcard', width: 320 });
+  card.id = 'dchc';
+  card.setAttribute('role', 'region');
+  card.setAttribute('aria-label', p.title);
+  a.setAttribute('aria-describedby', 'dchc');
+  cardAnchor = a;
+  card.addEventListener('mouseenter', () => clearTimeout(cardTimer));
+  card.addEventListener('mouseleave', () => { cardTimer = setTimeout(closeCard, 140); });
+  card.addEventListener('click', () => closeCard());
+}
+document.addEventListener('mouseover', (e) => {
+  const a = e.target instanceof Element ? e.target.closest('.dclink[data-doc]') : null;
+  if (!a || (e.relatedTarget instanceof Node && a.contains(e.relatedTarget)) || cardOff()) return;
+  clearTimeout(cardTimer);
+  cardTimer = setTimeout(() => openCard(a), 150);
+});
+document.addEventListener('mouseout', (e) => {
+  const a = e.target instanceof Element ? e.target.closest('.dclink[data-doc]') : null;
+  if (!a || (e.relatedTarget instanceof Node && a.contains(e.relatedTarget))) return;
+  const card = document.getElementById('dchc');
+  if (card && e.relatedTarget instanceof Node && card.contains(e.relatedTarget)) return;
+  clearTimeout(cardTimer);
+  cardTimer = setTimeout(closeCard, 140);
+});
+document.addEventListener('focusin', (e) => {
+  const a = e.target instanceof Element ? e.target.closest('.dclink[data-doc]') : null;
+  if (a) { clearTimeout(cardTimer); openCard(a); return; }
+  const card = document.getElementById('dchc');
+  if (card && !(e.target instanceof Element && card.contains(e.target))) closeCard();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && cardAnchor) closeCard(); });
+document.addEventListener('click', (e) => { if (e.target instanceof Element && e.target.closest('.dclink[data-doc]')) closeCard(); }, true);
 
 /* ---------- the frame: inside the app, or on its own ---------- */
 function frame(inner) {
   if (!standalone()) return inner;
   const back = B.S.phase === 'setup' ? ['/setup', 'Back to setup'] : ['/signin', 'Back to sign in'];
-  return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/docs" data-link><span class="pvk" aria-hidden="true">K</span><b>Broth</b><span>Help center</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
+  return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/help" data-link><span class="pvk" aria-hidden="true">K</span><b>Broth</b><span>Help center</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
 }
 function paint(inner) {
   const app = $('#app');
@@ -179,7 +243,7 @@ function drawCards() {
     const pool = LOCAL.map((a) => ({ slug: a.slug, title: a.title })).concat((s.index || []).filter((a) => !LOCAL_BY_SLUG[a.slug]));
     const hits = pool.filter((a) => haystack(a).includes(q));
     grid.innerHTML = hits.length
-      ? `<div class="dclist">${hits.map((a) => { const t = topicOf(topicIdOf(a.slug)); return `<a class="dcrow" href="/docs/${esc(a.slug)}" data-link>${esc(a.title)}<small>${esc(t ? t.title : '')}</small><span>${ICON('chevr', 14)}</span></a>`; }).join('')}</div>`
+      ? `<div class="dclist">${hits.map((a) => { const t = topicOf(topicIdOf(a.slug)); return `<a class="dcrow" href="/help/${esc(a.slug)}" data-link>${esc(a.title)}<small>${esc(t ? t.title : '')}</small><span>${ICON('chevr', 14)}</span></a>`; }).join('')}</div>`
       : framed('search', 'No articles match', 'Try fewer words.');
     return;
   }
@@ -187,7 +251,7 @@ function drawCards() {
   grid.innerHTML = `<div class="dcgrid">${TOPICS.map((t) => {
     const list = itemsOf(t);
     const n = list.length;
-    return `<a class="dccard" href="/docs/${esc(list[0].slug)}" data-link data-topic="${t.id}"><span class="dcimg"><img src="/assets/help/${t.id}.jpg" alt="" loading="lazy" draggable="false"></span><b>${esc(t.title)}</b><p>${esc(t.blurb)}</p><small class="dccount">${n} ${n === 1 ? 'article' : 'articles'}</small></a>`;
+    return `<a class="dccard" href="/help/${esc(list[0].slug)}" data-link data-topic="${t.id}"><span class="dcimg"><img src="/assets/help/${t.id}.jpg" alt="" loading="lazy" draggable="false"></span><b>${esc(t.title)}</b><p>${esc(t.blurb)}</p><small class="dccount">${n} ${n === 1 ? 'article' : 'articles'}</small></a>`;
   }).join('')}</div>${note}`;
   $$('[data-topic]', grid).forEach((c) => {
     c.addEventListener('click', () => { const r = $('.dcimg', c).getBoundingClientRect(); fromRect = { left: r.left, top: r.top, width: r.width, height: r.height }; });
@@ -218,11 +282,11 @@ async function article(slug) {
   if (B.S.route.surface !== 'docs' || B.S.route.params.slug !== slug) return;
   if (result.error) drawFailure(slug, result.error); else drawArticle(result);
 }
-const backLink = () => `<a class="dcback" href="/docs" data-link data-back>${ICON('chevr', 14)}<span>Help center</span></a>`;
+const backLink = () => `<a class="dcback" href="/help" data-link data-back>${ICON('chevr', 14)}<span>Help center</span></a>`;
 function drawFailure(slug, error) {
   setTitle('Help center');
   if (error.status === 404) {
-    paint(`<div class="pg dc dcart">${backLink()}${framed('book', "This article doesn't exist", 'It may have moved. The contents list every article.', '<a class="btn sm" href="/docs" data-link>See all help articles</a>')}</div>`);
+    paint(`<div class="pg dc dcart">${backLink()}${framed('book', "This article doesn't exist", 'It may have moved. The contents list every article.', '<a class="btn sm" href="/help" data-link>See all help articles</a>')}</div>`);
     return;
   }
   paint(`<div class="pg dc dcart">${backLink()}${failed(error, 'dcretry')}</div>`);
@@ -232,7 +296,7 @@ function navHtml(slug) {
   const t = topicOf(topicIdOf(slug));
   if (!t) return '<nav class="dcnav" aria-label="Articles"></nav>';
   const list = itemsOf(t);
-  return `<nav class="dcnav" aria-label="Articles" data-topic="${t.id}"><span class="dcimg" id="dcim"><img src="/assets/help/${t.id}.jpg" alt="" draggable="false"></span><h2 class="dct">${esc(t.title)}</h2><p class="dcbl">${esc(t.blurb)}</p><div class="dcarts">${list.map((x) => `<a class="dcai${x.slug === slug ? ' on' : ''}" href="/docs/${esc(x.slug)}" data-link ${x.slug === slug ? 'aria-current="page"' : ''}>${esc(x.title)}</a>`).join('')}</div></nav>`;
+  return `<nav class="dcnav" aria-label="Articles" data-topic="${t.id}"><span class="dcimg" id="dcim"><img src="/assets/help/${t.id}.jpg" alt="" draggable="false"></span><h2 class="dct">${esc(t.title)}</h2><p class="dcbl">${esc(t.blurb)}</p><div class="dcarts">${list.map((x) => `<a class="dcai${x.slug === slug ? ' on' : ''}" href="/help/${esc(x.slug)}" data-link ${x.slug === slug ? 'aria-current="page"' : ''}>${esc(x.title)}</a>`).join('')}</div></nav>`;
 }
 function sectionList(a, cls) {
   return `<ul class="${cls}">${a.sections.map((x) => `<li class="l${x.level}"><a href="#${esc(x.anchor)}" data-sec="${esc(x.anchor)}">${esc(x.title)}</a></li>`).join('')}</ul>`;
@@ -245,7 +309,7 @@ function helpRow(slug, updated) {
 /** A how-to article: summary, explained steps, tip, "if this does not work", one action, related articles. */
 function localHtml(a) {
   const rel = (a.rel || []).map((r) => LOCAL_BY_SLUG[r]).filter(Boolean);
-  const to = a.go && a.go[1] === 'docs:trust' ? `/docs/${itemsOf(topicOf('trust'))[0].slug}` : a.go && a.go[1];
+  const to = a.go && a.go[1] === 'docs:trust' ? `/help/${itemsOf(topicOf('trust'))[0].slug}` : a.go && a.go[1];
   const roles = a.go && a.go[2] ? a.go[2].split(',') : [];
   const go = to && (!roles.length || B.hasRole(...roles)) && !standalone() ? `<a class="btn primary dcgo" href="${esc(to)}" data-link>${esc(a.go[0])}</a>` : '';
   return `<h1>${esc(a.title)}</h1><p class="dcsum">${esc(a.sum)}</p>
@@ -253,7 +317,7 @@ function localHtml(a) {
   ${a.tip ? `<div class="dctip"><i>${ICON('bulb', 16)}</i><div><b>Tip</b><p>${esc(a.tip)}</p></div></div>` : ''}
   ${a.fix ? `<div class="dcfix"><h3>If this does not work</h3><p>${esc(a.fix)}</p></div>` : ''}
   ${go}
-  ${rel.length ? `<h3 class="dch3">Related</h3><div class="dcrel">${rel.map((x) => `<a class="dcrl" href="/docs/${esc(x.slug)}" data-link>${esc(x.title)}<span>${ICON('chevr', 14)}</span></a>`).join('')}</div>` : ''}
+  ${rel.length ? `<h3 class="dch3">Related</h3><div class="dcrel">${rel.map((x) => `<a class="dcrl" href="/help/${esc(x.slug)}" data-link>${esc(x.title)}<span>${ICON('chevr', 14)}</span></a>`).join('')}</div>` : ''}
   ${helpRow(a.slug, true)}`;
 }
 function drawLocal(a) {
@@ -268,7 +332,7 @@ function drawArticle(a) {
   place(a.slug, `<article class="dcdoc"><h1>${esc(a.title)}</h1><div class="dctags">${tags}</div>${has ? `<details class="dcsecm"><summary>Sections</summary>${sectionList(a, 'dctocl')}</details>` : ''}<div class="dcprose">${a.html}</div>${helpRow(a.slug, false)}</article>`, has ? `<aside class="dctoc" aria-label="On this page"><div class="dctoch">On this page</div>${sectionList(a, 'dctocl')}</aside>` : '');
   const prose = $('.dcprose');
   // Links between articles navigate in the app; external ones already open a new tab.
-  $$('a[href^="/docs"]', prose).forEach((link) => {
+  $('a[href^="/help"]', prose).forEach((link) => {
     link.onclick = (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return; e.preventDefault(); B.go(link.getAttribute('href')); };
   });
   $$('[data-sec]').forEach((link) => {
@@ -291,7 +355,7 @@ function place(slug, center, aside) {
     const toc = $('.dctoc'); if (toc) toc.remove();
     old.outerHTML = center;
     if (aside) $('.dclay').insertAdjacentHTML('beforeend', aside);
-    $$('.dcai', nav).forEach((l) => { const on = l.getAttribute('href') === `/docs/${slug}`; l.classList.toggle('on', on); if (on) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current'); });
+    $$('.dcai', nav).forEach((l) => { const on = l.getAttribute('href') === `/help/${slug}`; l.classList.toggle('on', on); if (on) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current'); });
     window.scrollTo(0, 0); $('#app').scrollTop = 0;
     if (!calm()) $('.dcdoc').animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' });
     return;

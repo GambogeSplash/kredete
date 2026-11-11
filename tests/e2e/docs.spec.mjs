@@ -11,7 +11,7 @@ test('the contents, from the sidebar', async ({ open, check }) => {
   if (mobile) await page.getByRole('button', { name: 'Open menu' }).click();
   // The icon rail on a desktop, the menu on a phone.
   await page.locator(mobile ? '#surfaces' : '#rail').getByRole('button', { name: 'Help center' }).click();
-  await expect(page).toHaveURL(/\/docs$/);
+  await expect(page).toHaveURL(/\/help$/);
   await expect(cards(page)).toHaveCount(6);
   await expect(cards(page).first()).toContainText('Getting started');
   const size = page.viewportSize() || { width: 1440, height: 900 };
@@ -21,7 +21,7 @@ test('the contents, from the sidebar', async ({ open, check }) => {
 
 test('the contents are the same topics for everyone, and the search finds articles but never the hidden Inbox one', async ({ open, check }) => {
   // The audience chips are gone: the contents list six topics, and the search reads what is inside the articles.
-  const page = await open('admin', '/docs');
+  const page = await open('admin', '/help');
   await expect(cards(page).locator('b')).toHaveText(['Getting started', 'Asking questions', 'Sources and connectors', 'Owners and conflicts', 'Admin', 'Privacy and security']);
   const rows = page.locator('#dcgrid .dcrow');
   await page.getByRole('searchbox', { name: 'Search the help center' }).fill('audit log');
@@ -34,11 +34,11 @@ test('the contents are the same topics for everyone, and the search finds articl
 });
 
 test('an article, its sections, and links between articles', async ({ open, check }) => {
-  const page = await open('employee', '/docs');
+  const page = await open('employee', '/help');
   // Labelling pages is listed in the Owners and conflicts topic: open the topic, then the article from its list.
   await cards(page).filter({ hasText: 'Owners and conflicts' }).click();
   await page.locator('.dcnav').getByRole('link', { name: 'Labelling pages' }).click();
-  await expect(page).toHaveURL(/\/docs\/labelling-pages$/);
+  await expect(page).toHaveURL(/\/help\/labelling-pages$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Labelling pages' })).toBeVisible();
   await expect(page.locator('.dcprose table')).toBeVisible();
   await expect(page).toHaveTitle('Labelling pages - Broth help center');
@@ -57,7 +57,7 @@ test('an article, its sections, and links between articles', async ({ open, chec
   await expect(page.locator('#restricted-pages')).toBeInViewport();
 
   await page.locator('.dcprose').getByRole('link', { name: 'Fixing label problems' }).click();
-  await expect(page).toHaveURL(/\/docs\/fixing-label-problems$/);
+  await expect(page).toHaveURL(/\/help\/fixing-label-problems$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Fixing label problems' })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: 'Labelling pages' })).toBeVisible();
@@ -66,9 +66,9 @@ test('an article, its sections, and links between articles', async ({ open, chec
 });
 
 test('an unknown section opens the article at the top, and an unknown article says so', async ({ open, check }) => {
-  const page = await open('employee', '/docs/setting-up-spaces#no-such-section');
+  const page = await open('employee', '/help/setting-up-spaces#no-such-section');
   await expect(page.getByRole('heading', { level: 1, name: 'Setting up spaces' })).toBeInViewport();
-  const missing = await open('employee', '/docs/no-such-article');
+  const missing = await open('employee', '/help/no-such-article');
   await expect(missing.getByText("This article doesn't exist")).toBeVisible();
   await check(missing, 'docs-missing');
   await missing.getByRole('link', { name: 'See all help articles' }).click();
@@ -77,7 +77,7 @@ test('an unknown section opens the article at the top, and an unknown article sa
 
 test('the docs say when they cannot be loaded, and try again', async ({ open, check }) => {
   let fail = true;
-  const page = await open('employee', '/docs', {
+  const page = await open('employee', '/help', {
     before: (p) => p.route('**/v1/docs', (route) => (fail ? route.fulfill({ status: 503, contentType: 'application/problem+json', body: JSON.stringify({ title: 'Service not ready', status: 503, code: 'not_ready' }) }) : route.fallback())),
   });
   await expect(page.getByRole('alert')).toContainText('Service not ready');
@@ -88,7 +88,7 @@ test('the docs say when they cannot be loaded, and try again', async ({ open, ch
 });
 
 test('signed out, the docs open on their own with a way back', async ({ open, check }) => {
-  const page = await open(null, '/docs');
+  const page = await open(null, '/help');
   await expect(page.getByRole('heading', { level: 1, name: 'Help center' })).toBeVisible();
   await expect(page.locator('#surfaces .surf')).toHaveCount(0);
   await check(page, 'docs-signed-out');
@@ -101,12 +101,12 @@ test('signed out, the docs open on their own with a way back', async ({ open, ch
 });
 
 test('every section a screen links to exists', async ({ open }) => {
-  const page = await open(null, '/docs');
+  const page = await open(null, '/help');
   const targets = await page.evaluate(() => Object.values(window.DOCS.links));
   expect(targets.length).toBeGreaterThan(0);
   for (const target of targets) {
     const [slug, anchor] = target.split('#');
-    await page.goto(`/docs/${slug}#${anchor}`);
+    await page.goto(`/help/${slug}#${anchor}`);
     await expect(page.locator(`.dcprose [id="${anchor}"]`), target).toBeInViewport();
   }
 });
@@ -121,7 +121,7 @@ test("a page's label problems link to what they mean", async ({ open }) => {
   });
   await page.locator('#libbody [data-open]').filter({ hasText: 'Cards FAQ' }).click();
   await page.locator('#drawer').getByRole('link', { name: 'What these mean' }).click();
-  await expect(page).toHaveURL(/\/docs\/labelling-pages#label-problems$/);
+  await expect(page).toHaveURL(/\/help\/labelling-pages#label-problems$/);
   await expect(page.locator('#drawer')).toHaveAttribute('aria-hidden', 'true');
   await expect(page.locator('#label-problems')).toBeInViewport();
 });
