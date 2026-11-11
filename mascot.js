@@ -50,7 +50,7 @@ const WM='assets/brand/broth-wordmark.svg';
 let wmD=null;
 const wmPath=()=>wmD?Promise.resolve(wmD):fetch(WM).then(r=>r.text()).then(t=>{ const m=/ d="([^"]+)"/.exec(t); wmD=m?m[1]:''; return wmD; });
 const NS='http://www.w3.org/2000/svg';
-const UNIT=118/963, BW=282, WMW=963, H=247;  /* px per unit, width of the B in units, wordmark width, height */
+const UNIT=100/963, BW=282, WMW=963, H=247;  /* px per unit, width of the B in units, wordmark width, height */
 const mk=(tag,attrs)=>{ const e=document.createElementNS(NS,tag); Object.entries(attrs||{}).forEach(([k,v])=>e.setAttribute(k,v)); return e; };
 function build(h){
   const svg=mk('svg',{class:'lmw','aria-hidden':'true',viewBox:'0 0 '+BW+' '+H}); svg.style.width=Math.round(BW*UNIT)+'px';
