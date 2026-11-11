@@ -576,3 +576,6 @@ code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:va
 @media (max-width:900px){.addoms{grid-template-columns:1fr}}
 
 .addom{height:auto;align-content:start}
+
+.addnew{display:grid;place-items:center;align-content:center;gap:6px;text-align:center;min-height:150px;border:1.5px dashed var(--line);background:transparent;color:var(--mute);cursor:pointer;font:inherit;transition:border-color var(--dur-fast),color var(--dur-fast),background var(--dur-fast)}.addnew b{color:var(--text);font-weight:500}.addnew small{font-size:var(--fs-xs)}.addnew:hover{border-color:var(--mute);background:var(--fill-1)}
+.addnote{margin:var(--s-2) 0 0}
