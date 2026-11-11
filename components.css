@@ -753,10 +753,9 @@ a.btn,a.btn:hover,a.btn:focus{text-decoration:none}
 
 .pm-who .pm-ch{margin-left:auto;flex:none;color:var(--mute);display:grid;place-items:center;transition:transform var(--dur-fast),color var(--dur-fast)}.pm-who:hover .pm-ch{color:var(--ink);transform:translateX(2px)}
 
-/* sign-in and first-run: the whole two-part frame floats like the app's shells, inset from the window with rounded corners */
+/* sign-in and first-run: the form sits on the page, and the picture side is its own floating frame, inset with rounded corners */
 @media (min-width:901px){
- body.noauth{background:var(--shell)}
- body.noauth .mainpanel{margin:8px!important;height:calc(100vh - 16px)!important;border:1px solid var(--line)!important;border-radius:var(--r-lg)!important;overflow:hidden;background:var(--surface)}
- body.noauth main#app{height:100%;overflow:auto}
- body.noauth .si{min-height:0;height:100%}
+ body.noauth .si{padding:8px;box-sizing:border-box;min-height:100vh;height:100vh;background:var(--surface)}
+ body.noauth .si-l{background:transparent}
+ body.noauth .si-r{border-radius:var(--r-lg);border:1px solid var(--line);overflow:hidden;min-height:0;height:100%;box-sizing:border-box}
 }
