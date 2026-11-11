@@ -38,7 +38,7 @@ const LOGOS = {
  ],
  "google-cloud-storage": [
   "0 0 24 24",
-  "<path fill=\"#4285f4\" d=\"M12 1.5l9 5.25v10.5L12 22.5 3 17.25V6.75z\"/><path fill=\"#669df6\" d=\"M12 1.5l9 5.25-9 5.25-9-5.25z\"/><path fill=\"#1a73e8\" d=\"M12 12l9-5.25v10.5L12 22.5z\"/><path fill=\"#fff\" d=\"M8.5 9.4h7v2.2h-7zM8.5 13h7v2.2h-7z\" opacity=\".95\"/>"
+  "<path fill=\"#4285f4\" d=\"M12 1.5l9 5.25v10.5L12 22.5 3 17.25V6.75z\"/><path fill=\"#669df6\" d=\"M12 1.5l9 5.25-9 5.25-9-5.25z\"/><path fill=\"#1a73e8\" d=\"M12 12l9-5.25v10.5L12 22.5z\"/><path fill=\"#fff\" d=\"M8.5 9.4h7v2.2h-7zM8.5 13h7v2.2h-7z\"/>"
  ]
 };
 const ALIASES = {

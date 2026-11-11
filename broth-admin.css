@@ -83,7 +83,7 @@ code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:va
 @media (max-width:720px){.dmcols{grid-template-columns:minmax(0,1fr) auto}.dmcols>:nth-child(n+3){display:none}}
 .fcount{display:inline-grid;place-items:center;min-width:16px;height:16px;margin-left:6px;padding:0 4px;border-radius:8px;background:var(--brand,#5e6ad2);color:#fff;font-style:normal;font-size:11px;line-height:1}
 .audf2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3)}.audf2 .audd{width:100%;box-sizing:border-box;min-width:0}
-.soonc{opacity:.78;min-height:0}.soonc:hover{transform:none}
+.soonc{min-height:0}
 
 /* add-a-source popup: a small catalogue, one row per source */
 .slist{display:grid;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
@@ -219,7 +219,6 @@ button.ds-card.add,button.ds-card.addom{font:inherit}
 /* ===== source cards and their popup ===== */
 .srccard{text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%;display:grid;gap:var(--s-3);align-content:start}
 .srccard:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
-.srccard.soonc{opacity:.78}.srccard.soonc:hover{opacity:1}
 .srccard .adsch{display:flex;align-items:center;gap:var(--s-3)}
 .srccard .adsch .tag{flex:none}
 .adsl .srclogo{display:block}
@@ -282,3 +281,4 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 .srccard{min-height:74px;align-content:center}
 .srccard .adsch>div{min-width:0}
 .srccard .adsch b,.srccard .adsch small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srccard{grid-template-columns:minmax(0,1fr)}
