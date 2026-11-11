@@ -17,7 +17,7 @@ Result: 102 rule rows, 0 unexplained differences after the fixes below. Rows ski
 - Avatar card is a circle under 901 px and a squircle above (prototype media rule).
 - Retry link in notices was underlined; now plain.
 - Empty and error states are framed (.ds-empty): no sources, empty chat, failed answer with Try again, nothing connected, no sources match, sources load error, empty chat list in the sidebar.
-- (i) hints added beside the chat title, the answer sources heading and the Sources tab heading (tooltips checked on hover).
+- (i) hints added earlier were removed at the user's request.
 
 ## Explained differences (real-app constraints)
 - First tab is Activity in the prototype and Answer in the real app (no activity feed in the API).

@@ -33,4 +33,4 @@ Status: done = present and matched in the real app with real data. browser-only 
 | Mobile: sheet for the panel, round avatar | mobile.css | yes | avatar made round under 901 px | done |
 | Ask motion (stagger, springs, focus scale) | life.js | yes | not edited | done |
 
-Rows 28 | done 22 | browser-only 3 | needs-backend 3. Empty states are framed and headings carry (i) hints.
+Rows 28 | done 22 | browser-only 3 | needs-backend 3. Empty states are framed; no (i) hints in Ask.

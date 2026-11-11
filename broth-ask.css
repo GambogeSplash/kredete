@@ -87,12 +87,7 @@ html[data-mode=dark] #app .umsg.editing{filter:none}
 .lh-feed-empty .ds-empty{margin:var(--s-4) 0 0;padding:var(--s-6)}
 .thempty{margin:0}
 
-/* (i) hints beside headings: the tooltip opens inward where the heading sits near an edge */
 .cxh{display:flex;align-items:center;gap:var(--s-2)}
-.cxside .hint:hover::after,.cxside .hint:focus::after{left:-6px;right:auto;top:24px;width:200px;z-index:5}
-.dchead .hint{margin-left:var(--s-1)}
-.dchead .hint:hover::after,.dchead .hint:focus::after{z-index:5}
-@media (max-width:900px){.dchead .hint{display:none}}
 
 /* attach and dictate in the composer: the prototype's rules */
 .dic{width:30px;height:30px;border:0;background:none;border-radius:var(--r-md);color:var(--mute);display:inline-flex;align-items:center;justify-content:center;flex:none}
