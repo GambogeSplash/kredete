@@ -186,6 +186,7 @@ const ROUTES = [
   { re: /^\/bookmarks$/, surface: 'bookmarks' },
   { re: /^\/inbox$/, surface: 'inbox' },
   { re: /^\/library(?:\/([a-z0-9-]+))?$/, surface: 'library', keys: ['domain'] },
+  { re: /^\/connectors$/, surface: 'connectors' },
   { re: /^\/governance$/, surface: 'governance' },
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
   { re: /^\/admin(?:\/(workspace|connectors|people|domains|audit))?$/, surface: 'admin', keys: ['tab'], allow: () => hasRole('admin', 'compliance') },
@@ -604,7 +605,7 @@ function newChat() {
 }
 
 /* ---------- breadcrumb and mobile title ---------- */
-const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], inbox: ['Workspace', 'Inbox'], library: ['Workspace', 'Library'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
+const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], inbox: ['Workspace', 'Inbox'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Connectors'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
   const label = S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
@@ -618,7 +619,7 @@ function setCrumb() {
 function mbTitle() {
   const t = $('#mbtitle');
   if (!t) return;
-  const names = { library: 'Library', governance: 'Governance', docs: 'Help center', account: 'Account', chats: 'Chats', bookmarks: 'Bookmarks', inbox: 'Inbox', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
+  const names = { library: 'Library', connectors: 'Connectors', governance: 'Governance', docs: 'Help center', account: 'Account', chats: 'Chats', bookmarks: 'Bookmarks', inbox: 'Inbox', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
   t.textContent = S.route.title || names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
 }
 

@@ -355,5 +355,34 @@ function showSource(container) {
   L.loaded = false;
   B.go('/library');
 }
+
+/* ---------- Connectors for everyone: which apps Broth reads, read only ---------- */
+const READ_APPS = [
+  { value: 'confluence', name: 'Confluence', logo: 'confluence', unit: 'pages' },
+  { value: 'gdrive', name: 'Google Drive', logo: 'gdrive', unit: 'files' },
+  { value: 'github_docs', name: 'Docs repositories', logo: 'github', unit: 'pages' },
+  { value: 'notion', name: 'Notion', logo: 'notion', unit: '', soon: true },
+  { value: 'gcs', name: 'Google Cloud Storage', logo: 'google-cloud-storage', unit: '', soon: true },
+  { value: 'slack', name: 'Slack', logo: 'slack', unit: '', soon: true },
+  { value: 'sharepoint', name: 'SharePoint', logo: 'sharepoint', unit: '', soon: true },
+];
+function connectorsPage() {
+  if (B.hasRole('admin')) { B.go('/admin/connectors'); return; }
+  const draw = () => {
+    const live = (S().facets && S().facets.systems) || [];
+    const card = (app) => {
+      const hit = live.find((x) => x.value === app.value);
+      const tag = hit ? '<span class="tag ok">Connected</span>' : app.soon ? '<span class="tag">Soon</span>' : '<span class="tag">Not connected</span>';
+      const line = hit ? `${hit.count} ${hit.count === 1 ? app.unit.replace(/s$/, '') : app.unit} you can open` : app.soon ? 'Coming soon.' : 'Admin only';
+      const act = hit ? `<div class="adscf"><button type="button" class="btn sm" data-lib="${app.value}">Open library</button></div>` : '';
+      return `<div class="ds-card adsc${app.soon ? ' soonc' : ''}"><div class="adsch"><span class="adsl">${B.srcIcon(app.logo, 28)}</span><div><b>${esc(app.name)}</b><small>${esc(line)}</small></div>${tag}</div>${act}</div>`;
+    };
+    $('#app').innerHTML = `<div class="pg"><h1>Connectors</h1><div class="ds-grid c3">${READ_APPS.map(card).join('')}</div></div>`;
+    $$('[data-lib]').forEach((b) => { b.onclick = () => { const L = state(); L.system = b.dataset.lib; L.loaded = false; B.go('/library'); }; });
+  };
+  draw();
+  if (!S().facets) loadFacets().then(() => { if (S().route.surface === 'connectors') draw(); });
+}
+window.SURFACES.connectors = connectorsPage;
 window.LIBRARY = { showLocation, showSource };
 })();

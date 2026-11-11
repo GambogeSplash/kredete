@@ -47,7 +47,7 @@ Method: crawled the prototype (every route, 10 surfaces, click-by-click effects,
 | 37 | Library: Filter chips by source, list and grid, folder open with back, search | library.js | library.js | identical | real filters come from facets |
 | 38 | Library: document drawer, Open in source, Details and lineage | library.js, app.js | document-drawer.js | identical | adds Share more widely |
 | 39 | Library: owners and last updated in folder rows | library.js | library.js | needs-backend | not in the facets read |
-| 40 | Connectors page for everyone (cards Connected, Not connected, Admin only, Soon) | library.js | admin Sources page only | different | non-admins have no page; see port P1 |
+| 40 | Connectors page for everyone (cards Connected, Not connected, Admin only, Soon) | library.js | library.js connectorsPage, route /connectors | PORTED | read-only cards from /v1/facets counts, Open library sets the source filter; admins are sent to /admin/connectors; palette lists it for non-admins; checked at 1440 dark with a non-admin stub |
 | 41 | Connect modal with simulated OAuth consent | library.js:80-110 | admin source setup | n/a | the real flow authorises at the provider |
 | 42 | Help center: search, six topic cards, article list, support banner | docs.js | docs.js | identical | articles come from GET /v1/docs |
 | 43 | Help center: 31 hardcoded articles, Was this helpful, status line | docs.js | none | needs-backend | content and feedback endpoints |
@@ -63,3 +63,21 @@ Method: crawled the prototype (every route, 10 surfaces, click-by-click effects,
 | 53 | Custom select, never native | select.js | select.js | identical | |
 | 54 | Focus return on popovers and overlays | focus.js | focus.js | identical | |
 | 55 | Reduced motion respected | motion.js | motion.js | identical | |
+
+## Totals
+
+55 rows checked (plus the sibling tables' 330 rows, spot-verified only where the crawl could test them).
+identical 38 (one more, row 26, exists only in real), different 3 (rows 14, 17, 40 before port), PORTED 1 (row 40), MISSING 1 (row 10), needs-backend 12 (rows 16, 21, 29, 34 status column, 35 other kinds, 39, 43, 45, 46 tags, 48 pages, 50 charts, plus attach sending in 17).
+
+## Left and why
+- Row 10, palette Library document group on open: the real palette searches documents through GET /v1/search once you type; showing documents before typing needs a recents endpoint.
+- Rows listed needs-backend: the API has no endpoint or field; nothing is faked.
+
+## For the motion agent
+- Conflict and inbox row exit, Connectors card entrance: no entrance stagger on the new /connectors page (uses the shared page entrance only).
+
+## Not verified
+- Pixel or computed-style comparison of every screen against the prototype (the sibling branches' sweeps did this for their screens; not re-measured here).
+- Light theme and 390 px of the new Connectors page were screenshotted once, not measured.
+- Sidebar and conversation menu behaviours beyond the click crawl (a scripted behaviour run stalled; Ctrl+\, "/", F2 and title click were confirmed).
+- Playwright e2e suite (needs the full stack).
