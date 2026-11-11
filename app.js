@@ -150,6 +150,10 @@ function openDrawer(html, wide) {
   const d = $('#drawer');
   d.innerHTML = html;
   d.classList.toggle('wide', !!wide);
+  // In the Library a document opens as its own shell beside the page (broth-library.css); elsewhere it stays a sheet.
+  const shell = !wide && S.route && S.route.surface === 'library';
+  d.classList.toggle('shell', shell);
+  document.body.classList.toggle('dsopen', shell);
   d.classList.add('on');
   $('#scrim').classList.add('on');
   d.setAttribute('aria-hidden', 'false');
@@ -159,6 +163,9 @@ function openDrawer(html, wide) {
 function closeDrawer() {
   $('#drawer').classList.remove('on', 'wide');
   $('#scrim').classList.remove('on');
+  document.body.classList.remove('dsopen');
+  // The shell keeps its class while it slides out.
+  setTimeout(() => { if (!$('#drawer').classList.contains('on')) $('#drawer').classList.remove('shell'); }, 320);
 }
 function openModal(html) {
   const m = $('#modal');
