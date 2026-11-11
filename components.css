@@ -216,32 +216,37 @@ svg[data-i=send],.dsend:hover svg,.exs:hover svg,.exi button:hover svg{animation
 .actions a.link{margin-left:12px;text-decoration:none;gap:4px}
 
 /* ---- Broth: mascot, wordmark, icon rail, agent card ---- */
-.bm{width:92px;height:96px;margin:0 auto var(--s-4);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-.bm-svg{display:block;width:100%;height:100%;overflow:visible}
-@media (max-width:900px){.bm{width:76px;height:79px}}
+.bm{width:auto;height:auto;margin:0 auto var(--s-4);display:grid;place-items:center;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.bm-img{display:block;height:150px;width:auto;user-select:none;-webkit-user-drag:none}
+@media (max-width:900px){.bm-img{height:116px}}
 .si-wm{display:block;width:104px;height:26px;background:currentColor;-webkit-mask:url(assets/brand/broth-wordmark.svg) left center/contain no-repeat;mask:url(assets/brand/broth-wordmark.svg) left center/contain no-repeat}
 .rail{display:none}
 @media (min-width:901px){
- body:not(.noauth) .rail{display:flex;position:fixed;left:0;top:0;bottom:0;width:64px;flex-direction:column;align-items:center;justify-content:center;padding:var(--s-4) 0;background:var(--shell);z-index:6}
- .rl-grp{display:flex;flex-direction:column;align-items:center;gap:var(--s-3)}
- .rl{width:48px;height:48px;border:0;border-radius:var(--r-full);background:none;color:var(--mute);display:grid;place-items:center;cursor:pointer;transition:background var(--dur-fast),color var(--dur-fast),transform var(--dur-fast)}
+ body:not(.noauth){background:var(--shell)}
+ body:not(.noauth) .rail{display:grid;grid-template-rows:auto 1fr auto;justify-items:center;position:fixed;left:0;top:0;bottom:0;width:64px;padding:var(--s-4) 0;background:transparent;z-index:6}
+ .rl-grp{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;align-self:center}
+ .rl{width:44px;height:44px;border:0;border-radius:var(--r-full);background:none;color:var(--mute);display:grid;place-items:center;cursor:pointer;transition:background var(--dur-fast),color var(--dur-fast),transform var(--dur-fast)}
  .rl:hover{background:var(--fill-1);color:var(--ink)}
  .rl:active{transform:scale(.92)}
  .rl[aria-current=page]{background:var(--fill-2);color:var(--ink)}
  .rl:focus-visible{outline:0;box-shadow:0 0 0 3px #d9dcf7}
  .rl.finish{color:var(--brand-strong)}
- .rl-menu{position:absolute;left:50%;bottom:var(--s-4);transform:translateX(-50%)}
- .rl-menu:active{transform:translateX(-50%) scale(.92)}
- body:not(.noauth) .top{left:64px}
+ .rl-menu{align-self:start}
+ .rl-acct .top-right{display:flex;flex-direction:column;align-items:center;gap:var(--s-2);margin:0;padding:0}
+ .rl-acct .acct{width:44px;height:44px;padding:0;border-radius:var(--r-full);display:grid;place-items:center;background:none;border:0}
+ .rl-acct .acct .acct-t,.rl-acct .acct .acct-c{display:none}
+ .rl-acct .thm{width:36px;height:36px}
+ /* the chats column: its own floating shell with the search on top */
+ body:not(.noauth) .top{left:64px;top:8px;bottom:8px;width:236px;height:auto;padding:var(--s-3) var(--s-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:0 1px 2px rgba(0,0,0,.04)}
  body:not(.noauth) .top #surfaces .snav{display:none!important}
- body:not(.noauth) .mainpanel{margin-left:calc(244px + 64px)}
+ body:not(.noauth) .mainpanel{margin:8px 8px 8px calc(64px + 236px + 16px)}
  body:not(.noauth).sbc .mainpanel{margin-left:calc(64px + var(--s-2))}
- body:not(.noauth).sbc .top{transform:translateX(-100%)}
+ body:not(.noauth).sbc .top{transform:translateX(calc(-100% - 64px))}
 }
 /* the agent card at the top of the side panel */
 .cxpro{display:flex;flex-direction:column;align-items:center;gap:var(--s-1);padding:var(--s-6) 0 var(--s-4)}
-.cxav{width:76px;height:76px;border-radius:50%;background:#eef0ff;display:grid;place-items:center;overflow:hidden;margin-bottom:var(--s-2)}
-.cxav svg{width:60px;height:auto;margin-top:8px}
+.cxav{width:100px;height:100px;border-radius:50%;background:#eef0ff;display:grid;place-items:center;overflow:hidden;margin-bottom:var(--s-2)}
+.cxav img{width:82px;height:auto;margin-top:10px}
 .cxname{font-size:var(--fs-xl);font-weight:600;letter-spacing:-.01em}
 .cxst{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-size:var(--fs-md)}
 .cxst i{width:8px;height:8px;border-radius:50%;background:var(--mute)}
@@ -265,3 +270,11 @@ svg[data-i=send],.dsend:hover svg,.exs:hover svg,.exi button:hover svg{animation
 }
 @media (max-width:900px){.sbsearch{display:none}}
 html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
+.bm img,.cxav img{filter:none!important}
+
+/* critique pass */
+@media (min-width:901px){
+ .sgl{background:transparent!important;padding-left:var(--s-3)}
+ .rl-acct .acct .avimg,.rl-acct .acct .lav,.rl-acct .acct>span:first-child{width:36px!important;height:36px!important;border-radius:50%!important}
+ .cx .lhome>.dchead{display:none}
+}

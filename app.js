@@ -160,7 +160,7 @@ function wireComposer(ta){ const att=$('#cxatt'), mic=$('#cxmic'), fi=$('#cxfile
   drawFiles(); }
 function renderAsk(){
   const fid=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.nxt')?document.activeElement.id:'';
-  const first = !S.thread.length; const off=S.ask.off||(S.ask.off={});
+  const first = !S.thread.length; if(first) S.ask.shut=false; const off=S.ask.off||(S.ask.off={});
   const n=SRCDOCS.filter(id=>!off[id]&&canSee(D[id])).length;
   const nx0=window.AUTH&&S.user&&!S.flow?window.AUTH.nextStep():null;
   const chips = [...new Set([...(S.user&&window.AUTH?[window.AUTH.example(S.user.team)]:[]),'What is the card replacement fee?','What is the daily transfer limit?','How do I request access to a source?','Show me the product tour'])].filter(c=>!(nx0&&nx0.l===c)).slice(0,4);
@@ -185,7 +185,7 @@ function renderAsk(){
      <div class="cxcomp">${composer(false,n,'Ask a follow-up')}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div>
    </section>${side}
   </div>`;
-  if(first) renderPanel();
+  if(first){ S.ask.shut=false; renderPanel(); }
   const nx=window.AUTH&&S.user?window.AUTH.nextStep():null;
   const go=$('#nxgo'); if(go&&nx) go.onclick=()=>{ window.AUTH.nextDone(nx.k); if(nx.pre) nx.pre(); if(nx.k==='ask'){ renderAsk(); ask(nx.l); } else if(nx.k==='report'){ report(); } else if(nx.stay){ nx.run(); renderAsk(); } else if(nx.ask){ renderAsk(); ask(nx.ask); } else { nx.run(); save(); route(); } };
   if(window.Motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches){ const nc=$('.nxt'); if(nc){ Motion.animate(nc,{opacity:[0,1],y:[-10,0],scale:[.98,1]},{type:'spring',stiffness:420,damping:28}); } const nb=$('#nxgo'); if(nb){ nb.addEventListener('pointerdown',()=>Motion.animate(nb,{scale:.94},{duration:.1})); ['pointerup','pointerleave'].forEach(e=>nb.addEventListener(e,()=>Motion.animate(nb,{scale:1},{type:'spring',stiffness:600,damping:18}))); } } const al=$('#nxall'); if(al) al.onclick=()=>{ S.surface='flows'; save(); route(); }; const sk=$('#nxskip'); if(sk&&nx) sk.onclick=()=>{ window.AUTH.nextDone(nx.k); renderAsk(); };
@@ -200,7 +200,7 @@ function renderAsk(){
     const th = $('#thread'); S.thread.forEach((entry,i)=> th.appendChild(turnEl(entry,i,false)));
     { const rn=()=>{ const t=$('#cxtitle'); if(!t||!S.thread[0]) return; editTitle(t,S.thread[0].cid,()=>{ renderAsk(); renderSurfaces(); }); }; $('#cxtitle').onclick=rn; $('#cxtitle').onkeydown=e=>{ if(e.key==='Enter'||e.key==='F2'){ e.preventDefault(); rn(); } }; $('#cxmore').onclick=e=>{ e.stopPropagation(); chatMenu($('#cxmore'),S.thread[0].q,{rename:rn,cur:true}); }; }
     if($('#cxnew')) $('#cxnew').onclick=()=>{  S.thread=[]; S.ask.pt='answer'; S.ask.open=false; S.ask.stack=null; S.ask.off={}; save(); route(); };
-    $('#cxtog').onclick=()=>{ const on=!panelOn(); setPanelOpen(on); save(); if(on) renderPanel(); };
+    $('#cxtog').onclick=()=>{ const on=!panelOn(); setPanelOpen(on); S.ask.shut=!on; save(); if(on) renderPanel(); };
     renderPanel(); const ch=$('#chat'); if(ch) ch.scrollTop=ch.scrollHeight;
   }
   if(fid){ const t=$('#'+fid)||$('#askin'); if(t) t.focus({preventScroll:true}); }
@@ -208,7 +208,7 @@ function renderAsk(){
 function doNext(){ const nx=window.AUTH&&S.user?window.AUTH.nextStep():null; if(!nx) return; window.AUTH.nextDone(nx.k); const toAsk=()=>{ S.surface='app'; S.mode='ask'; save(); route(); };
   if(nx.k==='ask'){ toAsk(); ask(nx.l); } else if(nx.k==='report'){ toAsk(); report(); } else if(nx.stay){ nx.run(); toAsk(); } else if(nx.ask){ toAsk(); ask(nx.ask); } else { if(nx.pre) nx.pre(); nx.run(); save(); route(); } }
 function panelOn(){ return !!S.ask.open||(innerWidth>=1200&&!S.ask.shut); }
-function setPanelOpen(on){ const c=$('.cx'); if(c) c.classList.toggle('closed',!on); S.ask.open=!!on; S.ask.shut=!on; }
+function setPanelOpen(on){ const c=$('.cx'); if(c) c.classList.toggle('closed',!on); S.ask.open=!!on; if(on) S.ask.shut=false; }
 function pickSources(){ const d=$('#drawer'); const draw=()=>{ const off=S.ask.off||(S.ask.off={}); d.innerHTML=`<button class="btn sm" id="dclose">Close</button><h3>Sources</h3><p class="sub" style="margin:0 0 12px">${SRCDOCS.filter(id=>!off[id]&&canSee(D[id])).length} of ${VIS().length} used for your next question</p><div class="glist">${srcRows('')}</div>`; $('#dclose').onclick=closeDrawer; d.querySelectorAll('[data-sd]').forEach(c=>c.onchange=()=>{ S.ask.off[c.dataset.sd]=!c.checked; save(); const k=SRCDOCS.filter(id=>!S.ask.off[id]&&canSee(D[id])).length; d.querySelector('.sub').textContent=k+' of '+VIS().length+' used for your next question'; const cx=$('#cxsrc'); if(cx) cx.innerHTML=ICON('stack',14)+' '+(S.ask.stack?esc(S.ask.stack)+' · ':'')+k+' sources'; }); }; draw(); d.classList.add('on'); $('#scrim').classList.add('on'); d.setAttribute('aria-hidden','false'); }
 function fileById(fid){ const all=[...(S.ask.files||[]),...S.thread.flatMap(e=>e.files||[]),...Object.values(S.saved||{}).flatMap(t=>t.flatMap(e=>e.files||[]))]; return all.find(x=>x.fid===fid); }
 function previewBody(f){ const b=(window._fb||{})[f.fid]; const url=(b&&b.url)||f.data||''; const ext=(f.name.split('.').pop()||'').toLowerCase(); const ty=(b&&b.type)||f.type||'';
@@ -222,7 +222,7 @@ function fmtSize(n){ return n>=1048576?(n/1048576).toFixed(1)+' MB':n>=1024?Math
 function openPreview(fid){ const f=fileById(fid); if(!f) return; const d=$('#drawer'); d.classList.add('wide'); d.innerHTML=`<div class="sv"><div class="sv-top"><span class="sv-sys">${ICON('clip',16)}<b class="pvn">${esc(f.name)}</b><small>${fmtSize(f.size||0)}</small></span><button class="xbtn2" id="dclose" type="button" aria-label="Close">${ICON('x',16)}</button></div><div class="sv-body pvbody">${previewBody(f)}</div></div>`; $('#dclose').onclick=closeDrawer; d.classList.add('on'); $('#scrim').classList.add('on'); d.setAttribute('aria-hidden','false'); }
 document.addEventListener('click',e=>{ const b=e.target.closest('[data-pf]'); if(b&&b.dataset.pf){ e.preventDefault(); openPreview(b.dataset.pf); return; } const l=e.target.closest('[data-pfl]'); if(l){ e.preventDefault(); openSource(l.dataset.pfl); } });
 function renderPanel(){ const p=$('#rsrc'); if(!p) return;
-  { const c=$('.cx'); if(c) c.classList.remove('wide'); } const pt=S.ask.pt||'answer'; const off=S.ask.off||(S.ask.off={});
+  { const c=$('.cx'); if(c) c.classList.remove('wide'); } const pt=(!S.thread.length&&(!S.ask.pt||S.ask.pt==='answer'))?'today':(S.ask.pt||'answer'); const off=S.ask.off||(S.ask.off={});
   const last=S.thread[S.thread.length-1]; const a=last&&last.a; const used=a&&(a.sources||(a.a?[a.a,a.b]:[]));
   const quote=d=>d.text((d.id==='cards_faq'||d.id==='fee_schedule'||d.id==='public_fee')?d.value:null);
   const row=(d,i,tagHtml,best)=>`<div class="cxs ${best?'best':''}" data-rs="${d.id}" tabindex="0" role="button"><div class="cxs-h">${SRCICON(d.system,20)}<b>${esc(d.title)}</b>${i?`<span class="cite">${i}</span>`:''}</div><div class="cxs-q">${quote(d)}</div><div class="cxs-f">${tagHtml||''}<span>${PERSON(d.owner,16)} · ${d.verified}</span><span class="cxs-go">${ICON('chevr',14)}</span></div></div>`;
@@ -244,7 +244,7 @@ function renderPanel(){ const p=$('#rsrc'); if(!p) return;
   const conn=appsOn().length>0;
   const tabs=[['answer','rows','Answer'],['sources','library','Sources'],['today','check','Today']];
   p.innerHTML=`<div class="cxpro"><div class="cxav" id="cxav"></div><b class="cxname">Broth</b><span class="cxst ${conn?'on':''}"><i></i>${conn?'Connected':'No sources connected'}</span></div><div class="cxtabs">${tabs.map(([k,ic,l])=>`<button class="ltab ic ${pt===k?'on':''}" data-pt="${k}" aria-label="${l}" title="${l}">${ICON(ic,18)}</button>`).join('')}<span class="lsp"></span><button class="lib" id="cxclose" aria-label="Close sources">${ICON('x',16)}</button></div><div class="cxbody">${body}</div>`;
-  { const av=$('#cxav'); if(av&&window.BROTH_MASCOT) av.innerHTML=window.BROTH_MASCOT.svg('p'+Date.now()); }
+  { const av=$('#cxav'); if(av&&window.BROTH_MASCOT) av.innerHTML=window.BROTH_MASCOT.svg(); }
   p.querySelectorAll('[data-pt]').forEach(b=>b.onclick=()=>{ S.ask.pt=b.dataset.pt; save(); renderPanel(); });
   (()=>{ const tabs=p.querySelector('.cxtabs'); const on=tabs.querySelector('.ltab.on'); if(!on) return; const pill=document.createElement('span'); pill.className='cxpill'; tabs.prepend(pill);
     const tr=tabs.getBoundingClientRect(), r=on.getBoundingClientRect(); const l=r.left-tr.left, w=r.width; pill.style.cssText='left:'+l+'px;width:'+w+'px;height:'+r.height+'px;top:'+(r.top-tr.top)+'px';
@@ -254,7 +254,7 @@ function renderPanel(){ const p=$('#rsrc'); if(!p) return;
       if(body&&!calm) body.animate([{opacity:0,transform:'translateX('+(dir*14)+'px)'},{opacity:1,transform:'none'}],{duration:240,easing:'cubic-bezier(.2,.8,.2,1)'});
       else if(body) body.animate([{opacity:0},{opacity:1}],{duration:160}); } })();
   p.querySelectorAll('[data-rs]').forEach(c=>{ c.onclick=()=>openSource(c.dataset.rs); c.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openSource(c.dataset.rs); } }; });
-  $('#cxclose',p).onclick=()=>{ setPanelOpen(false); save(); };
+  $('#cxclose',p).onclick=()=>{ setPanelOpen(false); S.ask.shut=true; save(); };
   const wireSrc=()=>p.querySelectorAll('[data-sd]').forEach(c=>c.onchange=()=>{ S.ask.off[c.dataset.sd]=!c.checked; save(); const k=SRCDOCS.filter(id=>!S.ask.off[id]&&canSee(D[id])).length; const cx=$('#cxsrc'); if(cx) cx.innerHTML=ICON('stack',14)+' '+k+' sources'; const g=p.querySelector('.gall span'); if(g) g.textContent=k+' of '+VIS().length+' selected'; });
   wireSrc();
   const sq=$('#srcq',p); if(sq) sq.oninput=e=>{ $('#srclist').innerHTML=srcRows(e.target.value); wireSrc(); };
