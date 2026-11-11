@@ -759,3 +759,18 @@ a.btn,a.btn:hover,a.btn:focus{text-decoration:none}
  body.noauth .si-l{background:transparent}
  body.noauth .si-r{border-radius:var(--r-lg);border:1px solid var(--line);overflow:hidden;min-height:0;height:100%;box-sizing:border-box}
 }
+
+/* the Broth crew: small companions perched on, climbing over and peeking out from behind the dashboard */
+.pvw.pvfl{position:relative}.pvsh{position:relative;z-index:1}.pvrail{z-index:1}
+.pvcr{position:absolute;z-index:0;pointer-events:none;display:block;--hue:0deg;--r:0deg;transform:rotate(var(--r));animation:pvbob 3.6s ease-in-out infinite,pvin .7s cubic-bezier(.2,.9,.25,1.2) backwards}
+.pvcr img{display:block;width:100%;height:auto;filter:hue-rotate(var(--hue));-webkit-user-drag:none}
+html[data-mode=dark] .pvcr img{filter:invert(1) hue-rotate(calc(180deg + var(--hue)))}
+.pvcr.c1{z-index:2;left:214px;top:-58px;width:44px;--r:-6deg;animation-delay:0s,.35s}
+.pvcr.c2{right:26px;top:-36px;width:62px;--r:9deg;--hue:115deg;animation-delay:.6s,.5s}
+.pvcr.c3{right:-18px;top:92px;width:60px;--r:-78deg;--hue:-55deg;animation-delay:1.1s,.65s}
+.pvcr.c4{right:120px;bottom:-34px;width:56px;--r:172deg;--hue:60deg;animation-delay:.3s,.8s}
+.pvcr.c5{z-index:2;left:64px;top:-42px;width:32px;--r:7deg;--hue:80deg;animation-delay:1.4s,.95s}
+@keyframes pvbob{0%,100%{transform:translateY(0) rotate(var(--r))}50%{transform:translateY(-4px) rotate(var(--r))}}
+@keyframes pvin{from{opacity:0;transform:translateY(14px) scale(.8) rotate(var(--r))}}
+@media (prefers-reduced-motion:reduce){.pvcr{animation:none}}
+@media (max-width:900px){.pvcr{display:none}}
