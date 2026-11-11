@@ -1,0 +1,66 @@
+/* broth-ask.css: the Ask home and conversation in the Broth look.
+   The mark and greeting, the avatar that opens the sources panel, example cards, and the
+   rename underline. Entrances use CSS only (life.js leaves .lh-sug alone) so nothing is faded twice. */
+
+/* the home fills the main column; the sources panel is a sibling that starts closed */
+.cx>.cxmain>.lhome{flex:1}
+@media (min-width:901px){.cx>.cxmain>.lhome{min-height:0}}
+@media (max-width:900px){.lhome .dform{border-radius:18px}}
+.cx .lhome>.dchead{display:none}
+.lhome{position:relative}
+
+/* the wordmark above the greeting: a B first, then the name writes itself (wordmark.js) */
+.lh-in .lm{display:grid;place-items:center;align-content:normal;margin:0 auto var(--s-3);min-height:0;opacity:.95}
+.lh-in .lm svg.lmw{color:var(--brand);overflow:visible}
+
+/* the Broth avatar at the top right: opens the sources panel while it is closed */
+.hometog{position:absolute;top:var(--s-3);right:var(--s-3);z-index:3;width:40px;height:40px;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);display:grid;place-items:center;cursor:pointer;transition:background var(--dur-fast),border-color var(--dur-fast),transform var(--dur-fast)}
+.hometog:hover{background:var(--fill-1,var(--wash));border-color:var(--line-strong,var(--line))}
+.hometog:active{transform:scale(.96)}
+.hometog:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.hav{position:relative;width:26px;height:26px;display:block}
+.hav img{width:100%;height:100%;object-fit:contain;display:block}
+.hdot{position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:50%;background:var(--green,#2f9e55);box-shadow:0 0 0 2px var(--surface)}
+.cx:not(.closed) .hometog{display:none}
+
+/* the Broth radius scale on the Ask screens: 8 tags, 12 buttons and fields, 18 cards, 24 composer */
+#app.cxapp{--r-sm:8px;--r-md:12px;--r-lg:18px;--r-xl:24px;--r-2xl:28px}
+.lhome .dform{border-radius:28px}
+#app.cxapp .dsend{background:linear-gradient(180deg,#6b77dd,#5662cb)}
+#app.cxapp .dsend:hover{background:linear-gradient(180deg,#7580e3,var(--brand))}
+
+/* the panel on the home view: Broth's card, then the sources list */
+.cxside{position:relative}
+.cxclose{position:absolute;top:var(--s-3);right:var(--s-3);z-index:2;width:32px;height:32px;display:grid;place-items:center;padding:0;border-radius:12px}
+.cxside .cxclose{width:32px!important;min-width:0!important;height:32px!important;left:auto!important;right:var(--s-3)!important}
+.cxpro{display:flex;flex-direction:column;align-items:center;gap:var(--s-1);padding:var(--s-6) 0 var(--s-4)}
+.cxav{width:100px;height:100px;border-radius:32%;corner-shape:squircle;background:#eef0ff;display:grid;place-items:center;overflow:hidden;margin-bottom:var(--s-2)}
+.cxav img{width:82px;height:auto;margin-top:10px}
+html[data-mode=dark] .cxav{filter:invert(1) hue-rotate(180deg)}
+.cxav img{filter:none!important}
+.cxname{font-size:var(--fs-xl);font-weight:600;letter-spacing:-.01em}
+.cxst{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-size:var(--fs-md)}
+.cxst i{width:8px;height:8px;border-radius:50%;background:var(--mute)}
+.cxst.on i{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+
+/* example question cards: ask.js enters them (the same motion as life.js rows), so no CSS entrance here */
+.lh-in .lh-sug{animation:none}
+
+.lh-sug:focus-visible{outline:2px solid var(--brand);outline-offset:2px;box-shadow:none}
+
+/* renaming a chat: a thin line draws under the new title, then fades */
+.dtitle{position:relative}
+.dtitle.drawn::after{content:"";position:absolute;left:var(--s-2);right:var(--s-2);bottom:1px;height:1px;background:var(--brand);transform-origin:left center;animation:ttdraw 1.2s var(--ease-out) forwards}
+@keyframes ttdraw{0%{transform:scaleX(0);opacity:1}50%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.dtitle.drawn::after{animation:none;opacity:0}}
+
+@media (max-width:900px){.lhome .dform{border-radius:18px}}
+
+/* conversation: a sent message is our purple, dimmed and translucent, with a soft stroke */
+#app .umsg{background:rgba(94,106,210,.58)!important;border:1px solid rgba(150,160,245,.5);color:#fff!important;box-shadow:0 8px 22px -14px rgba(94,106,210,.7)}
+#app .umsg em{display:block;margin-top:2px;font-style:normal;font-size:var(--fs-xs,12px);color:rgba(255,255,255,.72)!important}
+#app .umsg.editing{border-color:var(--line)}
+.cxcomp .dform{border-radius:28px}
+@media (max-width:900px){.cxcomp .dform{border-radius:22px}}
+html[data-mode=dark] #app .umsg{filter:invert(1) hue-rotate(180deg)}
+html[data-mode=dark] #app .umsg.editing{filter:none}
