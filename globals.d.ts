@@ -18,6 +18,7 @@ declare global {
   var SURFACES: Record<string, any>;
   var AUTH: any;
   var ASK: any;
+  var BROTH_RAIL: (() => void) | undefined;
   var SETUP: any;
   /** The Library (library.js). */
   var LIBRARY: any;

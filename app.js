@@ -519,11 +519,14 @@ function renderSurfaces() {
   h += navItem('data-go="/docs"', 'book', 'Docs', r.surface === 'docs');
   if (setupPending()) h += navItem('data-go="/setup"', 'check', 'Finish setup', r.surface === 'setup', '<span class="sdot" aria-hidden="true"></span>', 'finish');
   $('#surfaces').innerHTML = `<div class="snav">${h}</div><div class="srec" id="srec" role="list" aria-label="Chats"></div>`;
+  // The chats shell belongs to the chat pages; the icon rail (rail.js) stands in for the places list.
+  document.body.classList.toggle('nochats', r.surface !== 'ask' && r.surface !== 'chats');
   $$('#surfaces [data-go]').forEach((b) => { b.onclick = () => { go(b.dataset.go); window.scrollTo(0, 0); }; });
   $$('#surfaces [data-home]').forEach((b) => { b.onclick = newChat; });
   $$('#surfaces [data-search]').forEach((b) => { b.onclick = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true })); });
   renderChatList();
   const rec = $('#srec');
+  if (window.BROTH_RAIL) window.BROTH_RAIL();
   rec.onscroll = () => { if (rec.scrollTop + rec.clientHeight > rec.scrollHeight - 120) loadChats(false); };
 }
 function chatGroup(c) {

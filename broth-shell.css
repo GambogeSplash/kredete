@@ -1,0 +1,46 @@
+/* Broth shell: the floating icon rail, the chats shell and the main shell (ported from the Broth prototype).
+   Desktop only. Phones keep the drawer and top bar from mobile.css. */
+.rail{display:none}
+.rltip{position:fixed;z-index:200;display:flex;align-items:center;gap:var(--s-2);transform:translate(-4px,-50%);opacity:0;pointer-events:none;white-space:nowrap;padding:6px 10px;border-radius:var(--r-md);background:var(--ink);color:var(--surface);font:500 12px/1.2 var(--font);box-shadow:0 6px 18px rgba(0,0,0,.25);transition:opacity .12s ease,transform .12s ease}
+.rltip.on{opacity:1;transform:translate(0,-50%)}
+.rltip kbd{font:inherit;opacity:.65}
+@media (max-width:900px){.rltip,.sbsearch{display:none}}
+@media (min-width:901px){
+ body:not(.noauth) .rail{display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:58px;justify-items:center;position:fixed;left:0;top:0;bottom:0;width:58px;padding:9px 0 var(--s-4);background:transparent;z-index:6}
+ .rl-grp{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;align-self:center}
+ .rl{position:relative;width:42px;height:42px;padding:0;border:0;border-radius:var(--r-squircle);corner-shape:squircle;background:none;color:var(--mute);display:grid;place-items:center;cursor:pointer;transition:background var(--dur-fast),color var(--dur-fast),transform var(--dur-fast)}
+ .rl:hover:not([aria-current=page]){background:var(--fill-1);color:var(--ink)}
+ .rl:active{transform:scale(.92)}
+ .rl[aria-current=page]{background:#ececef;color:var(--ink)}
+ html[data-mode=dark] .rl[aria-current=page]{background:#e6e6e6}
+ .rl:focus-visible{outline:0;box-shadow:0 0 0 3px var(--brand-line)}
+ .rl.finish{color:var(--brand-strong)}
+ .rl-menu{align-self:start}
+ .rl-dot{position:absolute;top:1px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--brand);color:#fff;font:600 10px/16px var(--font);text-align:center;font-style:normal;box-shadow:0 0 0 2px var(--shell)}
+ /* the account sits at the foot of the rail */
+ .rl-acct{width:58px;display:flex;justify-content:center}
+ .rl-acct .top-right{display:flex;flex-direction:column;align-items:center;gap:var(--s-2);margin:0;padding:0}
+ .rl-acct .acct{display:flex;justify-content:center;align-items:center;gap:0;width:42px;min-width:0;height:42px;padding:0;margin:0;border:0;background:none;border-radius:var(--r-squircle);corner-shape:squircle}
+ .rl-acct .acct .acct-t,.rl-acct .acct .acct-c{display:none}
+ .rl-acct .acct .avimg,.rl-acct .acct .lav,.rl-acct .acct>span:first-child{width:36px;height:36px;border-radius:32%;corner-shape:squircle}
+ .rl-acct .thm{display:none}
+ /* the chats shell: a lighter shade, joined to the main shell with no gap */
+ body:not(.noauth) .top{left:58px;top:8px;bottom:8px;width:236px;height:auto;padding:0 var(--s-2) var(--s-3);background:#f6f6f7;border:1px solid var(--line);border-right:0;border-radius:var(--r-lg) 0 0 var(--r-lg);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+ html[data-mode=dark] body:not(.noauth) .top{background:#eeeeee}
+ body:not(.noauth) .top .brand,body:not(.noauth) .top #surfaces .snav{display:none}
+ body:not(.noauth) .mainpanel{margin:8px 8px 8px calc(58px + 236px);border-radius:0 var(--r-lg) var(--r-lg) 0}
+ body:not(.noauth).sbc .mainpanel{margin-left:58px;border-radius:var(--r-lg)}
+ body:not(.noauth).sbc .top{transform:translateX(calc(-100% - 58px));border-radius:var(--r-lg)}
+ .sbsearch{display:flex;align-items:center;gap:var(--s-3);width:auto;align-self:stretch;height:36px;margin:4px 8px var(--s-3);padding:0 12px;border:1px solid var(--line);border-radius:var(--r-full);background:var(--fill-1);color:var(--mute);font:inherit;font-size:var(--fs-md);cursor:pointer;text-align:left}
+ .sbsearch span{flex:1}
+ .sbsearch kbd{font:500 11px var(--font);color:var(--mute);opacity:.8}
+ .sbsearch:hover{color:var(--ink)}
+ body.noauth .sbsearch{display:none}
+ .top .sgl{background:transparent;padding-left:12px}
+ /* pages other than chats use the full width next to the rail */
+ body.nochats:not(.noauth) .top{display:none}
+ body.nochats:not(.noauth) .mainpanel{margin-left:58px;border-radius:var(--r-lg)}
+ body.nochats:not(.noauth) .rl-menu{visibility:hidden}
+ /* the rail menu replaces the old floating expand button */
+ #sbopen,.sbopen{display:none!important}
+}
