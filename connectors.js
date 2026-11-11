@@ -152,6 +152,8 @@ function declarationCell(s) {
   const name = B.containerName(s.path);
   const state = d && DECLARED[d.status];
   if (state) return `<span class="cndecl"><span class="tag ${state[1]}">${state[0]}</span></span>`;
+  // A request for a repository Broth does not read yet would make nothing Public: include it first.
+  if (!s.included) return '<span class="cndecl amute">Include it first</span>';
   return `<span class="cndecl"><button type="button" class="btn sm" data-declare aria-label="Request public for ${esc(name)}">Request public</button></span>`;
 }
 function spaceRow(s, repos = false) {

@@ -132,6 +132,13 @@ test.describe('docs repositories', () => {
     expect(requested).toEqual([{ reason: 'Published at docs.kredete.com' }]);
   });
 
+  test('a repository Broth does not read yet asks to be included before it can go Public', async ({ open }) => {
+    const page = await open('admin', '/admin/connectors', { before: (p) => withDocs(p, { repos: [repo(REPO, 'kredete/docs', { included: false })] }) });
+    const row = docsSection(page).locator('[data-space]');
+    await expect(row.locator('.cndecl')).toHaveText('Include it first');
+    await expect(row.getByRole('button', { name: /Request public/ })).toHaveCount(0);
+  });
+
   test("a repository's settings leave out what a repository derives", async ({ open }) => {
     const page = await open('admin', '/admin/connectors', { before: (p) => withDocs(p) });
     await docsSection(page).getByRole('button', { name: 'Settings for kredete/docs' }).click();
