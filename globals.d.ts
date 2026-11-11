@@ -31,6 +31,7 @@ declare global {
   /** The document drawer, and how a document reads in lists (document-drawer.js). */
   var DOCUMENTS: any;
   var ADMIN: any;
+  var SETTINGS: { rail: (current: string) => string, wire: (nav: HTMLElement | null) => void };
   var GOV: any;
   var DOCS: Record<string, any>;
   var HELP: any;

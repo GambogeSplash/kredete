@@ -29,7 +29,8 @@ The rail is identical on every settings page for a given user; only the current 
 ### Profile menu (`auth.js`)
 
 - "Account settings" and "Admin settings" are replaced by a single "Settings" item, shown to every user, which opens `/account`.
-- The item is marked current when the route surface is `account`, `admin` or `governance` (when governance is shown inside the settings shell).
+- The item is marked current when the route surface is `account` or `admin`.
+  Governance is also a place in the main rail, which marks it there, so the menu does not.
 - The profile card at the top of the menu still opens `/account`.
 
 ### Settings rail (`settings-rail.js`, new)
@@ -43,9 +44,9 @@ A small module with one job: render and wire the settings rail.
   - "Account": Profile, Sessions. Always present.
   - "Administration": present only for users with the admin or compliance role.
     Items come from the admin tab registry filtered by each tab's roles, in today's order: admin tabs except Domains and Audit log, then Sharing requests, then Domains and Audit log.
-    The Workspace tab keeps its setup-aware label (Finish setup while setup is pending).
 - Sign out at the foot.
-- The `brain:setupchange` listener re-renders the rail on any settings page, not only on Admin pages.
+- Nothing in the rail depends on setup state (Finish setup left the rail in e79dab9), so the old `brain:setupchange` re-render in `admin.js` is dead code and is removed, not moved.
+- At phone width the rail is a chip strip and its Sign out is hidden by existing CSS; Sign out stays in the profile menu there.
 - The rail exposes `aria-label="Settings"` and marks the current item with `aria-current="page"`.
 
 The module reads the admin tab registry through `window.ADMIN.tabs` and an `allowed()` helper exported from `admin.js`, so it does not duplicate tab labels or role rules.
@@ -58,8 +59,11 @@ The module reads the admin tab registry through `window.ADMIN.tabs` and an `allo
 
 ### Header crumb (`app.js`)
 
-- `account`, `admin` and `governance`-in-shell crumbs start with "Settings", followed by the current page name (for example "Settings / Profile", "Settings / People and access").
-- The document title follows the same naming.
+- `account` and `admin` crumbs start with "Settings", followed by the current page name (for example "Settings / Profile", "Settings / People and access").
+  The page name is read from the rail's current item, so the crumb and the rail cannot disagree.
+- Governance keeps its "Workspace / Governance" crumb, since it is also a main-rail place.
+- The phone top bar title reads "Settings" on these pages.
+- The document title stays "Broth", as on every screen except the help center.
 
 ### Help content (`help-content.js`)
 
@@ -82,7 +86,7 @@ E2E (Playwright, `tests/e2e`):
 - A regular employee's profile menu shows one "Settings" item and no "Admin settings" item; the rail has no Administration group.
 - An admin's profile menu shows one "Settings" item; the rail on `/account`, `/account/sessions`, `/admin/people` and `/governance` lists the same items in the same order, with only the current item differing.
 - A compliance user sees only the admin tabs their role allows.
-- While setup is pending, the admin's rail shows Finish setup on `/account` as well as on `/admin`.
+- Moving quickly between settings pages raises no page errors (this exposed a Sessions race: its list could land after the person had left, writing into the next page; the loader now drops a result whose pane is gone).
 - Existing account and admin specs updated for the new menu label and crumb.
 - Affected screenshots refreshed with `=changed` and reviewed at 1440 and 390, light and dark.
 

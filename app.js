@@ -801,10 +801,12 @@ function newChat() {
 }
 
 /* ---------- breadcrumb and mobile title ---------- */
-const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Sources'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
+const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Sources'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Settings', ''], admin: ['Settings', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
-  const label = S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
+  // A settings page is named by its item in the Settings rail, so the crumb and the rail always agree.
+  const setting = ['account', 'admin'].includes(S.route.surface) && $('.lrail [aria-current="page"]');
+  const label = setting ? setting.textContent : S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
   // A bot's pages add its name (bot admin spec 4.1), once the Support agent has loaded it.
   const parts = S.route.surface === 'bot' && S.route.title ? [c[0], label, S.route.title] : [c[0], label];
   $('#crumb').innerHTML = `${parts.slice(0, -1).map((p) => `<span>${esc(p)}</span><i>›</i>`).join('')}<span class="cur">${esc(parts[parts.length - 1])}</span><span class="lsp"></span><button type="button" class="lib" id="ccopy" aria-label="Copy link">${ICON('link', 16)}</button>`;
@@ -815,7 +817,7 @@ function setCrumb() {
 function mbTitle() {
   const t = $('#mbtitle');
   if (!t) return;
-  const names = { library: 'Library', connectors: 'Sources', governance: 'Governance', docs: 'Help center', account: 'Account', chats: 'Chats', bookmarks: 'Bookmarks', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
+  const names = { library: 'Library', connectors: 'Sources', governance: 'Governance', docs: 'Help center', account: 'Settings', chats: 'Chats', bookmarks: 'Bookmarks', admin: 'Settings', bot: 'Support agent', setup: 'Finish setup' };
   t.textContent = S.route.title || names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
 }
 
