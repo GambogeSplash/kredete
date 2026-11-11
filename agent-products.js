@@ -17,7 +17,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 /** The accents offered first; any hex colour works. Each keeps white text readable. */
-const SWATCHES = [['#5e6ad2', 'Indigo'], ['#5a0fc8', 'Kredete purple'], ['#1f7a4a', 'Green'], ['#1b1b1f', 'Graphite']];
+const SWATCHES = [['#5e6ad2', 'Indigo'], ['#5a0fc8', 'Broth purple'], ['#1f7a4a', 'Green'], ['#1b1b1f', 'Graphite']];
 /** The product shown on each bot's page, kept while moving between pages. */
 const shown = new Map();
 

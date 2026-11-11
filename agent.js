@@ -114,7 +114,7 @@ function list(app) {
     return `<a class="dt-r agrow" href="/agent/${bot.id}/overview" data-link><span class="dtp"><b>${esc(bot.name)}</b></span><span class="dtm">${count(bot.sources.length, 'source')}</span><span class="dtm">${live} of ${bot.products.length} live</span><span>${sites ? `<span class="tag ok">Live on ${count(sites, 'site')}</span>` : '<span class="tag">Not live</span>'}</span></a>`;
   }).join('');
   app.innerHTML = `<div class="lcont agwide"><div class="aghd"><h1 class="lcont-t">Support agent</h1><span class="lsp"></span><button type="button" class="btn primary sm" id="agnew">New bot</button></div>
-    <p class="sub agintro">A support bot answers customers on Kredete's websites from pages approved for them, and offers your contact route when it can't. ${window.DOCS.link('botSources')}</p>
+    <p class="sub agintro">A support bot answers customers on Broth's websites from pages approved for them, and offers your contact route when it can't. ${window.DOCS.link('botSources')}</p>
     ${s.bots.length
       ? `<div class="dt agbots" style="--cols:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 150px"><div class="dt-r dt-h"><span>Bot</span><span>Sources</span><span>Products</span><span>Status</span></div>${rows}</div>`
       : `<div class="dt"><div class="dt-r dtempty">${B.emptyBlock('No bots yet', 'Create one, choose the sources it answers from, then put it on a site.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>')}</div></div>`}
