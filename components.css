@@ -343,3 +343,16 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
 .lm img{display:none}
 .lm svg{display:block;width:26px;height:auto;color:var(--brand);filter:none}
 .lm{margin:0 auto var(--s-3);opacity:.95}
+
+/* sign-in and create-workspace */
+.provs{display:grid;gap:10px;margin:18px 0 14px}
+.prov{display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);color:var(--ink);font:500 14px var(--font);cursor:pointer;transition:background var(--dur-fast),transform var(--dur-fast)}
+.prov:hover{background:var(--fill-1)}.prov:active{transform:scale(.985)}
+.orline{display:flex;align-items:center;gap:12px;color:var(--mute);font-size:12px;margin:6px 0 14px}
+.orline::before,.orline::after{content:"";flex:1;height:1px;background:var(--line)}
+.si-alt{margin:16px 0 0;color:var(--mute);font-size:13px}
+.suslug{color:var(--mute);font-size:13px;margin:8px 0 0}.suslug b{color:var(--ink);font-weight:500}
+.suta{height:auto!important;min-height:88px;padding:12px;resize:vertical;font:inherit}
+.susel{display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;border:1px solid var(--line);background:var(--surface);transition:border-color var(--dur-fast),transform var(--dur-fast)}
+.susel:hover{border-color:var(--mute)}.susel.on{border-color:var(--brand)}.susel b{flex:1;font-weight:500}
+.pvlm{width:16px;height:16px;border-radius:4px;object-fit:cover}

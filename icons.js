@@ -74,7 +74,7 @@ window.PERSON=(name,px,cls)=>`<span class="who">${window.AVATAR(name,cls||'lav',
   b=>`<path d="M32 10l19 33H13z" fill="${b}"/><circle cx="47" cy="48" r="6" fill="${b}" opacity=".75"/>`,
   b=>[[20,22],[44,22],[32,38],[18,50],[46,50]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="5.5" fill="${b}"/>`).join('')
  ];
- window.AV_LIB=[1,2,3,4,5].map(n=>({id:'a'+n,src:'assets/avatars/a'+n+'.png'}));
+ window.AV_LIB=[1,2,3,4,5,6,7,8,9].map(n=>({id:'a'+n,src:'assets/avatars/a'+n+'.png'}));
  window.avatarSrc=av=>{ if(!av) return ''; if(av.kind==='photo') return av.data||''; if(av.kind==='lib'){ const x=window.AV_LIB.find(a=>a.id===av.id); return x?x.src:''; } return ''; };
 })();
 window.avDefault=(key)=>{ let h=0; String(key||'').toLowerCase().split('').forEach(c=>{ h=(h*31+c.charCodeAt(0))>>>0; }); return window.AV_LIB[h%window.AV_LIB.length].src; };

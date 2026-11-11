@@ -22,7 +22,7 @@ document.addEventListener('submit',e=>{ if(e.target&&e.target.id==='pf'){ e.prev
 const DIRX=()=>window.DIRECTORY||{};
 const lvlFor=em=>{ const o=(S().levels||{})[em]; const d=DIRX()[em]; return o!=null?o:(d?d.level:0); };
 function pvHtml(p){ const sk=w=>`<i class="pvsk" style="width:${w}px"></i>`; const apps=B.appsOn?B.appsOn():['Confluence','Google Drive'];
- return `<div class="pvp" aria-hidden="true"><div class="pvw"><div class="pvs"><div class="pvws"><span class="pvk">K</span><b>Broth</b></div>${[['compose','New chat'],['library','Library'],['plug','Connectors']].map(([i,l])=>`<div class="pvi">${ICON(i,13)}<span>${l}</span></div>`).join('')}<div class="pvu">${p?AVATAR(p.name,'lav',22)+`<span><b>${esc(p.name)}</b><small>${esc(p.team)}</small></span>`:`<i class="pvav"></i><span>${sk(70)}${sk(44)}</span>`}</div></div>
+ return `<div class="pvp" aria-hidden="true"><div class="pvw"><div class="pvs"><div class="pvws"><img class="pvk pvlm" src="assets/brand/logomark.png" alt=""><b>Broth</b></div>${[['compose','New chat'],['library','Library'],['plug','Connectors']].map(([i,l])=>`<div class="pvi">${ICON(i,13)}<span>${l}</span></div>`).join('')}<div class="pvu">${p?AVATAR(p.name,'lav',22)+`<span><b>${esc(p.name)}</b><small>${esc(p.team)}</small></span>`:`<i class="pvav"></i><span>${sk(70)}${sk(44)}</span>`}</div></div>
   <div class="pvm"><div class="pvg">${p?`Hello, ${esc(p.first)}`:sk(120)}</div><div class="pvc"><span>Ask a question</span><i></i></div><div class="pvf">${apps.map(a=>SRCICON(a,14)).join('')}<span>Reading from ${apps.length} apps</span></div>${p?`<div class="pvl"><i style="background:${window.LEVEL_COL[p.level]}"></i>${window.LEVELS[p.level]} access</div>`:''}</div></div><div class="pvcap">${p?'Your workspace':'Your workspace appears here'}</div></div>`; }
 function ashell(left,pv,step){ document.body.classList.add('noauth'); const app=$('#app');
  const stp=step?`<div class="stp" role="img" aria-label="Step ${step[0]} of ${step[1]}">${Array.from({length:step[1]},(_,i)=>`<i class="${i+1===step[0]?'on':i+1<step[0]?'done':''}"></i>`).join('')}</div>`:'';
@@ -32,12 +32,15 @@ function ashell(left,pv,step){ document.body.classList.add('noauth'); const app=
 const logo2='<div class="si-brand"><span class="si-wm" role="img" aria-label="Broth"></span></div>';
 AUTH.signin=()=>{ const au=A(); const DIR=DIRX();
  const demos=['aisha.bello','sam.idowu','priya.nair'].map(k=>k+'@kredete.example');
- ashell(`${logo2}<h1>Sign in to Broth</h1><div id="aerr"></div>
-  <form id="emf" novalidate><div class="emw"><span class="emi">${ICON('user',16)}</span><input id="em" class="eminp" type="email" inputmode="email" autocomplete="username" placeholder="name@kredete.example" aria-label="Work email" value="${esc(au.last||'')}"></div><button class="btn primary si-btn" id="sso" type="submit"><span class="spin" aria-hidden="true"></span><span id="ssol">Continue</span></button></form>
+ ashell(`${logo2}<h1>Welcome back</h1><p class="sub">Sign in to ask what your company knows.</p><div id="aerr"></div><div class="provs">${[['google','Continue with Google','<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h6.2a5.3 5.3 0 0 1-2.3 3.5v2.9h3.7c2.2-2 3.4-5 3.4-8.4z"/><path fill="#34A853" d="M12 23c3.1 0 5.7-1 7.6-2.8l-3.7-2.9c-1 .7-2.3 1.1-3.9 1.1-3 0-5.5-2-6.4-4.8H1.8v3A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.6 13.6a6.6 6.6 0 0 1 0-4.2v-3H1.8a11 11 0 0 0 0 10.2l3.8-3z"/><path fill="#EA4335" d="M12 5.4c1.7 0 3.2.6 4.4 1.7l3.3-3.3A11 11 0 0 0 1.8 6.4l3.8 3C6.5 6.5 9 5.4 12 5.4z"/></svg>'],['ms','Continue with Microsoft','<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#F25022" d="M2 2h9.5v9.5H2z"/><path fill="#7FBA00" d="M12.5 2H22v9.5h-9.5z"/><path fill="#00A4EF" d="M2 12.5h9.5V22H2z"/><path fill="#FFB900" d="M12.5 12.5H22V22h-9.5z"/></svg>'],['sso','Continue with SSO',ICON('lock',18)]].map(([k,l,i])=>`<button type="button" class="prov" data-prov="${k}">${i}<span>${l}</span></button>`).join('')}</div><div class="orline"><span>or use your work email</span></div>
+  <form id="emf" novalidate><div class="emw"><span class="emi">${ICON('user',16)}</span><input id="em" class="eminp" type="email" inputmode="email" autocomplete="username" placeholder="name@company.com" aria-label="Work email" value=""></div><button class="btn primary si-btn" id="sso" type="submit"><span class="spin" aria-hidden="true"></span><span id="ssol">Continue</span></button></form>
+  <p class="si-alt">New to Broth? <button type="button" class="link" id="mkws">Create a workspace</button></p>
   <div class="emdemo"><span>Try a demo account</span><div class="emrow">${demos.map(e=>`<button type="button" class="emchip" data-em="${e}">${AVATAR(DIR[e].name,'lav',24)}<span>${esc(DIR[e].name.split(' ')[0])}</span></button>`).join('')}</div></div>`,pvHtml(null));
  const f=$('#emf');
  const prev=()=>{ const em=$('#em').value.trim().toLowerCase(); const p=DIR[em]; $('#sipv').innerHTML=pvHtml(p?{name:p.name,first:p.name.split(' ')[0],team:p.team,level:lvlFor(em)}:null); };
  $('#em').oninput=prev; prev();
+ $$('[data-prov]').forEach(b=>b.onclick=()=>{ $('#em').value=(au.last&&DIR[au.last]?au.last:demos[0]); prev(); $('#emf').requestSubmit(); });
+ $('#mkws').onclick=()=>AUTH.signup();
  $$('[data-em]').forEach(b=>b.onclick=()=>{ $('#em').value=b.dataset.em; prev(); f.requestSubmit(); });
  const err=h=>{ $('#aerr').innerHTML=`<div class="banner bad">${h}</div>`; $('#em').setAttribute('aria-invalid','true'); };
  f.onsubmit=e=>{ e.preventDefault(); const em=$('#em').value.trim().toLowerCase(); const sso=$('#sso'); $('#aerr').innerHTML=''; $('#em').removeAttribute('aria-invalid');
@@ -50,16 +53,46 @@ AUTH.signin=()=>{ const au=A(); const DIR=DIRX();
    au.expired=false; const seen=!!((S().seen||{})[em]); S().user=Object.assign({email:em,onboarded:true,welcomed:seen},prof,{roles:prof.roles.slice()}); AUTH._ob=null; B.save(); B.route(); if(seen) B.toast('Welcome back, '+(S().user.nick||prof.name.split(' ')[0]));
   },650); }; };
 
-/* ---------- first run: four steps ---------- */
+
+/* ---------- create a workspace: four short steps ---------- */
+const FREEMAIL=/@(gmail|yahoo|hotmail|outlook|icloud|proton|protonmail|aol)\./i;
+AUTH.signup=()=>{ AUTH._su=AUTH._su||{step:1,email:'',name:'',company:'',apps:[],invites:[]}; suRender(); };
+function suRender(){ const su=AUTH._su, TOTAL=4;
+ const slug=()=>(su.company||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'your-company';
+ const pv=()=>pvHtml({name:su.name||'You',first:(su.name||'there').split(' ')[0],team:su.company||'Your company',level:2});
+ const nav=(label,skip)=>`<div class="obnav">${su.step>1?`<button class="btn ob-back" id="sub" type="button" aria-label="Back">${ICON('logout',18)}</button>`:''}<button class="btn primary si-btn obgo" id="sun" type="button">${label||'Continue'}</button></div>${skip?`<button class="link obout" id="susk" type="button">${skip}</button>`:''}`;
+ const APPS=['Confluence','Google Drive','Notion'];
+ let left;
+ if(su.step===1) left=`<h1>Create your workspace</h1><p class="sub">Use your work email so teammates can find you.</p><div id="aerr"></div><label class="emlab" for="suem">Work email</label><div class="emw"><span class="emi">${ICON('user',16)}</span><input id="suem" class="eminp" type="email" inputmode="email" autocomplete="email" placeholder="name@company.com" value="${esc(su.email)}"></div>${nav()}<button class="link obout" id="suin" type="button">Already have a workspace? Sign in</button>`;
+ else if(su.step===2) left=`<h1>Name your workspace</h1><div id="aerr"></div><label class="emlab" for="sunm">Your name</label><input id="sunm" class="eminp" value="${esc(su.name)}" autocomplete="name" placeholder="Aisha Bello"><label class="emlab" for="suco" style="margin-top:14px">Company</label><input id="suco" class="eminp" value="${esc(su.company)}" autocomplete="organization" placeholder="Acme Bank"><p class="suslug">broth.app/<b id="suslug">${slug()}</b></p>${nav()}`;
+ else if(su.step===3) left=`<h1>Connect your first source</h1><p class="sub">Broth only reads what you can already open there.</p><div class="obapps susrc">${APPS.map(a=>{ const on=su.apps.includes(a); return `<button type="button" class="obapp susel ${on?'on':''}" data-app="${a}" aria-pressed="${on}">${SRCICON(a,26)}<b>${a}</b><span class="tag ${on?'ok':''}">${on?'Connected':'Connect'}</span></button>`; }).join('')}</div>${nav('Continue','Skip for now')}`;
+ else left=`<h1>Invite your team</h1><p class="sub">They sign in with their work email. You can do this later.</p><label class="emlab" for="suinv">Emails</label><textarea id="suinv" class="eminp suta" rows="3" placeholder="sam@company.com, priya@company.com">${esc(su.invites.join(', '))}</textarea>${nav('Create workspace','Skip for now')}`;
+ ashell(left,pv(),[su.step,TOTAL]);
+ const err=h=>{ const e=$('#aerr'); if(e) e.innerHTML=`<div class="banner bad">${h}</div>`; };
+ const go=d=>{ su.step=Math.max(1,Math.min(TOTAL,su.step+d)); suRender(); };
+ const b=$('#sub'); if(b) b.onclick=()=>go(-1);
+ const next=()=>go(1);
+ if(su.step===1){ const em=$('#suem'); em.focus(); em.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#sun').click(); } }; $('#suin').onclick=()=>{ AUTH._su=null; AUTH.signin(); };
+  $('#sun').onclick=()=>{ const v=em.value.trim().toLowerCase(); if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ err('<b>Enter your work email.</b> It looks like name@company.com.'); return; } if(FREEMAIL.test(v)){ err('<b>Use your work email.</b> Personal addresses cannot create a workspace.'); return; }
+   su.email=v; const local=v.split('@')[0], dom=v.split('@')[1].split('.')[0]; if(!su.name) su.name=local.split(/[._-]/).map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(' '); if(!su.company) su.company=dom.charAt(0).toUpperCase()+dom.slice(1); next(); }; }
+ else if(su.step===2){ const nm=$('#sunm'), co=$('#suco'); nm.focus(); const up=()=>{ su.name=nm.value.trim(); su.company=co.value.trim(); $('#suslug').textContent=slug(); $('#sipv').innerHTML=pv(); }; nm.oninput=up; co.oninput=up; [nm,co].forEach(x=>x.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#sun').click(); } });
+  $('#sun').onclick=()=>{ up(); if(!su.name||!su.company){ err('<b>Add your name and company.</b>'); return; } next(); }; }
+ else if(su.step===3){ $$('[data-app]').forEach(btn=>btn.onclick=()=>{ const a=btn.dataset.app; const t=$('.tag',btn); if(!su.apps.includes(a)){ t.textContent='Connecting'; btn.disabled=true; setTimeout(()=>{ su.apps.push(a); suRender(); },650); } else { su.apps=su.apps.filter(x=>x!==a); suRender(); } }); $('#sun').onclick=next; $('#susk').onclick=next; }
+ else { const fin=()=>{ const inv=($('#suinv').value||'').split(/[,\s;]+/).map(x=>x.trim()).filter(x=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)); su.invites=inv; const first=su.name.split(' ')[0]; const s2=S();
+   s2.levels=s2.levels||{}; s2.levels[su.email]=2; (s2.seen=s2.seen||{})[su.email]=true;
+   s2.user={email:su.email,name:su.name,nick:first,title:'Workspace owner',team:'Admin',level:2,roles:['employee','admin'],onboarded:true,welcomed:true,company:su.company,invites:inv}; AUTH._su=null; s2.surface='app'; s2.mode='ask'; s2.thread=[]; B.save(); B.route(); B.toast('Workspace ready'+(inv.length?', '+inv.length+' invite'+(inv.length===1?'':'s')+' sent':'')); };
+  $('#sun').onclick=fin; $('#susk').onclick=()=>{ $('#suinv').value=''; fin(); }; }
+}
+
+/* ---------- first run: three steps ---------- */
 AUTH.welcome=()=>{ const s=S(), u=s.user; if(!AUTH._ob||AUTH._ob.em!==u.email) AUTH._ob={em:u.email,step:1,nick:u.nick||u.name.split(' ')[0],theme:(typeof THEME==='function'?THEME():'dark'),pick:0}; obRender(); };
-function obRender(){ const s=S(), u=s.user, ob=AUTH._ob; const TOTAL=4; const first=()=>ob.nick||u.name.split(' ')[0];
+function obRender(){ const s=S(), u=s.user, ob=AUTH._ob; const TOTAL=3; const first=()=>ob.nick||u.name.split(' ')[0];
  const pv=()=>pvHtml({name:u.name,first:first(),team:u.team,level:lvlFor(u.email)});
  const nav=(next,label,extra)=>`<div class="obnav"><button class="btn ob-back" id="obb" type="button" aria-label="Back" ${ob.step===1?'style="display:none"':''}>${ICON('logout',18)}</button><button class="btn primary si-btn obgo" id="obn" type="button">${label||'Continue'}</button></div>${extra||''}`;
  let left='';
  if(ob.step===1){ left=`<h1>Is this you?</h1><div class="obid">${AVATAR(u.name,'avimg',56)}<div class="obidt"><b>${esc(u.name)}</b><span>${esc(u.title||'')}</span><small>${esc(u.team||'')}${u.location?' · '+esc(u.location):''}</small></div></div><label class="emlab" for="obnick">What should we call you?</label><input id="obnick" class="eminp" value="${esc(ob.nick)}" autocomplete="off">${nav()}<button class="link obout" id="obout" type="button">Not you? Sign out</button>`; }
- else if(ob.step===2){ left=`<h1>How should it look?</h1><div class="obopts" role="radiogroup" aria-label="Appearance">${[['light','Light'],['dark','Dark'],['system','Match my device']].map(([k,l])=>`<button class="obopt ${ob.theme===k?'on':''}" role="radio" aria-checked="${ob.theme===k}" data-th="${k}" type="button"><span class="obsw ${k}"></span><b>${l}</b></button>`).join('')}</div>${nav()}`; }
- else if(ob.step===3){ const apps=B.appsOn();
-  left=`<h1>What Broth can read for you</h1><div class="obapps">${apps.map(a=>`<div class="obapp">${SRCICON(a,26)}<b>${a}</b><span class="tag ok">Connected</span></div>`).join('')}</div>${nav()}`; }
+ else if(ob.step===2){ const apps=B.appsOn();
+  left=`<h1>What Broth can read for you</h1><p class="sub">Only what you can already open there.</p><div class="obapps">${apps.map(a=>`<div class="obapp">${SRCICON(a,26)}<b>${a}</b><span class="tag ok">Connected</span></div>`).join('')}</div>${nav()}`; }
  else { const picks=[[AUTH.example(u.team)||'What is the card replacement fee?','chat'],['How do I request access to a source?','lock']]; ob.picks=picks;
   left=`<h1>Ask your first question</h1><div class="obcards" role="radiogroup" aria-label="First question">${picks.map((q,i)=>`<button class="obcard ${ob.pick===i?'on':''}" role="radio" aria-checked="${ob.pick===i}" data-pk="${i}" type="button">${ICON(q[1],16)}<span>${esc(q[0])}</span></button>`).join('')}</div>${nav(0,'Start asking')}<button class="link obout" id="obskip" type="button">Skip for now</button>`; }
  ashell(left,pv(),[ob.step,TOTAL]);
@@ -67,8 +100,7 @@ function obRender(){ const s=S(), u=s.user, ob=AUTH._ob; const TOTAL=4; const fi
  const go=d=>{ ob.step=Math.max(1,Math.min(TOTAL,ob.step+d)); obRender(); };
  $('#obb').onclick=()=>go(-1);
  if(ob.step===1){ const n=$('#obnick'); n.oninput=()=>{ ob.nick=n.value.trim(); $('#sipv').innerHTML=pv(); }; n.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#obn').click(); } }; n.focus(); $('#obn').onclick=()=>{ ob.nick=n.value.trim()||u.name.split(' ')[0]; go(1); }; $('#obout').onclick=()=>{ s.user=null; AUTH._ob=null; B.save(); B.route(); }; }
- else if(ob.step===2){ $$('[data-th]').forEach(b=>b.onclick=()=>{ ob.theme=b.dataset.th; if(typeof applyTheme==='function') applyTheme(ob.theme); $$('[data-th]').forEach(x=>{ const on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-checked',on); }); }); $('#obn').onclick=()=>go(1); }
- else if(ob.step===3){ $('#obn').onclick=()=>go(1); }
+ else if(ob.step===2){ $('#obn').onclick=()=>go(1); }
  else { $$('[data-pk]').forEach(b=>b.onclick=()=>{ ob.pick=+b.dataset.pk; $$('[data-pk]').forEach(x=>{ const on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-checked',on); }); }); $('#obn').onclick=()=>fin(ob.picks[ob.pick][0]); $('#obskip').onclick=()=>fin(null); } }
 
 /* ---------- step 2: team, then straight into Ask. Roles come from the identity provider ---------- */
