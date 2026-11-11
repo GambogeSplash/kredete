@@ -28,3 +28,22 @@
 .rnline{position:absolute;left:0;right:0;bottom:-2px;height:1.5px;border-radius:1px;background:var(--brand,#5e6ad2);transform-origin:left center;pointer-events:none}
 .pg .chl .chr:focus-visible{outline:2px solid var(--ring,var(--brand));outline-offset:-2px}
 @media (prefers-reduced-motion:reduce){.adok i{animation:none}}
+/* bookmarks */
+.svcols{grid-template-columns:minmax(0,1fr) 110px 100px 40px;padding-top:var(--s-2);padding-bottom:var(--s-2)}
+.svcols .ltb{min-width:0;display:grid}
+.svcols .ltb b{font-weight:500;font-size:var(--fs-md);line-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svcols .ltb small{font-size:var(--fs-xs);line-height:16px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svcols[data-id]{cursor:pointer;transition:background var(--dur-fast)}
+.svcols[data-id]:hover{background:var(--fill-1)}
+.svcols[data-id]:focus-visible{outline:2px solid var(--ring,var(--brand));outline-offset:-2px}
+.svsrc{display:flex;gap:6px;align-items:center}
+.svs{position:relative;display:inline-grid;place-items:center;border-radius:8px}
+.svs:focus-visible{outline:2px solid var(--ring,var(--brand));outline-offset:2px}
+.svs:hover::after,.svs:focus-visible::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--ink);color:var(--surface);padding:4px 8px;border-radius:8px;font-size:var(--fs-xs);z-index:5;pointer-events:none}
+.svx{justify-self:end}
+.svx .btn{width:32px;height:32px;padding:0;display:grid;place-items:center}
+.svx .btn:hover,.svx .btn:focus-visible{color:var(--danger);border-color:var(--danger-line);background:var(--danger-soft)}
+.pg .ds-table{border-radius:18px}
+.pg .ds-head h1{display:flex;align-items:center;gap:var(--s-2)}
+.gic.gbk[aria-pressed=true] svg path{fill:currentColor}
+@media (max-width:900px){.svcols{grid-template-columns:minmax(0,1fr) 40px}.svcols>.svsrc,.svcols>.svw{display:none}}

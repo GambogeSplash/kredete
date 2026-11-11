@@ -176,6 +176,7 @@ const ROUTES = [
   { re: /^\/$/, surface: 'ask' },
   { re: /^\/c\/([0-9a-f-]{36})$/i, surface: 'ask', keys: ['id'] },
   { re: /^\/chats$/, surface: 'chats' },
+  { re: /^\/bookmarks$/, surface: 'bookmarks' },
   { re: /^\/library(?:\/([a-z0-9-]+))?$/, surface: 'library', keys: ['domain'] },
   { re: /^\/governance$/, surface: 'governance' },
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
@@ -523,6 +524,7 @@ function renderSurfaces() {
   let h = navItem('data-home="1"', 'compose', 'New chat', atHome, '', 'newchat-nav');
   h += navItem('data-search="1"', 'search', 'Search', false, '<kbd class="skbd">⌘K</kbd>');
   h += navItem('data-go="/library"', 'library', 'Library', r.surface === 'library');
+  h += navItem('data-go="/bookmarks"', 'bookmark', 'Bookmarks', r.surface === 'bookmarks');
   h += navItem('data-go="/governance"', 'shield', 'Governance', r.surface === 'governance');
   if (hasRole('admin', 'compliance')) h += navItem('data-go="/admin"', 'settings', 'Admin', r.surface === 'admin');
   h += navItem('data-go="/docs"', 'book', 'Docs', r.surface === 'docs');
@@ -592,7 +594,7 @@ function newChat() {
 }
 
 /* ---------- breadcrumb and mobile title ---------- */
-const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], library: ['Workspace', 'Library'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Docs'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
+const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], library: ['Workspace', 'Library'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Docs'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
   const label = S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
@@ -606,7 +608,7 @@ function setCrumb() {
 function mbTitle() {
   const t = $('#mbtitle');
   if (!t) return;
-  const names = { library: 'Library', governance: 'Governance', docs: 'Docs', account: 'Account', chats: 'Chats', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
+  const names = { library: 'Library', governance: 'Governance', docs: 'Docs', account: 'Account', chats: 'Chats', bookmarks: 'Bookmarks', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
   t.textContent = S.route.title || names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
 }
 
