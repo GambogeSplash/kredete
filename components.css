@@ -739,3 +739,14 @@ a.btn,a.btn:hover,a.btn:focus{text-decoration:none}
 .dcrl{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);width:100%;text-align:left;padding:12px var(--s-4);border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:var(--fs-sm);cursor:pointer}.dcrl:first-child{border-top:0}.dcrl:hover{background:var(--fill-1)}.dcrl span{color:var(--mute);display:grid}
 .dchelp small{color:var(--mute);font-size:var(--fs-xs)}.dchelp .lsp{flex:1}
 .dcbody{max-width:660px}
+
+/* sign-in preview: the real layout in miniature. A rail, then two floating shells with a gap between them. */
+.pvw.pvfl{display:grid;grid-template-columns:34px 150px minmax(0,1fr);gap:8px;border:0;background:none;box-shadow:none;overflow:visible;padding:0;min-height:340px;align-items:stretch}
+.pvrail{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;position:relative;padding:4px 0 36px}
+.pvri{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;color:var(--mute)}.pvri.on{background:var(--fill-2);color:var(--ink)}
+.pvra{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:grid}.pvra .pvav{width:22px;height:22px;border-radius:9px;background:var(--fill-3);display:block}
+.pvsh{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:0 18px 44px -22px rgba(0,0,0,.45)}
+.pvs.pvsh{padding:var(--s-2);gap:4px;background:var(--surface)}
+.pvsr{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--r-full);background:var(--fill-1);color:var(--mute);font-size:var(--fs-2xs);margin-bottom:var(--s-2)}
+.pvgh{padding:2px 6px}.pvrow{padding:5px 6px;border-radius:var(--r-sm)}.pvrow:first-of-type{background:var(--fill-1)}
+.pvm.pvsh{padding:var(--s-6) var(--s-5)}
