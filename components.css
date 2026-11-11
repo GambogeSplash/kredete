@@ -571,3 +571,24 @@ time{white-space:nowrap}
 .agtotal{margin:var(--s-3) 0 0;font-size:var(--fs-sm);color:var(--ink-2)}
 .agtotal.warn{color:var(--amber)}
 @media (max-width:900px){.agks{grid-template-columns:minmax(0,1fr)!important;gap:var(--s-2)}.agksc,.agkso{padding-left:calc(18px + var(--s-3));text-align:left}}
+/* Experience: the form beside the real widget in its preview mode */
+.agexp{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:var(--s-7);align-items:start}
+.agexf{min-width:0;max-width:560px}
+.agfs{border:0;margin:0 0 var(--s-5);padding:0}
+.agfs legend{padding:0;margin:0 0 var(--s-3);font-size:var(--fs-md);font-weight:600;color:var(--ink)}
+.agst-h{margin:0 0 var(--s-2)}
+.agstarters{display:grid;gap:var(--s-2);justify-items:start}
+.agstr{width:100%}
+.agstr-r{display:flex;gap:var(--s-2);align-items:center}
+.agstr-r .eminp{flex:1;min-width:0;margin:0}
+.agpv{position:sticky;top:var(--s-4);display:grid;gap:var(--s-3);min-width:0}
+.agpv-c{display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap}
+.agpv-v button{border:0;background:none;padding:0 var(--s-3);min-height:30px;font-size:var(--fs-sm);color:var(--ink-2)}
+.agpv-v button+button{border-left:1px solid var(--line)}
+.agpv-v button:hover{background:var(--fill-1)}
+.agpv-v button[aria-pressed=true]{background:var(--fill-2);color:var(--ink);font-weight:500}
+.agpv-as{display:flex;align-items:center;gap:var(--s-2);font-size:var(--fs-sm);color:var(--ink-2);white-space:nowrap}
+.agpv-as select.eminp{margin:0;width:auto;min-width:0;padding-top:var(--s-1);padding-bottom:var(--s-1)}
+.agpv-box{position:relative;height:640px;container-type:size;--bb-panel-w:calc(100cqw - 32px);--bb-panel-h:calc(100cqh - 104px);border:1px solid var(--line);border-radius:var(--r-lg);background:repeating-linear-gradient(45deg,var(--fill-1) 0 10px,var(--surface) 10px 20px);overflow:hidden}
+.agpv-n{margin:0;font-size:var(--fs-xs);color:var(--mute)}
+@media (max-width:1100px){.agexp{grid-template-columns:1fr}.agpv{position:static;max-width:420px}}

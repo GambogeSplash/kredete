@@ -2,14 +2,14 @@
 // "Kredete Help" bot: sources over the Payments space, one live product on this client's
 // origin ("Help site") and one revoked ("Old help site").
 //
-// Views share one stack, so tests that create bots or products name them for the view and the
-// run, and never assume how many bots there are.
+// Views share one stack, so tests that create bots or products name them for the view, find
+// them by where they land rather than by name, and never assume how many bots there are.
 import { expect, test } from './fixtures.mjs';
 
 const SEEDED = 'Kredete Help';
 const phone = (page) => page.viewportSize().width < 700;
-/** A name no other view or run uses. */
-const unique = (base, info) => `${base} ${info.project.name.replace(/\W/g, '')}${Date.now().toString(36).slice(-4)}`.slice(0, 32);
+/** A name for the view's own bots: names need not be unique, and a fixed one keeps snapshots steady. */
+const unique = (base, info) => `${base} for ${info.project.name}`.slice(0, 32);
 
 async function openSeeded(open, page = 'overview') {
   const p = await open('admin', '/agent');
@@ -163,5 +163,65 @@ test.describe('Knowledge', () => {
     await expect(rows.first()).toBeVisible();
     for (const path of await rows.locator('.lpath').allTextContents()) expect(path).toMatch(/^Payments \(PAY\)/);
     await check(page, 'library-source-filter');
+  });
+});
+
+/** The preview widget's shadow root content, as a locator. */
+const preview = (page) => page.locator('#exhost');
+
+test.describe('Experience', () => {
+  test('shows the settings beside the real widget, at the start and when it cannot answer', async ({ open, check }) => {
+    const page = await openSeeded(open, 'experience');
+    await expect(page.getByLabel('Name', { exact: true })).toHaveValue(SEEDED);
+    await expect(preview(page).getByRole('heading', { name: SEEDED })).toBeVisible();
+    await expect(preview(page).getByRole('button', { name: 'What is the daily transfer limit for standard accounts?' })).toBeVisible();
+    await check(page, 'agent-experience');
+    await page.getByRole('button', { name: "Can't answer" }).click();
+    await expect(preview(page).getByText("I couldn't find that in our help content.")).toBeVisible();
+    await expect(preview(page).getByRole('link', { name: 'Contact support' })).toHaveAttribute('href', 'https://kredete.com/support');
+    await check(page, 'agent-experience-cant-answer');
+  });
+
+  test('every edit shows in the preview; a wrong field stops Save; saving keeps it', async ({ open, check }, info) => {
+    const { page, name } = await newBot(open, info, 'experience');
+    const bar = page.getByRole('region', { name: 'Unsaved changes' });
+    const form = page.locator('#exform');
+    const renamed = `${name.slice(0, 28)} two`;
+    await form.getByLabel('Name', { exact: true }).fill(renamed);
+    await expect(preview(page).getByRole('heading', { name: renamed })).toBeVisible();
+    await form.getByLabel('Greeting').fill('Ask me about fees and limits.');
+    await expect(preview(page).getByText('Ask me about fees and limits.')).toBeVisible();
+    // Starters: at most three, each shown as a button in the preview.
+    for (const q of ['What are the fees?', 'How do limits work?', 'How do I verify?']) {
+      await form.getByRole('button', { name: 'Add a starter' }).click();
+      await form.getByRole('textbox', { name: /^Starter \d$/ }).last().fill(q);
+    }
+    await expect(form.getByRole('button', { name: 'Add a starter' })).toHaveCount(0);
+    await expect(preview(page).getByRole('button', { name: 'How do limits work?' })).toBeVisible();
+    await form.getByRole('button', { name: 'Remove starter 2' }).click();
+    await expect(preview(page).getByRole('button', { name: 'How do limits work?' })).toHaveCount(0);
+    // A link that is not https keeps Save off, and says why under the field.
+    await form.getByLabel('Contact link').fill('http://kredete.com/help');
+    await expect(page.getByText('Use an https link or a mailto: address.')).toBeVisible();
+    await expect(bar.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await check(page, 'agent-experience-invalid', { mask: ['.agname'] });
+    await form.getByLabel('Contact link').fill('mailto:help@kredete.com');
+    await form.getByLabel('Contact label').fill('Email us');
+    await bar.getByRole('button', { name: 'Save' }).click();
+    await expect(bar).toBeHidden();
+    await page.reload();
+    await expect(form.getByLabel('Name', { exact: true })).toHaveValue(renamed);
+    await expect(form.getByRole('textbox', { name: /^Starter \d$/ })).toHaveCount(2);
+    await expect(page.getByRole('navigation', { name: 'Support agent' })).toContainText(renamed);
+    await page.getByRole('button', { name: "Can't answer" }).click();
+    await expect(preview(page).getByRole('link', { name: 'Email us' })).toHaveAttribute('href', 'mailto:help@kredete.com');
+  });
+
+  test('the preview follows the app between light and dark', async ({ open }) => {
+    const page = await openSeeded(open, 'experience');
+    const mode = await page.evaluate(() => document.documentElement.dataset.mode || 'light');
+    await expect(preview(page)).toHaveAttribute('data-scheme', mode === 'dark' ? 'dark' : 'light');
+    await page.evaluate(() => { document.documentElement.dataset.mode = document.documentElement.dataset.mode === 'dark' ? 'light' : 'dark'; });
+    await expect(preview(page)).toHaveAttribute('data-scheme', mode === 'dark' ? 'light' : 'dark');
   });
 });
