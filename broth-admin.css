@@ -388,3 +388,37 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 .storyblk b{display:block;font-weight:500;margin:0 0 2px}
 .storyblk p{margin:0;color:var(--mute);font-size:var(--fs-sm);line-height:1.5}
 .storyend{margin:0;color:var(--ink-2);font-size:var(--fs-sm)}
+
+/* ===== a source's page: one vertical rhythm (24 between blocks, 16 under a header, 12 inside rows) ===== */
+.srcpage>.cnsec>*+*{margin-top:0}
+.srcpage .cncreds{margin:0 0 var(--s-6)}
+.srcpage .cnconn-h{margin:0 0 var(--s-4)}
+.srcpage .cnacts{margin:0}
+.srcpage .cnspaces{margin-top:var(--s-6)}
+.srcpage .cnconn+.cnconn{margin-top:var(--s-6);padding-top:var(--s-6)}
+.srcpage .notice,.srcpage .cnwarn{margin:0 0 var(--s-4)}
+.srcpage .cnconn-h .cnsync{font-size:var(--fs-sm);color:var(--mute)}
+/* the credentials row: name and short description, the status line, Replace; one row, stacked on phones */
+.cncreds .frow.cnc{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;gap:var(--s-3) var(--s-4);align-items:center;padding:var(--s-4)}
+.cncreds .frow.cnc .frl{min-width:0}
+.cncreds .frow.cnc .frl small{display:block;margin-top:2px}
+.cncreds .frow.cnc .frv{min-width:0;color:var(--mute);font-size:var(--fs-sm)}
+.cncreds .frow.cnc .fra{display:flex;justify-content:flex-end}
+@media (max-width:900px){
+  .cncreds .frow.cnc{grid-template-columns:minmax(0,1fr) auto}
+  .cncreds .frow.cnc .frl{grid-column:1;grid-row:1}
+  .cncreds .frow.cnc .fra{grid-column:2;grid-row:1}
+  .cncreds .frow.cnc .frv{grid-column:1/-1;grid-row:2}
+}
+/* ===== one height and one radius across a toolbar: search, Filter and the primary action ===== */
+.adbar2{align-items:center}
+.adbar2 .adsearch input,.adbar2 .fbtn,.adbar2 .btn.sm{height:36px;min-height:36px;box-sizing:border-box;border-radius:var(--r-md)}
+.adbar2 .btn.sm{padding:0 var(--s-4);font-size:var(--fs-sm)}
+.adbar2 .fbtn{padding:0 var(--s-3)}
+.ds-act .btn.sm,.ds-act .seg{height:36px;min-height:36px;box-sizing:border-box;border-radius:var(--r-md)}
+.ds-act .btn.sm{padding:0 var(--s-4)}
+.ds-act .segb{height:34px;min-height:34px}
+@media (max-width:900px){
+  .adbar2 .adsearch input,.adbar2 .fbtn,.adbar2 .btn.sm,.ds-act .btn.sm,.ds-act .seg{height:40px;min-height:40px}
+  .ds-act .segb{height:38px;min-height:38px}
+}

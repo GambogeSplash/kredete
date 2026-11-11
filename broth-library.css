@@ -82,4 +82,34 @@ html[data-mode=dark] :is(.fmenu,.drawer){box-shadow:var(--e3)}
 
 /* the footer keeps both buttons on one row on a phone, as in the prototype */
 .sv-act a.btn{letter-spacing:normal}
-@media (max-width:560px){.sv-act .btn.primary [data-i=ext]{display:none}}
+
+/* the footer is always one row: the primary button takes what is left and truncates its label */
+#drawer .sv-act{flex-wrap:nowrap}
+#drawer .sv-act .btn.primary{flex:1 1 0;min-width:0;overflow:hidden}
+#drawer .sv-act .btn.primary .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#drawer .sv-act .btn.primary svg,#drawer .sv-act .btn.primary img,#drawer .sv-act .btn.primary .srcn{flex:none}
+#drawer .sv-act #ddet{flex:none}
+
+/* long names never push the shell wider: one line truncates with an ellipsis, text wraps anywhere */
+#drawer .sv{min-width:0}
+#drawer .sv-top{min-width:0;gap:var(--s-3)}
+#drawer .sv-sys{min-width:0;flex:1;overflow:hidden}
+#drawer .sv-sys>svg,#drawer .sv-sys>img,#drawer .sv-sys>.srcn{flex:none}
+#drawer .sv-sysn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#drawer .xbtn2{flex:none}
+#drawer .sv-body h2{overflow-wrap:anywhere}
+#drawer .sv-tags{flex-wrap:wrap;gap:var(--s-2) var(--s-3);min-width:0}
+#drawer .sv-tags>*{min-width:0;max-width:100%}
+#drawer .sv-tags .tag,#drawer .sv-team b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#drawer .sv-team{min-width:0;max-width:100%}
+#drawer .svwarn{overflow-wrap:anywhere}
+#drawer .sv-own{min-width:0}
+#drawer .sv-own>div{min-width:0}
+#drawer .sv-own b,#drawer .sv-own small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#drawer .sv-ver{flex:none}
+#drawer .svkv dd{min-width:0;overflow-wrap:anywhere}
+#drawer .svkv dd .link{white-space:normal;overflow-wrap:anywhere;text-align:left}
+.modal.lineage .bar span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modal.lineage .sv-tags{flex-wrap:wrap}
+.modal.lineage .kv dd{min-width:0;overflow-wrap:anywhere}
+@media (max-width:560px){#drawer .sv-act #ddet .dl{display:none}}
