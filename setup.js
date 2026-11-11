@@ -70,7 +70,7 @@ function updateChecklist(current) {
   if (prog) prog.textContent = progLabel(current, at);
 }
 /** A page title. No subtitle and no (i) hint: the prototype's sign-up pages have none. */
-const head = (title) => `<div class="suhd"><h1>${esc(title)}</h1></div>`;
+const head = (title, _unused) => `<div class="suhd"><h1>${esc(title)}</h1></div>`;
 /** The step swap, as in the prototype: the old form fades out where it stood, the new one fades in
  * rising 5 px, and the picture is left alone. */
 function swapIn(old) {
