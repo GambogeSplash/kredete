@@ -465,7 +465,7 @@ function renderSurfaces(){
     let h='';
   h+=nb('data-home="1"',ICON('compose',16),'New chat',inAsk&&!S.thread.length&&!S.ask.stack,'','newchat-nav');
   h+=nb('data-search="1"',ICON('search',16),'Search',false,'<kbd class="skbd">⌘K</kbd>','');
-  h+=navBtn('library','Library',sf==='library')+navBtn('inbox','Inbox',sf==='inbox',(window.INBOX&&window.INBOX.open())||0)+navBtn('insights','Insights',sf==='insights')+navBtn('connectors','Connectors',sf==='connectors');
+  h+=navBtn('library','Library',sf==='library')+navBtn('inbox','Inbox',sf==='inbox',(window.INBOX&&window.INBOX.open())||0)+navBtn('insights','Insights',sf==='insights');
   { const tsOf=q=>(S.saved&&S.saved[q]&&S.saved[q][0]&&S.saved[q][0].ts)||0; const now=new Date(); const sod=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(); const cur=S.thread[0]&&S.thread[0].cid;
     const grp=q=>{ if(S.pins&&S.pins[q]) return 'Pinned'; const t=tsOf(q); if(!t) return 'Earlier'; if(t>=sod) return 'Today'; if(t>=sod-864e5) return 'Yesterday'; if(t>=sod-6*864e5) return 'Previous 7 days'; return 'Earlier'; };
     const order=['Pinned','Today','Yesterday','Previous 7 days','Earlier']; const by={}; S.history.forEach((q,i)=>{ (by[grp(q)]=by[grp(q)]||[]).push([q,i]); });
