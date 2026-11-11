@@ -454,7 +454,7 @@ html.embed .lin{height:calc(100vh - 0px)}
 /* =====================================================================
    ONE STYLE: Linear. Everything below overrides earlier rules, so every
    screen shares the same shell, type, density and components.
-   Neutrals sampled from the Linear reference. Accent stays Kredete purple.
+   Neutrals sampled from the Linear reference. Accent stays Broth purple.
    ===================================================================== */
 html,body{background:var(--wash)}
 body{font:400 13px/1.5 var(--font);color:var(--ink);letter-spacing:-.003em}
@@ -750,7 +750,7 @@ main#app{padding:var(--s-6) var(--s-7) var(--s-8)}
 /* header bar on Ask */
 .dchead{display:flex;align-items:center;gap:var(--s-2);height:44px;padding:0 var(--s-4);border-bottom:1px solid var(--line);flex:none;font-size:var(--fs-sm)}
 .dchead b{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
-/* Welcome to Brain (Linear's Ask screen) */
+/* Welcome to Broth (Linear's Ask screen) */
 .lhome{flex:1;display:flex;flex-direction:column;min-height:0;overflow:auto;background:radial-gradient(ellipse 60% 40% at 50% 28%,var(--brand-wash) 0,var(--surface) 70%)}
 .lh-in{width:100%;max-width:640px;margin:0 auto;padding:11vh var(--s-6) var(--s-9);display:flex;flex-direction:column}
 .lh-mark{align-self:center;opacity:.06;margin-bottom:var(--s-4)}

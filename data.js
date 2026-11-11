@@ -16,9 +16,9 @@ window.DOCS = {
     verified:'14 Jan 2025', authority:'Approved, past review date', domain:'Savings',
     text:()=>`Flexible Saver pays <mark>3.2%</mark> annual interest, effective January 2025.`}
 };
-window.DOCS.crypto={id:'crypto',title:'Crypto Custody Policy',system:'Confluence',owner:'Priya Nair',ownerRole:'Compliance owner',verified:'1 Nov 2026',authority:'Approved policy',domain:'Compliance',text:()=>`Kredete does not hold customer crypto. Staff may not accept crypto from partners.`};
+window.DOCS.crypto={id:'crypto',title:'Crypto Custody Policy',system:'Confluence',owner:'Priya Nair',ownerRole:'Compliance owner',verified:'1 Nov 2026',authority:'Approved policy',domain:'Compliance',text:()=>`Broth does not hold customer crypto. Staff may not accept crypto from partners.`};
 window.DOCS.escalate={id:'escalate',title:'Support escalation guide',system:'Google Drive',owner:'Daniel Reyes',ownerRole:'Support content owner',verified:'9 Sep 2026',authority:'Approved guide',domain:'Payments',text:()=>`Escalate chargebacks over <mark>$2,000</mark> to the Payments lead within one working day.`};
-window.DOCS.pricing={id:'pricing',title:'Partner Pricing 2026',system:'Google Drive',owner:'Leo Marsh',ownerRole:'Security',verified:'20 Oct 2026',authority:'Restricted',domain:'Compliance',text:()=>`Partner rates and volume tiers for 2026. Sharing: anyone in Kredete can open this.`};
+window.DOCS.pricing={id:'pricing',title:'Partner Pricing 2026',system:'Google Drive',owner:'Leo Marsh',ownerRole:'Security',verified:'20 Oct 2026',authority:'Restricted',domain:'Compliance',text:()=>`Partner rates and volume tiers for 2026. Sharing: anyone in Broth can open this.`};
 window.DOCS.public_fee={id:'public_fee',title:'Card fees (public help article)',system:'Help centre',owner:'Amara Okafor',ownerRole:'Cards domain owner',verified:'2 Feb 2026',authority:'Public article',domain:'Cards',value:'free',text:(v)=>`The first replacement card is <mark>${v}</mark>.`};
 window.SEED_ITEMS = [
   {id:'i1', type:'staleness', title:'Savings Rate Sheet is past its review date', domain:'Savings', impact:41, owner:'Tomas Berg', status:'open', age:'6 days',
@@ -31,7 +31,7 @@ window.SEED_ITEMS = [
 
 window.SEED_ITEMS.push(
   {id:'i4', type:'exposure', title:'Restricted pricing sheet is shared with the whole company', domain:'Compliance', impact:0, owner:'Leo Marsh (Security)', status:'open', age:'2 days', doc:'pricing',
-    preview:'Partner Pricing 2026 is marked restricted but shared with "Anyone in Kredete".', note:'Routed to Security. The brain narrowed access already, the source still needs fixing.'},
+    preview:'Partner Pricing 2026 is marked restricted but shared with "Anyone in Broth".', note:'Routed to Security. The brain narrowed access already, the source still needs fixing.'},
   {id:'i5', type:'drift', title:'Public fee FAQ no longer matches the Fee Schedule', domain:'Cards', impact:12, owner:'Amara Okafor', status:'open', age:'4 days', doc:'public_fee',
     preview:'The public help article still says the first replacement card is free. The internal policy changed on 12 Oct.', note:'Routed to the domain owner and the Support lead.'}
 );
@@ -39,13 +39,13 @@ window.SEED_ITEMS.push(
 /* Org teams. A team owns sources and items; domain (Cards, Payments...) is the topic. */
 window.DOC_TEAM={fee_schedule:'Product',limits:'Product',rates:'Product',cards_faq:'Support',escalate:'Support',public_fee:'Support',crypto:'Compliance',pricing:'Compliance',limits2:'Compliance'};
 window.OWNER_TEAM={'Amara Okafor':'Product','Tomas Berg':'Product','Daniel Reyes':'Support','Priya Nair':'Compliance','Leo Marsh':'Compliance','Zainab Bello':'Design','Kofi Mensah':'Engineering'};
-window.DOCS.brand={id:'brand',title:'Brand and UI guidelines',system:'Google Drive',owner:'Zainab Bello',ownerRole:'Design lead',verified:'22 Oct 2026',authority:'Approved guide',domain:'Brand',text:()=>`Kredete purple is <mark>#5A0FC8</mark>. Body text is set at 16px or larger, and every screen is checked at 390px.`};
+window.DOCS.brand={id:'brand',title:'Brand and UI guidelines',system:'Google Drive',owner:'Zainab Bello',ownerRole:'Design lead',verified:'22 Oct 2026',authority:'Approved guide',domain:'Brand',text:()=>`Broth purple is <mark>#5A0FC8</mark>. Body text is set at 16px or larger, and every screen is checked at 390px.`};
 window.DOCS.dsystem={id:'dsystem',title:'Design system: components',system:'Confluence',owner:'Zainab Bello',ownerRole:'Design lead',verified:'3 Nov 2026',authority:'Approved guide',domain:'Brand',text:()=>`Use the shared button, field and table components. A new look ships as a named variant, never as one-off CSS.`};
 window.DOCS.apilimits={id:'apilimits',title:'API rate limits and errors',system:'Confluence',owner:'Kofi Mensah',ownerRole:'Engineering lead',verified:'28 Oct 2026',authority:'Approved policy',domain:'Platform',text:()=>`The public API allows <mark>600 requests per minute</mark> per key. Above that it returns 429 with a Retry-After header.`};
 window.DOCS.incident={id:'incident',title:'Incident response runbook',system:'Google Drive',owner:'Kofi Mensah',ownerRole:'Engineering lead',verified:'11 Aug 2026',authority:'Approved, past review date',domain:'Platform',text:()=>`Page the on-call engineer within <mark>10 minutes</mark> of a Sev 1. Post status updates every 30 minutes until resolved.`};
 Object.assign(window.DOC_TEAM,{brand:'Design',dsystem:'Design',apilimits:'Engineering',incident:'Engineering'});
 
-/* Who can open each source. No acl = everyone at Kredete. */
+/* Who can open each source. No acl = everyone at Broth. */
 window.DOCS.pricing.acl=['Compliance']; window.DOCS.limits2.acl=['Compliance','Product','Finance']; window.DOCS.incident.acl=['Engineering'];
 
 /* Company directory. Work email resolves to a profile, the way an identity provider would. Invented for the prototype. */

@@ -53,8 +53,8 @@ function rawAnswer(q){
   const R=o=>Object.assign({topic,follow},o);
   if(topic==='api') return R({kind:'answered', text:`The public API allows 600 requests per minute per key [1]. Above that it returns 429 with a Retry-After header [1].`, sources:[D.apilimits]});
   if(topic==='incident') return R({kind:'low', text:`Page the on-call engineer within 10 minutes of a Sev 1 [1].`, sources:[D.incident], why:'This runbook is past its review date, so the steps may have changed.'});
-  if(topic==='brand'){ if(/system|component|variant/.test(t)) return R({kind:'answered', text:`Use the shared button, field and table components [1]. A new look ships as a named variant, never as one-off CSS [1].`, sources:[D.dsystem]}); return R({kind:'answered', text:`Kredete purple is #5A0FC8 [1]. Body text is set at 16px or larger [1].`, sources:[D.brand]}); }
-  if(topic==='crypto'){ if(S.flags.gapFixed) return R({kind:'answered', text:`Kredete does not hold customer crypto [1]. Staff may not accept crypto from partners [1].`, sources:[D.crypto]}); return {kind:'none', owner:'the Compliance team', person:'Priya Nair', topic}; }
+  if(topic==='brand'){ if(/system|component|variant/.test(t)) return R({kind:'answered', text:`Use the shared button, field and table components [1]. A new look ships as a named variant, never as one-off CSS [1].`, sources:[D.dsystem]}); return R({kind:'answered', text:`Broth purple is #5A0FC8 [1]. Body text is set at 16px or larger [1].`, sources:[D.brand]}); }
+  if(topic==='crypto'){ if(S.flags.gapFixed) return R({kind:'answered', text:`Broth does not hold customer crypto [1]. Staff may not accept crypto from partners [1].`, sources:[D.crypto]}); return {kind:'none', owner:'the Compliance team', person:'Priya Nair', topic}; }
   if(topic==='escal'){ if(S.flags.revoked) return {kind:'none', owner:'the Support content owner', person:'Daniel Reyes', accessLimited:true, topic}; return R({kind:'answered', text:`Escalate chargebacks over $2,000 to the Payments lead within one working day [1].`, sources:[D.escalate]}); }
   if(topic==='fee'&&!follow&&!/fee|replac|deliver|waive|cost|price|lost|arrive|how long|days|free|charge/.test(t)) return {kind:'none', owner:'the Compliance team', person:'Priya Nair'};
   if(topic==='fee'){
@@ -103,7 +103,7 @@ function attInfo(x){ const ext=(String(x.name).split('.').pop()||'').toLowerCase
 function attThumb(x){ const i=attInfo(x); if(x.lib&&D[x.id]) return `<span class="athm lib">${SRCICON(D[x.id].system,22)}</span>`; if(i.isImg&&i.url) return `<img class="athm" src="${i.url}" alt="">`; const col=(FT[i.ext]||[0,'#7a7d85'])[1]; return `<span class="athm atile" style="--c:${col}">${i.isImg?ICON('image',16):esc(i.label)}</span>`; }
 function attCard(x,i,rm){ const inf=attInfo(x); const sub=x.lib?'Library':inf.label+(x.size?' · '+fmtSize(x.size):''); return `<span class="att"><button type="button" class="atb" ${x.lib?`data-pfl="${x.id}"`:`data-pf="${x.fid||''}"`} aria-label="Preview ${esc(x.name)}">${attThumb(x)}<span class="atx"><b>${esc(x.name)}</b><small>${esc(sub)}</small></span></button>${rm?`<button type="button" class="atrm" data-rmf="${i}" aria-label="Remove ${esc(x.name)}">${ICON('x',12)}</button>`:''}</span>`; }
 function filesHtml(){ const f=S.ask.files||[]; return f.length?`<div class="dfiles">${f.map((x,i)=>attCard(x,i,true)).join('')}</div>`:''; }
-const GREET={m:['Good morning, {n}','Morning, {n}. What are we finding?','Fresh start, {n}'],a:['Afternoon, {n}','Good afternoon, {n}','Still hunting, {n}?'],e:['Evening, {n}','Winding down, {n}?','One more thing, {n}?'],l:['Working late, {n}?','Still up, {n}?'],any:['What do you want to know, {n}?','Ask away, {n}','Looking for something, {n}?','Let\'s find it, {n}','What\'s on your mind, {n}?','Back with questions, {n}?','What can Brain dig up, {n}?']};
+const GREET={m:['Good morning, {n}','Morning, {n}. What are we finding?','Fresh start, {n}'],a:['Afternoon, {n}','Good afternoon, {n}','Still hunting, {n}?'],e:['Evening, {n}','Winding down, {n}?','One more thing, {n}?'],l:['Working late, {n}?','Still up, {n}?'],any:['What do you want to know, {n}?','Ask away, {n}','Looking for something, {n}?','Let\'s find it, {n}','What\'s on your mind, {n}?','Back with questions, {n}?','What can Broth dig up, {n}?']};
 const GR={on:false,t:''};
 function greeting(){ const d=new Date(), h=d.getHours(), day=d.getDay(); const f=S.user&&S.user.name?String(S.user.name).split(' ')[0]:''; const pool=[...(h>=5&&h<12?GREET.m:h<18&&h>=12?GREET.a:h<22&&h>=18?GREET.e:GREET.l),...GREET.any]; if(day===5) pool.push('Happy Friday, {n}'); if(day===1) pool.push('Monday questions, {n}?');
   if(!GR.on||!GR.t){ GR.t=pool[Math.floor(Math.random()*pool.length)]; GR.on=true; }
@@ -171,6 +171,7 @@ function renderAsk(){
   <div class="lhome">
     <div class="dchead"><b>New chat</b></div>
     <div class="lh-in">
+      <div class="bm" id="bm"></div>
       <h1 class="lh-t">${greeting()}</h1>
       ${composer(true,n,'Ask a question')}
       <div class="lh-sugs">${chips.slice(0,chips.length>=4?4:2).map((c,i)=>{ const ap=appsOn(); const ic=/access/i.test(c)?ICON('lock',16):/tour/i.test(c)?ICON('book',16):SRCICON(ap[i%Math.max(1,ap.length)]||'Confluence',18); return `<button class="lh-sug" style="--i:${i}" data-q="${esc(c)}"><span class="lh-si">${ic}</span><span class="lh-sq">${esc(c)}</span><span class="lh-go">${ICON('arrow',14)}</span></button>`; }).join('')}</div>
@@ -181,7 +182,7 @@ function renderAsk(){
    <section class="cxmain">
      <div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(titleOf(S.thread[0].cid))}</b><button class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more',16)}</button><span class="lsp"></span><button class="lib ctog" id="cxtog" aria-label="Sources" title="Sources">${(()=>{ const l=S.thread[S.thread.length-1]; const a=l&&l.a; const srcs=a?(a.sources||(a.a?[a.a,a.b]:[])):[]; const sy=[...new Set(srcs.map(d=>d.system))].slice(0,3); return sy.length?`<span class="ctogs">${sy.map(x=>SRCICON(x,16)).join('')}</span>`:ICON('stack',15); })()}<span class="ctogn">${(()=>{ const l=S.thread[S.thread.length-1]; const a=l&&l.a; const n=a?((a.sources&&a.sources.length)||(a.a?2:0)):0; return n?n+(n===1?' source':' sources'):''; })()}</span></button></div>
      <div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div>
-     <div class="cxcomp">${composer(false,n,'Ask a follow-up')}<p class="cxcap">Brain can be inaccurate. Check the sources.</p></div>
+     <div class="cxcomp">${composer(false,n,'Ask a follow-up')}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div>
    </section>${side}
   </div>`;
   const nx=window.AUTH&&S.user?window.AUTH.nextStep():null;
@@ -236,7 +237,12 @@ function renderPanel(){ const p=$('#rsrc'); if(!p) return;
     body=S.history.length?S.history.map((h,i)=>`<button class="ghist" data-hist="${i}"><span>${esc(titleOf(h))}</span><span class="x" data-del="${i}" title="Delete" aria-label="Delete">×</span></button>`).join(''):`<div class="cxnone"><p>Only you can see your history.</p></div>`;
   }
   const f=last&&last.fb;
-  p.innerHTML=`<div class="cxtabs">${[['answer','Answer'],['sources','Sources']].map(([k,l])=>`<button class="ltab ${pt===k?'on':''}" data-pt="${k}">${l}</button>`).join('')}<span class="lsp"></span><button class="lib" id="cxclose" aria-label="Close sources">${ICON('x',16)}</button></div><div class="cxbody">${body}</div>`;
+  if(pt==='today'){ const now=new Date(); const sod=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(); const rows=S.history.map((q,i)=>[q,i,(S.saved&&S.saved[q]&&S.saved[q][0]&&S.saved[q][0].ts)||0]).filter(r=>r[2]>=sod);
+    body=`<div class="cxh">Today</div>`+(rows.length?rows.map(([q,i,t])=>`<button class="cxtd" data-hist="${i}"><span class="cxtdi">${ICON('check',18)}</span><span><b>${esc(titleOf(q))}</b><small>${new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</small></span></button>`).join(''):`<div class="cxnone"><p>Nothing asked yet today.</p></div>`); }
+  const conn=appsOn().length>0;
+  const tabs=[['answer','rows','Answer'],['sources','library','Sources'],['today','check','Today']];
+  p.innerHTML=`<div class="cxpro"><div class="cxav" id="cxav"></div><b class="cxname">Broth</b><span class="cxst ${conn?'on':''}"><i></i>${conn?'Connected':'No sources connected'}</span></div><div class="cxtabs">${tabs.map(([k,ic,l])=>`<button class="ltab ic ${pt===k?'on':''}" data-pt="${k}" aria-label="${l}" title="${l}">${ICON(ic,18)}</button>`).join('')}<span class="lsp"></span><button class="lib" id="cxclose" aria-label="Close sources">${ICON('x',16)}</button></div><div class="cxbody">${body}</div>`;
+  { const av=$('#cxav'); if(av&&window.BROTH_MASCOT) av.innerHTML=window.BROTH_MASCOT.svg('p'+Date.now()); }
   p.querySelectorAll('[data-pt]').forEach(b=>b.onclick=()=>{ S.ask.pt=b.dataset.pt; save(); renderPanel(); });
   (()=>{ const tabs=p.querySelector('.cxtabs'); const on=tabs.querySelector('.ltab.on'); if(!on) return; const pill=document.createElement('span'); pill.className='cxpill'; tabs.prepend(pill);
     const tr=tabs.getBoundingClientRect(), r=on.getBoundingClientRect(); const l=r.left-tr.left, w=r.width; pill.style.cssText='left:'+l+'px;width:'+w+'px;height:'+r.height+'px;top:'+(r.top-tr.top)+'px';
@@ -269,7 +275,7 @@ function ask(q){ if(window._gen) window._gen.stop(true); S.ask.pt='answer';
 
 function fileHtml(entry){ const fs=entry.files||[]; if(!fs.length) return ''; const STOP=new Set(['what','which','about','that','this','with','from','have','does','your','their','there','when','where','how','the','and','for','are','can','you','our','who','why','was','were','will','would','should','could']); const ws=String(entry.q).toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>2&&!STOP.has(w));
   const blocks=fs.map(x=>{ let text=x.text; if(x.lib&&D[x.id]){ try{ text=String(D[x.id].text(D[x.id].value)).replace(/<[^>]+>/g,''); }catch(e){} }
-    if(!text) return `<div class="fres"><div class="fh">${ICON('clip',14)}<b>${esc(x.name)}</b></div><p>${x.unreadable?'Brain cannot read this kind of file yet. Text, Markdown and CSV files work.':'Nothing to read in this file.'}</p></div>`;
+    if(!text) return `<div class="fres"><div class="fh">${ICON('clip',14)}<b>${esc(x.name)}</b></div><p>${x.unreadable?'Broth cannot read this kind of file yet. Text, Markdown and CSV files work.':'Nothing to read in this file.'}</p></div>`;
     const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean); const scored=lines.map(l=>({l,n:ws.filter(w=>l.toLowerCase().includes(w)).length})).filter(o=>o.n>0).sort((a,b)=>b.n-a.n).slice(0,3);
     const hi=l=>{ let o=esc(l.length>200?l.slice(0,200)+'…':l); ws.forEach(w=>{ o=o.replace(new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>'); }); return o; };
     return `<div class="fres"><div class="fh">${ICON('clip',14)}<b>${x.fid?`<button type="button" class="fln" data-pf="${x.fid}">${esc(x.name)}</button>`:esc(x.name)}</b></div>${scored.length?scored.map(o=>`<p class="fl">${hi(o.l)}</p>`).join(''):`<p>Nothing in this file matches the question.</p>`}</div>`; });
@@ -297,13 +303,13 @@ function turnEl(entry, idx, stream){
       const reported = S.reported;
       ans.textContent = a.lead;
       extra.innerHTML = `<div class="conflict"><div class="cfh">Two sources disagree</div>
-        ${[a.a,a.b].map((d,i)=>`<button class="cfrow ${i?'':'best'}" data-src="${d.id}">${SRCICON(d.system,22)}<span class="cft"><b>${esc(d.title)}</b><small>${esc(d.system)} · ${d.verified}</small></span><span class="cfv">$${d.value}</span>${i?'':'<span class="tag ok" title="Brain recommends this source">Recommended</span>'}</button>`).join('')}
+        ${[a.a,a.b].map((d,i)=>`<button class="cfrow ${i?'':'best'}" data-src="${d.id}">${SRCICON(d.system,22)}<span class="cft"><b>${esc(d.title)}</b><small>${esc(d.system)} · ${d.verified}</small></span><span class="cfv">$${d.value}</span>${i?'':'<span class="tag ok" title="Broth recommends this source">Recommended</span>'}</button>`).join('')}
         <div class="cff"><button class="btn sm" id="report" ${reported?'disabled':''}>${reported?'Reported to owner':'Report to owner'}</button></div></div>` + fbHtml(entry,idx,{});
     } else if(a.kind==='restricted'){
       ans.textContent = 'I can\'t show that answer. You don\'t have access to the sources behind it.';
       extra.innerHTML = lockedHtml(a.hidden) + fbHtml(entry,idx,{});
     } else if(a.kind==='error'){
-      ans.textContent = 'I could not reach the brain just now.';
+      ans.textContent = 'I could not reach Broth just now.';
       extra.innerHTML = `<div class="notice low"><span>Your question was not lost. <button class="link" id="retryq">Try again</button></span></div>`;
     } else {
       { const fn=(entry.files||[]).map(x=>x.name).filter(Boolean); ans.textContent = fn.length?`You attached ${fn.join(', ')}. This prototype cannot read file contents beyond a preview, and no source matched your question.`:`I could not find a good source for that.`; }
@@ -413,12 +419,12 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeDrawer(); cl
 function sourceEditor(id, canEdit){
   const d = D[id]; const editable = ['cards_faq','pricing','public_fee'].includes(id);
   const body = id==='cards_faq' ? `A replacement card costs $<input class="edit" id="newval" value="${d.value}" aria-label="Fee"> . Delivery takes 5 to 7 working days.`
-    : id==='pricing' ? `Partner rates and volume tiers for 2026.<br><br>Sharing: <select id="newval" class="edit" style="width:auto" aria-label="Sharing"><option>${S.flags.pricingNarrowed?'Compliance only':'Anyone in Kredete'}</option><option>Compliance only</option><option>Anyone in Kredete</option></select>`
+    : id==='pricing' ? `Partner rates and volume tiers for 2026.<br><br>Sharing: <select id="newval" class="edit" style="width:auto" aria-label="Sharing"><option>${S.flags.pricingNarrowed?'Compliance only':'Anyone in Broth'}</option><option>Compliance only</option><option>Anyone in Broth</option></select>`
     : id==='public_fee' ? `The first replacement card is <input class="edit" id="newval" style="width:240px" value="${esc(d.value)}" aria-label="Wording">.`
     : d.text(d.value);
   $('#modal').innerHTML = `<div class="modal" role="dialog" aria-label="${esc(d.system)}"><div class="bar"><span>${esc(d.system)} · ${esc(d.title)}</span><button class="link" id="mclose">Close</button></div>
     <div class="body"><h2>${esc(d.title)}</h2><p>${body}</p>
-    <p style="color:var(--mute);font-size:13px">This is a stand-in for the real ${esc(d.system)} page. The brain never edits here.</p>
+    <p style="color:var(--mute);font-size:13px">This is a stand-in for the real ${esc(d.system)} page. Broth never edits here.</p>
     <div class="actions">${editable?`<button class="btn blue" id="msave">Save in ${esc(d.system)}</button>`:''}<button class="btn" id="mclose2">Close</button></div></div></div>`;
   $('#modal').classList.add('on'); $('#mclose').onclick=$('#mclose2').onclick=closeModal;
   const sv=$('#msave'); if(sv) sv.onclick=()=>{ const v=$('#newval').value.trim();
@@ -449,7 +455,7 @@ function renderSurfaces(){
     const row=([q,i])=>`<button class="surf chat" data-chat="${i}" title="${esc(titleOf(q))}" aria-current="${cur===q?'page':'false'}"><span class="chn">${esc(titleOf(q))}</span><span class="chedit" data-ren="${i}" role="button" tabindex="0" aria-label="Chat actions" aria-haspopup="menu">${ICON('more',16)}</span></button>`;
     h=`<div class="snav">${h}</div>`;
     h+=S.history.length?`<div class="srec" role="list" aria-label="Chats">${order.filter(k=>by[k]).map(k=>`<div class="sgl">${k}</div>${by[k].map(row).join('')}`).join('')}</div>`:`<div class="srec"><p class="sempty">Your chats show up here.</p></div>`; }
-  $('#surfaces').innerHTML=h;
+  $('#surfaces').innerHTML=h; if(window.BROTH_RAIL) window.BROTH_RAIL();
   document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{S.surface=b.dataset.s; if(b.dataset.clr){ S.ask.team=null; S.selected=null; } save(); route(); window.scrollTo(0,0);});
   const goHome=()=>{ S.surface='app'; S.mode='ask'; S.thread=[]; S.ask.stack=null; S.ask.off={}; S.ask.open=false; save(); route(); };
   document.querySelectorAll('[data-home]').forEach(b=>b.onclick=goHome);
