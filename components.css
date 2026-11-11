@@ -825,3 +825,40 @@ html[data-mode=dark] .pvmark{filter:invert(1) hue-rotate(180deg) drop-shadow(0 0
 .pvcr.c9{left:-6px;top:98px;width:54px;--r:-60deg}
 
 .pvcr.c9{left:20px;top:104px}
+
+/* sign-in picture, matched to the reference: its own backdrop, the same curved lines, a white mark with a soft glow, the name above it */
+.si-r.pv{background:transparent!important;isolation:isolate;overflow:hidden}
+.pvbg{position:absolute;inset:0;z-index:-1;overflow:hidden}
+.pvbgi{position:absolute;inset:0;background:#3a1a9a url(assets/auth/bg.jpg) center/cover no-repeat}
+.pvbg svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+html[data-mode=dark] .pvbg{filter:hue-rotate(180deg) invert(1) contrast(1.1628)}
+.pvp{position:absolute;inset:0;z-index:1;container-type:size;display:block;padding:0}
+.pvtitle{position:absolute;left:50%;top:13.9cqh;width:33.4cqh;height:8.6cqh;transform:translate(-50%,-50%);background:#fff;-webkit-mask:url(assets/brand/broth-wordmark.svg) center/contain no-repeat;mask:url(assets/brand/broth-wordmark.svg) center/contain no-repeat}
+html[data-mode=dark] .pvtitle{filter:hue-rotate(180deg) invert(1) contrast(1.1628)}
+.pvlogo2{position:absolute;left:50%;top:58.6cqh;width:60cqh;height:54.6cqh;transform:translate(-50%,-50%)}
+.pvmark{position:absolute;inset:0;z-index:1;display:block;filter:drop-shadow(0 0 1.2cqh rgba(255,255,255,.95)) drop-shadow(0 0 4.6cqh rgba(196,172,255,.85))}
+html[data-mode=dark] .pvmark{filter:hue-rotate(180deg) invert(1) contrast(1.1628) drop-shadow(0 0 1.2cqh rgba(255,255,255,.95)) drop-shadow(0 0 4.6cqh rgba(196,172,255,.85))}
+.pvmark .pvb{width:100%;height:100%;display:block;color:#fff}
+.pvhello{position:absolute;left:50%;bottom:6cqh;transform:translateX(-50%);color:#fff;font-size:var(--fs-lg);font-weight:500;white-space:nowrap}
+.pvlogo2 .pvcr{position:absolute;display:block;pointer-events:none;--r:0deg;z-index:0;transform:translate(-50%,-100%) rotate(var(--r));transform-origin:50% 100%;animation:pvbob2 3.6s ease-in-out infinite,pvin2 .7s cubic-bezier(.2,.9,.25,1.2) backwards}
+.pvlogo2 .pvcr.s{z-index:2}
+.pvlogo2 .pvcr.h{transform:translate(-50%,-50%) rotate(var(--r));transform-origin:50% 50%}
+.pvlogo2 .pvcr img{display:block;width:100%;height:auto}
+@keyframes pvbob2{0%,100%{translate:0 0}50%{translate:0 -.5cqh}}
+@keyframes pvin2{from{opacity:0;scale:.8}}
+@media (prefers-reduced-motion:reduce){.pvlogo2 .pvcr{animation:none}}
+
+/* dark mode counter-filter, the same one every picture uses, with the glow drawn before it so it comes out as intended */
+html[data-mode=dark] .pvbg{filter:invert(1) hue-rotate(180deg)}
+html[data-mode=dark] .pvtitle{filter:invert(1) hue-rotate(180deg)}
+html[data-mode=dark] .pvmark{filter:drop-shadow(0 0 1.2cqh rgba(255,255,255,.95)) drop-shadow(0 0 4.6cqh rgba(196,172,255,.85)) invert(1) hue-rotate(180deg)}
+.pvlogo2{width:46cqh;height:41.7cqh;top:57cqh}
+.pvlogo2 .pvcr.h.d{left:13%!important;top:64%!important}
+
+/* dark mode, done properly: the page inverts every colour, so this picture ships a second backdrop and uses pre-inverted colours instead of a filter. Shown colours match the light version as closely as the page filter allows. */
+html[data-mode=dark] .pvbg{filter:none}
+html[data-mode=dark] .pvbgi{background-color:#1b0f4a;background-image:url(assets/auth/bg-dark.jpg)}
+html[data-mode=dark] .pvbg svg g{stroke:#00000f}
+html[data-mode=dark] .pvtitle{filter:none;background:#000}
+html[data-mode=dark] .pvmark{filter:drop-shadow(0 0 1.2cqh rgba(0,0,0,.95)) drop-shadow(0 0 4.6cqh rgba(78,50,146,.85))}
+html[data-mode=dark] .pvmark .pvb{color:#000}
