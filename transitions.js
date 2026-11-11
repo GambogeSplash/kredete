@@ -116,6 +116,8 @@ A.rise = () => {
 /** Signing out is the dive in reverse: the app dims, the sign-in is switched on beneath, the card shrinks into the picture. */
 A.leave = (commit) => {
   if (calm()) { commit(); return; }
+  /* Already on a picture screen (first-run welcome, setup wizard): there is no app to dim, so switch straight to the sign-in and let it fade in, as the prototype does. Dimming here painted a white overlay, because these screens have no page filter. */
+  if ($('#sipv')) { still(commit); return; }
   const mp = $('.mainpanel');
   // In dark the panel's own colour is pre-inversion; what is on screen is the dark of the sign-in card.
   const [pr, pg, pb] = dark() ? [19, 19, 20] : rgb(mp ? getComputedStyle(mp).backgroundColor : 'rgb(255,255,255)');

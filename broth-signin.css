@@ -112,3 +112,7 @@ button.adlogo.busy{animation:logopulse 1s ease-in-out infinite}
 .si-in .obout{display:inline-flex;align-items:center;margin-top:var(--s-4);margin-left:-8px;padding:4px 8px;border-radius:var(--r-sm);color:var(--mute)}
 .si-in .obout:hover{color:var(--ink);background:var(--fill-1)}
 .si-in .obout:active{transform:scale(.98)}
+
+/* first-run welcome: the field and the buttons sit close (the empty error slot takes no room, the button row adds 8 px: a 20 px gap in all, as in the prototype) */
+.si-in .hse:empty{display:none}
+.si-in .obnav{margin-top:var(--s-2)}
