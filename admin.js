@@ -38,6 +38,44 @@ function life(root) {
   $$('.adseg i.on', root).forEach((i, k) => { if (i.animate) i.animate([{ transform: 'scaleY(.2)', opacity: 0.3 }, { transform: 'none', opacity: 1 }], { duration: 420, delay: k * 28, easing: ease, fill: 'backwards' }); });
   $$('.adst,.adsc,.adrow,.addom,.adhero,.adrq', root).forEach((c, k) => { if (c.animate) c.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: Math.min(k, 12) * 34, easing: ease, fill: 'backwards' }); });
 }
+/* ---------- domain tiles: a favicon for a name that is a hostname, else the initial ----------
+   A knowledge domain such as "Payments" has no host and makes no request. A name that is a host
+   (northwind.com) asks the favicon service for that host only, once per host, with no referrer;
+   the image is swapped in only when it is wider than 16 px (16 px is the generic globe). */
+const HOST = /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i;
+const hostOf = (name) => { const h = String(name || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''); return HOST.test(h) ? h : ''; };
+/** @type {Map<string, Promise<string | null>>} */
+const favicons = new Map();
+/** @param {string} host */
+function faviconFor(host) {
+  if (!favicons.has(host)) {
+    favicons.set(host, new Promise((resolve) => {
+      const img = new Image();
+      img.referrerPolicy = 'no-referrer';
+      img.onload = () => resolve(img.naturalWidth > 16 ? img.src : null);
+      img.onerror = () => resolve(null);
+      img.src = `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${host}&size=128`;
+    }));
+  }
+  return favicons.get(host);
+}
+/** The tile's markup: a fixed 40 px squircle with the initial; hydrateTiles adds a logo when there is one. */
+const domainTile = (name) => { const host = hostOf(name); return `<span class="dmtile" aria-hidden="true" data-l="${esc((String(name || '?').trim()[0] || '?').toUpperCase())}"${host ? ` data-host="${esc(host)}"` : ''}></span>`; };
+/** @param {ParentNode} root */
+function hydrateTiles(root) {
+  $$('[data-host]:not([data-done])', root).forEach((tile) => {
+    tile.dataset.done = '1';
+    faviconFor(tile.dataset.host).then((src) => {
+      if (!src || !tile.isConnected) return;
+      const img = document.createElement('img');
+      img.alt = '';
+      img.referrerPolicy = 'no-referrer';
+      img.src = src;
+      tile.appendChild(img);
+      requestAnimationFrame(() => img.classList.add('on'));
+    });
+  });
+}
 /** Fills the page title row's right-hand controls. */
 const actions = (html) => { const a = $('#adact'); if (a) a.innerHTML = html; return a; };
 
@@ -50,7 +88,7 @@ function closePop() { if (popClose) popClose(); }
  * @param {HTMLElement} anchor
  * @param {string} html
  * @param {string} label
- * @param {{ scrim?: boolean, sheet?: boolean }} [opts] scrim: a backdrop behind it; sheet: a bottom sheet on phones
+ * @param {{ scrim?: boolean, sheet?: boolean, menu?: boolean }} [opts] scrim: a backdrop behind it; sheet: a bottom sheet on phones
  * @returns {HTMLElement}
  */
 function pop(anchor, html, label, opts) {
@@ -59,7 +97,7 @@ function pop(anchor, html, label, opts) {
   const scrim = o.scrim ? document.createElement('div') : null;
   if (scrim) { scrim.className = 'ds-scrim'; document.body.appendChild(scrim); }
   const el = document.createElement('div');
-  el.className = 'ds-pop' + (o.sheet ? ' sheet' : '');
+  el.className = 'ds-pop' + (o.sheet ? ' sheet' : '') + (o.menu ? ' menu' : '');
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', label);
   el.innerHTML = html;
@@ -67,7 +105,8 @@ function pop(anchor, html, label, opts) {
   const place = () => {
     const r = anchor.getBoundingClientRect();
     el.style.top = (r.bottom + 8) + 'px';
-    el.style.right = Math.max(12, innerWidth - r.right) + 'px';
+    if (o.menu) el.style.left = Math.max(12, Math.min(r.left, innerWidth - el.offsetWidth - 12)) + 'px';
+    else el.style.right = Math.max(12, innerWidth - r.right) + 'px';
     el.style.maxHeight = Math.max(200, innerHeight - r.bottom - 20) + 'px';
   };
   place();
@@ -268,5 +307,5 @@ function draw() {
 }
 tabs.audit = { label: 'Audit log', roles: ['admin', 'compliance'], render: audit };
 
-window.ADMIN = { tabs, names, hint, actions, pop, closePop, life, railHtml, wireRail };
+window.ADMIN = { tabs, names, hint, actions, pop, closePop, life, railHtml, wireRail, domainTile, hydrateTiles };
 })();

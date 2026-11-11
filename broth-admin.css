@@ -300,3 +300,34 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 .modal .dmfixed .dmlabel code{border:0;background:none;padding:0}
 .modal .dmfixed{gap:var(--s-2)}
 .modal .dmfixed .dmlabel code{align-self:center;line-height:1.4;display:block;max-width:calc(100% - 40px)}
+
+/* the People filter: the Library's button, a narrow menu under it */
+.ds-pop.menu{width:240px;padding:var(--s-2);border-radius:var(--r-lg)}
+.ds-pop.menu .fopt{display:flex;align-items:center;gap:var(--s-3);width:100%;padding:var(--s-2) 10px;border:0;background:none;border-radius:var(--r-md);font-size:var(--fs-md);color:var(--ink);text-align:left;cursor:pointer}
+.ds-pop.menu .fopt span{flex:1}.ds-pop.menu .fopt em{font-style:normal;color:var(--mute);font-size:var(--fs-xs)}
+.ds-pop.menu .fopt:hover,.ds-pop.menu .fopt:focus-visible{background:var(--wash);outline:0}
+.ds-pop.menu .fopt:focus-visible{box-shadow:0 0 0 2px var(--brand) inset}
+.ds-pop.menu .fopt.on{background:var(--brand-soft)}
+.ds-pop.menu .fchk{display:inline-flex;width:14px;color:var(--brand-strong)}
+.adbar2 .fbtn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.adbar2 .fbtn[aria-expanded=true]{background:var(--fill-1)}
+/* column titles over the People table, aligned with its rows; sticky like the Audit log header */
+.adppl{overflow:clip}
+.adrow.adth{position:sticky;top:0;z-index:2;min-height:40px;padding-top:0;padding-bottom:0;background:var(--fill-1);color:var(--mute);font-size:var(--fs-xs);border-bottom:1px solid var(--line)}
+.adrow.adth:hover{background:var(--fill-1)}
+.adrow.skrow{display:flex}
+.actl .actth{min-height:40px;background:var(--fill-1);color:var(--mute);font-size:var(--fs-xs);padding-top:0;padding-bottom:0}
+.actl .actth .actb{flex:1;justify-content:flex-start}
+@media (max-width:900px){
+  .adbar2 .fbtn span{display:inline!important}.adbar2 .fbtn{width:auto;padding:0 var(--s-3)}
+  .adrow.adth{display:none}
+}
+
+/* a domain's tile: the same 40 px rounded tile as the source logos, a 1px stroke so white logos stay visible */
+.dmtile{position:relative;display:grid;place-items:center;flex:none;width:40px;height:40px;box-sizing:border-box;border-radius:var(--r-md);border:1px solid var(--line);background:var(--fill-1);overflow:hidden;font-weight:600;font-size:15px;color:var(--blue,#5e6ad2)}
+.dmtile::before{content:attr(data-l)}
+.dmtile img{position:absolute;inset:0;width:100%;height:100%;padding:7px;box-sizing:border-box;object-fit:contain;background:var(--surface);opacity:0;transition:opacity var(--dur-base)}
+.dmtile img.on{opacity:1}
+.dmn .dmtile{margin:0}
+.adth>span:first-child{width:40px}
+.adrow.adth>span:first-child{width:40px}
