@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 
 const { folders, mode, request } = createRequire(import.meta.url)('../../library-browse.js');
 
-const blank = { folder: '', q: '', system: '', path: '', problems: '' };
+const blank = { folder: '', q: '', system: '', path: '', source: '', problems: '' };
 const at = (fields) => ({ ...blank, ...fields });
 
 describe('mode', () => {
@@ -36,6 +36,16 @@ describe('request', () => {
   it('searches everything at the root, combining every filter', () => {
     assert.deepEqual(request(at({ q: 'fees', system: 'confluence', path: 'Cards (CARD)', problems: '1' })), { q: 'fees', system: 'confluence', path: 'Cards (CARD)', label_problems: true });
     assert.deepEqual(request(at({ system: 'gdrive' })), { system: 'gdrive' });
+  });
+});
+
+describe('the Source filter (bot admin spec 9.2)', () => {
+  it('lists one source as a flat list, wherever the Library was', () => {
+    for (const folder of ['', 'payments']) assert.equal(mode(at({ folder, source: 'c1' })), 'search', folder);
+  });
+  it('asks for that container, with any other filter', () => {
+    assert.deepEqual(request(at({ source: 'c1' })), { container_id: 'c1' });
+    assert.deepEqual(request(at({ source: 'c1', q: 'fees', system: 'confluence' })), { q: 'fees', system: 'confluence', container_id: 'c1' });
   });
 });
 

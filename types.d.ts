@@ -185,6 +185,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/connections/github/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Github Callback
+         * @description GitHub's redirect after installing the app; authorised by the install state.
+         */
+        get: operations["github_callback_v1_admin_connections_github_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/connections/oauth/callback": {
         parameters: {
             query?: never;
@@ -214,6 +234,26 @@ export interface paths {
         post?: never;
         /** Disconnect */
         delete: operations["disconnect_v1_admin_connections__connection_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/connections/{connection_id}/github/install": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Github Install
+         * @description Start installing the GitHub App for a docs connection (docs source spec 6).
+         */
+        post: operations["github_install_v1_admin_connections__connection_id__github_install_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -304,6 +344,26 @@ export interface paths {
         patch: operations["patch_container_v1_admin_containers__container_id__patch"];
         trace?: never;
     };
+    "/v1/admin/containers/{container_id}/public-declaration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Declaration
+         * @description Request that a docs repository's published pages be Public (docs source spec 5).
+         */
+        post: operations["request_declaration_v1_admin_containers__container_id__public_declaration_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/credentials": {
         parameters: {
             query?: never;
@@ -317,6 +377,26 @@ export interface paths {
          */
         get: operations["list_credentials_v1_admin_credentials_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/credentials/github_app": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Github App
+         * @description Sandbox only. The GitHub App the docs source reads through.
+         */
+        put: operations["put_github_app_v1_admin_credentials_github_app_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -555,6 +635,26 @@ export interface paths {
          * @description The run's failed pages that no later run has fixed (spec 3.4.1).
          */
         get: operations["list_failures_v1_admin_sync_runs__run_id__failures_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/sync-runs/{run_id}/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Notices
+         * @description The run's pages that synced with a notice (docs source spec 5).
+         */
+        get: operations["list_notices_v1_admin_sync_runs__run_id__notices_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -978,6 +1078,77 @@ export interface paths {
         put?: never;
         /** Revoke */
         post: operations["revoke_v1_promotions__promotion_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-declarations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Declarations
+         * @description Declarations the reader may decide, newest first: all of them, or those with one status. Approving still needs someone other than the requester.
+         */
+        get: operations["list_declarations_v1_public_declarations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-declarations/{declaration_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve */
+        post: operations["approve_v1_public_declarations__declaration_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-declarations/{declaration_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject */
+        post: operations["reject_v1_public_declarations__declaration_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-declarations/{declaration_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke */
+        post: operations["revoke_v1_public_declarations__declaration_id__revoke_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1496,7 +1667,7 @@ export interface components {
          * ContainerKind
          * @enum {string}
          */
-        ContainerKind: "shared_drive" | "folder" | "space";
+        ContainerKind: "shared_drive" | "folder" | "space" | "repo";
         /** ContainerOut */
         ContainerOut: {
             active_run: components["schemas"]["SyncRunOut"] | null;
@@ -1527,6 +1698,9 @@ export interface components {
             owner_user_id: string | null;
             /** Path */
             path: string;
+            public_declaration?: components["schemas"]["DeclarationOut"] | null;
+            /** Public Documents */
+            public_documents: number;
             /** Review Interval Months */
             review_interval_months: number;
         };
@@ -1611,7 +1785,7 @@ export interface components {
          * CredentialName
          * @enum {string}
          */
-        CredentialName: "google_oauth" | "confluence_oauth";
+        CredentialName: "google_oauth" | "confluence_oauth" | "github_app";
         /** CredentialOut */
         CredentialOut: {
             /** Client Id Last4 */
@@ -1636,6 +1810,59 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** DeclarationDecisionIn */
+        DeclarationDecisionIn: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /** DeclarationIn */
+        DeclarationIn: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /** DeclarationOut */
+        DeclarationOut: {
+            /** Approved By */
+            approved_by: string | null;
+            /**
+             * Can Decide
+             * @description The reader may approve, reject or revoke this declaration (an admin or a domain owner of the repository's default domain); a requester never approves their own.
+             */
+            can_decide: boolean;
+            /**
+             * Container Id
+             * Format: uuid
+             */
+            container_id: string;
+            /** Container Path */
+            container_path?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reason */
+            reason: string | null;
+            /**
+             * Requested By
+             * Format: uuid
+             */
+            requested_by: string;
+            status: components["schemas"]["DeclarationStatus"];
+        };
+        /**
+         * DeclarationStatus
+         * @description A public declaration on a docs repository (docs source spec 5).
+         * @enum {string}
+         */
+        DeclarationStatus: "pending" | "approved" | "rejected" | "revoked";
         /** DocsIndexOut */
         DocsIndexOut: {
             /** Items */
@@ -1810,6 +2037,15 @@ export interface components {
          * @enum {string}
          */
         FeedbackReason: "wrong" | "outdated" | "incomplete" | "could_not_check";
+        /** GitHubAppIn */
+        GitHubAppIn: {
+            /** App Id */
+            app_id: string;
+            /** Private Key */
+            private_key: string;
+            /** Webhook Secret */
+            webhook_secret: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -2008,6 +2244,13 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** Page[DeclarationOut] */
+        Page_DeclarationOut_: {
+            /** Items */
+            items: components["schemas"]["DeclarationOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** Page[DocumentOut] */
         Page_DocumentOut_: {
             /** Items */
@@ -2054,6 +2297,13 @@ export interface components {
         Page_SyncRunFailureOut_: {
             /** Items */
             items: components["schemas"]["SyncRunFailureOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** Page[SyncRunNoticeOut] */
+        Page_SyncRunNoticeOut_: {
+            /** Items */
+            items: components["schemas"]["SyncRunNoticeOut"][];
             /** Next Cursor */
             next_cursor?: string | null;
         };
@@ -2287,7 +2537,7 @@ export interface components {
          * SourceSystem
          * @enum {string}
          */
-        SourceSystem: "gdrive" | "confluence";
+        SourceSystem: "gdrive" | "confluence" | "github_docs";
         /** SourcesIn */
         SourcesIn: {
             /** Container Ids */
@@ -2324,6 +2574,17 @@ export interface components {
             error: string | null;
             /** External Id */
             external_id: string;
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string | null;
+        };
+        /** SyncRunNoticeOut */
+        SyncRunNoticeOut: {
+            /** External Id */
+            external_id: string;
+            /** Notice */
+            notice: string;
             /** Title */
             title: string | null;
             /** Url */
@@ -2869,6 +3130,36 @@ export interface operations {
             };
         };
     };
+    github_callback_v1_admin_connections_github_callback_get: {
+        parameters: {
+            query?: {
+                installation_id?: number | null;
+                state?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     oauth_callback_v1_admin_connections_oauth_callback_get: {
         parameters: {
             query?: {
@@ -2916,6 +3207,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    github_install_v1_admin_connections__connection_id__github_install_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
             };
             /** @description Validation Error */
             422: {
@@ -3087,6 +3409,41 @@ export interface operations {
             };
         };
     };
+    request_declaration_v1_admin_containers__container_id__public_declaration_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                container_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeclarationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeclarationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_credentials_v1_admin_credentials_get: {
         parameters: {
             query?: never;
@@ -3103,6 +3460,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CredentialList"];
+                };
+            };
+        };
+    };
+    put_github_app_v1_admin_credentials_github_app_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GitHubAppIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3569,6 +3957,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_SyncRunFailureOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notices_v1_admin_sync_runs__run_id__notices_get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_SyncRunNoticeOut_"];
                 };
             };
             /** @description Validation Error */
@@ -4072,6 +4494,7 @@ export interface operations {
             query?: {
                 system?: components["schemas"]["SourceSystem"] | null;
                 path?: string | null;
+                container_id?: string | null;
                 domain?: string | null;
                 direct?: boolean;
                 no_domain?: boolean;
@@ -4419,6 +4842,142 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PromotionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_declarations_v1_public_declarations_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["DeclarationStatus"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_DeclarationOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_v1_public_declarations__declaration_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                declaration_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DeclarationDecisionIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeclarationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_v1_public_declarations__declaration_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                declaration_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DeclarationDecisionIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeclarationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_v1_public_declarations__declaration_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                declaration_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DeclarationDecisionIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeclarationOut"];
                 };
             };
             /** @description Validation Error */

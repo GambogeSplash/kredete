@@ -64,8 +64,10 @@
      * @param {string | null} [fields.turnId] for streams: the turn that had started
      * @param {boolean} [fields.reached] whether Broth itself answered (not a network failure, or a
      *   page without a problem document from something in between, such as a proxy's 502)
+     * @param {{ loc: (string | number)[], msg: string }[]} [fields.errors] for a 422: each
+     *   rejected field's location and message, so a form can show it under that field
      */
-    constructor({ status, title, detail = '', code = '', retryAfter = null, retryable, turnId = null, reached }) {
+    constructor({ status, title, detail = '', code = '', retryAfter = null, retryable, turnId = null, reached, errors = [] }) {
       super(title);
       this.name = 'ApiError';
       this.status = status;
@@ -76,6 +78,7 @@
       this.retryable = retryable ?? (status === 0 || status === 429 || status >= 500);
       this.turnId = turnId;
       this.reached = reached ?? status !== 0;
+      this.errors = errors;
     }
   }
 
@@ -130,7 +133,7 @@
    * @returns {Promise<ApiError>}
    */
   async function problemOf(response, now) {
-    /** @type {{ title?: unknown, detail?: unknown, code?: unknown }} */
+    /** @type {{ title?: unknown, detail?: unknown, code?: unknown, errors?: unknown }} */
     let body = {};
     const type = response.headers.get('content-type') || '';
     if (/json/.test(type)) body = await response.json().catch(() => ({}));
@@ -146,7 +149,20 @@
       detail: typeof body.detail === 'string' ? body.detail : '',
       code: typeof body.code === 'string' ? body.code : '',
       retryAfter,
+      errors: fieldErrors(body.errors),
     });
+  }
+
+  /**
+   * The located messages of a validation problem; anything malformed is skipped.
+   * @param {unknown} errors
+   * @returns {{ loc: (string | number)[], msg: string }[]}
+   */
+  function fieldErrors(errors) {
+    if (!Array.isArray(errors)) return [];
+    return errors
+      .filter((e) => e && typeof e === 'object' && Array.isArray(e.loc) && typeof e.msg === 'string')
+      .map((e) => ({ loc: e.loc.filter((/** @type {unknown} */ p) => typeof p === 'string' || typeof p === 'number'), msg: e.msg }));
   }
 
   /**

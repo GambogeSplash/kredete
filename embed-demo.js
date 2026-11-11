@@ -4,7 +4,10 @@
   'use strict';
   const params = new URLSearchParams(window.location.search);
   const key = params.get('key');
-  const api = params.get('api');
+  // An address pasted without its scheme ("api.example.com") would load as a path on this
+  // site and the widget would never appear, so https:// is assumed.
+  const raw = (params.get('api') || '').trim();
+  const api = raw && !/^https?:\/\//i.test(raw) ? `https://${raw}` : raw;
   const help = document.getElementById('demo-help');
   if (!key || !api) {
     if (help) help.hidden = false;

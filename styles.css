@@ -921,7 +921,6 @@ body[data-sf=bot] #crumb{display:none}
 .agr>i{width:10px;height:10px;border-radius:50%;flex:none}
 .agc-h{display:flex;align-items:center;gap:var(--s-2);margin-bottom:var(--s-2)}.agc-h h3{margin:0;font-size:var(--fs-md);font-weight:600}
 .agh{font-size:var(--fs-sm);font-weight:500;margin:22px 0 var(--s-2)}
-.agt{width:100%;border-collapse:collapse}
 .agsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s-4);align-items:start}
 .agl{display:flex;flex-direction:column;gap:var(--s-2)}
 .agd{border:1px solid var(--line);border-radius:var(--r-lg);padding:14px var(--s-4);background:var(--surface);position:sticky;top:8px}.agd h3{font-size:var(--fs-md);margin:0 0 var(--s-2)}
@@ -1037,9 +1036,8 @@ body[data-sf=library] #crumb,body[data-sf=connectors] #crumb{display:none}
 @media (max-width:560px){.pg .libbar{padding:0 0 var(--s-3)}.pg .ggrid{padding:var(--s-3) 0 var(--s-2)}}
 
 /* ---- Admin redesign ---- */
-.lrail-g{font-size:var(--fs-2xs);color:var(--mute-2);font-weight:500;padding:14px 10px var(--s-1)}
+.lrail-g{font-size:var(--fs-2xs);color:var(--mute);font-weight:500;padding:14px 10px var(--s-1)}
 .lrail .lrail-g:first-of-type{padding-top:var(--s-2)}
-.agrid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s-3);margin-bottom:var(--s-2)}
 .astat{display:flex;flex-direction:column;gap:2px;text-align:left;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:14px var(--s-4)}
 button.astat:hover{background:var(--fill-1);border-color:var(--line-strong)}
 .astat b{font-size:var(--fs-h1);font-weight:600;letter-spacing:-.02em}.astat span{color:var(--mute);font-size:var(--fs-sm)}
@@ -1053,20 +1051,11 @@ button.astat:hover{background:var(--fill-1);border-color:var(--line-strong)}
 .adot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
 .acard{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:14px var(--s-4);margin-bottom:var(--s-2)}.acard h3{font-size:var(--fs-md);margin:0 0 var(--s-3);font-weight:600}
 .btn.danger-o{border-color:var(--danger-line);color:var(--danger-strong)}
-@media (max-width:900px){.agrid4{grid-template-columns:repeat(2,minmax(0,1fr))}.dt-r{grid-template-columns:1fr auto!important}.dt-h{display:none}.dtm{display:none}}
+@media (max-width:900px){.dt-r{grid-template-columns:1fr auto!important}.dt-h{display:none}.dtm{display:none}}
 
 /* ---- Support agent redesign ---- */
 .aghd{display:flex;align-items:center;gap:var(--s-3);margin-bottom:var(--s-4)}.aghd .lcont-t{margin:0}
-.agov{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:var(--s-4);align-items:start}
-.agrdy{display:flex;align-items:center;justify-content:space-between}.agrdy h3{margin:0;font-size:var(--fs-md)}.agrdy span{color:var(--mute);font-size:var(--fs-xs)}
-.agbar2{height:6px;border-radius:var(--r-xs);background:var(--fill-2);margin:var(--s-3) 0 var(--s-2);overflow:hidden}.agbar2 i{display:block;height:100%;background:var(--brand);border-radius:var(--r-xs);transition:width var(--dur-slow)}
-.agstep{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-3) 0;border-top:1px solid var(--line2)}.agstep:first-of-type{border-top:0}
-.agst{width:18px;height:18px;border-radius:50%;border:1.5px solid #cfcfd5;display:inline-flex;align-items:center;justify-content:center;color:var(--surface);flex:none}.agstep.ok .agst{background:#26a269;border-color:#26a269}
-.agt{flex:1;display:grid}.agt b{font-weight:500;font-size:var(--fs-md)}.agt small{color:var(--mute);font-size:var(--fs-xs)}
-.agrid4.g2{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:var(--s-3)}
 .dt-r.on{background:var(--brand-wash)}.dtr{text-align:right}
-.agta{width:100%;border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s-3);font:14px/1.5 var(--font);resize:vertical}
-@media (max-width:1100px){.agov{grid-template-columns:1fr}}
 @media (max-width:900px){.aghd{flex-wrap:wrap}}
 
 /* ---- Account redesign: label and value rows ---- */
@@ -1088,7 +1077,7 @@ button.astat:hover{background:var(--fill-1);border-color:var(--line-strong)}
  .lset .lrail .tab{white-space:nowrap;flex:none;padding:0 var(--s-3);min-height:34px}
  .lset .lcont{padding:var(--s-4) 14px var(--s-7)}
  .atool{flex-wrap:wrap}.atool .libs{max-width:none;flex:1 1 100%}
- .aghd{flex-wrap:wrap}.agov{grid-template-columns:1fr}.agsplit{grid-template-columns:1fr}.agd{position:static}
+ .aghd{flex-wrap:wrap}.agsplit{grid-template-columns:1fr}.agd{position:static}
  .dt{overflow-x:auto}
 }
 @media (max-width:860px){.dt-r{grid-template-columns:minmax(0,1fr)!important;grid-auto-flow:column;grid-auto-columns:auto}}
@@ -1101,7 +1090,7 @@ button.astat:hover{background:var(--fill-1);border-color:var(--line-strong)}
 
 /* ---- dark mode: tuned invert, pictures and brand colours kept true ---- */
 html[data-mode=dark]{filter:invert(.93) hue-rotate(180deg);background:var(--surface);color-scheme:dark}
-html[data-mode=dark] :is(img,video,canvas,.stile,.wsav,.avimg,.lav,.kav,.adot,.dsend,.btn.primary,.btn.blue,.lbadge,.obsw,.agst,.agbar2 i,.lvs i,.cmp-tick){filter:invert(1) hue-rotate(180deg)}
+html[data-mode=dark] :is(img,video,canvas,.stile,.wsav,.avimg,.lav,.kav,.adot,.dsend,.btn.primary,.btn.blue,.lbadge,.obsw,.lvs i,.cmp-tick){filter:invert(1) hue-rotate(180deg)}
 html[data-mode=dark]{--e1:0 1px 2px rgba(255,255,255,.12);--e2:0 8px 16px -4px rgba(255,255,255,.2);--e3:0 16px 40px -8px rgba(255,255,255,.35)}
 html[data-mode=dark] .scrim{background:rgba(255,255,255,.4)}
 html[data-mode=dark] .modal-wrap{background:rgba(255,255,255,.55)}
@@ -1226,8 +1215,6 @@ html[data-mode=dark] :is(.fc-art,.fsvg,.fh-i){filter:invert(1) hue-rotate(180deg
 /* Account: a ring around your photo */
 .acid .avimg,.acid img{box-shadow:0 0 0 3px var(--surface),0 0 0 5px rgba(94,106,210,.45),0 10px 24px -8px rgba(94,106,210,.5);border-radius:50%}
 /* Support agent: readiness fills with colour */
-.agbar2 i{background:linear-gradient(90deg,var(--brand),#26a269)}
-.agstep.ok .agst{box-shadow:0 0 0 3px rgba(38,162,105,.16)}
 /* sign-in and onboarding: a soft colour field behind the preview */
 .si-r.pv{background:radial-gradient(ellipse 70% 55% at 70% 20%,rgba(94,106,210,.18),transparent 70%),radial-gradient(ellipse 60% 50% at 20% 90%,rgba(217,70,168,.12),transparent 70%),var(--wash)}
 .si-in.in{animation:none}

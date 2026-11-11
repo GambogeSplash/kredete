@@ -18,6 +18,7 @@ const P={
  globe:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c3 3.2 3 13.8 0 17M12 3.5c-3 3.2-3 13.8 0 17"/>',
  chevd:'<path d="M6 9.5l6 6 6-6"/>',
  chevr:'<path d="M9.5 6l6 6-6 6"/>',
+ chevl:'<path d="M14.5 6l-6 6 6 6"/>',
  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
  copy:'<rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6A2.5 2.5 0 0 0 13 3.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/>',
  thumbup:'<path d="M7.5 11v8.5h-3V11h3zM7.5 11l3.5-7a2 2 0 0 1 2 2v3.5h5.2a2 2 0 0 1 2 2.4l-1.2 5.6a2 2 0 0 1-2 1.6H7.5"/>',
@@ -58,6 +59,6 @@ const P={
 window.PERSON=(name,px,cls)=>`<span class="who">${window.AVATAR(name,cls||'lav',px||18)}<span>${String(name==null?'':name).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span></span>`;
 /* Initials on a tinted tile: real people have no stored photo. */
 window.AVATAR=(name,cls,px)=>{ const n=String(name||'').replace(/\(.*\)/,'').trim(); const ini=n.split(/\s+/).map(x=>x[0]||'').join('').slice(0,2).toUpperCase(); const safe=n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); return `<span class="${cls||'avimg'} avini" title="${safe}" style="${px?`width:${px}px;height:${px}px;font-size:${Math.max(9,Math.round(px*0.4))}px`:''}" aria-hidden="true">${ini}</span>`; };
-window.SRCICON=(system,px)=>`<img src="/assets/svg/${{'Confluence':'src-confluence','Google Drive':'src-drive','Help centre':'src-help'}[system]||'src-file'}.svg?v=3" alt="${system}" width="${px||20}" height="${px||20}" style="border-radius:5px;flex:none">`;
+window.SRCICON=(system,px)=>`<img src="/assets/svg/${{'Confluence':'src-confluence','Google Drive':'src-drive','Help centre':'src-help','Docs repositories':'src-repo'}[system]||'src-file'}.svg?v=3" alt="${system}" width="${px||20}" height="${px||20}" style="border-radius:5px;flex:none">`;
 window.ICON=(n,s)=>`<svg class="ic-svg" data-i="${n}" width="${s||18}" height="${s||18}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||''}</svg>`;
 })();

@@ -1,4 +1,5 @@
-/* governance.js: promotion requests (sandbox spec 4.3, plan C7.2).
+/* governance.js: promotion requests (sandbox spec 4.3, plan C7.2), and requests to make a
+ * whole docs repository Public (docs source spec 8), listed first while pending.
  *
  * GET /v1/promotions lists requests for documents the reader can see. Approve, Reject and
  * Revoke appear only when PromotionOut.can_decide says the reader is an approver; nobody
@@ -21,7 +22,7 @@ const OPEN = ['pending', 'needs_review'];
 
 function state() {
   const c = B.S.cache;
-  if (!c.gov) c.gov = { status: '', items: [], next: null, loaded: false, loading: false, error: null, seq: 0 };
+  if (!c.gov) c.gov = { status: '', items: [], repos: [], next: null, loaded: false, loading: false, error: null, seq: 0 };
   return c.gov;
 }
 /** Names for requesters: admins can read the people list; everyone else sees "you" or a colleague. */
@@ -30,7 +31,7 @@ const who = (id, names) => (id === B.S.me.id ? 'you' : names[id] || 'a colleague
 
 function page() {
   const g = state();
-  $('#app').innerHTML = `<div class="pg gov"><h1>Governance</h1><p class="sub pgsub">Requests to share a document more widely. A document's owner, a domain owner of its domain, or an admin decides; nobody approves their own request.</p>
+  $('#app').innerHTML = `<div class="pg gov"><h1>Governance</h1><p class="sub pgsub">Requests to share a document, or a whole docs repository, more widely. Its owner, a domain owner of its domain, or an admin decides; nobody approves their own request.</p>
     <div class="libchips govtabs" role="tablist" aria-label="Status">${STATUSES.map(([k, l]) => `<button type="button" class="lchip ${g.status === k ? 'on' : ''}" role="tab" aria-selected="${g.status === k}" data-st="${k}">${l}</button>`).join('')}</div>
     <div class="actl govlist" id="govlist"></div><div class="chmore" id="govmore"></div></div>`;
   $$('[data-st]').forEach((b) => { b.onclick = () => { g.status = b.dataset.st; page(); load(true); }; });
@@ -44,8 +45,15 @@ async function load(reset) {
   if (reset) { g.items = []; g.next = null; g.loaded = false; }
   draw();
   try {
-    const [result] = await Promise.all([B.api.get('/promotions', { status: g.status || null, limit: 30, cursor: reset ? null : g.next }), people()]);
+    // Repository requests have every status a promotion has, except Needs review.
+    const repoStatus = g.status === 'needs_review' ? undefined : g.status || null;
+    const [result, repos] = await Promise.all([
+      B.api.get('/promotions', { status: g.status || null, limit: 30, cursor: reset ? null : g.next }),
+      reset && repoStatus !== undefined ? B.api.get('/public-declarations', { status: repoStatus }) : Promise.resolve(null),
+      people(),
+    ]);
     if (mine !== g.seq) return;
+    if (reset) g.repos = repos ? repos.items : [];
     g.items = reset ? result.items : g.items.concat(result.items);
     g.next = result.next_cursor || null;
     g.loaded = true;
@@ -69,6 +77,21 @@ function actions(p) {
   }
   return h;
 }
+/** A request to make a whole docs repository Public. Nobody approves their own; an approved
+ * one stays listed so it can be revoked here. */
+function repoActions(d) {
+  if (!d.can_decide) return '';
+  if (d.status === 'pending') {
+    const approve = d.requested_by === B.S.me.id ? '' : `<button type="button" class="btn sm primary" data-ract="approve" data-id="${d.id}">Approve</button>`;
+    return `${approve}<button type="button" class="btn sm" data-ract="reject" data-id="${d.id}">Reject</button>`;
+  }
+  return d.status === 'approved' ? `<button type="button" class="btn sm" data-ract="revoke" data-id="${d.id}">Revoke</button>` : '';
+}
+function repoRow(d) {
+  const names = B.S.cache.names || {};
+  const tag = STATUS_TAG[d.status] || [d.status, ''];
+  return `<div class="actr govr govrepo"><span class="actic">${B.srcIcon('github_docs', 16)}</span><span class="actt"><b>${esc(B.containerName(d.container_path || 'A docs repository'))}</b><small>Whole repository · Public · requested by ${esc(who(d.requested_by, names))} · ${B.when(d.created_at, B.ago(d.created_at))}</small>${d.reason ? `<span class="govreason">${esc(d.reason)}</span>` : ''}</span><span class="actb"><span class="tag ${tag[1]}">${tag[0]}</span>${repoActions(d)}</span></div>`;
+}
 function draw() {
   const g = state();
   const list = $('#govlist'), more = $('#govmore');
@@ -81,14 +104,29 @@ function draw() {
     more.innerHTML = '';
     return;
   }
-  list.classList.toggle('isempty', !g.items.length);
-  list.innerHTML = g.items.length
+  list.classList.toggle('isempty', !g.items.length && !g.repos.length);
+  list.innerHTML = g.repos.map(repoRow).join('') + (g.items.length || g.repos.length
     ? g.items.map((p) => { const tag = STATUS_TAG[p.status] || [p.status, '']; return `<div class="actr govr"><span class="actic">${ICON('shield', 16)}</span><span class="actt"><button type="button" class="link govdoc" data-doc="${p.document_id}">${esc(p.document_title || 'A document')}</button><small>${esc(SCOPE[p.to_scope] || p.to_scope)} · requested by ${esc(who(p.requested_by, names))}${p.created_at ? ' · ' + B.when(p.created_at, B.ago(p.created_at)) : ''}</small>${p.reason ? `<span class="govreason">${esc(p.reason)}</span>` : ''}</span><span class="actb"><span class="tag ${tag[1]}">${tag[0]}</span>${actions(p)}</span></div>`; }).join('')
-    : `<div class="empty govempty"><h2>${g.status ? 'Nothing here' : 'No requests yet'}</h2><p>${g.status ? 'No requests have this status.' : 'Ask to share a document more widely from its details in the Library.'}</p></div>`;
+    : `<div class="empty govempty"><h2>${g.status ? 'Nothing here' : 'No requests yet'}</h2><p>${g.status ? 'No requests have this status.' : 'Ask to share a document more widely from its details in the Library.'}</p></div>`);
   more.innerHTML = g.next ? `<button type="button" class="btn sm" id="govload" ${g.loading ? 'disabled' : ''}>${g.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#govload');
   if (m) m.onclick = () => load(false);
   $$('[data-doc]', list).forEach((b) => { b.onclick = () => window.DOCUMENTS.openDocument(b.dataset.doc); });
+  $$('[data-ract]', list).forEach((b) => {
+    b.onclick = () => {
+      const act = b.dataset.ract;
+      if (act !== 'approve' && !b.dataset.arm) { b.dataset.arm = '1'; b.textContent = act === 'reject' ? 'Confirm reject' : 'Confirm revoke'; b.classList.add('danger'); return; }
+      B.busy(b, async () => {
+        const updated = await B.api.post(`/public-declarations/${b.dataset.id}/${act}`, {});
+        // A decision response carries no path: keep the listed one.
+        g.repos = g.repos
+          .map((d) => (d.id === updated.id ? Object.assign({}, d, { status: updated.status, approved_by: updated.approved_by, decided_at: updated.decided_at, can_decide: updated.can_decide }) : d))
+          .filter((d) => !g.status || d.status === g.status);
+        B.toast({ approve: 'Approved. The repository\'s published pages are Public now.', reject: 'Rejected', revoke: 'Revoked. The repository\'s pages are Internal again.' }[act]);
+        draw();
+      });
+    };
+  });
   $$('[data-act]', list).forEach((b) => {
     b.onclick = () => {
       const act = b.dataset.act;

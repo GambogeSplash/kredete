@@ -23,7 +23,7 @@ const LB = window.LIBRARY_BROWSE;
 
 function state() {
   const s = S();
-  if (!s.lib) s.lib = { folder: '', q: '', system: '', path: '', problems: '', view: 'list', items: [], next: null, loaded: false, loading: false, error: null, seq: 0, facets: { loading: false, error: null }, facetsRoute: null };
+  if (!s.lib) s.lib = { folder: '', q: '', system: '', path: '', source: '', sourceName: '', problems: '', view: 'list', items: [], next: null, loaded: false, loading: false, error: null, seq: 0, facets: { loading: false, error: null }, facetsRoute: null };
   return s.lib;
 }
 const { authorityTag, domainCol, domainLabel, kindName, KIND_ICON } = window.DOCUMENTS;
@@ -147,6 +147,7 @@ function chips() {
   const filters = [];
   if (L.system) filters.push(['system', B.systemName(L.system)]);
   if (L.path) filters.push(['path', `Location: ${L.path}`]);
+  if (L.source) filters.push(['source', `Source: ${L.sourceName}`]);
   if (L.problems) filters.push(['problems', 'Label problems']);
   const tree = folderTree();
   const here = tree && currentFolder(tree);
@@ -157,7 +158,7 @@ function chips() {
     b.onclick = () => {
       const k = b.dataset.clear;
       if (k === 'folder') { B.go('/library'); return; } // the same search, across the whole Library
-      if (k === 'all') { L.system = ''; L.path = ''; L.problems = ''; } else L[k] = '';
+      if (k === 'all') { L.system = ''; L.path = ''; L.source = ''; L.problems = ''; } else L[k] = '';
       page({ domain: L.folder }); load(true);
     };
   });
@@ -264,5 +265,22 @@ function showLocation(path) {
   L.loaded = false;
   if (S().route.surface === 'library' && !L.folder) { page({ domain: '' }); load(true); } else B.go('/library');
 }
-window.LIBRARY = { showLocation };
+/**
+ * Shows the whole Library filtered to one source: what the Support agent's "Open in Library"
+ * opens, so an admin can promote its pages to Public (bot admin spec 9.2).
+ * @param {{ id: string, path: string }} container
+ */
+function showSource(container) {
+  const L = state();
+  // Only that source: no search, and no filter left from earlier, would hide any of its pages.
+  L.source = container.id;
+  L.sourceName = B.containerName(container.path);
+  L.path = '';
+  L.q = '';
+  L.system = '';
+  L.problems = '';
+  L.loaded = false;
+  B.go('/library');
+}
+window.LIBRARY = { showLocation, showSource };
 })();
