@@ -875,3 +875,11 @@ html[data-mode=dark] body.noauth .pvmark{filter:drop-shadow(0 0 1.2cqh rgba(255,
 html[data-mode=dark] body.noauth .pvmark .pvb{color:#fff}
 
 html[data-mode=dark] body.noauth :is(.btn.primary,.si-btn,.oa-allow,.emchip.on){color:#fff}
+
+.pvlogo2 .pvcr.s{z-index:2;transform:translate(-50%,-100%) rotate(var(--r));transform-origin:50% 100%}
+
+/* the picture shows the dashboard itself, with the crew perched on its edges */
+.pvlogo2{width:62cqh;height:38.75cqh;top:56cqh}
+.pvdash{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:1.8cqh;object-fit:cover;z-index:1;box-shadow:0 0 0 1px rgba(255,255,255,.22),0 0 5cqh rgba(196,172,255,.55),0 4cqh 9cqh rgba(8,4,40,.55)}
+
+.pvlogo2{width:66cqh;height:41.25cqh;top:52cqh}
