@@ -313,6 +313,7 @@ body .mainpanel{min-height:100dvh}
    second. */
 .cnspaces .dt-r>.cnown{grid-column:1;grid-row:2}
 .cnspaces .dt-r>.cninc{grid-column:2;grid-row:2;justify-self:end}
+.cnspaces .dt-r>.cndecl{grid-column:1/-1;grid-row:3}
 
 /* ---------- docs ---------- */
 .dcgrid,.dcgrid>.skwrap{grid-template-columns:minmax(0,1fr)}
