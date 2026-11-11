@@ -84,7 +84,7 @@ function docsLink(name, text, newTab) {
 function frame(inner) {
   if (!standalone()) return inner;
   const back = B.S.phase === 'setup' ? ['/setup', 'Back to setup'] : ['/signin', 'Back to sign in'];
-  return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/docs" data-link><span class="pvk" aria-hidden="true">K</span><b>Broth</b><span>Docs</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
+  return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/docs" data-link><span class="pvk" aria-hidden="true">K</span><b>Broth</b><span>Help center</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
 }
 function paint(inner) {
   const app = $('#app');
@@ -96,16 +96,16 @@ function setTitle(title) {
   if (cur) cur.textContent = title;
   const mb = $('#mbtitle');
   if (mb) mb.textContent = title;
-  document.title = title === 'Docs' ? 'Docs - Broth' : `${title} - Broth docs`;
+  document.title = title === 'Help center' ? 'Help center - Broth' : `${title} - Broth help center`;
 }
 
 /* ---------- contents ---------- */
 async function contents() {
   const s = state();
-  setTitle('Docs');
+  setTitle('Help center');
   const ask = !standalone() && window.ASK ? '<button type="button" class="btn primary" id="dcask">Ask Broth</button>' : '';
   const mail = SUPPORT_EMAIL ? `<a class="btn" href="mailto:${esc(SUPPORT_EMAIL)}">Email support</a>` : '';
-  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Docs${hint('How to ask Broth, describe pages with labels, and set Broth up for your team.')}</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the docs" aria-label="Search the docs" value="${esc(query)}" autocomplete="off"></div></div><div class="dcbody" id="dcgrid"></div>${ask || mail ? `<div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth${mail ? ', or write to a person' : ''}.</p></div><div class="dcbtns">${ask}${mail}</div></div>` : ''}</div>`);
+  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Help center${hint('How to ask Broth, describe pages with labels, and set Broth up for your team.')}</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the help center" aria-label="Search the help center" value="${esc(query)}" autocomplete="off"></div></div><div class="dcbody" id="dcgrid"></div>${ask || mail ? `<div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth${mail ? ', or write to a person' : ''}.</p></div><div class="dcbtns">${ask}${mail}</div></div>` : ''}</div>`);
   $('#dcq').oninput = (e) => { query = e.target.value; drawCards(); };
   const askBtn = $('#dcask');
   if (askBtn) askBtn.onclick = () => { B.go('/'); setTimeout(() => window.ASK.askFresh('How do I connect a source?'), 350); };
@@ -128,7 +128,7 @@ function drawCards() {
       grid.innerHTML = failed(s.error, 'dcretry');
       $('#dcretry').onclick = async () => { s.error = null; drawCards(); await loadIndex(); drawCards(); };
     } else {
-      grid.innerHTML = B.loadingBlock('Loading the docs', 4, 'dccard dcsk');
+      grid.innerHTML = B.loadingBlock('Loading the help center', 4, 'dccard dcsk');
     }
     return;
   }
@@ -156,7 +156,7 @@ async function article(slug) {
   const s = state();
   const cached = s.articles[slug];
   if (cached && !cached.error) { drawArticle(cached); return; }
-  setTitle('Docs');
+  setTitle('Help center');
   paint(`<div class="pg dc dcart">${backLink()}<div class="dcload">${B.loadingBlock('Loading the article', 6, 'dcskl')}</div></div>`);
   let result;
   try { result = await get(`/docs/${encodeURIComponent(slug)}`); } catch (error) { result = { error }; }
@@ -164,11 +164,11 @@ async function article(slug) {
   if (B.S.route.surface !== 'docs' || B.S.route.params.slug !== slug) return;
   if (result.error) drawFailure(slug, result.error); else drawArticle(result);
 }
-const backLink = () => `<a class="dcback" href="/docs" data-link>${ICON('chevr', 14)}<span>All docs</span></a>`;
+const backLink = () => `<a class="dcback" href="/docs" data-link>${ICON('chevr', 14)}<span>Help center</span></a>`;
 function drawFailure(slug, error) {
-  setTitle('Docs');
+  setTitle('Help center');
   if (error.status === 404) {
-    paint(`<div class="pg dc dcart">${backLink()}${framed('book', "This article doesn't exist", 'It may have moved. The contents list every article.', '<a class="btn sm" href="/docs" data-link>See all docs</a>')}</div>`);
+    paint(`<div class="pg dc dcart">${backLink()}${framed('book', "This article doesn't exist", 'It may have moved. The contents list every article.', '<a class="btn sm" href="/docs" data-link>See all help articles</a>')}</div>`);
     return;
   }
   paint(`<div class="pg dc dcart">${backLink()}${failed(error, 'dcretry')}</div>`);

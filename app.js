@@ -521,7 +521,7 @@ function renderSurfaces() {
   h += navItem('data-go="/library"', 'library', 'Library', r.surface === 'library');
   h += navItem('data-go="/governance"', 'shield', 'Governance', r.surface === 'governance');
   if (hasRole('admin', 'compliance')) h += navItem('data-go="/admin"', 'gear', 'Admin', r.surface === 'admin');
-  h += navItem('data-go="/docs"', 'book', 'Docs', r.surface === 'docs');
+  h += navItem('data-go="/docs"', 'book', 'Help center', r.surface === 'docs');
   $('#surfaces').innerHTML = `<div class="snav">${h}</div><div class="srec" id="srec" role="list" aria-label="Chats"></div>`;
   // The chats shell belongs to the chat pages; the icon rail (rail.js) stands in for the places list.
   document.body.classList.toggle('nochats', r.surface !== 'ask' && r.surface !== 'chats');
@@ -588,7 +588,7 @@ function newChat() {
 }
 
 /* ---------- breadcrumb and mobile title ---------- */
-const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], library: ['Workspace', 'Library'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Docs'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
+const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], library: ['Workspace', 'Library'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
   const label = S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
@@ -602,7 +602,7 @@ function setCrumb() {
 function mbTitle() {
   const t = $('#mbtitle');
   if (!t) return;
-  const names = { library: 'Library', governance: 'Governance', docs: 'Docs', account: 'Account', chats: 'Chats', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
+  const names = { library: 'Library', governance: 'Governance', docs: 'Help center', account: 'Account', chats: 'Chats', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
   t.textContent = S.route.title || names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
 }
 

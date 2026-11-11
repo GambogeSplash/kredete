@@ -95,7 +95,7 @@ app.addEventListener('mouseout',e=>{ const n=e.target.closest('svg.graph .n'); i
 
 /* ---------- search palette: pages, recent chats, and the API's search ---------- */
 const esc=B.esc;
-const pages=()=>{ const p=[['New chat','compose',()=>B.newChat()],['Chats','chat',()=>B.go('/chats')],['Library','library',()=>B.go('/library')],['Governance','shield',()=>B.go('/governance')],['Docs','book',()=>B.go('/docs')],['Account','user',()=>B.go('/account')]];
+const pages=()=>{ const p=[['New chat','compose',()=>B.newChat()],['Chats','chat',()=>B.go('/chats')],['Library','library',()=>B.go('/library')],['Governance','shield',()=>B.go('/governance')],['Help center','book',()=>B.go('/docs')],['Account','user',()=>B.go('/account')]];
   if(B.hasRole('admin')) p.push(['Connectors','plug',()=>B.go('/admin/connectors')],['People','user',()=>B.go('/admin/people')],['Domains','globe',()=>B.go('/admin/domains')],['Support agent','headset',()=>B.go('/agent')]);
   if(B.hasRole('admin','compliance')) p.push(['Audit','book',()=>B.go('/admin/audit')]);
   return p; };

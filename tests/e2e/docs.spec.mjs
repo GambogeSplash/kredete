@@ -9,7 +9,7 @@ test('the contents, from the sidebar', async ({ open, check }) => {
   const page = await open('employee', '/');
   const mobile = (page.viewportSize() || { width: 1440 }).width < 900;
   if (mobile) await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.locator('#surfaces').getByRole('button', { name: 'Docs' }).click();
+  await page.locator('#surfaces').getByRole('button', { name: 'Help center' }).click();
   await expect(page).toHaveURL(/\/docs$/);
   await expect(page.locator('.dcchips').getByRole('button', { name: 'All', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(cards(page)).toHaveCount(6);
@@ -57,7 +57,7 @@ test('an article, its sections, and links between articles', async ({ open, chec
   await expect(page.getByRole('heading', { level: 1, name: 'Fixing label problems' })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: 'Labelling pages' })).toBeVisible();
-  await page.getByRole('link', { name: 'All docs' }).click();
+  await page.getByRole('link', { name: 'Help center' }).click();
   await expect(cards(page)).toHaveCount(6);
 });
 
@@ -67,7 +67,7 @@ test('an unknown section opens the article at the top, and an unknown article sa
   const missing = await open('employee', '/docs/no-such-article');
   await expect(missing.getByRole('heading', { name: "This article doesn't exist" })).toBeVisible();
   await check(missing, 'docs-missing');
-  await missing.getByRole('link', { name: 'See all docs' }).click();
+  await missing.getByRole('link', { name: 'See all help articles' }).click();
   await expect(cards(missing)).toHaveCount(6);
 });
 
@@ -85,7 +85,7 @@ test('the docs say when they cannot be loaded, and try again', async ({ open, ch
 
 test('signed out, the docs open on their own with a way back', async ({ open, check }) => {
   const page = await open(null, '/docs');
-  await expect(page.getByRole('heading', { level: 1, name: 'Docs' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Help center' })).toBeVisible();
   await expect(page.locator('#surfaces .surf')).toHaveCount(0);
   await check(page, 'docs-signed-out');
   await cards(page).filter({ hasText: 'Setting up spaces' }).click();
