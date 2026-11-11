@@ -420,7 +420,7 @@ function route() {
 function renderBoot() {
   document.body.classList.add('noauth');
   $('#app').className = 'siapp';
-  $('#app').innerHTML = `<div class="bootsplash" role="status"><span class="pvk big" aria-hidden="true">K</span><span class="sr">Loading Broth</span></div>`;
+  $('#app').innerHTML = `<div class="bootsplash" role="status"><div class="lm" aria-hidden="true"></div><span class="sr">Loading Broth</span></div>`;
 }
 function renderBootError() {
   window.AUTH.bootError(S.bootError, boot);
