@@ -34,10 +34,8 @@ window.SURFACES.admin = (params) => {
 function rail(tab) {
   const nav = $('.lrail');
   if (!nav) return;
-  nav.innerHTML = `${allowed().map((k) => `<button type="button" class="tab" data-at="${k}" aria-current="${k === tab ? 'page' : 'false'}">${tabs[k].label}</button>`).join('')}${B.setupPending() ? '<div class="lrail-sep" role="separator"></div><button type="button" class="tab" data-setup="1">Finish setup</button>' : ''}`;
+  nav.innerHTML = `${allowed().map((k) => `<button type="button" class="tab" data-at="${k}" aria-current="${k === tab ? 'page' : 'false'}">${tabs[k].label}</button>`).join('')}`;
   $$('[data-at]', nav).forEach((b) => { b.onclick = () => B.go('/admin/' + b.dataset.at); });
-  const s = $('[data-setup]', nav);
-  if (s) s.onclick = () => B.go('/setup');
 }
 // Setup can finish while an Admin tab is open (a space's first read ends): the rail follows.
 document.addEventListener('brain:setupchange', () => {

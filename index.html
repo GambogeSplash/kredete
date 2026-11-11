@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script>try{var t=localStorage.getItem("brain-theme");if(t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.mode="dark"}catch(e){}</script>
+<script>try{var t=localStorage.getItem("brain-theme");if(!t||t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.mode="dark"}catch(e){}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Broth</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,6 +18,9 @@
 <link rel="stylesheet" href="/styles.css?v=1134">
 <link rel="stylesheet" href="/components.css?v=59">
 <link rel="stylesheet" href="/design-system.css?v=1">
+<link rel="stylesheet" href="/broth-shell.css?v=1">
+<link rel="stylesheet" href="/broth-signin.css?v=4">
+<link rel="stylesheet" href="/broth-docs.css?v=1">
 <link rel="stylesheet" href="/mobile.css?v=62" media="(max-width:900px)">
 </head>
 <body>
@@ -45,8 +48,11 @@
 <script src="/domain-tree.js?v=2"></script>
 <script src="/library-browse.js?v=2"></script>
 <script src="/bot-form.js?v=1"></script>
-<script src="/app.js?v=923"></script>
-<script src="/auth.js?v=4"></script>
+<script src="/rail.js?v=1"></script>
+<script src="/app.js?v=924"></script>
+<script src="/auth.js?v=7"></script>
+<script src="/transitions.js?v=1"></script>
+<script src="/wordmark.js?v=1"></script>
 <script src="/setup.js?v=6"></script>
 <script src="/ask.js?v=7"></script>
 <script src="/document-drawer.js?v=2"></script>
@@ -56,7 +62,7 @@
 <script src="/connectors.js?v=11"></script>
 <script src="/people.js?v=3"></script>
 <script src="/domains.js?v=3"></script>
-<script src="/docs.js?v=6"></script>
+<script src="/docs.js?v=7"></script>
 <script src="/embed.js?v=2" data-preview></script>
 <script src="/agent.js?v=27"></script>
 <script src="/agent-overview.js?v=1"></script>

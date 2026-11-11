@@ -250,7 +250,12 @@ function route() {
   if (S.phase === 'error') { renderBootError(); return; }
   // The docs are public, so they open signed out and during setup as well.
   const docs = path === '/docs' || path.startsWith('/docs/');
-  if (S.phase === 'setup' && path !== '/setup' && !docs) { go('/setup', { replace: true }); return; }
+  // The setup wizard is never offered: it opens only from its own address. Leaving it lands on sign-in.
+  if (S.phase === 'setup' && path !== '/setup' && !docs) { S.phase = 'signedout'; go('/signin', { replace: true }); return; }
+  if (S.phase === 'signedout' && path === '/setup') {
+    if (S.setup && S.setup.needs_setup) S.phase = 'setup';
+    else { S.route = { surface: 'setup', params: {}, path, from: null }; window.AUTH.alreadySetup(); return; }
+  }
   if (S.phase === 'signedout' && path !== '/signin' && !docs) { go('/signin', { replace: true }); return; }
   if (S.phase === 'app' && path === '/signin') { go('/', { replace: true }); return; }
   const found = match(path);
@@ -306,7 +311,8 @@ async function boot() {
     if (error.status === 404) { S.setup = null; S.mode = 'workspace'; }
     else { S.bootError = error; S.phase = 'error'; route(); return; }
   }
-  if (S.setup && S.setup.needs_setup) { S.phase = 'setup'; route(); return; }
+  // A workspace that is not set up shows the sign-in with a calm line; the wizard opens only from /setup.
+  if (S.setup && S.setup.needs_setup && location.pathname === '/setup') { S.phase = 'setup'; route(); return; }
   try {
     await API.refresh();
     await loadMe();
@@ -316,11 +322,10 @@ async function boot() {
   }
   S.phase = 'app';
   if (isAdmin() && sandbox()) await refreshSetupProgress();
-  // The sign-in callback lands on "/": an admin with setup unfinished continues it there.
-  if (setupPending() && location.pathname === '/') history.replaceState({}, '', '/setup');
   loadFacets();
   loadChats(true);
   route();
+  if (window.AUTH && window.AUTH.rise) window.AUTH.rise();
 }
 async function loadMe() {
   S.me = await API.get('/me');
@@ -350,9 +355,8 @@ async function refreshSetupProgress() {
 
 async function signOut() {
   await API.logout();
-  clearServerState();
-  S.phase = 'signedout';
-  go('/signin', { replace: true });
+  const out = () => { clearServerState(); S.phase = 'signedout'; go('/signin', { replace: true }); };
+  if (window.AUTH && window.AUTH.leave) window.AUTH.leave(out); else out();
 }
 API.onSignedOut(() => {
   if (S.phase !== 'app') return;
@@ -517,7 +521,6 @@ function renderSurfaces() {
   h += navItem('data-go="/governance"', 'shield', 'Governance', r.surface === 'governance');
   if (hasRole('admin', 'compliance')) h += navItem('data-go="/admin"', 'settings', 'Admin', r.surface === 'admin');
   h += navItem('data-go="/docs"', 'book', 'Docs', r.surface === 'docs');
-  if (setupPending()) h += navItem('data-go="/setup"', 'check', 'Finish setup', r.surface === 'setup', '<span class="sdot" aria-hidden="true"></span>', 'finish');
   $('#surfaces').innerHTML = `<div class="snav">${h}</div><div class="srec" id="srec" role="list" aria-label="Chats"></div>`;
   // The chats shell belongs to the chat pages; the icon rail (rail.js) stands in for the places list.
   document.body.classList.toggle('nochats', r.surface !== 'ask' && r.surface !== 'chats');

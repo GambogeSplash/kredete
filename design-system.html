@@ -35,7 +35,7 @@ body{background:var(--surface);color:var(--ink);font:400 var(--fs-md)/var(--lh-b
 </style>
 </head>
 <body>
-<script>try{var t=localStorage.getItem("brain-theme");if(t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.mode="dark"}catch(e){}</script>
+<script>try{var t=localStorage.getItem("brain-theme");if(!t||t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.mode="dark"}catch(e){}</script>
 <main class="ds">
   <div class="ds-top"><h1>Broth design system</h1><button class="btn sm" id="dstheme" type="button">Dark mode</button></div>
   <p class="ds-lead">Tokens first, components second, pages last. Every value you see on a screen comes from <code>tokens.css</code>. This page reads that file live, so it cannot drift from the app.</p>

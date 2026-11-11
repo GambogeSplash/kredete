@@ -98,7 +98,6 @@ const esc=B.esc;
 const pages=()=>{ const p=[['New chat','compose',()=>B.newChat()],['Chats','chat',()=>B.go('/chats')],['Library','library',()=>B.go('/library')],['Governance','shield',()=>B.go('/governance')],['Account','user',()=>B.go('/account')]];
   if(B.hasRole('admin')) p.push(['Connectors','plug',()=>B.go('/admin/connectors')],['People','user',()=>B.go('/admin/people')]);
   if(B.hasRole('admin','compliance')) p.push(['Audit','book',()=>B.go('/admin/audit')]);
-  if(B.setupPending()) p.push(['Finish setup','check',()=>B.go('/setup')]);
   return p; };
 let found={q:'',conversations:[],documents:[]}; let timer=0, seq=0;
 const build=()=>{ const raw=$('#kq').value.trim(); const q=raw.toLowerCase(); const g=[];

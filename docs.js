@@ -43,6 +43,10 @@ const DOCS = {
 const AUDIENCES = [['', 'All'], ['askers', 'Asking'], ['authors', 'Writing pages'], ['admins', 'Admin'], ['compliance', 'Compliance']];
 const AUDIENCE_NAME = Object.fromEntries(AUDIENCES.filter(([k]) => k));
 const FILTER_KEY = 'brain-docs-audience';
+/** The picture on a card and above the article list, by audience. */
+const AUD_IMAGE = { askers: 'ask', authors: 'sources', admins: 'admin', compliance: 'trust' };
+const imageOf = (audiences) => AUD_IMAGE[(audiences || [])[0]] || 'start';
+let query = '';
 const OFFSET = 96; // a heading this close to the top counts as the section being read
 
 function state() {
@@ -104,7 +108,7 @@ async function contents() {
   setTitle('Docs');
   const filter = defaultFilter();
   const chips = AUDIENCES.map(([k, l]) => `<button type="button" class="lchip ${filter === k ? 'on' : ''}" aria-pressed="${filter === k}" data-aud="${k}">${l}</button>`).join('');
-  paint(`<div class="pg dc"><h1>Docs</h1><p class="sub pgsub">How to ask Broth, describe pages with labels, and set Broth up for your team.</p><div class="libchips dcchips" role="group" aria-label="Who it is for">${chips}</div><div class="dcgrid" id="dcgrid"></div></div>`);
+  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Docs</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the docs" aria-label="Search the docs" value="${esc(query)}" autocomplete="off"></div></div><div class="libchips dcchips" role="group" aria-label="Who it is for">${chips}</div><div class="dcgrid" id="dcgrid"></div></div>`);
   $$('[data-aud]').forEach((b) => {
     b.onclick = () => {
       remember(b.dataset.aud);
@@ -112,6 +116,7 @@ async function contents() {
       drawCards(b.dataset.aud);
     };
   });
+  $('#dcq').oninput = (e) => { query = e.target.value; const on = $('.dcchips .lchip.on'); drawCards(on ? on.dataset.aud : ''); };
   drawCards(filter);
   if (s.index) return;
   await loadIndex();
@@ -136,10 +141,11 @@ function drawCards(filter) {
     }
     return;
   }
-  const items = s.index.filter((a) => !filter || a.audiences.includes(filter));
+  const q = query.toLowerCase().trim();
+  const items = s.index.filter((a) => (!filter || a.audiences.includes(filter)) && (!q || `${a.title} ${a.summary}`.toLowerCase().includes(q)));
   grid.innerHTML = items.length
-    ? items.map((a) => `<a class="dccard" href="/docs/${esc(a.slug)}" data-link><b>${esc(a.title)}</b><p>${esc(a.summary)}</p><span class="dctags">${a.audiences.map((x) => `<span class="tag">${esc(AUDIENCE_NAME[x] || x)}</span>`).join('')}</span></a>`).join('')
-    : B.emptyBlock('Nothing for this audience yet', 'Choose All to see every article.');
+    ? items.map((a) => `<a class="dccard" href="/docs/${esc(a.slug)}" data-link><span class="dcimg"><img src="/assets/help/${imageOf(a.audiences)}.jpg" alt="" loading="lazy" draggable="false"></span><b>${esc(a.title)}</b><p>${esc(a.summary)}</p><span class="dctags">${a.audiences.map((x) => `<span class="tag">${esc(AUDIENCE_NAME[x] || x)}</span>`).join('')}</span></a>`).join('')
+    : q ? B.emptyBlock('No articles match', 'Try fewer words.') : B.emptyBlock('Nothing for this audience yet', 'Choose All to see every article.');
 }
 
 /* ---------- an article ---------- */
@@ -165,6 +171,18 @@ function drawFailure(slug, error) {
   paint(`<div class="pg dc dcart">${backLink()}${B.errorBlock(error, 'dcretry')}</div>`);
   $('#dcretry').onclick = () => { delete state().articles[slug]; article(slug); };
 }
+/** The articles of the group being read, beside the article (hidden on narrow screens). */
+function groupOf(a) {
+  const f = defaultFilter();
+  return f && a.audiences.includes(f) ? f : a.audiences[0];
+}
+function navHtml(a) {
+  const idx = state().index;
+  const group = groupOf(a);
+  if (!idx || !group) return '<nav class="dcnav" aria-label="Articles"></nav>';
+  const list = idx.filter((x) => x.audiences.includes(group));
+  return `<nav class="dcnav" aria-label="Articles"><span class="dcimg"><img src="/assets/help/${imageOf([group])}.jpg" alt="" draggable="false"></span><h2 class="dct">${esc(AUDIENCE_NAME[group] || group)}</h2><div class="dcarts">${list.map((x) => `<a class="dcai${x.slug === a.slug ? ' on' : ''}" href="/docs/${esc(x.slug)}" data-link ${x.slug === a.slug ? 'aria-current="page"' : ''}>${esc(x.title)}</a>`).join('')}</div></nav>`;
+}
 function sectionList(a, cls) {
   return `<ul class="${cls}">${a.sections.map((x) => `<li class="l${x.level}"><a href="#${esc(x.anchor)}" data-sec="${esc(x.anchor)}">${esc(x.title)}</a></li>`).join('')}</ul>`;
 }
@@ -172,7 +190,7 @@ function drawArticle(a) {
   setTitle(a.title);
   const tags = a.audiences.map((x) => `<span class="tag">${esc(AUDIENCE_NAME[x] || x)}</span>`).join('');
   const has = a.sections.length > 0;
-  paint(`<div class="pg dc dcart">${backLink()}<div class="dclay"><article class="dcdoc"><h1>${esc(a.title)}</h1><p class="sub dcsum">${esc(a.summary)}</p><div class="dctags">${tags}</div>${has ? `<details class="dcsecm"><summary>Sections</summary>${sectionList(a, 'dctocl')}</details>` : ''}<div class="dcprose">${a.html}</div></article>${has ? `<aside class="dctoc" aria-label="On this page"><div class="dctoch">On this page</div>${sectionList(a, 'dctocl')}</aside>` : ''}</div></div>`);
+  paint(`<div class="pg dc dcart">${backLink()}<div class="dclay">${navHtml(a)}<article class="dcdoc"><h1>${esc(a.title)}</h1><p class="sub dcsum">${esc(a.summary)}</p><div class="dctags">${tags}</div>${has ? `<details class="dcsecm"><summary>Sections</summary>${sectionList(a, 'dctocl')}</details>` : ''}<div class="dcprose">${a.html}</div></article>${has ? `<aside class="dctoc" aria-label="On this page"><div class="dctoch">On this page</div>${sectionList(a, 'dctocl')}</aside>` : ''}</div></div>`);
   const prose = $('.dcprose');
   // Links between articles navigate in the app; external ones already open a new tab.
   $$('a[href^="/docs"]', prose).forEach((link) => {
@@ -188,6 +206,7 @@ function drawArticle(a) {
   });
   reveal(decodeURIComponent(location.hash.slice(1)), false);
   markCurrent();
+  if (!state().index && !state().loading) loadIndex().then(() => { const nav = $('.dcnav'); if (nav && B.S.route.surface === 'docs' && B.S.route.params.slug === a.slug) nav.outerHTML = navHtml(a); });
 }
 /** Scrolls to a section; an unknown or empty anchor shows the article from the top. */
 function reveal(anchor, record) {

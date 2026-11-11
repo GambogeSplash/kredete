@@ -28,7 +28,7 @@ const FALLBACK_ERROR = ['Sign-in did not work', 'Try again. If it keeps happenin
 AUTH.signInError = (reason) => (reason ? SIGNIN_ERRORS[reason] || FALLBACK_ERROR : null);
 
 /* ---------- the split shell: form on the left, a preview of the workspace on the right ---------- */
-const brand = '<div class="si-brand"><span class="si-wm" role="img" aria-label="Broth"></span></div>';
+const brand = '<div class="si-brand"><div class="lm lmleft" role="img" aria-label="Broth"></div></div>';
 const CLEARANCE_COL = { public: '#26a269', internal: '#3b82f6', confidential: '#e2a600', restricted: '#e5484d' };
 function preview(person) {
   const sk = (w) => `<i class="pvsk" style="width:${w}px"></i>`;
@@ -41,6 +41,18 @@ function preview(person) {
 }
 AUTH.preview = preview;
 
+/** The sign-in picture: a violet frame, Broth holding a dashboard card. Static markup, no data. */
+function picture() {
+  fitPicture();
+  return `<div class="pvbg" aria-hidden="true"><div class="pvbgi"></div></div><div class="pvp" aria-hidden="true"><div class="pvlogo2"><div class="pvw pvfl pvmock"><div class="pvm pvsh"><div class="pvg"><i class="pvsk" style="width:120px"></i></div><div class="pvc"><span>Ask a question</span><i>${ICON('send', 12)}</i></div><div class="pvf">${window.SRCICON('Confluence', 14)}${window.SRCICON('Google Drive', 14)}<span>Reading from your connected apps</span></div></div></div><img class="pvholder" src="/assets/crew/holder2.png" alt="" draggable="false"></div></div>`;
+}
+/** The card is drawn at a fixed size and scaled to the height of the screen. */
+function fitPicture() {
+  const st = document.documentElement.style;
+  st.setProperty('--pvs', (0.663 * Math.max(420, innerHeight - 16) / 600).toFixed(4));
+}
+window.addEventListener('resize', () => { if ($('.si-r.pict')) fitPicture(); });
+
 /** Renders the split shell; keeps the right side when only the left changes. */
 function shell(left, right, step) {
   document.body.classList.add('noauth');
@@ -51,9 +63,10 @@ function shell(left, right, step) {
     c.innerHTML = dots + left;
     c.classList.remove('in'); void c.offsetWidth; c.classList.add('in');
     if (right != null) $('#sipv').innerHTML = right;
+    $('#sipv').classList.toggle('pict', !!$('#sipv .pvbg'));
   } else {
     app.className = 'siapp';
-    app.innerHTML = `<div class="si v2"><div class="si-l"><div class="si-in in" id="sin" aria-live="polite">${dots + left}</div></div><div class="si-r pv" id="sipv">${right || ''}</div></div>`;
+    app.innerHTML = `<div class="si v2"><div class="si-l"><div class="si-in in" id="sin" aria-live="polite">${dots + left}</div></div><div class="si-r pv${right && right.includes('pvbg') ? ' pict' : ''}" id="sipv">${right || ''}</div></div>`;
   }
   const h = $('#sin h1');
   if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
@@ -68,21 +81,60 @@ window.SURFACES.signin = () => {
   // The account Google confirmed before Broth refused it; the server sends it in the fragment,
   // which never reaches a server or a log.
   const refused = failure ? new URLSearchParams(location.hash.slice(1)).get('email') : null;
-  const unconfigured = B.S.setup && !B.S.setup.google_configured;
-  const sub = B.sandbox()
-    ? 'Continue with the Google account your Broth admin invited.'
-    : 'Continue with your Broth Google account.';
-  shell(`${brand}<h1>Sign in to Broth</h1><p class="sub">${sub}</p>
+  const needsSetup = !!(B.S.setup && B.S.setup.needs_setup);
+  const blocked = needsSetup || !!(B.S.setup && !B.S.setup.google_configured);
+  shell(`${brand}<h1>Welcome back</h1><p class="sub">Sign in to ask what your company knows.</p>
     ${failure ? `<div class="banner bad" role="alert" id="aerr"><b>${esc(failure[0])}.</b> ${esc(failure[1])}${refused ? `<span class="refused-as">Google account: ${esc(refused)}</span>` : ''}</div>` : ''}
-    ${unconfigured ? `<div class="banner info" role="status"><b>Sign-in is not configured yet.</b> Your Broth admin finishes setup first.</div>` : ''}
-    <a class="btn primary si-btn" id="gsignin" href="${B.api.signInUrl}" ${unconfigured ? 'aria-disabled="true" tabindex="-1"' : ''}><span class="spin" aria-hidden="true"></span><span>Continue with Google</span></a>
-    <p class="disc">Broth answers from the documents you can already open.</p>`, preview(null));
+    ${needsSetup ? `<div class="banner info" role="status">This workspace is not set up yet. Ask your administrator to finish setup.</div>` : blocked ? `<div class="banner info" role="status"><b>Sign-in is not configured yet.</b> Your Broth admin finishes setup first.</div>` : ''}
+    <div class="provs"><a class="prov si-btn" id="gsignin" href="${B.api.signInUrl}" ${blocked ? 'aria-disabled="true" tabindex="-1"' : ''}><span class="spin" aria-hidden="true"></span><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h6.2a5.3 5.3 0 0 1-2.3 3.5v2.9h3.7c2.2-2 3.4-5 3.4-8.4z"/><path fill="#34A853" d="M12 23c3.1 0 5.7-1 7.6-2.8l-3.7-2.9c-1 .7-2.3 1.1-3.9 1.1-3 0-5.5-2-6.4-4.8H1.8v3A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.6 13.6a6.6 6.6 0 0 1 0-4.2v-3H1.8a11 11 0 0 0 0 10.2l3.8-3z"/><path fill="#EA4335" d="M12 5.4c1.7 0 3.2.6 4.4 1.7l3.3-3.3A11 11 0 0 0 1.8 6.4l3.8 3C6.5 6.5 9 5.4 12 5.4z"/></svg><span>Continue with Google</span></a>
+    <button type="button" class="prov soon" disabled aria-disabled="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="9" r="3.5"/><path d="M11 11.5 20 20.5M16 16.5l2-2M18.5 19l1.5-1.5"/></svg><span>Continue with passkey</span><em class="provtag">Coming soon</em></button></div>
+    <div class="orline"><span>or use your work email</span></div>
+    <form id="emf" novalidate><div class="emw"><span class="emi">${ICON('user', 16)}</span><input id="em" class="eminp" type="email" inputmode="email" autocomplete="username" placeholder="name@company.com" aria-label="Work email" value=""></div><div class="emerr" id="emerr" role="alert" hidden></div><button class="btn primary si-btn" id="sso" type="submit"><span class="spin" aria-hidden="true"></span><span>Continue</span></button></form>
+    <p class="si-alt">New to Broth? <a class="link" href="/setup" data-link>Create a workspace</a></p>
+    <p class="disc">Broth answers from the documents you can already open.</p>`, picture());
   const button = $('#gsignin');
   button.onclick = (e) => {
     if (button.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
     button.classList.add('busy');
+    if (AUTH.dive) { e.preventDefault(); AUTH.dive(() => location.assign(button.getAttribute('href'))); }
+  };
+  // The work email: it asks Google for that account (login_hint) and greets the person in the picture as they type.
+  const em = $('#em'), err = $('#emerr'), form = $('#emf');
+  const looksLikeEmail = (v) => /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(v);
+  const firstName = (v) => {
+    const part = v.split('@')[0].split(/[._+\-\d]+/).find(Boolean) || '';
+    return part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : '';
+  };
+  const greeting = $('#sipv .pvg');
+  const skeleton = greeting ? greeting.innerHTML : '';
+  em.oninput = () => {
+    err.hidden = true; em.removeAttribute('aria-invalid');
+    const value = em.value.trim();
+    const name = looksLikeEmail(value) ? firstName(value) : '';
+    if (!greeting) return;
+    const next = name ? `Hello, ${esc(name)}` : skeleton;
+    if (greeting.innerHTML !== next) greeting.innerHTML = next; // only the greeting changes; the picture is not redrawn
+  };
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const value = em.value.trim();
+    if (!looksLikeEmail(value)) {
+      err.textContent = value ? 'That does not look like an email address.' : 'Enter your work email, or continue with Google.';
+      err.hidden = false; em.setAttribute('aria-invalid', 'true'); em.focus();
+      return;
+    }
+    if (blocked) return;
+    $('#sso').classList.add('busy');
+    const href = button.getAttribute('href') + (button.getAttribute('href').includes('?') ? '&' : '?') + 'login_hint=' + encodeURIComponent(value);
+    if (AUTH.dive) AUTH.dive(() => location.assign(href)); else location.assign(href);
   };
   if (failure) history.replaceState({}, '', '/signin'); // the message stays; a reload starts clean, without the address
+};
+
+/** /setup opened while the workspace is already claimed: no wizard, a calm line and a way to sign in. */
+AUTH.alreadySetup = () => {
+  document.title = 'Broth';
+  shell(`${brand}<h1>This workspace is already set up</h1><p class="sub">Sign in to continue.</p><a class="btn primary si-btn" href="/signin" data-link><span>Sign in</span></a>`, picture());
 };
 
 /* ---------- boot error ---------- */
@@ -90,7 +142,7 @@ AUTH.bootError = (error, retry) => {
   // Broth's own problem says what went wrong; without one, say what to do rather than repeat the heading.
   const head = error && error.reached ? 'Broth could not start' : 'Broth could not be reached';
   const body = error && error.reached ? B.problem(error) : 'Check your connection and try again. If it keeps happening, tell your Broth admin.';
-  shell(`${brand}<h1>${head}</h1><p class="sub">${esc(body)}</p><button type="button" class="btn primary si-btn" id="bootretry"><span class="spin" aria-hidden="true"></span><span>Try again</span></button>`, preview(null));
+  shell(`${brand}<h1>${head}</h1><p class="sub">${esc(body)}</p><button type="button" class="btn primary si-btn" id="bootretry"><span class="spin" aria-hidden="true"></span><span>Try again</span></button>`, picture());
   $('#bootretry').onclick = () => { $('#bootretry').classList.add('busy'); retry(); };
 };
 
@@ -157,7 +209,7 @@ function drawWelcome() {
 }
 
 /* ---------- theme ---------- */
-const THEME = () => { try { return localStorage.getItem('brain-theme') || 'light'; } catch (e) { return 'light'; } };
+const THEME = () => { try { return localStorage.getItem('brain-theme') || 'dark'; } catch (e) { return 'dark'; } };
 const isDark = () => document.documentElement.dataset.mode === 'dark';
 function applyTheme(mode) {
   try { localStorage.setItem('brain-theme', mode); } catch (e) { /* storage unavailable */ }
