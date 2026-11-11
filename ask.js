@@ -24,6 +24,7 @@ function askState() {
   if (!s.ask) {
     s.ask = {
       panel: false,
+      homeOpen: false, // the panel on the home view: closed until the Broth avatar opens it
       pt: 'answer',
       focus: null, // the turn whose sources the panel shows (defaults to the last answer)
       filters: { system: '', domain: '', when: '' },
@@ -229,31 +230,67 @@ function feedHtml() {
   }
   return `<p class="lh-feed" id="lhfeed">${sys.map((k) => B.srcIcon(k, 14)).join('')}<span>Reading from ${sys.length} connected ${sys.length === 1 ? 'app' : 'apps'}</span></p>`;
 }
-function recentHtml() {
-  const c = S().chats;
-  if (!c.loaded) return `<div class="lh-sugs lh-recent" aria-hidden="true">${B.skeletonRows(2, 'lh-sug sksug')}</div>`;
-  const recent = c.items.slice(0, 4);
-  if (!recent.length) return '';
-  return `<div class="lh-recent"><div class="lh-rh">Pick up where you left off</div><div class="lh-sugs">${recent.map((x, i) => `<button type="button" class="lh-sug" style="--i:${i}" data-open-chat="${x.id}"><span class="lh-si">${ICON('chat', 16)}</span><span class="lh-sq">${esc(B.chatTitle(x))}</span><span class="lh-go">${ICON('arrow', 14)}</span></button>`).join('')}</div></div>`;
+/** Questions that show what Broth is for; each starts a chat. The icon is a connected app's. */
+const EXAMPLES = [
+  ['How do I request access to a source?', 'lock'],
+  ['What is our onboarding process?', null],
+  ['Where is the latest expenses policy?', null],
+  ['Who owns the pricing page?', null],
+];
+function examplesHtml() {
+  const sys = systems();
+  if (S().facets && !sys.length) return '';
+  let n = 0;
+  return `<div class="lh-sugs">${EXAMPLES.map(([q, icon], i) => {
+    const mark = icon ? ICON(icon, 16) : sys.length ? B.srcIcon(sys[n++ % sys.length], 18) : ICON('doc', 16);
+    return `<button type="button" class="lh-sug" data-lf="1" style="--i:${i}" data-q="${esc(q)}"><span class="lh-si">${mark}</span><span class="lh-sq">${esc(q)}</span><span class="lh-go">${ICON('arrow', 14)}</span></button>`;
+  }).join('')}</div>`;
 }
-
 function renderHome() {
   $('#app').className = 'cxapp';
-  $('#app').innerHTML = `<div class="lhome"><div class="dchead"><b>New chat</b></div><div class="lh-in"><h1 class="lh-t">${greeting()}</h1>${composer(true, 'Ask a question')}<div id="lhrecent">${recentHtml()}</div>${feedHtml()}</div></div>`;
+  const open = askState().homeOpen;
+  $('#app').innerHTML = `<div class="cx ${open ? '' : 'closed'}"><section class="cxmain"><div class="lhome"><button type="button" class="hometog" id="hometog" aria-label="Show sources" title="Sources" aria-expanded="${open}"><span class="hav"><img src="/assets/brand/mascot-head.png" alt="" width="26" height="26" draggable="false"><i class="hdot"></i></span></button><div class="dchead"><b>New chat</b></div><div class="lh-in"><div class="lm" role="img" aria-label="Broth"></div><h1 class="lh-t">${greeting()}</h1>${composer(true, 'Ask a question')}<div id="lhsugs">${examplesHtml()}</div>${feedHtml()}</div></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
   wireComposer(true);
   wireHome();
+  const tog = $('#hometog');
+  if (tog) tog.onclick = () => { askState().pt = 'sources'; setPanel(true); };
+  if (open) renderPanel();
+  cyclePlaceholder();
+  enterCards();
+}
+/** The example cards rise in one after another, as life.js does for rows (same stagger, length and ease). */
+function enterCards() {
+  const M = window.Motion;
+  const cards = $$('.lh-sug');
+  if (!M || calm() || !cards.length) return;
+  cards.forEach((c) => { c.style.opacity = '0'; });
+  const done = () => cards.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; });
+  M.animate(cards, { opacity: [0, 1], y: [12, 0] }, { delay: M.stagger(0.028), duration: 0.4, ease: [0.22, 1, 0.36, 1] }).finished.then(done).catch(done);
+}
+/** The empty composer on the home view suggests a question every few seconds, fading between them. */
+function cyclePlaceholder() {
+  const ta = $('#askin');
+  if (!ta || calm()) return;
+  const ex = EXAMPLES.filter(([, icon]) => !icon).map(([q]) => q).concat(['What changed this week?']);
+  let k = 0;
+  const tick = () => {
+    if (!document.body.contains(ta)) return;
+    if (!ta.value && document.activeElement !== ta) {
+      k = (k + 1) % ex.length;
+      ta.classList.add('phx');
+      setTimeout(() => { ta.placeholder = ex[k]; ta.classList.remove('phx'); }, 180);
+    }
+    setTimeout(tick, 3200);
+  };
+  setTimeout(tick, 3200);
 }
 function wireHome() {
+  $$('#app [data-q]').forEach((b) => { b.onclick = () => { if (!active && !creating) ask(b.dataset.q); }; });
   $$('[data-open-chat]').forEach((b) => { b.onclick = () => B.go('/c/' + b.dataset.openChat); });
   $$('#app [data-go]').forEach((b) => { b.onclick = () => B.go(b.dataset.go); });
 }
-/** The home page's recent chats arrive after it renders: swap them in place. */
-function refreshRecent() {
-  const box = $('#lhrecent');
-  if (!box) return;
-  box.innerHTML = recentHtml();
-  wireHome();
-}
+/** The sidebar lists recent chats; the home page no longer repeats them. */
+function refreshRecent() {}
 
 /** What is being typed in this conversation's composer, to carry over a re-render. */
 function takeDraft(convId) {
@@ -287,7 +324,15 @@ function renderConversation(conv) {
   }
   const rename = () => {
     const t = $('#cxtitle');
-    if (t) B.editTitle(t, conv, () => { if (S().conv === conv) renderConversation(conv); B.setCrumb(); B.mbTitle(); });
+    const before = B.chatTitle(conv);
+    if (t) {
+      B.editTitle(t, conv, () => {
+        if (S().conv === conv) renderConversation(conv);
+        B.setCrumb(); B.mbTitle();
+        const next = $('#cxtitle');
+        if (next && B.chatTitle(conv) !== before && !calm()) { next.classList.add('drawn'); setTimeout(() => next.classList.remove('drawn'), 1400); }
+      });
+    }
   };
   $('#cxtitle').onclick = rename;
   $('#cxtitle').onkeydown = (e) => { if (e.key === 'Enter' || e.key === 'F2') { e.preventDefault(); rename(); } };
@@ -528,12 +573,14 @@ async function vote(turn, index, feedback) {
 /* ---------- the sources panel ---------- */
 function setPanel(open) {
   const a = askState();
-  a.panel = !!open;
+  const home = !!$('.lhome');
+  if (home) a.homeOpen = !!open; else a.panel = !!open;
+  const on = home ? a.homeOpen : a.panel;
   const cx = $('.cx');
-  if (cx) cx.classList.toggle('closed', !a.panel);
-  const tog = $('#cxtog');
-  if (tog) tog.setAttribute('aria-expanded', String(a.panel));
-  if (a.panel) renderPanel();
+  if (cx) cx.classList.toggle('closed', !on);
+  const tog = $(home ? '#hometog' : '#cxtog');
+  if (tog) tog.setAttribute('aria-expanded', String(on));
+  if (on) renderPanel();
 }
 function focusCitation(turn, n) {
   const a = askState();
@@ -654,6 +701,7 @@ function renderPanel() {
   const p = $('#rsrc');
   if (!p) return;
   const a = askState();
+  if ($('.lhome')) { renderHomePanel(p); return; }
   const pt = a.pt === 'sources' ? 'sources' : 'answer';
   p.innerHTML = `<div class="cxtabs" role="tablist">${[['answer', 'Answer'], ['sources', 'Sources']].map(([k, l]) => `<button type="button" class="ltab ${pt === k ? 'on' : ''}" role="tab" aria-selected="${pt === k}" data-pt="${k}">${l}</button>`).join('')}<span class="lsp"></span><button type="button" class="lib" id="cxclose" aria-label="Close sources">${ICON('x', 16)}</button></div><div class="cxbody">${pt === 'answer' ? answerTab() : sourcesTab()}</div>`;
   $$('[data-pt]', p).forEach((b) => { b.onclick = () => { a.pt = b.dataset.pt; renderPanel(); }; });
@@ -676,6 +724,13 @@ function renderPanel() {
     }
   }
   if (pt === 'answer') wireAnswerTab(p); else wireSourcesTab(p);
+}
+/** The panel on the home view: who Broth is, then the sources the next question can read. */
+function renderHomePanel(p) {
+  const connected = systems().length > 0;
+  p.innerHTML = `<button type="button" class="lib cxclose" id="cxclose" aria-label="Close panel">${ICON('x', 16)}</button><div class="cxpro"><div class="cxav"><img src="/assets/brand/mascot-head.png" alt="" draggable="false"></div><b class="cxname">Broth</b><span class="cxst ${connected ? 'on' : ''}"><i></i>${connected ? 'Connected' : 'No sources connected'}</span></div><div class="cxbody">${sourcesTab()}</div>`;
+  $('#cxclose', p).onclick = () => setPanel(false);
+  wireSourcesTab(p);
 }
 function openSourcesDrawer(n) {
   const a = askState();
@@ -741,6 +796,16 @@ function askFresh(question) {
 function refreshFeed() {
   // The composer's source count shows in a chat too, not only on the home page.
   $$('#cxsrc span').forEach((x) => { if (!x.querySelector('svg')) x.textContent = sourcesLabel(); });
+  const sg = $('#lhsugs');
+  if (sg) {
+    // Only the icons can change; swapping the cards would restart their entrance.
+    const fresh = document.createElement('div');
+    fresh.innerHTML = examplesHtml();
+    const next = $$('.lh-si', fresh);
+    const now = $$('.lh-si', sg);
+    if (now.length && next.length === now.length) now.forEach((el, i) => { el.innerHTML = next[i].innerHTML; });
+    else { sg.innerHTML = examplesHtml(); wireHome(); }
+  }
   const f = $('#lhfeed');
   if (!f) return;
   f.outerHTML = feedHtml();
