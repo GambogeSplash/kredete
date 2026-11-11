@@ -38,11 +38,11 @@
 
   /* ---- radius: cards 12, controls 8, tags 6, sheets 16/20 ---- */
   --r-xs:4px;
-  --r-sm:6px;        /* tags, badges */
-  --r-md:8px;        /* buttons, chips, inputs */
-  --r-lg:12px;       /* cards, groups, menus */
-  --r-xl:16px;       /* modals, composer */
-  --r-2xl:20px;      /* bottom sheets */
+  --r-sm:8px;        /* tags, badges */
+  --r-md:12px;        /* buttons, chips, inputs */
+  --r-lg:18px;       /* cards, groups, menus */
+  --r-xl:24px;       /* modals, composer */
+  --r-2xl:28px;      /* bottom sheets */
   --r-full:999px;    /* avatars, dots */
   --r:var(--r-md);
 
