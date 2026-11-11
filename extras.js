@@ -9,12 +9,14 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 
+const hint = (t) => `<span class="hint" tabindex="0" data-tip="${t}" aria-label="${t}">i</span>`;
+
 /* ---------- Chats page ---------- */
 let chatQuery = '';
 let searchTimer = 0;
 let searchSeq = 0;
 function chatsPage() {
-  $('#app').innerHTML = `<div class="pg"><h1>Chats</h1><div class="libbar"><div class="libs"><span class="libs-i">${ICON('search', 15)}</span><input id="chq" type="search" placeholder="Search chats" aria-label="Search chats" value="${esc(chatQuery)}" autocomplete="off"></div></div><div class="actl chl" id="chl"></div><div class="chmore" id="chmorebox"></div></div>`;
+  $('#app').innerHTML = `<div class="pg"><h1>Chats ${hint('Every conversation you have had with Broth. Search by title or question.')}</h1><div class="libbar"><div class="libs"><span class="libs-i">${ICON('search', 15)}</span><input id="chq" type="search" placeholder="Search chats" aria-label="Search chats" value="${esc(chatQuery)}" autocomplete="off"></div></div><div class="actl chl" id="chl"></div><div class="chmore" id="chmorebox"></div></div>`;
   $('#chq').oninput = (e) => {
     chatQuery = e.target.value;
     clearTimeout(searchTimer);
@@ -54,9 +56,10 @@ async function drawChats() {
       $('#chload').onclick = () => B.loadChats(false);
     }
   }
+  list.className = items.length ? 'actl chl' : 'chl';
   list.innerHTML = items.length
     ? items.map((c, i) => `<div class="actr chr" data-o="${i}" role="button" tabindex="0"><span class="actic">${ICON('chat', 16)}</span><span class="actt"><b>${esc(B.chatTitle(c))}</b><small>${B.when(c.updated_at, B.ago(c.updated_at))}</small></span><span class="actb">${c.pinned ? `<span class="chpin" aria-label="Pinned">${ICON('pin', 13)}</span>` : ''}<button type="button" class="lib" data-m="${i}" aria-label="Chat actions" aria-haspopup="menu">${ICON('more', 16)}</button></span></div>`).join('')
-    : `<p class="actn">${q ? 'No chats match.' : 'No chats yet. Ask Broth a question to start one.'}</p>`;
+    : `<div class="ds-empty"><span class="ds-empty-ic">${ICON(q ? 'search' : 'chat', 22)}</span><b>${q ? 'No chats match' : 'No chats yet'}</b><p>${q ? 'Try a different word.' : 'Ask Broth a question to start one.'}</p></div>`;
   $$('[data-o]', list).forEach((r) => {
     const open = () => B.go('/c/' + items[+r.dataset.o].id);
     r.onclick = (e) => { if (!e.target.closest('[data-m]')) open(); };
@@ -91,7 +94,6 @@ function deviceIcon(agent) {
   return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
 }
 const dframe = (label, small, action) => `<div class="frow"><div class="frl"><b>${label}</b>${small ? `<small>${small}</small>` : ''}</div><div class="frv"></div><div class="fra">${action}</div></div>`;
-const hint = (t) => `<span class="hint" tabindex="0" data-tip="${t}" aria-label="${t}">i</span>`;
 const frow = (label, value, action) => `<div class="frow"><div class="frl"><b>${label}</b></div><div class="frv">${value}</div><div class="fra">${action || ''}</div></div>`;
 
 window.SURFACES.account = (params) => {
@@ -100,7 +102,7 @@ window.SURFACES.account = (params) => {
   const adminLinks = B.hasRole('admin', 'compliance')
     ? `<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administrator settings</div>${[['Sources', '/admin/connectors'], ['People and access', '/admin/people'], ['Sharing requests', '/governance'], ['Domains', '/admin/domains'], ['Audit log', '/admin/audit']].map(([l, to]) => `<button type="button" class="tab" data-at="${to}" aria-current="false">${l}</button>`).join('')}`
     : '';
-  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><div class="lrail-h">Account settings</div><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button>${adminLinks}<div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div id="acpane"></div></div></div>`;
+  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><div class="lrail-h">Account settings</div><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button>${adminLinks}<div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'} ${tab === 'profile' ? hint('Your name, how Broth looks, and the details your work account gives it.') : hint('Where you are signed in. Sign out of any device you do not use.')}</h1><div id="acpane"></div></div></div>`;
   $$('[data-at]').forEach((b) => { b.onclick = () => B.go(b.dataset.at); });
   $('#aout').onclick = () => B.signOut();
   if (tab === 'profile') profile(me);
@@ -115,9 +117,9 @@ function profile(me, editing) {
   el.innerHTML = `<div class="acid"><button type="button" class="avchg" id="avchg" aria-label="Change avatar" title="Change avatar">${AVATAR(me.name, 'avimg', 88)}<span class="avedit">${ICON('compose', 14)}</span></button><div class="acidt"><h2>${esc(me.name)}</h2>${me.title ? `<div>${esc(me.title)}</div>` : ''}<div class="amute">${esc(me.email)}</div></div></div>
    <div class="fgroup">${frow('Preferred name', editing ? `<input id="enick" class="eminp" value="${esc(nick)}" maxlength="60" aria-label="Preferred name" style="margin:0;max-width:260px"><div class="hse" id="enke" role="alert"></div>` : esc(nick), editing ? '<button type="button" class="btn sm primary" id="enks">Save</button><button type="button" class="btn sm" id="enkc">Cancel</button>' : '<button type="button" class="btn sm" id="enk">Edit</button>')}
    ${frow('Appearance', `<select id="etheme" aria-label="Appearance">${[['light', 'Light'], ['dark', 'Dark'], ['system', 'Match my device']].map(([k, l]) => `<option value="${k}" ${window.AUTH.THEME() === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`)}</div>
-   <h3 class="ach">${from} ${hint('Your admin manages these.')}</h3><div class="fgroup">${me.team ? frow('Team', esc(me.team)) : ''}${frow('Location', esc(me.location || ''))}${frow('Roles', `<span class="acchips">${roles}</span>`)}${frow('Clearance', esc(B.clearanceName(me.clearance)))}</div>
-   <h3 class="ach">Sign-in</h3><div class="fgroup"><div class="frow"><div class="frl"><b>Sign-in</b><small>Broth single sign-on</small></div><div class="frv"><span class="tag ok">Managed by IT</span></div><div class="fra"></div></div></div>
-   <h3 class="ach">Your data</h3><div class="fgroup">${dframe('Download my data', 'Your profile and questions, as a file.', '<button type="button" class="btn sm" id="adl">Download</button>')}${dframe('Delete my question history', 'Only you can see it.', '<button type="button" class="btn sm danger-o" id="aclr">Delete</button>')}${dframe('Replay onboarding', '', '<button type="button" class="btn sm" id="atour">Replay</button>')}</div>`;
+   <h3 class="ach">${from} ${hint('Managed by IT. Ask IT to change these.')}</h3><div class="fgroup">${me.team ? frow('Team', esc(me.team)) : ''}${frow('Location', esc(me.location || ''))}${frow('Roles', `<span class="acchips">${roles}</span>`)}${frow('Clearance', esc(B.clearanceName(me.clearance)))}</div>
+   <h3 class="ach">Sign-in ${hint('How you sign in to Broth. Your company manages it.')}</h3><div class="fgroup"><div class="frow"><div class="frl"><b>Sign-in</b><small>Broth single sign-on</small></div><div class="frv"><span class="tag ok">Managed by IT</span></div><div class="fra"></div></div></div>
+   <h3 class="ach">Your data ${hint('Take a copy of your data, or clear your question history.')}</h3><div class="fgroup">${dframe('Download my data', 'Your profile and questions, as a file.', '<button type="button" class="btn sm" id="adl">Download</button>')}${dframe('Delete my question history', 'Only you can see it.', '<button type="button" class="btn sm danger-o" id="aclr">Delete</button>')}${dframe('Replay onboarding', '', '<button type="button" class="btn sm" id="atour">Replay</button>')}</div>`;
   const edit = $('#enk');
   if (edit) edit.onclick = () => { profile(me, true); $('#enick').focus(); };
   const cancel = $('#enkc');
@@ -171,7 +173,6 @@ function historyClear(btn) {
   if (!btn.dataset.arm) {
     btn.dataset.arm = '1';
     btn.textContent = 'Confirm delete';
-    setTimeout(() => { if (btn.isConnected) { delete btn.dataset.arm; btn.textContent = 'Delete'; } }, 2600);
     return;
   }
   B.busy(btn, async () => {
@@ -200,8 +201,8 @@ async function sessions() {
   }
   const others = list.filter((s) => !s.current);
   const row = (s) => `<div class="ds-tr dvcols" data-id="${s.id}" role="row"><span class="dmn"><span class="addvi dvic">${deviceIcon(s.user_agent)}</span><span class="ltb"><b>${esc(device(s.user_agent))}${s.current ? '<span class="tag blue dvme">This device</span>' : ''}</b></span></span><span class="amute dvm">${B.when(s.created_at, B.fmtDate(s.created_at))}</span><span class="amute dvm">${s.current ? '<span class="adok"><i></i>Now</span>' : B.when(s.last_used_at, B.ago(s.last_used_at))}</span><span class="dvact">${s.current ? '' : `<button type="button" class="btn sm" data-so="${s.id}">Sign out</button>`}</span></div>`;
-  el.innerHTML = `<div class="ach2row"><h2 class="adh3" id="devh">Devices</h2>${others.length ? '<button type="button" class="btn sm" id="soall">Sign out of all other devices</button>' : ''}</div>
-   <div class="ds-table sesdt" role="table" aria-labelledby="devh"><div class="ds-tr ds-th dvcols" role="row"><span>Device</span><span class="dvm">First seen</span><span class="dvm">Last active</span><span></span></div>${list.map(row).join('')}</div>`;
+  el.innerHTML = `${others.length ? '<div class="ach2row sesbar"><button type="button" class="btn sm" id="soall">Sign out of all other devices</button></div>' : ''}
+   <div class="ds-table sesdt" role="table" aria-label="Devices"><div class="ds-tr ds-th dvcols" role="row"><span>Device</span><span class="dvm">First seen</span><span class="dvm">Last active</span><span></span></div>${list.map(row).join('')}</div>`;
   $$('[data-so]', el).forEach((b) => {
     b.onclick = () => {
       if (!b.dataset.arm) {

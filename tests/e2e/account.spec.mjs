@@ -31,7 +31,8 @@ test('the profile, and a preferred name that sticks', async ({ open, check }) =>
 test('sessions list every signed-in device', async ({ open, check, seed }) => {
   const page = await open('owner', '/account/sessions');
   const total = seed.people.owner.refresh_tokens.length;
-  await expect(page.getByRole('heading', { name: 'Devices' })).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Devices' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Devices' })).toHaveCount(0);
   await expect(page.locator('.sesdt .ds-tr:not(.ds-th)')).toHaveCount(total);
   await expect(page.locator('.sesdt .tag.blue')).toHaveText('This device');
   await check(page, 'sessions', { mask: [THIS_DEVICE] });
