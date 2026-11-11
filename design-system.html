@@ -73,6 +73,9 @@ body{background:var(--surface);color:var(--ink);font:400 var(--fs-md)/var(--lh-b
   <p>One grid and one card. Pages never write their own. <code>.ds-grid</code> with <code>.c2</code>, <code>.c3</code> or <code>.c4</code> steps down to 2 then 1 column. <code>.ds-card</code> is the only bordered surface; <code>.lift</code> makes it openable, <code>.add</code> is the dashed add tile and comes first. <code>.ds-head</code> puts one action on the title line.</p>
   <div class="ds-grid c3"><button class="ds-card add" type="button"><span class="adsti">+</span><b>Add a domain</b><small>Let people sign in</small></button><div class="ds-card lift"><b>northwind.com</b><br><small>18 members</small></div><div class="ds-card lift"><b>acme.io</b><br><small>10 members</small></div></div>
 
+  <h3>Popover</h3>
+  <p><code>.ds-pop</code> opens under the button that asked for it (filters, small forms). Use a modal only for a task that needs the whole page's attention.</p>
+
   <h3>Buttons</h3>
   <div class="ds-row"><button class="btn primary">Primary</button><button class="btn">Default</button><button class="btn sm primary">Small primary</button><button class="btn sm">Small</button><button class="btn sm danger-o">Destructive</button></div>
 

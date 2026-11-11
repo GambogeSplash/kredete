@@ -223,7 +223,7 @@ svg[data-i=send],.dsend:hover svg,.exs:hover svg,.exi button:hover svg{animation
 .rail{display:none}
 @media (min-width:901px){
  body:not(.noauth){background:var(--shell)}
- body:not(.noauth) .rail{display:grid;grid-template-rows:auto 1fr auto;justify-items:center;position:fixed;left:0;top:0;bottom:0;width:64px;padding:var(--s-4) 0;background:transparent;z-index:6}
+ body:not(.noauth) .rail{display:grid;grid-template-rows:auto 1fr auto;justify-items:center;position:fixed;left:0;top:0;bottom:0;width:56px;padding:var(--s-4) 0;background:transparent;z-index:6}
  .rl-grp{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;align-self:center}
  .rl{width:44px;height:44px;border:0;border-radius:var(--r-full);background:none;color:var(--mute);display:grid;place-items:center;cursor:pointer;transition:background var(--dur-fast),color var(--dur-fast),transform var(--dur-fast)}
  .rl:hover{background:var(--fill-1);color:var(--ink)}
@@ -237,11 +237,11 @@ svg[data-i=send],.dsend:hover svg,.exs:hover svg,.exi button:hover svg{animation
  .rl-acct .acct .acct-t,.rl-acct .acct .acct-c{display:none}
  .rl-acct .thm{width:36px;height:36px}
  /* the chats column: its own floating shell with the search on top */
- body:not(.noauth) .top{left:64px;top:8px;bottom:8px;width:236px;height:auto;padding:var(--s-3) var(--s-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+ body:not(.noauth) .top{left:56px;top:8px;bottom:8px;width:236px;height:auto;padding:var(--s-3) var(--s-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:0 1px 2px rgba(0,0,0,.04)}
  body:not(.noauth) .top #surfaces .snav{display:none!important}
- body:not(.noauth) .mainpanel{margin:8px 8px 8px calc(64px + 236px + 16px)}
- body:not(.noauth).sbc .mainpanel{margin-left:calc(64px + var(--s-2))}
- body:not(.noauth).sbc .top{transform:translateX(calc(-100% - 64px))}
+ body:not(.noauth) .mainpanel{margin:8px 8px 8px calc(56px + 236px + 16px)}
+ body:not(.noauth).sbc .mainpanel{margin-left:calc(56px + var(--s-2))}
+ body:not(.noauth).sbc .top{transform:translateX(calc(-100% - 56px))}
 }
 /* the agent card at the top of the side panel */
 .cxpro{display:flex;flex-direction:column;align-items:center;gap:var(--s-1);padding:var(--s-6) 0 var(--s-4)}
@@ -283,8 +283,8 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
 @media (min-width:901px){
  body:not(.noauth) .top{background:var(--shell);border-radius:var(--r-lg) 0 0 var(--r-lg);border-right:0}
  html[data-mode=dark] body:not(.noauth) .top{background:#eeeeee}
- body:not(.noauth) .mainpanel{margin:8px 8px 8px calc(64px + 236px);border-radius:0 var(--r-lg) var(--r-lg) 0}
- body:not(.noauth).sbc .mainpanel{margin-left:calc(64px + var(--s-2));border-radius:var(--r-lg)}
+ body:not(.noauth) .mainpanel{margin:8px 8px 8px calc(56px + 236px);border-radius:0 var(--r-lg) var(--r-lg) 0}
+ body:not(.noauth).sbc .mainpanel{margin-left:calc(56px + var(--s-2));border-radius:var(--r-lg)}
  body:not(.noauth).sbc .top{border-radius:var(--r-lg)}
 }
 
@@ -303,8 +303,8 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
  .rl-acct .thm{width:44px!important}
 }
 @media (min-width:901px){
- body:not(.noauth) .rail{grid-template-columns:64px}
- .rl-acct{width:64px;display:flex;justify-content:center}
+ body:not(.noauth) .rail{grid-template-columns:56px}
+ .rl-acct{width:56px;display:flex;justify-content:center}
  .rl-acct .thm,.rl-acct .acct{margin:0!important}
 }
 @media (min-width:901px){
@@ -315,7 +315,7 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
 /* the chats shell belongs to chat pages only; other pages use the full width next to the rail */
 @media (min-width:901px){
  body.nochats:not(.noauth) .top{display:none}
- body.nochats:not(.noauth) .mainpanel{margin-left:calc(64px + var(--s-2));border-radius:var(--r-lg)}
+ body.nochats:not(.noauth) .mainpanel{margin-left:calc(56px + var(--s-2));border-radius:var(--r-lg)}
  body.nochats:not(.noauth) .rl-menu{visibility:hidden}
 }
 @media (min-width:901px){
@@ -625,3 +625,8 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 
 .fcount{display:inline-grid;place-items:center;min-width:16px;height:16px;margin-left:6px;padding:0 4px;border-radius:8px;background:var(--brand,#5e6ad2);color:#fff;font-style:normal;font-size:11px;line-height:1}
 .audf2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3)}.audf2 .audd{width:100%;box-sizing:border-box;min-width:0}
+
+/* design system: popover. Opens under the control that asked for it, never in the middle of the page. */
+.ds-pop{position:fixed;z-index:60;width:min(440px,calc(100vw - 24px));box-sizing:border-box;padding:var(--s-4);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:0 12px 32px rgba(0,0,0,.28);animation:dspop .14s var(--ease-out)}
+@keyframes dspop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ds-pop{animation:none}}
