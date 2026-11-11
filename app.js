@@ -74,7 +74,7 @@ const isAbort = (error) => error && error.name === 'AbortError';
 
 const SYSTEMS = { confluence: 'Confluence', gdrive: 'Google Drive', github_docs: 'Docs repositories' };
 const systemName = (s) => SYSTEMS[s] || s || '';
-const srcIcon = (system, px) => window.SRCICON(systemName(system), px);
+const srcIcon = (system, px) => (window.SRCLOGO && window.SRCLOGO.has(system) ? window.SRCLOGO(system, px) : window.SRCICON(systemName(system), px));
 /* Confluence names a personal space after its owner, with a key like "~712020cc...". The server
    keeps the key in the stored name (the audit feed matches on it); people see "personal space". */
 const PERSONAL_SPACE = /^(.*) \(~[^()]+\)$/;

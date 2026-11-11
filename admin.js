@@ -50,12 +50,16 @@ function closePop() { if (popClose) popClose(); }
  * @param {HTMLElement} anchor
  * @param {string} html
  * @param {string} label
+ * @param {{ scrim?: boolean, sheet?: boolean }} [opts] scrim: a backdrop behind it; sheet: a bottom sheet on phones
  * @returns {HTMLElement}
  */
-function pop(anchor, html, label) {
+function pop(anchor, html, label, opts) {
   closePop();
+  const o = opts || {};
+  const scrim = o.scrim ? document.createElement('div') : null;
+  if (scrim) { scrim.className = 'ds-scrim'; document.body.appendChild(scrim); }
   const el = document.createElement('div');
-  el.className = 'ds-pop';
+  el.className = 'ds-pop' + (o.sheet ? ' sheet' : '');
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', label);
   el.innerHTML = html;
@@ -69,7 +73,17 @@ function pop(anchor, html, label) {
   place();
   anchor.setAttribute('aria-expanded', 'true');
   const away = (/** @type {any} */ e) => { if (!el.contains(e.target) && !anchor.contains(e.target) && !e.target.closest('.ssel-menu, [role=listbox]')) closePop(); };
-  const key = (/** @type {KeyboardEvent} */ e) => { if (e.key === 'Escape' && !$('.ssel-menu')) closePop(); };
+  const key = (/** @type {KeyboardEvent} */ e) => {
+    if (e.key === 'Escape' && !$('.ssel-menu')) { closePop(); return; }
+    if (e.key !== 'Tab' || $('.ssel-menu')) return;
+    // focus stays inside the popover while it is open
+    const items = $$('button:not([disabled]), [href], input:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])', el).filter((x) => x.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (!el.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
   const watch = new MutationObserver(() => { if (!anchor.isConnected) closePop(); });
   watch.observe($('#app'), { childList: true, subtree: true });
   setTimeout(() => { document.addEventListener('pointerdown', away, true); }, 0);
@@ -82,10 +96,11 @@ function pop(anchor, html, label) {
     document.removeEventListener('keydown', key, true);
     window.removeEventListener('resize', place);
     el.remove();
+    if (scrim) scrim.remove();
     anchor.removeAttribute('aria-expanded');
     if (anchor.isConnected) anchor.focus({ preventScroll: true });
   };
-  const first = $('input:not([type=checkbox]), textarea', el);
+  const first = $('input:not([type=checkbox]), textarea, button:not([disabled])', el);
   if (first) first.focus({ preventScroll: true });
   return el;
 }
@@ -235,7 +250,7 @@ function draw() {
   if (!t) return;
   const head = '<div class="aud-r aud-h" role="row"><span role="columnheader">Timestamp</span><span role="columnheader">Event</span><span role="columnheader">Actor</span><span role="columnheader">Resource</span><span role="columnheader">Outcome</span></div>';
   if (!a.loaded) {
-    t.innerHTML = head + (a.error ? `<div class="aud-r aud-e">${B.errorBlock(a.error, 'audretry')}</div>` : B.skeletonRows(6, 'aud-r'));
+    t.innerHTML = head + (a.error ? `<div class="ds-empty">${B.errorBlock(a.error, 'audretry')}</div>` : B.skeletonRows(6, 'aud-r'));
     const r = $('#audretry');
     if (r) r.onclick = () => load(true);
     more.innerHTML = '';
@@ -243,7 +258,8 @@ function draw() {
   }
   t.innerHTML = head + (a.items.length
     ? a.items.map((e) => `<div class="aud-r" role="row"><span class="amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="audw"><i class="audi">${ICON(actionIcon(e.action), 14)}</i><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="audwho">${actor(e.actor)}</span><span>${target(e)}</span><span><span class="tag ${outcomeTone(e.outcome)}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('')
-    : '<div class="aud-r aud-e"><span class="amute">No events match.</span></div>');
+    : '<div class="ds-empty"><b>No events match</b><p>Try a different action or dates.</p></div>');
+  t.classList.toggle('isempty', a.loaded && !a.items.length);
   more.innerHTML = a.next ? `<div class="audmore"><button type="button" class="btn sm" id="audload" ${a.loading ? 'disabled' : ''}>${a.loading ? 'Loading' : 'Show more'}</button></div>` : '';
   const m = $('#audload');
   if (m) m.onclick = () => load(false);

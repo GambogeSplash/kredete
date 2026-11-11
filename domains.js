@@ -46,7 +46,7 @@ function render(el) {
   s.rise = true;
   const view = s.view || 'list';
   const toggle = (k, icon, label) => `<button type="button" class="segb ${view === k ? 'on' : ''}" data-view="${k}" aria-pressed="${view === k}" aria-label="${label}">${ICON(icon, 15)}</button>`;
-  window.ADMIN.actions(`<div class="seg" role="group" aria-label="View">${toggle('list', 'rows', 'List view')}${toggle('grid', 'grid', 'Grid view')}</div><button type="button" class="btn sm primary" id="dmnew" aria-haspopup="dialog">New domain</button>`);
+  window.ADMIN.actions(`${window.DOCS.link('domains')}<div class="seg" role="group" aria-label="View">${toggle('list', 'rows', 'List view')}${toggle('grid', 'grid', 'Grid view')}</div><button type="button" class="btn sm primary" id="dmnew" aria-haspopup="dialog">New domain</button>`);
   el.innerHTML = '<div id="dmlist"></div>';
   $('#dmnew').onclick = () => createModal();
   $$('[data-view]').forEach((b) => { b.onclick = () => { s.view = b.dataset.view; render(el); }; });
@@ -72,14 +72,14 @@ function draw() {
   if (!list) return;
   const view = s.view || 'list';
   if (!s.loaded) {
-    if (s.error) { list.innerHTML = `<div class="ds-card">${B.errorBlock(s.error, 'dmretry')}</div>`; const r = $('#dmretry'); if (r) r.onclick = load; return; }
+    if (s.error) { list.innerHTML = `<div class="ds-empty">${B.errorBlock(s.error, 'dmretry')}</div>`; const r = $('#dmretry'); if (r) r.onclick = load; return; }
     list.innerHTML = view === 'grid'
       ? `<div class="ds-grid c3" role="status" aria-label="Loading domains">${[0, 1, 2].map(() => '<div class="ds-card dmsk" aria-hidden="true"><i class="pvsk" style="width:46%"></i><i class="pvsk sksub" style="width:30%"></i></div>').join('')}</div>`
       : `<div class="ds-table" role="status" aria-label="Loading domains">${B.skeletonRows(4, 'ds-tr')}</div>`;
     return;
   }
   if (!s.items.length) {
-    list.innerHTML = `<div class="ds-grid c3"><button type="button" class="ds-card add" id="dmadd"><span class="ds-ic adsti">${ICON('plus', 18)}</span><b>Add a domain</b><small>Group pages by subject</small></button></div>`;
+    list.innerHTML = `<div class="ds-empty"><span class="ds-empty-ic">${ICON('folder', 20)}</span><b>No domains yet</b><p>Create one for each subject your pages cover, such as Payments or Cards.</p><button type="button" class="btn primary" id="dmadd">New domain</button></div>`;
     $('#dmadd').onclick = () => createModal();
     return;
   }

@@ -26,6 +26,7 @@ declare global {
   /** The document drawer, and how a document reads in lists (document-drawer.js). */
   var DOCUMENTS: any;
   var ADMIN: any;
+  var GOV: any;
   var DOCS: Record<string, any>;
   /** The Support agent's shell, page registry and form helpers (agent.js). */
   var AGENT: any;
@@ -34,6 +35,7 @@ declare global {
   var Motion: any;
   function ICON(name: string, size?: number): string;
   function SRCICON(system: string, size?: number): string;
+  var SRCLOGO: ((system: string, size?: number) => string) & { has(system: string): boolean; key(system: string): string };
   function AVATAR(name: string, cls?: string, size?: number): string;
   function PERSON(name: string, size?: number, cls?: string): string;
   interface Window {

@@ -25,7 +25,7 @@ async function render(el) {
   try {
     [connections, users, domains] = await Promise.all([B.api.get('/admin/connections'), B.api.get('/admin/users', { limit: 200 }), B.api.get('/admin/domains')]);
   } catch (error) {
-    el.innerHTML = B.errorBlock(error, 'wsretry');
+    el.innerHTML = `<div class="ds-empty">${B.errorBlock(error, 'wsretry')}</div>`;
     $('#wsretry').onclick = () => render(el);
     return;
   }
@@ -35,7 +35,7 @@ async function render(el) {
   const live = connections.items.filter((c) => c.status !== 'disconnected');
   const go = (path, label) => `<button type="button" class="btn sm" data-go="${path}">${label}</button>`;
   el.innerHTML = `<div class="adhero"><span class="adlogo" aria-hidden="true">${esc(name.charAt(0).toUpperCase())}</span><div class="adhd"><h2>${esc(name)}</h2><div class="adurl"><span>${esc(host)}</span><button type="button" class="adcopy" data-copy="${esc(host)}" aria-label="Copy address">${ICON('link', 14)}<em>Copy</em></button></div><div class="adchips"><span class="adch">${ICON('lock', 13)}Google sign-in</span>${B.sandbox() ? `<span class="adch">${ICON('globe', 13)}Sandbox</span>` : ''}</div></div></div>
-   <h3 class="adh3">Settings</h3><div class="fgroup">${row('Sign-in', 'Members sign in with their Google account', 'Google', '')}${row('Sources', 'Spaces and repositories Broth reads', esc(count(live.length, 'connection', 'connections')), go('/admin/connectors', 'Manage'))}${row('People', 'Everyone who has signed in', esc(count(users.items.length, 'person', 'people', !!users.next_cursor)), go('/admin/people', 'Manage'))}${row('Domains', 'How pages are grouped by subject', esc(count(domains.items.length, 'domain', 'domains')), go('/admin/domains', 'Manage'))}</div>`;
+   <h3 class="adh3">Settings${window.ADMIN.hint('What this workspace is connected to, with a way into each.')}</h3><div class="fgroup">${row('Sign-in', 'Members sign in with their Google account', 'Google', '')}${row('Sources', 'Spaces and repositories Broth reads', esc(count(live.length, 'connection', 'connections')), go('/admin/connectors', 'Manage'))}${row('People', 'Everyone who has signed in', esc(count(users.items.length, 'person', 'people', !!users.next_cursor)), go('/admin/people', 'Manage'))}${row('Domains', 'How pages are grouped by subject', esc(count(domains.items.length, 'domain', 'domains')), go('/admin/domains', 'Manage'))}</div>`;
   $$('[data-go]', el).forEach((b) => { b.onclick = () => B.go(b.dataset.go); });
   $$('[data-copy]', el).forEach((b) => {
     b.onclick = async () => {

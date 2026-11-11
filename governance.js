@@ -74,7 +74,7 @@ async function load(reset) {
 function actions(p) {
   if (!p.can_decide) return p.status === 'rejected' || p.status === 'revoked' ? '<small class="amute">Closed</small>' : '';
   const mine = p.requested_by === B.S.me.id;
-  let h = '';
+  let h = `<button type="button" class="btn sm" data-review="${p.id}">Review</button>`;
   if (OPEN.includes(p.status)) {
     if (mine) h += '<small class="amute">You cannot approve your own request</small>';
     if (!mine) h += `<button type="button" class="btn sm primary" data-act="approve" data-id="${p.id}">Approve</button>`;
@@ -88,9 +88,10 @@ function actions(p) {
  * one stays listed so it can be revoked here. */
 function repoActions(d) {
   if (!d.can_decide) return '';
+  const review = `<button type="button" class="btn sm" data-review="${d.id}" data-repo>Review</button>`;
   if (d.status === 'pending') {
     const approve = d.requested_by === B.S.me.id ? '' : `<button type="button" class="btn sm primary" data-ract="approve" data-id="${d.id}">Approve</button>`;
-    return `${approve}<button type="button" class="btn sm" data-ract="reject" data-id="${d.id}">Reject</button>`;
+    return `${review}${approve}<button type="button" class="btn sm" data-ract="reject" data-id="${d.id}">Reject</button>`;
   }
   return d.status === 'approved' ? `<button type="button" class="btn sm" data-ract="revoke" data-id="${d.id}">Revoke</button>` : '';
 }
@@ -107,7 +108,7 @@ function draw() {
   if (!list) return;
   const names = B.S.cache.names || {};
   if (!g.loaded) {
-    list.innerHTML = g.error ? B.errorBlock(g.error, 'govretry') : `<div class="skwrap" role="status"><span class="sr">Loading requests</span>${B.skeletonRows(4)}</div>`;
+    list.innerHTML = g.error ? `<div class="ds-empty">${B.errorBlock(g.error, 'govretry')}</div>` : `<div class="skwrap" role="status"><span class="sr">Loading requests</span>${B.skeletonRows(4)}</div>`;
     const r = $('#govretry');
     if (r) r.onclick = () => load(true);
     more.innerHTML = '';
@@ -116,12 +117,18 @@ function draw() {
   list.classList.toggle('isempty', !g.items.length && !g.repos.length);
   list.innerHTML = g.items.length || g.repos.length
     ? g.repos.map(repoRow).join('') + g.items.map((p) => { const tag = STATUS_TAG[p.status] || [p.status, '']; const acts = actions(p); return `<article class="adrq govr"><span class="adsl">${ICON('shield', 22)}</span><div class="adrqb"><div class="adrqt"><button type="button" class="link govdoc" data-doc="${p.document_id}">${esc(p.document_title || 'A document')}</button><span class="tag ${tag[1]}">${tag[0]}</span></div><p>Wants to share with <b>${esc(SCOPE[p.to_scope] || p.to_scope)}</b>${scopeTag(p.to_scope)}</p>${meta(p.requested_by, p.created_at, names)}${p.reason ? `<p class="adrqn govreason">${esc(p.reason)}</p>` : ''}</div><div class="adrqa">${acts}</div></article>`; }).join('')
-    : `<div class="ixempty govempty"><b>${g.status ? 'Nothing here' : 'No requests yet'}</b><p>${g.status ? 'No requests have this status.' : 'Ask to share a document more widely from its details in the Library.'}</p></div>`;
+    : `<div class="ds-empty govempty"><b>${g.status ? 'Nothing here' : 'No requests yet'}</b><p>${g.status ? 'No requests have this status.' : 'Ask to share a document more widely from its details in the Library.'}</p></div>`;
   if (g.rise) { g.rise = false; window.ADMIN.life(list); }
   more.innerHTML = g.next ? `<button type="button" class="btn sm" id="govload" ${g.loading ? 'disabled' : ''}>${g.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#govload');
   if (m) m.onclick = () => load(false);
   $$('[data-doc]', list).forEach((b) => { b.onclick = () => window.DOCUMENTS.openDocument(b.dataset.doc); });
+  $$('[data-review]', list).forEach((b) => {
+    b.onclick = () => {
+      const item = b.hasAttribute('data-repo') ? g.repos.find((x) => x.id === b.dataset.review) : g.items.find((x) => x.id === b.dataset.review);
+      if (item) reviewPopup(item, b);
+    };
+  });
   $$('[data-ract]', list).forEach((b) => {
     b.onclick = () => {
       const act = b.dataset.ract;
@@ -153,5 +160,72 @@ function draw() {
     };
   });
 }
+/* ---------- Review request: one popup for a promotion or a docs repository request ----------
+ * window.GOV.reviewPopup(request, anchor, onDone) opens it under `anchor` (a bottom sheet on
+ * phones). `request` is a PromotionOut, or a public declaration (it has container_path). Approve,
+ * Decline and Revoke use the same endpoints and rules as the cards; a person who cannot decide
+ * sees the details only. `onDone(updated)` runs after a decision. */
+const REVIEW_SCOPE = (p) => SCOPE[p.to_scope] || p.to_scope;
+function reviewPopup(request, anchor, onDone) {
+  const repo = request.container_path !== undefined && request.document_id === undefined;
+  const g = state();
+  const names = B.S.cache.names || {};
+  const tag = STATUS_TAG[request.status] || [request.status, ''];
+  const mine = request.requested_by === B.S.me.id;
+  const open = repo ? request.status === 'pending' : OPEN.includes(request.status);
+  const who = (id) => (id === B.S.me.id ? 'You' : names[id] || 'A colleague');
+  const from = repo ? 'Internal' : 'Its source access';
+  const to = repo ? 'Public' : REVIEW_SCOPE(request);
+  const title = repo ? B.containerName(request.container_path || 'A docs repository') : request.document_title || 'A document';
+  const doc = repo
+    ? `<div class="revdoc"><span class="adsl">${B.srcIcon('github_docs', 28)}</span><div><b>${esc(title)}</b><small>Whole repository</small></div></div>`
+    : `<div class="revdoc"><span class="adsl" id="revlogo">${ICON('shield', 22)}</span><div><b>${esc(title)}</b><small id="revpath"></small></div><button type="button" class="link" id="revopen">Open document</button></div>`;
+  let buttons = '';
+  if (request.can_decide) {
+    if (open) buttons = `<button type="button" class="btn" id="revno">Decline</button>${mine ? '' : '<button type="button" class="btn primary" id="revyes">Approve</button>'}`;
+    else if (request.status === 'approved') buttons = '<button type="button" class="btn" id="revoke">Revoke</button>';
+  }
+  const note = !request.can_decide ? 'Only its owner, a domain owner or an admin can decide this.' : open && mine ? 'You cannot approve your own request.' : '';
+  const pop = window.ADMIN.pop(anchor, `<div class="dmbody revpop"><div class="revh"><b>Review request</b><span class="tag ${tag[1]}">${tag[0]}</span></div>
+    <div class="revwho">${AVATAR(who(request.requested_by), 'lav', 28)}<span><b>${esc(who(request.requested_by))}</b><small>${request.created_at ? B.when(request.created_at, B.ago(request.created_at)) : ''}</small></span></div>
+    ${doc}
+    <div class="revchg" role="group" aria-label="Access change"><span class="tag">${esc(from)}</span><i aria-hidden="true">${ICON('arrow', 14)}</i><span class="tag ${to === 'Public' ? 'warn' : 'blue'}">${esc(to)}</span></div>
+    ${request.reason ? `<p class="revnote">${esc(request.reason)}</p>` : ''}
+    ${note ? `<p class="ds-msg">${esc(note)}</p>` : ''}
+    <div class="hse ds-msg bad" id="reve" role="alert"></div>
+    ${buttons ? `<div class="actions"><span class="lsp"></span>${buttons}</div>` : ''}</div>`, 'Review request', { scrim: true, sheet: true });
+  if (!repo) {
+    $('#revopen', pop).onclick = () => { window.ADMIN.closePop(); window.DOCUMENTS.openDocument(request.document_id); };
+    // The document's source and folder, when it can be read.
+    B.api.get('/documents/' + request.document_id).then((d) => {
+      if (!pop.isConnected) return;
+      if (d.system) $('#revlogo', pop).innerHTML = B.srcIcon(d.system, 28);
+      const path = d.domain && d.domain.path ? d.domain.path.map((c) => c.name).join(' / ') : '';
+      $('#revpath', pop).textContent = path || B.systemName(d.system);
+    }).catch(() => { if (pop.isConnected) $('#revpath', pop).textContent = ''; });
+  }
+  const fail = (error) => { $('#reve', pop).textContent = B.problem(error); };
+  const decide = (act, button) => B.busy(button, async () => {
+    const updated = await B.api.post(repo ? `/public-declarations/${request.id}/${act}` : `/promotions/${request.id}/${act}`, {});
+    if (repo) {
+      g.repos = g.repos.map((x) => (x.id === updated.id ? Object.assign({}, x, { status: updated.status, approved_by: updated.approved_by, decided_at: updated.decided_at, can_decide: updated.can_decide }) : x)).filter((x) => !g.status || x.status === g.status);
+    } else {
+      const i = g.items.findIndex((x) => x.id === updated.id);
+      if (i >= 0) g.items[i] = Object.assign({}, g.items[i], { status: updated.status, approved_by: updated.approved_by, can_decide: updated.can_decide });
+      if (g.status && updated.status !== g.status && i >= 0) g.items.splice(i, 1);
+    }
+    B.toast(repo
+      ? { approve: 'Approved. The repository\'s published pages are Public now.', reject: 'Declined', revoke: 'Revoked. The repository\'s pages are Internal again.' }[act]
+      : { approve: 'Approved. It is shared more widely now.', reject: 'Declined', revoke: 'Revoked. Access is back to its source.' }[act]);
+    window.ADMIN.closePop();
+    if (onDone) onDone(updated);
+    draw();
+  }, fail);
+  const yes = $('#revyes', pop), no = $('#revno', pop), rv = $('#revoke', pop);
+  if (yes) yes.onclick = () => decide('approve', yes);
+  if (no) no.onclick = () => { if (!no.dataset.arm) { no.dataset.arm = '1'; no.textContent = 'Confirm decline'; no.classList.add('danger'); return; } decide('reject', no); };
+  if (rv) rv.onclick = () => { if (!rv.dataset.arm) { rv.dataset.arm = '1'; rv.textContent = 'Confirm revoke'; rv.classList.add('danger'); return; } decide('revoke', rv); };
+}
+window.GOV = { reviewPopup };
 window.SURFACES.governance = page;
 })();

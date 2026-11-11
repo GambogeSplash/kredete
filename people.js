@@ -134,7 +134,7 @@ function drawUsers() {
   const v0 = state().invites;
   const rise = u.loaded && (v0.loaded || v0.error) && state().rise;
   if (!u.loaded) {
-    list.innerHTML = u.error ? `<div class="aud-r aud-e">${B.errorBlock(u.error, 'ppretry')}</div>` : B.skeletonRows(5, 'adrow');
+    list.innerHTML = u.error ? `<div class="ds-empty">${B.errorBlock(u.error, 'ppretry')}</div>` : B.skeletonRows(5, 'adrow');
     const r = $('#ppretry');
     if (r) r.onclick = () => loadUsers(true);
     more.innerHTML = '';
@@ -145,7 +145,8 @@ function drawUsers() {
   const pend = !u.role && !u.q ? pendingRows(state().invites) : '';
   list.innerHTML = (shown.length || pend
     ? shown.map((x) => `<div class="adrow" role="row" data-user="${x.id}"><span class="adav">${AVATAR(x.name, 'lav', 40)}</span><div class="adwho"><b>${esc(x.name)}</b><small>${esc(x.email)}</small></div><div class="adroles">${x.roles.length ? x.roles.map((r) => roleTag(r, doms)).join('') : '<span class="amute">Employee</span>'}</div><div class="adlv" title="${esc(B.clearanceName(x.clearance))}">${levelBars(x.clearance)}<em>${esc(B.clearanceName(x.clearance))}</em></div><small class="adact">${x.status === 'suspended' ? '<span class="tag bad">Suspended</span>' : ''}</small><div class="adrowa"><button type="button" class="btn sm" data-edit="${x.id}" aria-label="Edit ${esc(x.name)}">Edit</button></div></div>`).join('') + pend
-    : `<div class="ixempty"><b>${u.q || u.role ? 'No one matches' : 'No one has signed in yet'}</b>${u.q || u.role ? '<p>Try a different search or filter.</p>' : ''}</div>`);
+    : `<div class="ds-empty"><b>${u.q || u.role ? 'No one matches' : 'No one has signed in yet'}</b>${u.q || u.role ? '<p>Try a different search or filter.</p>' : ''}</div>`);
+  list.classList.toggle('isempty', !shown.length && !pend);
   more.innerHTML = u.next ? `<button type="button" class="btn sm" id="ppload" ${u.loading ? 'disabled' : ''}>${u.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#ppload');
   if (m) m.onclick = () => loadUsers(false);
@@ -249,7 +250,7 @@ function drawInvites() {
   const list = $('#invlist'), more = $('#invmore');
   if (!list) return;
   if (!v.loaded) {
-    list.innerHTML = v.error ? `<div class="aud-r aud-e">${B.errorBlock(v.error, 'invretry')}</div>` : B.skeletonRows(4, 'adrow');
+    list.innerHTML = v.error ? `<div class="ds-empty">${B.errorBlock(v.error, 'invretry')}</div>` : B.skeletonRows(4, 'adrow');
     const r = $('#invretry');
     if (r) r.onclick = () => loadInvites(true);
     more.innerHTML = '';
@@ -258,7 +259,8 @@ function drawInvites() {
   const rise = state().rise;
   list.innerHTML = v.items.length
     ? v.items.map((x) => { const st = INVITE_STATUS[x.status] || [x.status, '']; return `<div class="adrow pend" role="row"><span class="adav adgh">${ICON('inbox', 18)}</span><div class="adwho"><b>${esc(x.email)}</b><small>Invited ${B.when(x.created_at, B.ago(x.created_at))}</small></div><div class="adroles">${x.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('')}<span class="tag ${st[1]}">${st[0]}</span></div><div class="adlv">${levelBars(x.clearance)}<em>${esc(B.clearanceName(x.clearance))}</em></div><small class="adact"></small><div class="adrowa on">${x.status === 'open' ? `<button type="button" class="btn sm" data-revoke="${x.id}">Revoke</button>` : ''}</div></div>`; }).join('')
-    : '<div class="ixempty"><b>No invitations yet</b><p>Invite the people who should use Broth.</p></div>';
+    : '<div class="ds-empty"><b>No invitations yet</b><p>Invite the people who should use Broth.</p></div>';
+  list.classList.toggle('isempty', !v.items.length);
   more.innerHTML = v.next ? `<button type="button" class="btn sm" id="invload" ${v.loading ? 'disabled' : ''}>${v.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#invload');
   if (m) m.onclick = () => loadInvites(false);
@@ -304,7 +306,7 @@ async function links() {
     const [result] = await Promise.all([B.api.get('/admin/account-links'), allUsers()]);
     p.links = result;
   } catch (error) {
-    $('#lnbody').innerHTML = B.errorBlock(error, 'lnretry');
+    $('#lnbody').innerHTML = `<div class="ds-empty">${B.errorBlock(error, 'lnretry')}</div>`;
     $('#lnretry').onclick = links;
     return;
   }

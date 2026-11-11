@@ -90,8 +90,90 @@ function readReturn() {
   return undefined;
 }
 
-const SOON = [['Google Cloud Storage', null], ['Slack', null], ['SharePoint', null], ['Notion', null]];
-const soonIcon = (ic, px) => (ic ? B.srcIcon(ic, px) : ICON('plug', 20));
+/* Every source Broth can read now or will: the real ones show their state from the API; the rest
+   are honest Coming soon cards. */
+const SOURCES = [
+  { key: 'confluence', name: 'Confluence', logo: 'confluence', systems: ['confluence'], real: true, blurb: "Read your wiki, with each person's own access." },
+  { key: 'github', name: 'Docs repositories', logo: 'github', systems: ['github_docs'], real: true, blurb: 'Read product docs from GitHub.' },
+  { key: 'gdrive', name: 'Google Drive', logo: 'google-drive', systems: ['gdrive'], real: false, blurb: 'Read your shared drives.' },
+  { key: 'notion', name: 'Notion', logo: 'notion', systems: [], real: false, blurb: 'Read your notes.' },
+  { key: 'slack', name: 'Slack', logo: 'slack', systems: [], real: false, blurb: 'Read your channels.' },
+  { key: 'sharepoint', name: 'SharePoint', logo: 'sharepoint', systems: [], real: false, blurb: 'Read your sites.' },
+  { key: 'gcs', name: 'Google Cloud Storage', logo: 'google-cloud-storage', systems: [], real: false, blurb: 'Read your buckets.' },
+];
+const liveOf = (src) => data.connections.filter((c) => src.systems.includes(c.system) && c.status !== 'disconnected');
+const needsAuth = (c) => (c.system === 'confluence' || c.system === 'github_docs') && !c.authorized;
+const warned = (c) => Object.values(c.warnings || {}).some(Boolean);
+/** The card's state: a tag, one short line, and a progress fraction while a read is running. */
+function stateOf(src) {
+  const conns = liveOf(src);
+  if (!conns.length) return src.real ? { tag: ['Not connected', ''], line: src.blurb, fraction: null, conns } : { tag: ['Soon', ''], line: 'Coming soon.', fraction: null, conns, soon: true };
+  const running = conns.find((c) => c.active_run && c.active_run.status === 'running');
+  const view = running ? SYNC.runView(running.active_run) : null;
+  const sites = conns.map((c) => c.site).join(', ');
+  const spaces = data.containers.filter((x) => conns.some((c) => c.id === x.connection_id) && x.included).length;
+  const unit = src.key === 'github' ? 'repositories' : src.key === 'gdrive' ? 'drives' : 'spaces';
+  const line = `${sites} · ${spaces} ${spaces === 1 ? unit.replace(/ies$/, 'y').replace(/s$/, '') : unit}`;
+  let tag;
+  if (conns.some(needsAuth)) tag = ['Needs authorising', 'warn'];
+  else if (running) tag = ['Syncing', 'blue'];
+  else if (conns.some((c) => c.status === 'failing')) tag = ['Failing', 'bad'];
+  else if (conns.some((c) => c.status === 'degraded') || conns.some(warned)) tag = ['Warnings', 'warn'];
+  else tag = ['Connected', 'ok'];
+  return { tag, line, fraction: view && view.fraction !== null ? view.fraction : null, conns };
+}
+function sourceCard(src) {
+  const st = stateOf(src);
+  return `<button type="button" class="ds-card lift adsc srccard${st.soon ? ' soonc' : ''}" data-src="${src.key}" aria-haspopup="dialog" aria-label="${esc(src.name)}, ${esc(st.tag[0])}"><div class="adsch"><span class="adsl">${B.srcIcon(src.logo, 28)}</span><div><b>${esc(src.name)}</b><small>${esc(st.line)}</small></div><span class="tag ${st.tag[1]}">${st.tag[0]}</span></div>${st.fraction !== null ? `<span class="adbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(st.fraction * 100)}"><i style="width:${Math.round(st.fraction * 100)}%"></i></span>` : ''}</button>`;
+}
+/* "Notify me" for a source that is not supported yet is kept in this browser only. */
+const NOTIFY = 'broth-notify';
+const notified = () => { try { return JSON.parse(localStorage.getItem(NOTIFY) || '[]'); } catch (e) { return []; } };
+function notify(key) {
+  const list = notified();
+  if (!list.includes(key)) { try { localStorage.setItem(NOTIFY, JSON.stringify(list.concat(key))); } catch (e) { /* storage unavailable */ } }
+  B.toast('Noted');
+}
+/** The popup a card opens: the logo and state, and the actions that already exist on this page. */
+function sourcePop(anchor, src) {
+  const st = stateOf(src);
+  const head = `<div class="addh srcph"><span class="adsl">${B.srcIcon(src.logo, 28)}</span><div><b>${esc(src.name)}</b><small>${esc(st.soon ? 'Coming soon.' : st.line)}</small></div><span class="tag ${st.tag[1]}">${st.tag[0]}</span></div>`;
+  let body;
+  if (st.soon || !src.real && !st.conns.length) {
+    const done = notified().includes(src.key);
+    body = `<p class="ds-msg srcsoon">${esc(src.name)} is coming soon. We can tell you when it is ready.</p><div class="actions"><span class="lsp"></span><button type="button" class="btn primary" id="srcnotify" ${done ? 'disabled' : ''}>${done ? 'Noted' : 'Notify me'}</button></div>`;
+  } else if (!st.conns.length) {
+    const missing = B.sandbox() && data.credentials.some((c) => c.name === (src.key === 'github' ? 'github_app' : 'confluence_oauth') && !c.configured);
+    body = `<p class="ds-msg srcsoon">${esc(src.blurb)}</p><div class="actions"><span class="lsp"></span>${missing ? `<button type="button" class="btn primary" data-pc="cred">${src.key === 'github' ? 'Add the GitHub App' : 'Add the Confluence app'}</button>` : '<button type="button" class="btn primary" data-pc="add">Connect</button>'}</div>`;
+  } else {
+    body = `<div class="srcconns">${st.conns.map((c) => {
+      const run = c.active_run && c.active_run.status === 'running' ? c.active_run : c.last_run;
+      const view = run ? SYNC.runView(run) : null;
+      const spaces = data.containers.filter((x) => x.connection_id === c.id);
+      const failed = spaces.reduce((n, x) => n + ((x.last_run && x.last_run.counts && x.last_run.counts.failed) || 0), 0);
+      const act = (id, label, primary) => `<button type="button" class="btn sm ${primary ? 'primary' : ''}" data-pc="${id}" data-cid="${c.id}">${label}</button>`;
+      const btns = needsAuth(c)
+        ? act(c.system === 'github_docs' ? 'install' : 'authorize', c.system === 'github_docs' ? 'Install on GitHub' : 'Authorise', true)
+        : `${act('verify', c.system === 'github_docs' ? 'Find repositories' : 'Find spaces')}${act('sync', 'Sync now', true)}${c.system === 'confluence' ? act('authorize', 'Re-authorise') : ''}${act('manage', 'Manage')}`;
+      return `<div class="srcc"><div class="srcct"><b>${esc(c.site)}</b><small>${view ? `Last read: ${esc(view.label)}${view.detail ? ' · ' + esc(view.detail) : ''}` : 'Not read yet'}${failed ? ` · ${failed} ${failed === 1 ? 'page' : 'pages'} could not be read` : ''}</small></div><div class="srcca">${btns}</div></div>`;
+    }).join('')}</div><div class="actions"><span class="lsp"></span><button type="button" class="btn" data-pc="add">Connect another</button></div>`;
+  }
+  const pop = window.ADMIN.pop(anchor, `<div class="dmbody srcpop">${head}${body}</div>`, `${src.name}`);
+  const nb = $('#srcnotify', pop);
+  if (nb) nb.onclick = () => { notify(src.key); nb.disabled = true; nb.textContent = 'Noted'; };
+  $$('[data-pc]', pop).forEach((b) => {
+    b.onclick = () => {
+      const act = b.dataset.pc;
+      if (act === 'add') { window.ADMIN.closePop(); addSource(); return; }
+      if (act === 'cred') { window.ADMIN.closePop(); credentialForm(src.key === 'github' ? 'github_app' : 'confluence_oauth'); return; }
+      const section = $(`[data-conn="${b.dataset.cid}"]`);
+      if (act === 'manage') { window.ADMIN.closePop(); if (section) { section.scrollIntoView({ block: 'start', behavior: 'auto' }); const f = $('button', section); if (f) f.focus({ preventScroll: true }); } return; }
+      const own = section && $(`[data-cact="${act}"]`, section);
+      if (own) own.click();
+      if (act === 'sync' || act === 'verify') window.ADMIN.closePop();
+    };
+  });
+}
 /** The Add a source dialog: a Confluence site or a GitHub account to connect, then what is coming. */
 function addSource() {
   const confluence = data ? data.connections.some((c) => c.system === 'confluence' && c.status !== 'disconnected') : false;
@@ -100,7 +182,7 @@ function addSource() {
   const needApp = (name, what, label) => `<div class="cnneed"><span class="ltb"><b>${what}</b><small>Add the app first, then connect.</small></span><button type="button" class="btn sm primary" data-cneed="${name}">${label}</button></div>`;
   B.openModal(`<div class="modal bt" style="max-width:480px" role="dialog" aria-label="Add a source"><div class="bar"><span>Add a source</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><div class="dmbody cnpop">${missing('confluence_oauth') ? needApp('confluence_oauth', 'Confluence', 'Add the Confluence app') : `<form id="cnadd" novalidate><label class="dmlab" for="cnsite">${confluence ? 'Connect another Confluence site' : 'Confluence site'}</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse ds-msg bad" id="cnadde" role="alert"></div></form>`}
     ${missing('github_app') ? needApp('github_app', 'GitHub docs', 'Add the GitHub App') : `<form id="ghadd" novalidate><label class="dmlab" for="ghlogin">${docs ? 'Connect another GitHub account' : 'GitHub docs'}</label><div class="cnaddrow"><input id="ghlogin" class="eminp" placeholder="Organization or user, like kredete" autocomplete="off" spellcheck="false"><button type="submit" class="btn primary" id="ghaddgo">Connect</button></div><div class="hse ds-msg bad" id="ghadde" role="alert"></div></form>`}
-    <div class="slist"><div class="srow"><span class="adsl">${B.srcIcon('gdrive', 28)}</span><span class="ltb"><b>Google Drive</b><small>${B.sandbox() ? 'Needs Google Workspace.' : 'Set up under Google Drive below.'}</small></span>${B.sandbox() ? '<span class="tag">Unavailable</span>' : ''}</div>${SOON.map(([n, ic]) => `<div class="srow"><span class="adsl">${soonIcon(ic, 28)}</span><span class="ltb"><b>${n}</b><small>Coming soon.</small></span><span class="tag">Soon</span></div>`).join('')}</div></div></div></div>`);
+    <div class="slist"><div class="srow"><span class="adsl">${B.srcIcon('gdrive', 28)}</span><span class="ltb"><b>Google Drive</b><small>${B.sandbox() ? 'Needs Google Workspace.' : 'Set up under Google Drive below.'}</small></span>${B.sandbox() ? '<span class="tag">Unavailable</span>' : ''}</div>${SOURCES.filter((x) => !x.real && x.key !== 'gdrive').map((x) => `<div class="srow"><span class="adsl">${B.srcIcon(x.logo, 28)}</span><span class="ltb"><b>${x.name}</b><small>Coming soon.</small></span><span class="tag">Soon</span></div>`).join('')}</div></div></div></div>`);
   $$('[data-cneed]').forEach((b) => { b.onclick = () => { B.closeModal(); credentialForm(b.dataset.cneed); }; });
   const flag = (id, msg) => { const f = $(id === 'cn' ? '#cnsite' : '#ghlogin'); $(`#${id}adde`).textContent = msg; if (msg) f.setAttribute('aria-invalid', 'true'); else f.removeAttribute('aria-invalid'); };
   if ($('#cnsite')) setTimeout(() => $('#cnsite').focus(), 80);
@@ -154,31 +236,29 @@ function draw() {
   const docs = data.connections.filter((c) => c.system === 'github_docs' && c.status !== 'disconnected');
   const app = data.credentials.find((c) => c.name === 'github_app');
   const conns = data.connections.filter((c) => c.status !== 'disconnected' && ['confluence', 'gdrive', 'github_docs'].includes(c.system));
-  const cards = `<div class="ds-grid c3 cnover"><button type="button" class="ds-card add" id="cnaddcard"><span class="ds-ic adsti">${ICON('plus', 18)}</span><b>Add a source</b><small>Confluence, Docs repositories</small></button>${conns.map((c) => { const st = STATUS[c.status] || [c.status, '']; return `<article class="ds-card lift adsc" data-card="${c.id}"><div class="adsch"><span class="adsl">${B.srcIcon(c.system, 28)}</span><div><b>${esc(B.systemName(c.system))}</b><small>${esc(c.site)}</small></div><span class="tag ${st[1]}">${st[0]}</span></div><div class="adscf"><small></small><div>${c.system !== 'gdrive' || c.authorized ? `<button type="button" class="btn sm" data-sync-card="${c.id}">Sync now</button>` : ''}<button type="button" class="btn sm" data-manage="${c.id}">Manage</button></div></div></article>`; }).join('')}${SOON.map(([n, ic]) => `<article class="ds-card adsc soonc"><div class="adsch"><span class="adsl">${soonIcon(ic, 28)}</span><div><b>${n}</b><small>Coming soon.</small></div><span class="tag">Soon</span></div></article>`).join('')}</div>`;
+  const cards = `<div class="ds-grid c3 cnover"><button type="button" class="ds-card add" id="cnaddcard"><span class="ds-ic adsti">${ICON('plus', 18)}</span><b>Add a source</b><small>Confluence, Docs repositories</small></button>${SOURCES.map((src) => sourceCard(src)).join('')}</div>`;
   // Nothing connected yet (an admin right after setup): one clear way in, and the per-source sections wait.
   const none = conns.length === 0;
-  const first = none ? `<div class="ds-card cnfirst"><div class="empty"><h2>Connect your first source</h2><p>Broth reads Confluence and your docs repositories, with each person's own access.</p><button type="button" class="btn primary" id="cnfirst">Connect your first source</button></div></div>` : '';
+  const first = none ? `<div class="ds-empty cnfirst"><span class="ds-empty-ic">${ICON('plug', 20)}</span><b>Connect your first source</b><p>Broth reads Confluence and your docs repositories, with each person's own access.</p><button type="button" class="btn primary" id="cnfirst">Connect your first source</button></div>` : '';
   body.classList.toggle('cnnone', none);
-  body.innerHTML = first + cards + `<section class="cnsec" id="cnconf"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2><p class="amute">Broth reads the spaces you include, with each person's Confluence access.</p></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
+  body.innerHTML = first + cards + `<section class="cnsec" id="cnconf"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence${window.ADMIN.hint("Broth reads the spaces you include, with each person's Confluence access.")}</h2></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && conf && !conf.configured ? `<div class="notice low"><span>Add the Confluence app below before connecting a site.</span></div>` : ''}
-      ${confluence.map(connectionHtml).join('') || `<div class="cnempty"><p class="amute">No Confluence site is connected.</p></div>`}
+      ${confluence.map(connectionHtml).join('') || `<div class="ds-empty"><b>No Confluence site is connected</b><p>Use Add a source to connect one.</p></div>`}
 </section>
-    <section class="cnsec"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive</h2><p class="amute">${B.sandbox() ? 'Unavailable in this sandbox.' : 'Broth reads the shared drives you include.'}</p></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : drive.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
+    <section class="cnsec"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive${window.ADMIN.hint(B.sandbox() ? 'Unavailable in this sandbox.' : 'Broth reads the shared drives you include.')}</h2></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : drive.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() ? '<div class="notice none"><span>Google Drive needs a Google Workspace account: Broth reads Drive through domain-wide delegation, which a personal Google account does not have.</span></div>' : ''}
       <ol class="cncheck ${B.sandbox() ? 'off' : ''}"><li><b>Authorize Broth in the Google Admin console</b><span>Add Broth's client ID with the Drive and Admin SDK read scopes under domain-wide delegation.</span></li><li><b>Add the indexer to each shared drive</b><span>Invite broth-indexer@ as a viewer on every shared drive Broth should read.</span></li><li><b>Verify</b><span>Broth checks that it can see each shared drive, then you include them.</span></li></ol>
       ${drive.map(connectionHtml).join('')}</section>
-    <section class="cnsec" id="cndocs"><div class="cnsec-h">${B.srcIcon('github_docs', 32)}<div><h2>Docs repositories</h2><p class="amute">Broth reads the product docs from the GitHub repositories you include, and links each answer to the page on the docs site. ${window.DOCS.link('docsInstall', 'How to connect')}</p></div>${docs.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
+    <section class="cnsec" id="cndocs"><div class="cnsec-h">${B.srcIcon('github_docs', 32)}<div><h2>Docs repositories${window.ADMIN.hint('Broth reads the product docs from the GitHub repositories you include, and links each answer to the page on the docs site.')}</h2>${window.DOCS.link('docsInstall', 'How to connect')}</div>${docs.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && app && !app.configured ? `<div class="notice low"><span>Add the GitHub App below before connecting an account.</span></div>` : ''}
-      ${docs.map(connectionHtml).join('') || `<div class="cnempty"><p class="amute">No GitHub account is connected.</p></div>`}
+      ${docs.map(connectionHtml).join('') || `<div class="ds-empty"><b>No GitHub account is connected</b><p>Use Add a source to connect one.</p></div>`}
 </section>
-    ${B.sandbox() ? `<section class="cnsec"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials</h2><p class="amute">The apps Broth uses in this sandbox. Secrets are stored encrypted and never shown again.</p></div></div><div class="fgroup cncreds">${data.credentials.map(credentialRow).join('')}</div></section>` : ''}`;
+    ${B.sandbox() ? `<section class="cnsec"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials${window.ADMIN.hint('The apps Broth uses in this sandbox. Secrets are stored encrypted and never shown again.')}</h2></div></div><div class="fgroup cncreds">${data.credentials.map(credentialRow).join('')}</div></section>` : ''}`;
   $('#cnaddcard').onclick = addSource;
   const fb = $('#cnfirst');
   if (fb) fb.onclick = addSource;
   if (!riseDone) { riseDone = true; window.ADMIN.life($('.cnover', body)); }
-  // Sync now on a card runs the connection's own Sync now, so there is one sync path.
-  $$('[data-sync-card]', body).forEach((b) => { b.onclick = () => { const own = $(`[data-conn="${b.dataset.syncCard}"] [data-cact=sync]`); if (own) own.click(); else B.toast('Authorize this connection first'); }; });
-  $$('[data-manage]', body).forEach((b) => { b.onclick = () => { const t = $(`[data-conn="${b.dataset.manage}"]`); if (t) { t.scrollIntoView({ block: 'start', behavior: 'auto' }); const f = $('button', t); if (f) f.focus({ preventScroll: true }); } }; });
+  $$('[data-src]', body).forEach((b) => { b.onclick = () => sourcePop(b, SOURCES.find((x) => x.key === b.dataset.src)); });
   paint();
   wire();
   watch();
@@ -197,7 +277,7 @@ function connectionHtml(c) {
     <div class="cnbar"></div><div class="cnfails"></div><div class="cnerrs"></div>
     ${warningsHtml(c.warnings || {})}
     <div class="cnacts">${needs ? start : `<button type="button" class="btn sm" data-cact="verify">${find}</button><button type="button" class="btn sm cnsyncb" data-cact="sync"><span class="suspin" aria-hidden="true"></span><span>Sync now</span></button>${c.system === 'confluence' ? '<button type="button" class="btn sm" data-cact="authorize">Re-authorize</button>' : ''}`}<span class="lsp"></span><button type="button" class="btn sm" data-cact="disconnect">Disconnect</button></div>
-    ${c.authorized || c.system === 'gdrive' ? `<div class="cnspaces">${spaces.length ? `<div class="dt" style="--cols:${cols}"><div class="dt-r dt-h"><span>${unit}</span><span>Owner</span><span>Included</span>${repos ? '<span>Bots</span>' : ''}<span></span></div>${spaces.map((s) => spaceRow(s, repos)).join('')}</div>` : `<p class="amute cnnone">No ${repos ? 'repositories' : 'spaces'} found yet. Use ${find}.</p>`}</div>` : ''}</div>`;
+    ${c.authorized || c.system === 'gdrive' ? `<div class="cnspaces">${spaces.length ? `<div class="dt" style="--cols:${cols}"><div class="dt-r dt-h"><span>${unit}</span><span>Owner</span><span>Included</span>${repos ? '<span>Bots</span>' : ''}<span></span></div>${spaces.map((s) => spaceRow(s, repos)).join('')}</div>` : `<div class="ds-empty cnnone"><b>No ${repos ? 'repositories' : 'spaces'} found yet</b><p>Use ${find}.</p></div>`}</div>` : ''}</div>`;
 }
 /** A repository's Public declaration: Request public, or where its request stands. */
 function declarationCell(s) {

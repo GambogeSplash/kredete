@@ -94,6 +94,20 @@ Status words: **done** (in the real app, real data), **browser-only** (works in 
 
 Counts: **72 rows**. done 50 (one of them with a needs-backend part, row 14), browser-only 1, explained 4, n/a 2, needs backend 15 (nine endpoint groups, listed below).
 
+## Added after the first pass
+
+| # | Element | Status |
+|---|---|---|
+| 73 | Every empty, zero, no-results and error state sits in one framed card (`.ds-empty`): Sharing requests (per status), People (no matches, no one yet, no invitations), Domains, Audit, Confluence accounts, Workspace error, Sources first-source, per-source "not connected", "no spaces or repositories found" | done |
+| 74 | (i) hint after every page title and section heading: Workspace, Settings, People and access, Domains, Audit log, Sources, Confluence, Google Drive, Docs repositories, App credentials, Sharing requests; old subtitles moved into the hints (the docs link stays as a plain link beside the heading) | done |
+| 75 | Source cards for every source with real logos: Confluence, Docs repositories (real state from the API), Google Drive (real state when connected, else Coming soon), Notion, Slack, SharePoint, Google Cloud Storage (Coming soon) | done |
+| 76 | Each card is one button (hover, focus ring, Enter or Space) and opens a popup: logo, state, the page's own actions (Connect, Add the app, Authorise, Install on GitHub, Find spaces, Sync now, Re-authorise, Manage, Connect another), last read and unreadable page count | done |
+| 77 | Coming soon popup with Notify me, kept in this browser (`broth-notify`), toast "Noted" | browser-only; needs backend: `POST /v1/interest {source}` |
+| 78 | `source-logos.js`: `SRCLOGO(system, size)`, inline SVG for Confluence, GitHub, Google Drive, Notion, Slack, SharePoint, Google Cloud Storage; `BRAIN.srcIcon` returns them, so every caller shows them | done |
+| 79 | Focus stays inside popovers while they are open, restored on close | done |
+| 80 | Review request popup on Sharing requests (`window.GOV.reviewPopup(request, anchor, onDone)`): who and when, document with source and folder, access change as two tags, note, status, Approve, Decline, Revoke with the real endpoints and rules, read-only for people who cannot decide, inline API errors, backdrop, bottom sheet on phones; repository requests have their own fields | done |
+| 81 | Decline with a note | needs backend: `POST /promotions/{id}/reject {note}` |
+
 ## Needs backend (endpoint wanted)
 
 1. `PATCH /v1/admin/workspace` name, `PUT /v1/admin/workspace/logo`, plan, data region, retention (`GET /v1/admin/workspace`)
@@ -105,3 +119,4 @@ Counts: **72 rows**. done 50 (one of them with a needs-backend part, row 14), br
 7. `POST /v1/interest {source}` (Notify me)
 8. `/v1/promotions`: counts per status, source system of a document
 9. `GET/PUT /v1/admin/policies`
+10. `POST /v1/interest {source}` (Notify me), and a `note` on promotion rejection
