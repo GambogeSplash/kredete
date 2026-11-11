@@ -7,7 +7,7 @@ const EASE=[.22,1,.36,1]; const SPRING={type:'spring',stiffness:420,damping:30};
 const app=$('#app'); if(!app) return;
 
 /* 1. entrances: new cards, rows and groups rise in with a stagger (not while typing, not inside folders) */
-const NEW='.actr,.gcard,.lrow,.dt-r:not(.dt-h),.frow,.acid,.astat,.agstep,.hcb,.hrel,.fhead,.lvs,.agr,.acard,.obcard,.obopt,.obapp,.obid,.lh-sug,.dday,.libs,.atabs,.libchips,.stkl-main';
+const NEW='.actr,.gcard,.lrow,.cnsec,.dt-r:not(.dt-h),.frow,.acid,.astat,.agstep,.hcb,.hrel,.fhead,.lvs,.agr,.acard,.obcard,.obopt,.obapp,.obid,.lh-sug,.dday,.libs,.atabs,.libchips,.stkl-main';
 let pending=[], raf=0, lastBatch=0;
 function flush(){ raf=0; const els=pending.filter(e=>e.isConnected); pending=[]; if(!els.length) return;
   const set=new Set(els); const leaf=els.filter(e=>![...set].some(o=>o!==e&&e.contains(o))).slice(0,50);
