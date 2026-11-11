@@ -75,3 +75,21 @@ html[data-mode=dark] #app .umsg.editing{filter:none}
 
 /* a retry link in a notice reads as the prototype's plain link, never underlined */
 .cxapp .notice .link,.cxapp .banner .link{text-decoration:none;color:var(--brand)}
+
+/* framed empty and error states (shared spec) */
+.ds-empty{display:grid;justify-items:center;gap:var(--s-2);text-align:center;padding:48px var(--s-6);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--fill-1);color:var(--mute);margin:var(--s-4) 0}
+.ds-empty .ds-empty-ic{width:44px;height:44px;border-radius:var(--r-md);background:var(--fill-2);color:var(--ink-2);display:grid;place-items:center;margin-bottom:var(--s-2)}
+.ds-empty b{color:var(--ink);font-weight:500;font-size:var(--fs-md)}
+.ds-empty p{margin:0;font-size:var(--fs-sm)}
+.ds-empty .btn{margin-top:var(--s-2)}
+.ds-empty.ds-empty-sm{padding:var(--s-6) var(--s-4);margin:var(--s-3) var(--s-2)}
+.cxbody>.ds-empty,.cxbody .gall+.glist>.ds-empty{margin:var(--s-3)}
+.lh-feed-empty .ds-empty{margin:var(--s-4) 0 0;padding:var(--s-6)}
+.thempty{margin:0}
+
+/* (i) hints beside headings: the tooltip opens inward where the heading sits near an edge */
+.cxh{display:flex;align-items:center;gap:var(--s-2)}
+.cxside .hint:hover::after,.cxside .hint:focus::after{left:-6px;right:auto;top:24px;width:200px;z-index:5}
+.dchead .hint{margin-left:var(--s-1)}
+.dchead .hint:hover::after,.dchead .hint:focus::after{z-index:5}
+@media (max-width:900px){.dchead .hint{display:none}}

@@ -555,7 +555,7 @@ function renderChatList() {
     $('#chretry').onclick = () => loadChats(true);
     return;
   }
-  if (!c.items.length) { rec.innerHTML = '<p class="sempty">Your chats show up here.</p>'; return; }
+  if (!c.items.length) { rec.innerHTML = `<div class="ds-empty ds-empty-sm"><span class="ds-empty-ic">${ICON('chat', 20)}</span><b>No chats yet</b><p>Your chats show up here.</p></div>`; return; }
   const by = {};
   c.items.forEach((x) => { (by[chatGroup(x)] = by[chatGroup(x)] || []).push(x); });
   const row = (x) => `<button type="button" class="surf chat" data-chat="${x.id}" data-pinned="${x.pinned ? 1 : 0}" title="${esc(chatTitle(x))}" aria-current="${current === x.id ? 'page' : 'false'}"><span class="chn">${esc(chatTitle(x))}</span><span class="chedit" data-ren="${x.id}" role="button" tabindex="0" aria-label="Chat actions" aria-haspopup="menu">${ICON('more', 16)}</span></button>`;

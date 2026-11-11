@@ -15,6 +15,10 @@ const $ = (s, r = document) => r.querySelector(s);
 /** @type {(s: string, r?: ParentNode) => any[]} */
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
+/** An (i) hint beside a heading: keyboard focusable, tooltip on hover and focus. */
+const hint = (text) => `<span class="hint" tabindex="0" data-tip="${esc(text)}" aria-label="${esc(text)}">i</span>`;
+/** A framed empty or error state (the shared .ds-empty card). */
+const empty = (icon, title, line, action) => `<div class="ds-empty"><span class="ds-empty-ic">${ICON(icon, 20)}</span><b>${esc(title)}</b>${line ? `<p>${line}</p>` : ''}${action || ''}</div>`;
 const S = () => B.S;
 const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -229,7 +233,7 @@ function feedHtml() {
   const sys = systems();
   if (!S().facets) return '<p class="lh-feed" id="lhfeed"><i class="pvsk" style="width:160px;display:inline-block"></i></p>';
   if (!sys.length) {
-    return `<p class="lh-feed" id="lhfeed"><span>Nothing is connected yet.${B.isAdmin() ? ' <button type="button" class="link" data-go="/admin/connectors">Connect a source</button>' : ' Your admin connects sources.'}</span></p>`;
+    return `<div class="lh-feed lh-feed-empty" id="lhfeed">${empty('stack', 'Nothing is connected yet', B.isAdmin() ? '' : 'Your admin connects sources.', B.isAdmin() ? '<button type="button" class="btn sm" data-go="/admin/connectors">Connect a source</button>' : '')}</div>`;
   }
   return `<p class="lh-feed" id="lhfeed">${sys.map((k) => B.srcIcon(k, 14)).join('')}<span>Reading from ${sys.length} connected ${sys.length === 1 ? 'app' : 'apps'}</span></p>`;
 }
@@ -314,14 +318,14 @@ function renderConversation(conv) {
   const draft = takeDraft(conv.id); // the view re-renders when the chat loads or is renamed
   const a = askState();
   $('#app').className = 'cxapp';
-  $('#app').innerHTML = `<div class="cx ${panelOn() ? '' : 'closed'}"><section class="cxmain"><div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(B.chatTitle(conv))}</b><button type="button" class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more', 16)}</button><span class="lsp"></span><button type="button" class="lib ctog" id="cxtog" aria-label="Sources" title="Sources" aria-expanded="${panelOn()}">${togInner()}</button></div><div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div><div class="cxcomp">${composer(false, 'Ask a follow-up', conv.id)}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
+  $('#app').innerHTML = `<div class="cx ${panelOn() ? '' : 'closed'}"><section class="cxmain"><div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(B.chatTitle(conv))}</b>${hint('Click the title to rename this chat.')}<button type="button" class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more', 16)}</button><span class="lsp"></span><button type="button" class="lib ctog" id="cxtog" aria-label="Sources" title="Sources" aria-expanded="${panelOn()}">${togInner()}</button></div><div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div><div class="cxcomp">${composer(false, 'Ask a follow-up', conv.id)}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
   const thread = $('#thread');
   if (!conv.loaded) {
     thread.innerHTML = conv.error ? B.errorBlock(conv.error, 'convretry') : `<div class="skwrap" role="status"><span class="sr">Loading the conversation</span>${skeletonTurn()}${skeletonTurn()}</div>`;
     const retry = $('#convretry');
     if (retry) retry.onclick = () => openConversation(conv.id, true);
   } else if (!conv.turns.length) {
-    thread.innerHTML = '<p class="actn thempty">No questions in this chat yet. Ask one below.</p>';
+    thread.innerHTML = `<div class="thempty">${empty('chat', 'No questions yet', 'Ask one below.')}</div>`;
   } else {
     conv.turns.forEach((t, i) => thread.appendChild(turnEl(t, i)));
   }
@@ -462,8 +466,8 @@ function fill(el, turn, index) {
   }
   if (turn.status === 'failed') {
     const e = turn.error || { title: FAILED.internal, retryable: true };
-    ans.textContent = e.title; // a partial answer is never shown as if it were complete
-    extra.innerHTML = `<div class="notice low" role="alert"><span>${e.retryable ? `Your question was not lost. <button type="button" class="link" data-retry="1" ${e.retryAfter ? 'disabled' : ''}>${e.retryAfter ? `Try again in ${e.retryAfter} s` : 'Try again'}</button>` : 'Try asking it a different way.'}</span></div>`;
+    ans.textContent = ''; // a partial answer is never shown as if it were complete
+    extra.innerHTML = `<div role="alert">${empty('refresh', e.title, e.retryable ? 'Your question was not lost.' : 'Try asking it a different way.', e.retryable ? `<button type="button" class="btn sm" data-retry="1" ${e.retryAfter ? 'disabled' : ''}>${e.retryAfter ? `Try again in ${e.retryAfter} s` : 'Try again'}</button>` : '')}</div>`;
     bind(el, turn, index);
     if (e.retryAfter) countdown(el, turn);
     return;
@@ -601,18 +605,18 @@ function panelTurn() {
 }
 function citationRows(turn) {
   const cites = turn.answer.citations;
-  return `<div class="cxh">${cites.length} ${cites.length === 1 ? 'source' : 'sources'} used</div>${cites.map((c) => `<div class="cxs" data-n="${c.n}" data-doc="${c.document_id}" tabindex="0" role="button"><div class="cxs-h">${B.srcIcon(c.system, 20)}<b>${esc(c.title)}</b><span class="cite">${c.n}</span></div><div class="cxs-q">${c.quote ? esc(c.quote) : '<span class="amute">This passage is no longer available.</span>'}</div><div class="cxs-f">${authorityTag(c.authority)}<span>${c.owner ? PERSON(c.owner.name, 16) : ''}${c.last_verified_at ? ` · ${B.when(c.last_verified_at, B.fmtDate(c.last_verified_at))}` : ''}</span><span class="cxs-go">${ICON('chevr', 14)}</span></div></div>`).join('')}`;
+  return `<div class="cxh">${cites.length} ${cites.length === 1 ? 'source' : 'sources'} used${hint('The pages Broth read to write this answer.')}</div>${cites.map((c) => `<div class="cxs" data-n="${c.n}" data-doc="${c.document_id}" tabindex="0" role="button"><div class="cxs-h">${B.srcIcon(c.system, 20)}<b>${esc(c.title)}</b><span class="cite">${c.n}</span></div><div class="cxs-q">${c.quote ? esc(c.quote) : '<span class="amute">This passage is no longer available.</span>'}</div><div class="cxs-f">${authorityTag(c.authority)}<span>${c.owner ? PERSON(c.owner.name, 16) : ''}${c.last_verified_at ? ` · ${B.when(c.last_verified_at, B.fmtDate(c.last_verified_at))}` : ''}</span><span class="cxs-go">${ICON('chevr', 14)}</span></div></div>`).join('')}`;
 }
 function answerTab() {
   const turn = panelTurn();
-  if (!turn) return `<div class="cxnone"><span class="cxni">${ICON('stack', 20)}</span><b>No sources yet</b><p>The sources behind an answer show up here.</p></div>`;
+  if (!turn) return empty('stack', 'No sources yet', 'The sources behind an answer show up here.');
   return citationRows(turn);
 }
 function sourcesTab() {
   const a = askState();
   const f = S().facets || { systems: [], domains: [] };
   const opt = (value, label, current) => `<option value="${esc(value)}" ${current === value ? 'selected' : ''}>${esc(label)}</option>`;
-  return `<div class="cxf"><input id="srcq" class="cxin" type="search" placeholder="Search sources" aria-label="Search sources" value="${esc(a.docs.q)}" autocomplete="off"><div class="cxpills">
+  return `<div class="cxh">Sources${hint('Untick a page to leave it out of your next question.')}</div><div class="cxf"><input id="srcq" class="cxin" type="search" placeholder="Search sources" aria-label="Search sources" value="${esc(a.docs.q)}" autocomplete="off"><div class="cxpills">
     <select id="fsrc" class="cxsel" aria-label="Source type">${opt('', 'Any source', a.filters.system)}${f.systems.map((s) => opt(s.value, B.systemName(s.value), a.filters.system)).join('')}</select>
     <select id="fdom" class="cxsel" aria-label="Domain">${opt('', 'Any domain', a.filters.domain)}${window.DOMAIN_TREE.optionTags(window.DOMAIN_TREE.tree(window.LIBRARY_BROWSE.folders(f)), { selected: a.filters.domain, value: (d) => d.slug })}</select>
     <select id="fwhen" class="cxsel" aria-label="Verified">${opt('', 'Any date', a.filters.when)}${opt('90', 'Verified in 90 days', a.filters.when)}${opt('365', 'Verified this year', a.filters.when)}</select></div></div>
@@ -625,8 +629,8 @@ function selectedCount() {
 function docRows() {
   const d = askState().docs;
   if (!d.loaded && d.loading) return B.skeletonRows(4, 'gsrc skgsrc');
-  if (d.error) return `<div class="gempty">${esc(B.problem(d.error))} <button type="button" class="link" id="docretry">Try again</button></div>`;
-  if (!d.items.length) return `<div class="gempty">${d.q ? 'No sources match.' : 'No sources yet.'}</div>`;
+  if (d.error) return empty('refresh', B.problem(d.error), '', '<button type="button" class="btn sm" id="docretry">Try again</button>');
+  if (!d.items.length) return d.q ? empty('stack', 'No sources match', 'Try another word.') : empty('stack', 'No sources yet', 'Your admin connects sources.');
   const ex = new Set(askState().exclude);
   return d.items.map((doc) => `<label class="gsrc">${B.srcIcon(doc.system, 22)}<span class="gt"><span>${esc(doc.title)}</span><small>${esc([B.systemName(doc.system), doc.path].filter(Boolean).join(' · '))}</small></span><input type="checkbox" class="gck" data-sd="${doc.id}" ${ex.has(doc.id) ? '' : 'checked'} aria-label="Use ${esc(doc.title)}"></label>`).join('') + (d.next ? `<button type="button" class="link gmore" id="docmore" ${d.loading ? 'disabled' : ''}>${d.loading ? 'Loading' : 'Show more'}</button>` : '');
 }
