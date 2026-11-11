@@ -318,3 +318,6 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
  body.nochats:not(.noauth) .mainpanel{margin-left:calc(64px + var(--s-2));border-radius:var(--r-lg)}
  body.nochats:not(.noauth) .rl-menu{visibility:hidden}
 }
+@media (min-width:901px){
+ html:not([data-mode=dark]) body:not(.noauth) .top{background:#f6f6f7}
+}
