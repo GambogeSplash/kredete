@@ -1,10 +1,13 @@
-/* The support bot demo page: a plain help centre the widget sits on. */
-body{margin:0;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222;background:#fafaf9}
-.bar{padding:16px 24px;border-bottom:1px solid #e4e4e0;background:#fff;font-weight:600}
+/* The support bot demo page: a plain Broth help centre the widget sits on. */
+:root{--bg:#fafafa;--surface:#fff;--line:#e6e6e9;--ink:#1b1b1f;--mute:#62666d;--brand:#5a0fc8}
+body{margin:0;font:16px/1.6 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+.bar{display:flex;align-items:center;gap:12px;padding:0 24px;height:56px;border-bottom:1px solid var(--line);background:var(--surface);font-weight:500}
+.wm{display:block;width:92px;height:22px;background:currentColor;-webkit-mask:url(assets/brand/broth-wordmark.svg) left center/contain no-repeat;mask:url(assets/brand/broth-wordmark.svg) left center/contain no-repeat}
+.bar span:last-child{font-size:15px;color:var(--mute);font-weight:450}
 main{max-width:640px;margin:48px auto;padding:0 24px}
-h1{font-size:28px;margin:0 0 12px}
-p,ul{color:#555}
+h1{font-size:28px;font-weight:600;letter-spacing:-.015em;margin:0 0 12px}
+p,ul{color:var(--mute)}
 ul{padding-left:20px}
-.demo-help{padding:12px 16px;border:1px solid #e4e4e0;border-radius:8px;background:#fff}
+.demo-help{padding:12px 16px;border:1px solid var(--line);border-radius:18px;background:var(--surface)}
 code{font-size:14px}
-@media (prefers-color-scheme:dark){body{color:#eee;background:#151517}.bar,.demo-help{background:#1c1c20;border-color:#34343a}p,ul{color:#bbb}}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--surface:#1a1a1a;--line:#333;--ink:#f1f1f1;--mute:#a1a1a1}}

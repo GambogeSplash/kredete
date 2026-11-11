@@ -24,12 +24,12 @@ async function idle(page) {
 }
 const lastAnswer = (page) => page.locator('#thread article').last();
 
-test('the Ask home: composer, recent chats and connected sources', async ({ open, check }) => {
+test('the Ask home: composer, example questions and connected sources', async ({ open, check }) => {
   const page = await open('employee', '/');
   await expect(page.getByRole('textbox', { name: 'Ask a question' })).toBeVisible();
-  await expect(page.getByText('Pick up where you left off')).toBeVisible();
+  await expect(page.locator('.lh-sug')).toHaveCount(4);
   await expect(page.getByText('Reading from 1 connected app')).toBeVisible();
-  await check(page, 'ask-home', { mask: ['.lh-t', '#lhrecent'] });
+  await check(page, 'ask-home', { mask: ['.lh-t'] });
 });
 
 test.describe('each answer kind', () => {
@@ -97,7 +97,8 @@ test('a refused ask waits out Retry-After, then retries', async ({ open, check, 
     body: JSON.stringify({ title: 'Too many questions at once', status: 429, code: 'rate_limited' }),
   }));
   await ask(page, seed.questions.answered.question);
-  await expect(lastAnswer(page).locator('.ans')).toHaveText('Too many questions at once');
+  // A failed answer shows its reason in a framed alert under an empty answer.
+  await expect(lastAnswer(page).getByRole('alert')).toContainText('Too many questions at once');
   await expect(lastAnswer(page).getByRole('button', { name: /Try again in/ })).toBeDisabled();
   await check(page, 'answer-refused', { mask: ['[data-retry]'] });
   await page.unroute(TURNS);
@@ -118,7 +119,7 @@ test('an answer cut off mid-stream is never shown as complete', async ({ open, c
     await route.fulfill({ response, body: frames.slice(0, cut + 1).join('\n\n') + '\n\n' });
   });
   await ask(page, seed.questions.answered.question);
-  await expect(lastAnswer(page).locator('.ans')).toHaveText('The answer was cut off.');
+  await expect(lastAnswer(page).getByRole('alert')).toContainText('The answer was cut off.');
   await expect(lastAnswer(page)).not.toContainText('Standard accounts can send');
   await check(page, 'answer-cut-off');
   await page.unroute(TURNS);

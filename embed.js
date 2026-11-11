@@ -1,4 +1,4 @@
-/* embed.js: the Kredete Broth support bot widget (support bot spec 7).
+/* embed.js: the Broth support bot widget (support bot spec 7).
  *
  * Paste one script tag on a site the bot's product allows:
  *   <script src="https://<client>/embed.js" data-key="bk_live_..." data-api="https://<bot API>" async></script>
@@ -363,7 +363,6 @@
    * @param {{messages: any[], busy: boolean, stage: string | null, started: boolean, error: string | null, disabled: boolean}} state
    */
   function panelView(settings, state) {
-    const initial = esc((settings.name || 'K').trim().charAt(0).toUpperCase());
     const starters =
       !state.started && Array.isArray(settings.starters) && settings.starters.length
         ? `<div class="starters">${settings.starters
@@ -381,7 +380,7 @@
     const sendDisabled = state.busy || state.disabled ? ' disabled' : '';
     return (
       `<div class="panel" role="dialog" aria-modal="true" aria-labelledby="bot-name">` +
-      `<header><span class="avatar" aria-hidden="true">${initial}</span><h2 id="bot-name">${esc(settings.name)}</h2>` +
+      `<header><span class="avatar" aria-hidden="true">${ICONS.mark}</span><h2 id="bot-name">${esc(settings.name)}</h2>` +
       `<button type="button" class="icon close" data-action="close" aria-label="${esc(COPY.close)}">${ICONS.close}</button></header>` +
       `<p class="notice-line">${esc(settings.notice)}</p>` +
       `<div class="log" role="log" aria-live="polite" aria-relevant="additions">${greeting}${starters}${messages}${status}</div>` +
@@ -396,13 +395,14 @@
 
   const ICONS = {
     chat: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>',
+    mark: '<svg viewBox="0 0 276 245" width="16" height="14" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M0.3 242.5 C-0.7 239.8 12.3 209.2 29.5 173.5 C41.1 149.5 50.7 128.0 75.6 69.6 C99.0 15.0 100.2 12.9 112.8 6.2 C124.0 0.2 128.1 -0.2 171.0 0.3 C213.8 0.7 217.0 1.1 230.4 8.3 C264.8 26.7 270.1 80.0 240.3 108.7 L234.9 113.8L240.7 117.8 C265.8 134.8 275.1 166.9 264.1 198.0 C255.8 221.5 238.8 236.0 213.0 241.8 C206.5 243.3 198.3 243.5 149.0 243.5 L92.5 243.5L92.2 241.0 C91.8 237.5 101.6 207.6 103.7 205.9 C105.0 204.8 114.7 204.4 153.4 204.0 C200.9 203.5 201.6 203.5 207.3 201.2 C232.7 190.9 234.4 153.1 209.9 140.5 C203.4 137.1 200.2 136.7 176.0 136.1 L151.5 135.5L151.2 118.1 C151.0 106.8 151.3 100.3 152.0 99.5 C152.8 98.5 158.7 98.1 175.3 97.8 C196.1 97.5 197.8 97.3 202.8 95.1 C221.0 86.9 225.7 60.6 211.4 46.3 C203.6 38.4 201.3 38.0 167.5 38.0 C131.3 38.0 135.2 35.8 124.7 62.0 C106.0 108.9 93.7 138.0 75.6 178.3 C69.7 191.5 61.6 210.9 52.8 233.0 C48.2 244.5 49.6 244.0 23.4 244.0 C4.1 244.0 0.9 243.8 0.3 242.5 Z"/></svg>',
     close: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>',
     send: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M3 11.5 21 3l-6.5 18-3-7.5L3 11.5Z"/></svg>',
     up: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M7 11v9H4v-9h3Zm0 0 4-8a2 2 0 0 1 2 2v4h5.5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.3 20H7"/></svg>',
     down: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M17 13V4h3v9h-3Zm0 0-4 8a2 2 0 0 1-2-2v-4H5.5a2 2 0 0 1-2-2.3l1.2-7A2 2 0 0 1 6.7 4H17"/></svg>',
   };
 
-  const DARK = '--surface:#1c1c20;--shell:#26262b;--fill:#2e2e34;--line:#34343a;--ink:#f2f2f4;--ink-2:#d0d0d6;--mute:#a2a4ab;--warn:#ffd77a;--warn-soft:#3a2f12;--danger:#ff8a80';
+  const DARK = '--surface:#161616;--shell:#1f1f1f;--fill:#272727;--line:#333;--ink:#f1f1f1;--ink-2:#d2d2d2;--mute:#a1a1a1;--warn:#ffd77a;--warn-soft:#3a2f12;--danger:#ff8a80;--shadow:0 1px 2px rgba(0,0,0,.4),0 16px 40px -8px rgba(0,0,0,.6)';
 
   /**
    * Design-system tokens, inlined: the widget lives on other people's pages. A preview sets
@@ -414,9 +414,9 @@
     return `
 :host{all:initial;
   --font:"Inter Variable",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  --accent:${accent};--surface:#fff;--shell:#f4f4f4;--fill:#efeff1;--line:#e9e8ea;--ink:#1b1b1f;--ink-2:#3b3d42;--mute:#62666d;
-  --warn:#7a5200;--warn-soft:#fff1cf;--danger:#d23a30;--r-md:8px;--r-lg:12px;--r-xl:16px;
-  --e3:0 4px 8px rgba(28,10,60,.06),0 16px 32px -8px rgba(28,10,60,.16),0 32px 64px -16px rgba(28,10,60,.18);
+  --accent:${accent};--surface:#fff;--shell:#f6f6f7;--fill:#efeff1;--line:#e6e6e9;--ink:#1b1b1f;--ink-2:#3b3d42;--mute:#62666d;
+  --warn:#7a5200;--warn-soft:#fff1cf;--danger:#d23a30;--r-md:12px;--r-lg:18px;--r-xl:24px;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 16px 40px -8px rgba(0,0,0,.18);--e3:var(--shadow);
   --dur:.22s;--ease:cubic-bezier(.2,.8,.2,1);
   position:fixed;bottom:20px;z-index:2147483000;font:14px/1.5 var(--font);color:var(--ink)}
 @media (prefers-color-scheme:dark){:host(:not([data-scheme="light"])){${DARK}}}
@@ -434,7 +434,7 @@ button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid va
 :host([data-side="right"]) .panel{right:0}:host([data-side="left"]) .panel{left:0}
 header{display:flex;align-items:center;gap:10px;padding:12px 12px 12px 16px;border-bottom:1px solid var(--line)}
 header h2{flex:1;margin:0;font-size:15px;line-height:1.3;font-weight:600}
-.avatar{width:28px;height:28px;flex:none;border-radius:999px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:600;font-size:13px}
+.avatar{width:30px;height:30px;flex:none;border-radius:32%;background:var(--accent);color:#fff;display:grid;place-items:center}
 .icon{border:0;background:transparent;width:32px;height:32px;border-radius:var(--r-md);display:grid;place-items:center;color:var(--mute)}
 .icon:hover{background:var(--fill);color:var(--ink)}
 .icon[aria-pressed="true"]{color:var(--accent);background:var(--fill)}
@@ -443,8 +443,8 @@ header h2{flex:1;margin:0;font-size:15px;line-height:1.3;font-weight:600}
 .msg{max-width:88%;padding:10px 12px;border-radius:var(--r-lg);overflow-wrap:anywhere}
 .msg>*+*{margin-top:8px}
 .msg p{margin:0}
-.msg.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px;white-space:pre-wrap}
-.msg.bot{align-self:flex-start;background:var(--shell);border-bottom-left-radius:4px}
+.msg.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:6px;white-space:pre-wrap}
+.msg.bot{align-self:flex-start;background:var(--shell);border-bottom-left-radius:6px}
 .msg.status{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:13px}
 .msg.status>*+*{margin-top:0}
 .dots{display:inline-flex;gap:3px}.dots i{width:5px;height:5px;border-radius:999px;background:currentColor;animation:pulse 1.2s infinite ease-in-out}
@@ -453,12 +453,12 @@ header h2{flex:1;margin:0;font-size:15px;line-height:1.3;font-weight:600}
 @media (prefers-reduced-motion:reduce){.dots i{animation:none;opacity:.6}.launcher{transition:none}}
 .ref{font-size:11px;color:var(--mute)}
 .sources{margin:0;padding-left:20px;font-size:13px;color:var(--ink-2)}
-.sources a{color:var(--accent);display:inline-block;min-height:24px;line-height:24px}
+.sources a{color:var(--accent);text-decoration:none;display:inline-block;min-height:24px;line-height:24px}
 .warn{background:var(--warn-soft);color:var(--warn);padding:8px 10px;border-radius:var(--r-md);font-size:13px}
 .contact{display:inline-block;padding:6px 12px;border-radius:var(--r-md);background:var(--accent);color:#fff;text-decoration:none;font-weight:500;font-size:13px}
 .starters{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r-md);padding:6px 10px;font-size:13px;text-align:left}
-.chip:hover{background:var(--fill)}
+.chip{transition:background var(--dur)}.chip:hover{background:var(--fill)}
 .notice .chip{margin-right:6px}
 .thumbs{display:flex;gap:2px}
 .reasons{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--mute);align-items:center}
@@ -472,7 +472,7 @@ textarea::placeholder{color:var(--mute)}
 .send:disabled{opacity:.5;cursor:default}
 .input-error{margin:-4px 12px 8px;font-size:12px;color:var(--danger)}
 footer{padding:0 16px 12px;font-size:11px;line-height:1.4;color:var(--mute)}
-footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
+footer a{color:var(--ink-2);text-decoration:none;display:inline-block;min-height:24px;line-height:24px}footer a:hover{color:var(--ink)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (max-width:480px){:host{bottom:16px}:host([data-side="right"]){right:16px}:host([data-side="left"]){left:16px}
   :host(:not([data-contained])) .panel{position:fixed;inset:0;width:100vw;max-width:none;height:100%;border-radius:0;border:0}
@@ -772,7 +772,7 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
     const key = script.dataset.key || '';
     const api = script.dataset.api || '';
     if (!/^bk_live_[A-Za-z0-9]{32}$/.test(key) || !/^https?:\/\//.test(api)) {
-      win.console.warn('Kredete help: the embed snippet needs data-key and data-api.');
+      win.console.warn('Broth help: the embed snippet needs data-key and data-api.');
       return;
     }
     const client = createBotClient({ fetch: win.fetch.bind(win), api, key });
@@ -780,7 +780,7 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
     try {
       settings = await client.settings();
     } catch (_) {
-      win.console.warn('Kredete help is unavailable on this page.');
+      win.console.warn('Broth help is unavailable on this page.');
       return;
     }
     /** @type {Storage | undefined} */

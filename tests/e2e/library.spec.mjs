@@ -5,15 +5,15 @@
 // Engineering hold only pages Eve cannot open, so she sees neither.
 import { expect, test } from './fixtures.mjs';
 
-const docRows = (page) => page.locator('#libbody .lrow:not(.lfold)');
+const docRows = (page) => page.locator('#libbody [data-open]');
 const folders = (page) => page.locator('#libbody [data-folder]');
-const titles = (page) => docRows(page).locator('.ltt > span').allTextContents();
-const folderNames = (page) => folders(page).locator('.ltt > span, .gc-t').allTextContents();
-const crumbs = (page) => page.locator('#libcrumb a').allTextContents();
-const heading = (page) => page.locator('#libh1');
+const titles = (page) => docRows(page).locator('.ltb b, .gc-t').allTextContents();
+const folderNames = (page) => folders(page).locator('.ltb b, .gc-t').allTextContents();
+const back = (page) => page.locator('#libback');
+const heading = (page) => page.locator('#libfolder');
 const phone = (page) => page.viewportSize().width < 900;
 /** The folder's name: the heading on a desktop, the top bar on a phone (the heading is hidden). */
-const title = (page) => (phone(page) ? page.locator('#mbtitle') : heading(page));
+const title = (page) => heading(page);
 const search = (page) => page.locator('#libq');
 async function filter(page, option) {
   await page.getByRole('button', { name: 'Filter', exact: true }).click();
@@ -28,7 +28,7 @@ test('the Library opens on its top-level folders, then the pages with no domain'
   expect(await folderNames(page)).toEqual(['Cards', 'Payments']);
   await expect(folders(page)).toContainText(['2 pages', '3 pages']);
   expect(await titles(page)).toEqual(['Engineering handbook', 'Release checklist']);
-  await expect(page.locator('#libcrumb')).toBeHidden();
+  await expect(back(page)).toBeHidden();
   await expect(search(page)).toHaveAttribute('placeholder', 'Search the library');
   await check(page, 'library');
 });
@@ -38,7 +38,7 @@ test('folders open all the way down, and the breadcrumb goes back up', async ({ 
   await folders(page).filter({ hasText: 'Payments' }).click();
   await expect(page).toHaveURL(/\/library\/payments$/);
   await expect(title(page)).toHaveText('Payments');
-  await expect(page.locator('#libcrumb a')).toHaveText(['Library']);
+  await expect(back(page)).toHaveAttribute('aria-label', 'Back to the Library');
   await expect(folders(page)).toHaveCount(1);
   expect(await folderNames(page)).toEqual(['Payouts']);
   await expect(docRows(page)).toHaveCount(2);
@@ -48,23 +48,25 @@ test('folders open all the way down, and the breadcrumb goes back up', async ({ 
 
   await folders(page).filter({ hasText: 'Payouts' }).click();
   await expect(title(page)).toHaveText('Payouts');
-  await expect(page.locator('#libcrumb a')).toHaveText(['Library', 'Payments']);
+  await expect(back(page)).toHaveAttribute('aria-label', 'Back to Payments');
   expect(await folderNames(page)).toEqual(['Cross-border']);
   await expect(docRows(page)).toHaveCount(0);
-  await expect(page.locator('#libbody .empty')).toHaveCount(0); // its folder is its content
+  await expect(page.locator('#libbody .ds-empty')).toHaveCount(0); // its folder is its content
 
   await folders(page).filter({ hasText: 'Cross-border' }).click();
   await expect(title(page)).toHaveText('Cross-border');
-  await expect(page.locator('#libcrumb a')).toHaveText(['Library', 'Payments', 'Payouts']);
+  await expect(back(page)).toHaveAttribute('aria-label', 'Back to Payouts');
   await expect(folders(page)).toHaveCount(0);
   await expect(docRows(page)).toHaveCount(1);
   expect(await titles(page)).toEqual(['Transfer limits policy']);
   await check(page, 'library-nested');
 
-  await page.locator('#libcrumb').getByRole('link', { name: 'Payments' }).click();
+  await back(page).click();
+  await expect(page).toHaveURL(/\/library\/payouts$/);
+  await back(page).click();
   await expect(page).toHaveURL(/\/library\/payments$/);
   await expect(folders(page)).toHaveText([/Payouts/]);
-  await page.locator('#libcrumb').getByRole('link', { name: 'Library' }).click();
+  await back(page).click();
   await expect(page).toHaveURL(/\/library$/);
   await expect(folders(page)).toHaveCount(2);
 });
@@ -73,7 +75,7 @@ test('a link opens its folder, and back and forward step through folders from th
   const page = await open('employee', '/library/cross-border');
   await expect(title(page)).toHaveText('Cross-border');
   await expect(docRows(page)).toHaveText([/Transfer limits policy/]);
-  await page.locator('#libcrumb').getByRole('link', { name: 'Payouts' }).click();
+  await back(page).click();
   await expect(title(page)).toHaveText('Payouts');
   const scrolled = () => page.evaluate(() => Math.max(document.querySelector('#app').scrollTop, (document.querySelector('.mainpanel') || {}).scrollTop || 0, window.scrollY));
   await page.goBack();
@@ -86,15 +88,15 @@ test('a link opens its folder, and back and forward step through folders from th
 
 test('a folder that does not exist, or holds nothing you can open, says so', async ({ open, check }) => {
   const page = await open('employee', '/library/collections'); // only a page Eve cannot open
-  await expect(page.getByRole('heading', { name: 'Folder not found' })).toBeVisible();
-  await expect(heading(page)).toHaveText('Library');
+  await expect(page.getByText('Folder not found', { exact: true })).toBeVisible();
+  await expect(page.locator('#libh1')).toHaveText('Library'); // #libfolder is only the folder's own name
   await check(page, 'library-folder-missing');
   await page.getByRole('link', { name: 'Go to the Library' }).click();
   await expect(page).toHaveURL(/\/library$/);
   await expect(folders(page)).toHaveCount(2);
 
   await page.evaluate(() => window.BRAIN.go('/library/no-such-folder'));
-  await expect(page.getByRole('heading', { name: 'Folder not found' })).toBeVisible();
+  await expect(page.getByText('Folder not found', { exact: true })).toBeVisible();
 });
 
 test('the grid view shows folders as cards before the pages', async ({ open, check }) => {
@@ -126,7 +128,8 @@ const failing = (route) => route.fulfill({
 test('when the folders cannot load, the pages still do, and Try again brings the folders', async ({ open, check }) => {
   const page = await open('employee', '/', { before: (p) => p.route('**/v1/facets', failing) });
   await page.evaluate(() => window.BRAIN.go('/library'));
-  await expect(page.getByRole('alert')).toHaveText(/^Couldn't load the folders\. Something went wrong on our side\./);
+  await expect(page.getByRole('alert')).toContainText("Couldn't load the folders");
+  await expect(page.getByRole('alert')).toContainText('Something went wrong on our side.');
   await expect(docRows(page)).toHaveCount(2);
   await check(page, 'library-folders-error');
   await page.unrouteAll({ behavior: 'ignoreErrors' });
@@ -168,7 +171,7 @@ test('the Library reads its folders again each time it opens, not on every folde
   const opened = asked;
   await folders(page).filter({ hasText: 'Payments' }).click();
   await expect(title(page)).toHaveText('Payments');
-  await page.locator('#libcrumb').getByRole('link', { name: 'Library' }).click();
+  await back(page).click();
   await expect(folders(page)).toHaveText([/Payments/]);
   expect(asked).toBe(opened); // moving between folders reads nothing new
 
@@ -276,8 +279,10 @@ test("a document's details, its domain as folders, and its location as a filter"
   const drawer = page.locator('#drawer');
   await expect(drawer.getByRole('heading', { name: 'KYC onboarding procedure' })).toBeVisible();
   await expect(drawer.getByRole('link', { name: /Open in Confluence/ })).toHaveAttribute('target', '_blank');
-  await expect(drawer.getByRole('button', { name: 'Share more widely' })).toBeVisible();
-  await expect(drawer.getByRole('button', { name: 'Lineage' })).toHaveCount(0); // admins and compliance only
+  await drawer.getByRole('button', { name: 'Details and lineage' }).click(); // everyone reads the details
+  await expect(page.locator('#modal')).toContainText('Admins and compliance see which answers cited this document.'); // the lineage is theirs
+  await expect(page.locator('#modal').getByRole('button', { name: 'Share more widely' })).toBeVisible(); // asking for wider sharing lives with the details
+  await page.locator('#modal [data-close-modal]').click();
   await expect(drawer.locator('.svcrumb a')).toHaveText(['Payments']);
   await check(page, 'document');
 

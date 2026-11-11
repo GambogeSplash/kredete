@@ -42,7 +42,10 @@ async function withDocs(page, { connection = docsConnection(), repos = [repo(REP
     return route.fulfill({ response, json: { ...body, items: [...body.items, ...repos] } });
   });
 }
-const docsSection = (page) => page.locator('#cndocs');
+/** The Docs repositories card opens its section in a dialog (the section sits in a hidden holder until then). */
+const docsSection = (page) => page.locator('[data-sec="docs"]');
+const docsCard = (page) => page.locator('[data-src="github"]');
+const openDocs = async (page) => { await docsCard(page).click(); return docsSection(page); };
 
 test.describe('docs repositories', () => {
   test('a GitHub account that is not installed yet offers the install', async ({ open, check }) => {
@@ -57,7 +60,8 @@ test.describe('docs repositories', () => {
         await p.route('https://github.com/**', (route) => route.fulfill({ contentType: 'text/html', body: '<title>GitHub</title><h1>Install Broth</h1>' }));
       },
     });
-    const section = docsSection(page);
+    const section = await openDocs(page);
+    await expect(page.getByRole('dialog', { name: 'Docs repositories' })).toBeVisible();
     await expect(section.getByRole('heading', { name: 'Docs repositories' })).toBeVisible();
     await expect(section.locator('.cnstate')).toContainText('Not installed');
     await expect(section.getByRole('button', { name: 'Find repositories' })).toHaveCount(0);
@@ -72,6 +76,12 @@ test.describe('docs repositories', () => {
     const created = [];
     const page = await open('admin', '/admin/connectors', {
       before: async (p) => {
+        // Connecting needs the GitHub App saved first (sandbox), else the card offers to add it.
+        await p.route('**/v1/admin/credentials', async (route) => {
+          const response = await route.fetch();
+          const body = await response.json();
+          return route.fulfill({ response, json: { ...body, items: body.items.map((c) => (c.name === 'github_app' ? { ...c, configured: true, client_id_last4: '1234' } : c)) } });
+        });
         await p.route('**/v1/admin/connections', (route) => {
           if (route.request().method() !== 'POST') return route.fallback();
           created.push(route.request().postDataJSON());
@@ -81,13 +91,14 @@ test.describe('docs repositories', () => {
         await p.route('https://github.com/**', (route) => route.fulfill({ contentType: 'text/html', body: '<title>GitHub</title>' }));
       },
     });
-    const section = docsSection(page);
-    await section.getByLabel('Connect a GitHub account').fill('not a name!');
-    await section.getByRole('button', { name: 'Connect' }).click();
-    await expect(section.locator('#ghadde')).toHaveText('Enter the GitHub organization or user name, like kredete');
+    await docsCard(page).click();
+    const dialog = page.getByRole('dialog', { name: 'Docs repositories' });
+    await dialog.getByLabel('GitHub organization or user').fill('not a name!');
+    await dialog.getByRole('button', { name: 'Connect' }).click();
+    await expect(dialog.locator('#ghadde')).toHaveText('Enter the GitHub organization or user name, like kredete');
     expect(created).toEqual([]);
-    await section.getByLabel('Connect a GitHub account').fill('https://github.com/kredete');
-    await section.getByRole('button', { name: 'Connect' }).click();
+    await dialog.getByLabel('GitHub organization or user').fill('https://github.com/kredete');
+    await dialog.getByRole('button', { name: 'Connect' }).click();
     await expect(page).toHaveURL(/state=s2$/);
     expect(created).toEqual([{ system: 'github_docs', site: 'kredete' }]);
   });
@@ -116,15 +127,15 @@ test.describe('docs repositories', () => {
         });
       },
     });
-    const section = docsSection(page);
-    await expect(section.locator('.dt-h')).toHaveText(/Repository\s*Owner\s*Included\s*Bots/);
+    const section = await openDocs(page);
+    await expect(section.locator('.dt-h')).toHaveText(/Repository\s*Owner\s*Bots\s*Settings\s*Included/);
     const rows = section.locator('[data-space]');
     await expect(rows.nth(1).locator('.cndecl')).toHaveText('Public');
     await section.scrollIntoViewIfNeeded();
     await check(page, 'docs-repositories');
     await rows.nth(0).getByRole('button', { name: 'Request public for kredete/docs' }).click();
     const dialog = page.getByRole('dialog', { name: 'Request public for kredete/docs' });
-    await expect(dialog.locator('a')).toHaveAttribute('href', '/docs/connecting-docs-repositories#public-declaration');
+    await expect(dialog.locator('a')).toHaveAttribute('href', '/help/connecting-docs-repositories#public-declaration');
     await dialog.getByLabel('Why').fill('Published at docs.kredete.com');
     await dialog.getByRole('button', { name: 'Request' }).click();
     await expect(page.locator('#toast')).toContainText('Requested. Another admin or a domain owner approves it in Governance.');
@@ -134,14 +145,14 @@ test.describe('docs repositories', () => {
 
   test('a repository Broth does not read yet asks to be included before it can go Public', async ({ open }) => {
     const page = await open('admin', '/admin/connectors', { before: (p) => withDocs(p, { repos: [repo(REPO, 'kredete/docs', { included: false })] }) });
-    const row = docsSection(page).locator('[data-space]');
+    const row = (await openDocs(page)).locator('[data-space]');
     await expect(row.locator('.cndecl')).toHaveText('Include it first');
     await expect(row.getByRole('button', { name: /Request public/ })).toHaveCount(0);
   });
 
   test("a repository's settings leave out what a repository derives", async ({ open }) => {
     const page = await open('admin', '/admin/connectors', { before: (p) => withDocs(p) });
-    await docsSection(page).getByRole('button', { name: 'Settings for kredete/docs' }).click();
+    await (await openDocs(page)).getByRole('button', { name: 'Settings for kredete/docs' }).click();
     const drawer = page.getByRole('dialog', { name: 'Settings for kredete/docs' });
     await expect(drawer.getByRole('heading', { name: 'Repository settings' })).toBeVisible();
     await expect(drawer.getByRole('button', { name: 'Default authority' })).toHaveCount(0);
@@ -158,11 +169,11 @@ test.describe('docs repositories', () => {
         }));
       },
     });
-    const section = docsSection(page);
+    const section = await openDocs(page);
     await section.getByText('Show failed and held-back pages').click();
     await expect(section.locator('.cnnh')).toHaveText('Kept out of Public');
     await expect(section.locator('.cnnbox li')).toHaveText(/Renew a card\s*Not public: a card number found\./);
-    await expect(section.getByRole('link', { name: 'What these mean' })).toHaveAttribute('href', '/docs/connecting-docs-repositories#problems');
+    await expect(section.getByRole('link', { name: 'What these mean' })).toHaveAttribute('href', '/help/connecting-docs-repositories#problems');
     await section.scrollIntoViewIfNeeded();
     await check(page, 'docs-held-back');
   });
@@ -170,12 +181,16 @@ test.describe('docs repositories', () => {
   test('the GitHub App credential takes an app ID, a private key and a webhook secret', async ({ open }) => {
     const saved = [];
     const page = await open('admin', '/admin/connectors', {
-      before: (p) => p.route('**/v1/admin/credentials/github_app', (route) => {
-        saved.push(route.request().postDataJSON());
-        return route.fulfill({ status: 204 });
-      }),
+      before: async (p) => {
+        // The credential row sits in the Docs repositories dialog, which opens for a connected account.
+        await withDocs(p);
+        await p.route('**/v1/admin/credentials/github_app', (route) => {
+          saved.push(route.request().postDataJSON());
+          return route.fulfill({ status: 204 });
+        });
+      },
     });
-    const row = page.locator('[data-cred="github_app"]');
+    const row = (await openDocs(page)).locator('[data-cred="github_app"]');
     await expect(row).toContainText('GitHub App');
     await expect(row.locator('.tag')).toHaveText('Not configured');
     await row.getByRole('button', { name: 'Add' }).click();
@@ -208,13 +223,14 @@ test.describe('governance of docs repositories', () => {
     });
     const row = page.locator('.govrepo');
     await expect(row).toContainText('kredete/docs');
-    await expect(row).toContainText('Whole repository · Public · requested by a colleague');
+    await expect(row).toContainText('Whole repository, wants to share with Public');
+    await expect(row).toContainText('a colleague');
     await expect(page.locator('.govr').first()).toHaveClass(/govrepo/);
     await check(page, 'governance-repository');
     await row.getByRole('button', { name: 'Approve' }).click();
     await expect(page.locator('#toast')).toContainText("Approved. The repository's published pages are Public now.");
     // Approved, it stays listed, so it can be revoked where it was approved.
-    await expect(row.locator('.tag')).toHaveText('Approved');
+    await expect(row.locator('.adrqt .tag')).toHaveText('Approved');
     await expect(row.getByRole('button', { name: 'Revoke' })).toBeVisible();
     expect(decided).toEqual(['approve']);
   });

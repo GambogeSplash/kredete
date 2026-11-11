@@ -21,19 +21,31 @@ const KIND_NAME = { confluence_page: 'Page', page: 'Page', blogpost: 'Post', gdo
 const kindName = (k) => KIND_NAME[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ') : 'Document');
 const DOMAIN_COL = ['#5e6ad2', '#16a34a', '#f97316', '#0ea5a4', '#d946a8', '#3b82f6', '#e2a600'];
 const domainCol = (slug) => DOMAIN_COL[[...String(slug)].reduce((a, c) => a + c.charCodeAt(0), 0) % DOMAIN_COL.length];
-const SCOPE = { public: ['Public', 'ok'], internal: ['Everyone at Kredete', 'blue'], granular: ['Limited access', ''] };
+const SCOPE = { public: ['Public', 'ok'], internal: ['Everyone at Broth', 'blue'], granular: ['Limited access', ''] };
 function authorityTag(d) {
+  if (!d.authority) return '';
   if (d.authority === 'approved') {
     return d.review_due_at && new Date(d.review_due_at) < new Date() ? '<span class="tag warn">Past review date</span>' : '';
   }
   return `<span class="tag warn">${d.authority === 'draft' ? 'Draft' : 'Not approved'}</span>`;
 }
 /** The full path of a document's domain (nested domains spec 4.3): Payments / Payouts. */
-const domainPath = (d) => (d.domain ? d.domain.path.map((c) => c.name).join(' / ') : '');
+const domainPath = (d) => (d.domain ? B.arr(d.domain.path).map((c) => c.name).join(' / ') : '');
 /** A document's domain as a label: its own name, with the full path in the tooltip. */
 const domainLabel = (d) => (d.domain ? `<span class="llab" title="${esc(domainPath(d))}"><i style="background:${domainCol(d.domain.slug)}"></i>${esc(d.domain.name)}</span>` : '');
 /** A document's domain as a breadcrumb of folder links. */
-const domainCrumbs = (d) => d.domain.path.map((c) => `<a href="/library/${esc(c.slug)}" data-link>${esc(c.name)}</a>`).join('<i aria-hidden="true">/</i>');
+const domainCrumbs = (d) => B.arr(d.domain.path).map((c) => `<a href="/library/${esc(c.slug)}" data-link>${esc(c.name)}</a>`).join('<i aria-hidden="true">/</i>');
+
+/** What the source is called, and its mark; a read without a source says "Source" with a neutral mark. */
+const srcName = (d) => (d.system ? B.systemName(d.system) : '') || 'Source';
+const srcMark = (d, px) => (d.system ? B.srcIcon(d.system, px) : `<span class="srcn" style="width:${px}px;height:${px}px">${ICON('stack', Math.round(px * 0.7))}</span>`);
+/** A chip only when it has words. */
+const chip = (text, cls) => (String(text || '').trim() ? `<span class="tag ${cls || ''}">${esc(text)}</span>` : '');
+const docTitle = (d) => (d.title && String(d.title).trim()) || 'Untitled document';
+/** An empty state sits in a frame where the list would be (the shared .ds-empty spec). */
+const emptyFrame = (icon, title, text, action) => `<div class="ds-empty">${icon ? `<span class="ds-empty-ic">${ICON(icon, 20)}</span>` : ''}<b>${esc(title)}</b>${text ? `<p>${text}</p>` : ''}${action || ''}</div>`;
+/** A failed read, framed, with the retry under it. */
+const errorFrame = (error, retryId) => `<div class="ds-empty errstate" role="alert"><span class="ds-empty-ic">${ICON('refresh', 20)}</span><b>${esc(B.problem(error))}</b><p>${error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.'}</p>${retryId ? `<button type="button" class="btn sm" id="${retryId}">Try again</button>` : ''}</div>`;
 
 /* ---------- the document drawer ---------- */
 async function openDocument(id, opts) {
@@ -43,48 +55,59 @@ async function openDocument(id, opts) {
   let d;
   try {
     d = await B.api.get('/documents/' + id);
+    if (!d || !d.id) throw Object.assign(new Error('The document reply was empty'), { status: 404 }); // read like a document that is not there
   } catch (error) {
     const body = $('#svbody');
-    if (body) body.innerHTML = error.status === 404 ? B.emptyBlock('Not available', 'This document is not available to you. It may have moved, or its access changed.') : B.errorBlock(error, 'docretry');
+    const sys = $('#drawer .sv-sys');
+    if (sys && !c) sys.textContent = 'Document'; // the name placeholder does not wait for an answer that is not coming
+    if (body) body.innerHTML = error.status === 404 ? emptyFrame('lock', 'Not available', 'This document is not available to you. It may have moved, or its access changed.') : errorFrame(error, 'docretry');
     const r = $('#docretry');
     if (r) r.onclick = () => openDocument(id, o);
     return;
   }
   const drawer = $('#drawer');
   if (!drawer.classList.contains('on')) return;
-  const scope = SCOPE[d.scope] || SCOPE.granular;
-  const lineage = B.hasRole('admin', 'compliance');
-  const canWiden = d.scope !== 'public';
-  drawer.innerHTML = `<div class="sv"><div class="sv-top"><span class="sv-sys">${B.srcIcon(d.system, 20)}${esc(B.systemName(d.system))}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div>
-    <div class="sv-body"><h2>${esc(d.title)}</h2>
-      <div class="sv-tags">${authorityTag(d) || '<span class="tag ok">Approved</span>'}<span class="tag ${scope[1]}">${esc(scope[0])}</span>${d.sensitivity !== 'internal' ? `<span class="tag">${esc(B.clearanceName(d.sensitivity))}</span>` : ''}</div>
+  const scope = SCOPE[d.scope];
+  const sens = d.sensitivity && d.sensitivity !== 'internal' && !(scope && scope[0] === B.clearanceName(d.sensitivity)) ? chip(B.clearanceName(d.sensitivity)) : '';
+  const team = d.domain && d.domain.name ? `<span class="sv-team"><b>${esc(d.domain.name)}</b></span>` : '';
+  const tags = team + authorityTag(d) + (scope ? chip(scope[0], scope[1]) : '') + sens;
+  const owner = d.owner && d.owner.name
+    ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b>${esc(d.owner.name)}</b><small>${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>`
+    : '';
+  const kv = [
+    d.domain && d.domain.path && d.domain.path.length ? `<dt>Domain</dt><dd class="svcrumb">${domainCrumbs(d)}</dd>` : '',
+    d.path ? `<dt>Location</dt><dd><button type="button" class="link" id="dlocation">${esc(d.path)}</button></dd>` : '',
+    d.kind ? `<dt>Kind</dt><dd>${esc(kindName(d.kind))}</dd>` : '',
+    d.review_due_at ? `<dt>Review due</dt><dd>${B.when(d.review_due_at, B.fmtDate(d.review_due_at, true))}</dd>` : '',
+    !(d.owner && d.owner.name) && d.last_verified_at ? `<dt>Verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : '',
+  ].join('');
+  drawer.innerHTML = `<div class="sv"><div class="sv-top"><span class="sv-sys">${srcMark(d, 20)}${esc(srcName(d))}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div>
+    <div class="sv-body"><h2>${esc(docTitle(d))}</h2>
+      ${tags ? `<div class="sv-tags">${tags}</div>` : ''}
       ${labelProblems(d)}
       ${c && c.quote ? `<blockquote class="sv-q">${esc(c.quote)}</blockquote>` : ''}
-      ${d.owner ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b>${esc(d.owner.name)}</b><small>${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>` : ''}
-      <dl class="kv svkv">${d.domain ? `<dt>Domain</dt><dd class="svcrumb">${domainCrumbs(d)}</dd>` : ''}${d.path ? `<dt>Location</dt><dd><button type="button" class="link" id="dlocation">${esc(d.path)}</button></dd>` : ''}<dt>Kind</dt><dd>${esc(kindName(d.kind))}</dd>${d.review_due_at ? `<dt>Review due</dt><dd>${B.when(d.review_due_at, B.fmtDate(d.review_due_at, true))}</dd>` : ''}${!d.owner && d.last_verified_at ? `<dt>Verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}</dl>
+      ${owner}
+      ${kv ? `<dl class="kv svkv">${kv}</dl>` : ''}
     </div>
-    <div class="sv-act"><a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${B.srcIcon(d.system, 16)}Open in ${esc(B.systemName(d.system))}${ICON('ext', 14)}</a>${canWiden ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}${lineage ? '<button type="button" class="btn" id="dlineage">Lineage</button>' : ''}</div></div>`;
+    <div class="sv-act">${d.url ? `<a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${srcMark(d, 16)}${d.system ? `Open in ${esc(srcName(d))}` : 'Open in source'}${ICON('ext', 14)}</a>` : `<button type="button" class="btn primary" id="dopen" disabled>${srcMark(d, 16)}${d.system ? `Open in ${esc(srcName(d))}` : 'Open in source'}</button>`}<button type="button" class="btn" id="ddet">Details and lineage</button></div></div>`;
   $('[data-close-drawer]', drawer).onclick = B.closeDrawer;
   const where = $('#dlocation');
   if (where) where.onclick = () => { B.closeDrawer(); window.LIBRARY.showLocation(d.path); };
-  const share = $('#dshare');
-  if (share) share.onclick = () => shareModal(d);
-  const lin = $('#dlineage');
-  if (lin) lin.onclick = () => lineageModal(d);
+  $('#ddet').onclick = () => detailsModal(d);
 }
 
 /** Labels Broth ignored or adjusted on this page, for its author to fix in the source. */
 function labelProblems(d) {
   const warnings = d.label_warnings || [];
   if (!warnings.length) return '';
-  return `<div class="svwarn" role="note"><b>Label problems</b><ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul><p>Fix the labels in ${esc(B.systemName(d.system))}. Broth reads them again on its next sync.</p><p>${window.DOCS.link('labelProblems', 'What these mean')}</p></div>`;
+  return `<div class="svwarn" role="note"><b>Label problems</b><ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul><p>Fix the labels in ${esc(d.system ? B.systemName(d.system) : 'the source')}. Broth reads them again on its next sync.</p><p>${window.DOCS.link('labelProblems', 'What these mean')}</p></div>`;
 }
 
 function shareModal(d) {
   const options = [];
-  if (d.scope === 'granular') options.push(['internal', 'Everyone at Kredete', 'Every employee can find it and get answers from it.']);
+  if (d.scope === 'granular') options.push(['internal', 'Everyone at Broth', 'Every employee can find it and get answers from it.']);
   options.push(['public', 'Public', 'Customers can see it through the support agent. Only for content that is safe to publish.']);
-  B.openModal(`<div class="modal" role="dialog" aria-label="Share more widely"><div class="bar"><span>Share more widely</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(d.title)}</h2><p class="sub">An owner or admin approves the request. Until then, nothing changes.</p>
+  B.openModal(`<div class="modal" role="dialog" aria-label="Share more widely"><div class="bar"><span>Share more widely</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(docTitle(d))}</h2><p class="sub">An owner or admin approves the request. Until then, nothing changes.</p>
     <div class="obopts promopts" role="radiogroup" aria-label="Who can see it">${options.map(([k, l, t], i) => `<button type="button" class="obopt ${i ? '' : 'on'}" role="radio" aria-checked="${!i}" data-scope="${k}"><b>${l}</b><small>${t}</small></button>`).join('')}</div>
     <label class="hsl" for="preason">Why</label><textarea id="preason" class="eminp" rows="3" maxlength="500" placeholder="For example: every support agent needs this."></textarea><div class="hse" id="pre" role="alert"></div>
     <div class="actions"><button type="button" class="btn primary" id="psend">Send request</button><button type="button" class="btn" data-close-modal>Cancel</button></div></div></div>`);
@@ -100,20 +123,34 @@ function shareModal(d) {
 }
 
 const ACTIONS = { 'answer.served': 'Cited in an answer', 'promotion.requested': 'Wider sharing requested', 'promotion.approved': 'Sharing approved', 'promotion.rejected': 'Sharing rejected', 'promotion.revoked': 'Sharing revoked', 'promotion.needs_review': 'Sharing needs review' };
-async function lineageModal(d) {
-  B.openModal(`<div class="modal lineage" role="dialog" aria-label="Lineage"><div class="bar"><span>Lineage</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(d.title)}</h2><p class="sub">Answers that cited this document, and changes to how widely it is shared. Only admins and compliance see this.</p><div id="lin">${B.loadingBlock('Loading lineage', 3, 'actr')}</div></div></div>`);
+/** "Details and lineage", for everyone, as in the prototype: the document's tags and facts, then the
+ *  answers that cited it (admins and compliance read those; the audit is theirs). */
+async function detailsModal(d) {
+  const scope = SCOPE[d.scope];
+  const lineage = B.hasRole('admin', 'compliance');
+  const tags = (d.authority === 'approved' && !authorityTag(d) ? chip('Approved', 'ok') : authorityTag(d)) + (d.system ? chip(srcName(d)) : '') + (d.domain && d.domain.name ? chip(d.domain.name, 'blue') : '');
+  const rows = `${d.owner && d.owner.name ? `<dt>Owner</dt><dd>${PERSON(d.owner.name, 20)}${d.owner.title ? `, ${esc(d.owner.title)}` : ''}</dd>` : ''}${d.last_verified_at ? `<dt>Last verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}${d.sensitivity ? `<dt>Sensitivity</dt><dd>${esc(B.clearanceName(d.sensitivity))}</dd>` : ''}${scope ? `<dt>Access</dt><dd>${esc(scope[0])}</dd><dt>External use</dt><dd>${d.scope === 'public' ? 'Approved' : 'Not approved'}</dd>` : ''}`;
+  B.openModal(`<div class="modal lineage" role="dialog" aria-label="Details and lineage"><div class="bar"><span>${esc(docTitle(d))}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
+    ${tags ? `<div class="sv-tags">${tags}</div>` : ''}
+    ${rows ? `<dl class="kv">${rows}</dl>` : ''}
+    <h4 class="dlh">Lineage: answers that cited this</h4><div id="lin">${lineage ? B.loadingBlock('Loading lineage', 3, 'actr') : '<p class="amute">Admins and compliance see which answers cited this document.</p>'}</div>
+    <div class="actions">${d.url ? `<a class="btn primary" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${srcMark(d, 16)}${d.system ? `Open in ${esc(srcName(d))}` : 'Open in source'}${ICON('ext', 14)}</a>` : ''}${d.scope && d.scope !== 'public' ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}</div></div></div>`);
+  const share = $('#dshare');
+  if (share) share.onclick = () => shareModal(d);
+  if (!lineage) return;
   try {
     const page = await B.api.get('/admin/audit', { document_id: d.id, limit: 50 });
     const box = $('#lin');
     if (!box) return;
-    box.innerHTML = page.items.length
-      ? `<div class="actl">${page.items.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' · ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' · ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
-      : '<p class="actn">Nothing yet. Answers that cite this document appear here.</p>';
+    const events = B.rows(page);
+    box.innerHTML = events.length
+      ? `<div class="actl">${events.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' \u00b7 ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' \u00b7 ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
+      : emptyFrame('chat', 'Nothing yet', 'Answers that cite this document appear here.');
   } catch (error) {
     const box = $('#lin');
-    if (box) box.innerHTML = B.errorBlock(error);
+    if (box) box.innerHTML = errorFrame(error);
   }
 }
 
-window.DOCUMENTS = { openDocument, authorityTag, domainLabel, domainCol, kindName, KIND_ICON };
+window.DOCUMENTS = { openDocument, authorityTag, domainLabel, domainCol, kindName, KIND_ICON, emptyFrame, errorFrame };
 })();

@@ -68,7 +68,7 @@ test('the Chats page lists every chat and finds them by title', async ({ open, c
   await page.getByRole('searchbox', { name: 'Search chats' }).fill('Earlier question 07');
   await expect(rows.first()).toContainText('Earlier question 07');
   await page.getByRole('searchbox', { name: 'Search chats' }).fill('xylophone');
-  await expect(page.getByText('No chats match.')).toBeVisible();
+  await expect(page.getByText('No chats match')).toBeVisible();
   await check(page, 'chats-no-match');
 });
 

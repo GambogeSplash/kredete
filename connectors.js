@@ -15,7 +15,7 @@
  * connection's finished run also lists the pages it kept out of Public, with why.
  * Google Drive: a setup checklist; in sandbox mode it explains that Drive needs a Google
  * Workspace account. In sandbox mode the OAuth clients are managed here too. The Confluence
- * authorization returns to /admin/connectors?connected=<id> or ?error=<reason>.
+ * authorization returns to /admin/connectors?connected=<id> (now /admin/sources, the old address redirects) or ?error=<reason>.
  */
 (() => {
 'use strict';
@@ -26,7 +26,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 
-const STATUS = { healthy: ['Healthy', 'ok'], degraded: ['Degraded', 'warn'], failing: ['Failing', 'bad'], disconnected: ['Disconnected', ''] };
+const STATUS = { healthy: ['Connected', 'ok'], degraded: ['Degraded', 'warn'], failing: ['Failing', 'bad'], disconnected: ['Disconnected', ''] };
 const OAUTH_ERRORS = {
   invalid_state: 'The Confluence authorization expired or was started in another browser. Authorize again.',
   authorization_failed: 'Atlassian did not complete the authorization. Authorize again, and allow every requested permission.',
@@ -51,6 +51,8 @@ const SETTINGS_HELP = {
   review: 'How long a verified page stays current before it is due for review.',
 };
 let banner = null;
+/** The cards rise once per visit to the page, not on every repaint. */
+let riseDone = false;
 /** The connection a return from Atlassian or GitHub just connected, toasted once loaded. */
 let connected = null;
 /** Stops following the page's runs; replaced each time the page is drawn. */
@@ -68,7 +70,7 @@ async function fetchAll() {
     B.api.get('/admin/users', { limit: 200 }),
     B.api.get('/admin/domains'),
   ]);
-  return { connections: connections.items, containers: containers.items, credentials: credentials.items, users: users.items, domains: domains.items };
+  return { connections: B.rows(connections), containers: B.rows(containers), credentials: B.rows(credentials), users: B.rows(users), domains: B.rows(domains) };
 }
 /** Every run the page shows: each connection's and each space's running and last run. */
 const runsOf = (connections, containers) => [...connections, ...containers].flatMap((x) => [x.active_run, x.last_run]);
@@ -79,18 +81,212 @@ function readReturn() {
   if (!q.has('connected') && !q.has('error')) return;
   if (q.has('connected')) {
     banner = null;
-    history.replaceState({}, '', '/admin/connectors');
-    if (B.setupPending()) { B.toast('Confluence is connected'); B.go('/setup', { replace: true }); return 'moved'; }
+    history.replaceState({}, '', BASE);
     connected = q.get('connected');
   } else {
     banner = OAUTH_ERRORS[q.get('error')] || 'The Confluence authorization did not finish. Authorize again.';
-    history.replaceState({}, '', '/admin/connectors');
+    history.replaceState({}, '', BASE);
   }
   return undefined;
 }
 
-async function render(el) {
+/* Every source Broth can read now or will: the real ones show their state from the API; the rest
+   are honest Coming soon cards. */
+/** The address of a source's own page. */
+const SLUG = { confluence: 'confluence', github: 'docs-repositories', gdrive: 'google-drive' };
+/** The canonical address of Sources. The old /admin/connectors still works: the router sends it here, query string kept. */
+const BASE = '/admin/sources';
+const pagePath = (src) => `${BASE}/${SLUG[src.key]}`;
+/** The source whose page is open, or null on the grid. */
+let pageSrc = null;
+const SOURCES = [
+  { key: 'confluence', name: 'Confluence', logo: 'confluence', systems: ['confluence'], real: true, blurb: 'Read your wiki.' },
+  { key: 'github', name: 'Docs repositories', logo: 'github', systems: ['github_docs'], real: true, blurb: 'Read docs from GitHub.' },
+  { key: 'gdrive', name: 'Google Drive', logo: 'google-drive', systems: ['gdrive'], real: true, blurb: 'Read your shared drives.' },
+  { key: 'notion', name: 'Notion', logo: 'notion', systems: [], real: false, blurb: 'Read your notes.' },
+  { key: 'gcs', name: 'Google Cloud Storage', logo: 'google-cloud-storage', systems: [], real: false, blurb: 'Read your buckets.' },
+  { key: 'slack', name: 'Slack', logo: 'slack', systems: [], real: false, blurb: 'Read your channels.' },
+  { key: 'sharepoint', name: 'SharePoint', logo: 'sharepoint', systems: [], real: false, blurb: 'Read your sites.' },
+  { key: 'creds', name: 'App credentials', logo: null, systems: [], real: false, blurb: 'The apps Broth uses in this sandbox.' },
+];
+const liveOf = (src) => data.connections.filter((c) => src.systems.includes(c.system) && c.status !== 'disconnected');
+const needsAuth = (c) => (c.system === 'confluence' || c.system === 'github_docs') && !c.authorized;
+const warned = (c) => Object.values(c.warnings || {}).some(Boolean);
+/** The card's state: a tag, one short line, and a progress fraction while a read is running. */
+function stateOf(src) {
+  if (src.key === 'creds') { const todo = data.credentials.some((c) => !c.configured); return { tag: todo ? ['Needs setup', 'warn'] : ['Configured', 'ok'], line: src.blurb, fraction: null, conns: [] }; }
+  const conns = liveOf(src);
+  if (!conns.length) return src.real ? { tag: ['Not connected', ''], line: src.blurb, fraction: null, conns } : { tag: ['Soon', ''], line: 'Coming soon.', fraction: null, conns, soon: true };
+  const running = conns.find((c) => c.active_run && c.active_run.status === 'running');
+  const view = running ? SYNC.runView(running.active_run) : null;
+  const sites = conns.map((c) => c.site).join(', ');
+  const spaces = data.containers.filter((x) => conns.some((c) => c.id === x.connection_id) && x.included).length;
+  const unit = src.key === 'github' ? 'repositories' : src.key === 'gdrive' ? 'drives' : 'spaces';
+  const line = `${sites} · ${spaces} ${spaces === 1 ? unit.replace(/ies$/, 'y').replace(/s$/, '') : unit}`;
+  let tag;
+  if (conns.some(needsAuth)) tag = ['Needs authorising', 'warn'];
+  else if (running) tag = ['Syncing', 'blue'];
+  else if (conns.some((c) => c.status === 'failing')) tag = ['Failing', 'bad'];
+  else if (conns.some((c) => c.status === 'degraded') || conns.some(warned)) tag = ['Warnings', 'warn'];
+  else tag = ['Connected', 'ok'];
+  return { tag, line, fraction: view && view.fraction !== null ? view.fraction : null, conns };
+}
+function sourceCard(src) {
+  const st = stateOf(src);
+  return `<button type="button" class="ds-card lift adsc srccard${st.soon ? ' soonc' : ''}" data-src="${src.key}" ${st.conns.length ? '' : ' aria-haspopup="dialog"'} aria-label="${st.conns.length ? 'Open ' : ''}${esc(src.name)}, ${esc(st.tag[0])}"><div class="adsch"><span class="adsl">${src.logo ? B.srcIcon(src.logo, 28) : ICON('lock', 20)}</span><div><b>${esc(src.name)}</b><small>${esc(st.line)}</small></div><span class="tag ${st.tag[1]}">${st.tag[0]}</span></div></button>`;
+}
+/** What a card opens: its setup section when it has one, its first step when it is not connected, or the Coming soon dialog. */
+function sourcePop(anchor, src) {
+  const st = stateOf(src);
+  if (st.conns.length && SLUG[src.key]) { B.go(pagePath(src)); return; }
+  if (src.key === 'creds' || src.key === 'gdrive') { if (openSection(src)) return; }
+  if (src.real) { connectForm(src); return; }
+  openModal(shell(src.name, soonStory(src), 480, B.srcIcon(src.logo, 22)));
+}
+/** A source's own page: the title with its logo and state, the section laid out as the page body. */
+function showPage(body) {
+  const st = stateOf(pageSrc);
+  const key = SECTIONS[pageSrc.key];
+  const sec = $(`#cnhold [data-sec="${key}"]`, body);
+  if (!sec) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'srcpage srcm';
+  const link = $('.cnsec-h .dclink', sec);
+  wrap.appendChild(sec);
+  body.insertBefore(wrap, $('#cnpick', body));
+  const hold = $('#cnhold', body);
+  if (hold) hold.hidden = true;
+  const head = $('.cnsec-h', sec);
+  if (head) head.remove();
+  window.ADMIN.setTitle(`<span class="srctl"><span class="adsl">${B.srcIcon(pageSrc.logo, 28)}</span><span>${esc(pageSrc.name)}</span><span class="tag ${st.tag[1]}">${st.tag[0]}</span></span>`, BASE, 'Sources');
+  window.ADMIN.actions(link ? window.DOCS.link('docsInstall', 'How to connect').replace('class="dclink"', 'class="dclink btn sm"') : '');
+}
+/* Every dialog here is the prototype's: a centred .modal in the shared #modal host, a title bar with a
+   Close link, a body. A source's setup (its section: connections, spaces, steps, credentials) is moved
+   into the dialog while it is open and back into the page's holder when it closes, so its buttons, its
+   run status and its polling stay the page's own code. */
+const shell = (label, inner, width, lead) => `<div class="modal bt srcm" style="max-width:${width || 480}px" role="dialog" aria-label="${esc(label)}"><div class="bar"><span class="dmttl">${lead || ''}${esc(label)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">${inner}</div></div>`;
+/** @type {{ sec: HTMLElement, key: string } | null} */
+let secHome = null;
+function restoreSec() {
+  if (!secHome) return;
+  const hold = $('#cnhold');
+  if (hold && secHome.sec) hold.appendChild(secHome.sec);
+  secHome = null;
+}
+/** Every dialog of this page goes through here, so an open section always goes home first. */
+const openModal = (html) => { restoreSec(); B.openModal(html); };
+new MutationObserver(() => { if (!$('#modal').classList.contains('on')) restoreSec(); }).observe($('#modal'), { attributes: true, attributeFilter: ['class'] });
+const SECTIONS = { confluence: 'confluence', github: 'docs', gdrive: 'drive', creds: 'creds' };
+function openSection(src) {
+  const key = SECTIONS[src.key];
+  const sec = key && $(`#cnhold [data-sec="${key}"]`);
+  if (!sec) return false;
+  openModal(shell(src.name, '<div id="srcbody"></div>', src.key === 'github' ? 720 : 640, src.logo ? B.srcIcon(src.logo, 22) : ICON('lock', 18)));
+  const box = $('#srcbody');
+  box.appendChild(sec);
+  // The failed-pages link inside a section is handled by the page's delegated click.
+  box.onclick = (e) => { const page = $('#cnbody'); if (page && page.onclick) page.onclick(e); };
+  secHome = { sec, key };
+  return true;
+}
+const missingApp = (name) => B.sandbox() && data && data.credentials.some((c) => c.name === name && !c.configured);
+const row = (logo, name, line, action) => `<div class="srow"><span class="adsl">${logo}</span><span class="ltb"><b>${esc(name)}</b><small>${esc(line)}</small></span>${action}</div>`;
+/** The sources not yet connected, in this order. A connected source has its card and is not offered again. */
+const PICK_ORDER = ['confluence', 'github', 'gdrive', 'notion', 'gcs', 'slack', 'sharepoint'];
+const offered = () => PICK_ORDER.map((k) => SOURCES.find((x) => x.key === k)).filter((src) => src && !stateOf(src).conns.length);
+/* What a source that is not built yet will do, written in one place. Each entry has three blocks:
+   read (what Broth will read), answers (how answers use it) and access (who can see what). A source
+   without an entry gets the generic story. */
+const SOURCE_STORIES = {
+  notion: {
+    read: 'Pages and databases in the workspaces you pick, with their properties such as status and owner. Nested pages will be read with the page they sit under.',
+    answers: 'Wiki pages go stale quietly, so answers will show who owns a page and when it was last verified. Each answer will link back to the Notion page.',
+    access: "Broth will check Notion's permissions on every question, so people only get answers from pages they can open. Admins pick the workspaces and name an owner for each.",
+  },
+  slack: {
+    read: 'Public channels you choose, read one thread at a time. Private channels and direct messages will never be read.',
+    answers: 'Decisions often sit buried in chat, so answers will cite the thread that holds one and link back to the message, with when it was last confirmed.',
+    access: 'People only get answers from channels they can already join. Admins choose which channels to connect and who owns each one.',
+  },
+  sharepoint: {
+    read: 'Sites and document libraries you choose, including Word, Excel and PowerPoint files and site pages.',
+    answers: 'Answers will cite the file or page and link back to it in SharePoint, with the site owner and when it was last verified shown beside it.',
+    access: 'Broth will respect Microsoft 365 permissions on every question, so people only get answers from items they can open. Admins pick the sites and the owner of each.',
+  },
+  gcs: {
+    read: 'Buckets and folders you choose, with the PDFs and text files inside them.',
+    answers: 'Files carry no author, so the owner of each bucket will be the person you assign, and answers will show that name. Each answer will link back to the file.',
+    access: "Broth will follow the bucket's own access rules, so people only get answers from files they can open. Admins choose the buckets and who owns each.",
+  },
+};
+const STORY_FALLBACK = (name) => ({
+  read: `The content you pick in ${name}.`,
+  answers: 'Answers will cite the original item with a link back, and show its owner and when it was last verified, as they do for other sources. Its content will appear in the Library under its own section.',
+  access: `Broth will keep ${name}'s own access rules, so people only get answers from items they can already open there. Admins choose which parts to connect and who owns each.`,
+});
+/** The Coming soon dialog's body: three short blocks and an honest closing line. */
+function soonStory(src) {
+  const story = SOURCE_STORIES[src.key] || STORY_FALLBACK(src.name);
+  const block = (icon, title, text) => `<div class="storyblk"><span class="storyic" aria-hidden="true">${ICON(icon, 16)}</span><div><b>${title}</b><p>${esc(text)}</p></div></div>`;
+  return `<div class="dmbody"><div class="srcstate"><span class="tag">Coming soon</span></div><div class="story">${block('doc', 'What Broth will read', story.read)}${block('link', 'How answers use it', story.answers)}${block('lock', 'Who can see what', story.access)}</div><p class="storyend">Not available yet. Connecting will work like Confluence: authorise once, pick what to include, and Broth reads it on a schedule.</p><div class="actions"><span class="lsp"></span><button type="button" class="btn" data-close-modal>Close</button></div></div>`;
+}
+const soonRow = (src) => row(B.srcIcon(src.logo, 28), src.name, 'Coming soon.', '');
+/** Add a source: a picker. Choosing a real source opens its own setup. */
+function addSource() {
+  const list = offered();
+  const rows = list.map((src) => (src.real || src.key === 'gdrive'
+    ? row(B.srcIcon(src.logo, 28), src.name, src.blurb, `<button type="button" class="btn sm primary" data-pickgo="${src.key}">${src.key === 'gdrive' ? 'Set up' : 'Connect'}</button>`)
+    : soonRow(src))).join('');
+  openModal(shell('Add a source', list.length ? `<div class="dmbody"><div class="slist">${rows}</div></div>` : '<div class="ds-empty"><b>Every source is connected</b></div>'));
+  $$('[data-pickgo]', $('#modal')).forEach((b) => { b.onclick = () => { const src = SOURCES.find((x) => x.key === b.dataset.pickgo); sourcePop(null, src); }; });
+}
+/** A real source that is not connected yet: its first step (the app, or the site) in the dialog. */
+function connectForm(src) {
+  const github = src.key === 'github';
+  const app = github ? 'github_app' : 'confluence_oauth';
+  const lead = B.srcIcon(src.logo, 22);
+  if (missingApp(app)) {
+    openModal(shell(src.name, `<div class="dmbody"><div class="slist">${row(B.srcIcon(src.logo, 28), src.name, 'Add the app first, then connect.', `<button type="button" class="btn sm primary" id="srcapp">${github ? 'Add the GitHub App' : 'Add the Confluence app'}</button>`)}</div></div>`, 480, lead));
+    $('#srcapp').onclick = () => { B.closeModal(); credentialForm(app); };
+    return;
+  }
+  openModal(shell(src.name, github
+    ? `<form id="ghadd" class="dmbody" novalidate><div><label class="dmlab" for="ghlogin">GitHub organization or user</label><div class="cnaddrow"><input id="ghlogin" class="eminp" placeholder="Organization or user, like kredete" autocomplete="off" spellcheck="false"><button type="submit" class="btn primary" id="ghaddgo">Connect</button></div><div class="hse ds-msg bad" id="ghadde" role="alert"></div></div></form>`
+    : `<form id="cnadd" class="dmbody" novalidate><div><label class="dmlab" for="cnsite">Confluence site</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse ds-msg bad" id="cnadde" role="alert"></div></div></form>`, 480, lead));
+  const flag = (id, msg) => { const f = $(id === 'cn' ? '#cnsite' : '#ghlogin'); $(`#${id}adde`).textContent = msg; if (msg) f.setAttribute('aria-invalid', 'true'); else f.removeAttribute('aria-invalid'); };
+  if (github) {
+    setTimeout(() => $('#ghlogin').focus(), 80);
+    $('#ghlogin').oninput = () => flag('gh', '');
+    $('#ghadd').onsubmit = (e) => {
+      e.preventDefault();
+      const login = $('#ghlogin').value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/.*$/, '');
+      if (!GITHUB_LOGIN.test(login)) { flag('gh', 'Enter the GitHub organization or user name, like kredete'); return; }
+      B.busy($('#ghaddgo'), async () => {
+        const created = await B.api.post('/admin/connections', { system: 'github_docs', site: login });
+        await install(created.id);
+      }, (error) => { flag('gh', B.problem(error)); refresh(); });
+    };
+  } else {
+    setTimeout(() => $('#cnsite').focus(), 80);
+    $('#cnsite').oninput = () => flag('cn', '');
+    $('#cnadd').onsubmit = (e) => {
+      e.preventDefault();
+      // SOURCES checks the address, creates the connection and sends the admin to Atlassian.
+      B.busy($('#cnaddgo'), async () => {
+        const id = await window.SOURCES.createConnection($('#cnsite').value);
+        await window.SOURCES.authorize(id);
+      }, (error) => { flag('cn', B.problem(error)); if (error && error.status) refresh(); });
+    };
+  }
+}
+
+async function render(el, params) {
   if (readReturn() === 'moved') return;
+  pageSrc = params && params.source ? SOURCES.find((x) => SLUG[x.key] === params.source) || null : null;
+  riseDone = false;
+  stopReads();
+  window.ADMIN.actions('');
   el.innerHTML = `${banner ? `<div class="banner bad" role="alert">${esc(banner)}</div>` : ''}<div id="cnbody">${B.loadingBlock('Loading connectors', 3, 'cnsec skcapp')}</div>`;
   try { data = await fetchAll(); }
   catch (error) {
@@ -102,30 +298,55 @@ async function render(el) {
     const c = data.connections.find((x) => x.id === connected);
     B.toast(c && c.system === 'github_docs' ? 'The GitHub App is installed. Find the repositories next.' : 'Confluence is connected');
     connected = null;
+    // A new connection lands on its own page.
+    if (c) { B.go(c.system === 'github_docs' ? `${BASE}/docs-repositories` : c.system === 'gdrive' ? `${BASE}/google-drive` : `${BASE}/confluence`, { replace: true }); return; }
   }
   draw();
 }
 function draw() {
   const body = $('#cnbody');
   if (!body || !data) return;
+  // A source's own page: only connected sources have one; anything else goes back to the grid.
+  if (pageSrc && !stateOf(pageSrc).conns.length) { B.go(BASE, { replace: true }); return; }
+  const open = pageSrc ? null : (secHome ? secHome.key : null);
   const confluence = data.connections.filter((c) => c.system === 'confluence' && c.status !== 'disconnected');
   const drive = data.connections.filter((c) => c.system === 'gdrive' && c.status !== 'disconnected');
   const conf = data.credentials.find((c) => c.name === 'confluence_oauth');
   const docs = data.connections.filter((c) => c.system === 'github_docs' && c.status !== 'disconnected');
   const app = data.credentials.find((c) => c.name === 'github_app');
-  body.innerHTML = `<section class="cnsec"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2><p class="amute">Broth reads the spaces you include, with each person's Confluence access.</p></div></div>
+  const conns = data.connections.filter((c) => c.status !== 'disconnected' && ['confluence', 'gdrive', 'github_docs'].includes(c.system));
+  const cards = `<div class="ds-grid c3 cnover"><button type="button" class="ds-card add" id="cnaddcard"><span class="ds-ic adsti">${ICON('plus', 18)}</span><b>Add a source</b><small>Confluence, Docs repositories</small></button>${SOURCES.filter((src) => src.key !== 'creds' || B.sandbox()).map((src) => sourceCard(src)).join('')}</div>`;
+  // Nothing connected yet (an admin right after setup): the framed header card, about sources in general.
+  const none = !SOURCES.some((src) => liveOf(src).length);
+  const first = none ? `<div class="ds-empty suempty cnfirst"><span class="ds-empty-ic">${ICON('plug', 20)}</span><b>Connect your first source</b><p>Broth reads the pages you connect.</p><button type="button" class="btn primary" id="cnfirst">Add a source</button></div>` : '';
+  body.innerHTML = (pageSrc ? '' : first + cards) + '<div id="cnpick"></div><div id="cnhold"' + (pageSrc ? ' data-page' : ' hidden') + '>' + `<section class="cnsec" data-sec="confluence"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && conf && !conf.configured ? `<div class="notice low"><span>Add the Confluence app below before connecting a site.</span></div>` : ''}
-      ${confluence.map(connectionHtml).join('') || `<div class="cnempty"><p class="amute">No Confluence site is connected.</p></div>`}
-      <form class="cnadd" id="cnadd" novalidate><label class="hsl" for="cnsite">${confluence.length ? 'Connect another site' : 'Connect a site'}</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse" id="cnadde" role="alert"></div></form></section>
-    <section class="cnsec"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive</h2><p class="amute">${B.sandbox() ? 'Unavailable in this sandbox.' : 'Broth reads the shared drives you include.'}</p></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : ''}</div>
+      ${B.sandbox() && conf ? `<div class="fgroup cncreds">${credentialRow(conf)}</div>` : ''}
+      ${confluence.map(connectionHtml).join('') || `<div class="ds-empty"><b>No Confluence site is connected</b><p>Use Add a source to connect one.</p></div>`}
+</section>
+    <section class="cnsec" data-sec="drive"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive</h2></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : drive.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() ? '<div class="notice none"><span>Google Drive needs a Google Workspace account: Broth reads Drive through domain-wide delegation, which a personal Google account does not have.</span></div>' : ''}
       <ol class="cncheck ${B.sandbox() ? 'off' : ''}"><li><b>Authorize Broth in the Google Admin console</b><span>Add Broth's client ID with the Drive and Admin SDK read scopes under domain-wide delegation.</span></li><li><b>Add the indexer to each shared drive</b><span>Invite broth-indexer@ as a viewer on every shared drive Broth should read.</span></li><li><b>Verify</b><span>Broth checks that it can see each shared drive, then you include them.</span></li></ol>
       ${drive.map(connectionHtml).join('')}</section>
-    <section class="cnsec" id="cndocs"><div class="cnsec-h">${B.srcIcon('github_docs', 32)}<div><h2>Docs repositories</h2><p class="amute">Broth reads the product docs from the GitHub repositories you include, and links each answer to the page on the docs site. ${window.DOCS.link('docsInstall', 'How to connect')}</p></div></div>
+    <section class="cnsec" data-sec="docs"><div class="cnsec-h">${B.srcIcon('github_docs', 32)}<div><h2>Docs repositories</h2>${window.DOCS.link('docsInstall', 'How to connect').replace('class="dclink"', 'class="dclink btn sm"')}</div>${docs.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && app && !app.configured ? `<div class="notice low"><span>Add the GitHub App below before connecting an account.</span></div>` : ''}
-      ${docs.map(connectionHtml).join('') || `<div class="cnempty"><p class="amute">No GitHub account is connected.</p></div>`}
-      <form class="cnadd" id="ghadd" novalidate><label class="hsl" for="ghlogin">${docs.length ? 'Connect another GitHub account' : 'Connect a GitHub account'}</label><div class="cnaddrow"><input id="ghlogin" class="eminp" placeholder="GitHub organization or user, like kredete" autocomplete="off" spellcheck="false"><button type="submit" class="btn primary" id="ghaddgo">Connect</button></div><div class="hse" id="ghadde" role="alert"></div></form></section>
-    ${B.sandbox() ? `<section class="cnsec"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials</h2><p class="amute">The apps Broth uses in this sandbox. Secrets are stored encrypted and never shown again.</p></div></div><div class="fgroup cncreds">${data.credentials.map(credentialRow).join('')}</div></section>` : ''}`;
+      ${B.sandbox() && app ? `<div class="fgroup cncreds">${credentialRow(app)}</div>` : ''}
+      ${docs.map(connectionHtml).join('') || `<div class="ds-empty"><b>No GitHub account is connected</b><p>Use Add a source to connect one.</p></div>`}
+</section>
+    ${B.sandbox() ? `<section class="cnsec" data-sec="creds"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials</h2></div></div><div class="fgroup cncreds">${data.credentials.filter((c) => c.name === 'google_oauth').map(credentialRow).join('')}</div></section>` : ''}</div>`;
+  if (open) {
+    const fresh = $(`#cnhold [data-sec="${open}"]`);
+    const box = $('#srcbody');
+    if (fresh && box) { box.replaceChildren(fresh); secHome = { sec: fresh, key: open }; } else secHome = null;
+  }
+  if (pageSrc) showPage(body);
+  const addCard = $('#cnaddcard');
+  if (addCard) addCard.onclick = addSource;
+  const fb = $('#cnfirst');
+  if (fb) fb.onclick = addSource;
+  pickSpaces(body, conf);
+  if (!riseDone && $('.cnover', body)) { riseDone = true; window.ADMIN.life($('.cnover', body)); }
+  $$('[data-src]', body).forEach((b) => { b.onclick = () => sourcePop(b, SOURCES.find((x) => x.key === b.dataset.src)); });
   paint();
   wire();
   watch();
@@ -136,7 +357,7 @@ function connectionHtml(c) {
   const spaces = data.containers.filter((x) => x.connection_id === c.id);
   const repos = c.system === 'github_docs';
   const unit = repos ? 'Repository' : c.system === 'gdrive' ? 'Shared drive' : 'Space';
-  const cols = repos ? 'minmax(0,1.5fr) minmax(0,1.1fr) 64px minmax(124px,0.9fr) 84px' : 'minmax(0,1.6fr) minmax(0,1.2fr) 64px 84px';
+  const cols = repos ? 'minmax(0,1.1fr) minmax(0,1.2fr) 124px 88px 72px' : 'minmax(0,1.4fr) minmax(0,1.1fr) 88px 72px';
   const needs = (c.system === 'confluence' || repos) && !c.authorized;
   const start = repos ? '<button type="button" class="btn sm primary" data-cact="install">Install on GitHub</button>' : '<button type="button" class="btn sm primary" data-cact="authorize">Authorize with Atlassian</button>';
   const find = repos ? 'Find repositories' : 'Find spaces';
@@ -144,7 +365,7 @@ function connectionHtml(c) {
     <div class="cnbar"></div><div class="cnfails"></div><div class="cnerrs"></div>
     ${warningsHtml(c.warnings || {})}
     <div class="cnacts">${needs ? start : `<button type="button" class="btn sm" data-cact="verify">${find}</button><button type="button" class="btn sm cnsyncb" data-cact="sync"><span class="suspin" aria-hidden="true"></span><span>Sync now</span></button>${c.system === 'confluence' ? '<button type="button" class="btn sm" data-cact="authorize">Re-authorize</button>' : ''}`}<span class="lsp"></span><button type="button" class="btn sm" data-cact="disconnect">Disconnect</button></div>
-    ${c.authorized || c.system === 'gdrive' ? `<div class="cnspaces">${spaces.length ? `<div class="dt" style="--cols:${cols}"><div class="dt-r dt-h"><span>${unit}</span><span>Owner</span><span>Included</span>${repos ? '<span>Bots</span>' : ''}<span></span></div>${spaces.map((s) => spaceRow(s, repos)).join('')}</div>` : `<p class="amute cnnone">No ${repos ? 'repositories' : 'spaces'} found yet. Use ${find}.</p>`}</div>` : ''}</div>`;
+    ${c.authorized || c.system === 'gdrive' ? `<div class="cnspaces">${spaces.length ? `<div class="dt" style="--cols:${cols}"><div class="dt-r dt-h"><span>${unit}</span><span>Owner</span>${repos ? '<span>Bots</span>' : ''}<span>Settings</span><span class="cninc">Included</span></div>${spaces.map((s) => spaceRow(s, repos)).join('')}</div>` : `<div class="ds-empty cnnone"><b>No ${repos ? 'repositories' : 'spaces'} found yet</b><p>Use ${find}.</p></div>`}</div>` : ''}</div>`;
 }
 /** A repository's Public declaration: Request public, or where its request stands. */
 function declarationCell(s) {
@@ -159,7 +380,7 @@ function declarationCell(s) {
 function spaceRow(s, repos = false) {
   const options = data.users.filter((u) => u.status === 'active').map((u) => `<option value="${u.id}" ${s.owner_user_id === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
   const name = B.containerName(s.path);
-  return `<div class="dt-r" data-space="${s.id}"><span class="dtp"><span><b>${esc(name)}</b><span class="cnsrun" role="status"></span></span></span><span class="cnown"><select data-owner aria-label="Owner of ${esc(name)}"><option value="" ${s.owner_user_id ? '' : 'selected'}>No owner</option>${options}</select></span><span class="cninc"><input type="checkbox" class="sw" data-include ${s.included ? 'checked' : ''} aria-label="Include ${esc(name)}"></span>${repos ? declarationCell(s) : ''}<span><button type="button" class="btn sm" data-settings aria-label="Settings for ${esc(name)}">Settings</button></span></div>`;
+  return `<div class="dt-r" data-space="${s.id}"><span class="dtp"><span><b>${esc(name)}</b><span class="cnsrun" role="status"></span></span></span><span class="cnown"><select data-owner aria-label="Owner of ${esc(name)}"><option value="" ${s.owner_user_id ? '' : 'selected'}>No owner</option>${options}</select></span>${repos ? declarationCell(s) : ''}<span class="cnset"><button type="button" class="btn sm" data-settings aria-label="Settings for ${esc(name)}">Settings</button></span><span class="cninc"><input type="checkbox" class="sw" data-include ${s.included ? 'checked' : ''} aria-label="Include ${esc(name)}"></span></div>`;
 }
 function credentialRow(c) {
   const [title, sub] = CREDENTIALS[c.name] || [c.name, ''];
@@ -167,24 +388,6 @@ function credentialRow(c) {
 }
 function wire() {
   const body = $('#cnbody');
-  $('#cnadd').onsubmit = (e) => {
-    e.preventDefault();
-    const site = $('#cnsite').value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(site)) { $('#cnadde').textContent = 'Enter the site address, like yourteam.atlassian.net'; return; }
-    B.busy($('#cnaddgo'), async () => {
-      const created = await B.api.post('/admin/connections', { system: 'confluence', site });
-      await window.SETUP.authorize(created.id);
-    }, (error) => { $('#cnadde').textContent = B.problem(error); refresh(); });
-  };
-  $('#ghadd').onsubmit = (e) => {
-    e.preventDefault();
-    const login = $('#ghlogin').value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/.*$/, '');
-    if (!GITHUB_LOGIN.test(login)) { $('#ghadde').textContent = 'Enter the GitHub organization or user name, like kredete'; return; }
-    B.busy($('#ghaddgo'), async () => {
-      const created = await B.api.post('/admin/connections', { system: 'github_docs', site: login });
-      await install(created.id);
-    }, (error) => { $('#ghadde').textContent = B.problem(error); refresh(); });
-  };
   $$('[data-cact]', body).forEach((b) => {
     const id = b.closest('[data-conn]').dataset.conn;
     b.onclick = () => {
@@ -192,7 +395,7 @@ function wire() {
       if (act === 'sync') { syncNow(b, id); return; }
       if (act === 'disconnect' && !b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Confirm disconnect'; b.classList.add('danger'); return; }
       B.busy(b, async () => {
-        if (act === 'authorize') { await window.SETUP.authorize(id); return; }
+        if (act === 'authorize') { await window.SOURCES.authorize(id); return; }
         if (act === 'install') { await install(id); return; }
         if (act === 'verify') {
           const r = await B.api.post(`/admin/connections/${id}/verify`);
@@ -205,7 +408,7 @@ function wire() {
       });
     };
   });
-  $$('[data-space]', body).forEach((row) => {
+  $$('.dt-r[data-space]', body).forEach((row) => {
     const id = row.dataset.space;
     const include = $('[data-include]', row), owner = $('[data-owner]', row);
     include.onchange = () => {
@@ -231,6 +434,56 @@ function wire() {
     if (space) failedDrawer(space, link.dataset.failed);
   };
 }
+/* A Confluence site that is authorised but reads no space yet: the picker; while the first reads
+   run: their progress. Both come from SOURCES, the same code the wizard used. */
+let stopReads = () => {};
+function pickSpaces(body, conf) {
+  stopReads();
+  if (pageSrc && pageSrc.key !== 'confluence') return;
+  const c = data.connections.find((x) => x.system === 'confluence' && x.status !== 'disconnected' && x.authorized);
+  const slot = $('#cnpick', body);
+  if (!c || !slot) return;
+  const S = window.SOURCES;
+  const mine = () => data.containers.filter((x) => x.connection_id === c.id);
+  const failing = S.failingHtml(mine());
+  if (S.included(mine()).length) {
+    // Reads running or done: progress while they run, and the unreadable pages notice after.
+    const running = S.reads(mine()).some((r) => r && r.status === 'running');
+    if (running) {
+      slot.innerHTML = '<div class="ds-card susync" role="status"></div>';
+      const box = $('.susync', slot);
+      let shown = '';
+      const state = { connection: c, containers: mine() };
+      shown = S.paintReads(box, S.readsHtml(state.containers), shown);
+      stopReads = S.watchReads(state, () => {
+        shown = S.paintReads(box, S.readsHtml(state.containers), shown);
+        if (!S.reads(state.containers).some((r) => r && r.status === 'running')) { stopReads(); refresh(); }
+      });
+    } else if (failing) slot.innerHTML = `<div class="notice low" role="status"><span>${failing}</span></div>`;
+    return;
+  }
+  const containers = mine();
+  slot.innerHTML = `<div class="ds-card cnpick"><h2>Pick the spaces Broth reads</h2><div id="supick"></div><div class="hse ds-msg bad" id="sue" role="alert"></div><div class="actions"><button type="button" class="btn" id="surefresh">Look again</button><span class="lsp"></span><button type="button" class="btn primary" id="sugo" disabled><span>Pick at least one space</span></button></div></div>`;
+  const list = $('#supick', slot), go = $('#sugo', slot), err = $('#sue', slot);
+  const ticked = new Map();
+  const label = () => { const n = S.countPicked(slot); go.disabled = !n; $('span', go).textContent = n ? `Include ${n} ${n === 1 ? 'space' : 'spaces'}` : 'Pick at least one space'; };
+  const draw = (items) => {
+    $$('[data-space]', slot).forEach((x) => ticked.set(x.dataset.space, x.checked));
+    list.innerHTML = items.length ? S.spacesTableHtml(items, ticked) : `<div class="ds-empty"><b>No spaces found</b><p>Broth found no spaces it can read on ${esc(c.site)}.</p></div>`;
+    $$('[data-space]', slot).forEach((x) => { x.onchange = label; });
+    label();
+  };
+  draw(containers);
+  let known = containers;
+  $('#surefresh', slot).onclick = () => B.busy($('#surefresh', slot), async () => {
+    err.textContent = '';
+    try { known = await S.refreshSpaces(c); }
+    catch (error) { err.textContent = `Couldn't check Confluence for new spaces: ${(error && error.detail) || B.problem(error)}`; }
+    draw(known);
+  });
+  $('.cnpick', slot).onsubmit = null;
+  go.onclick = () => B.busy(go, async () => { await S.includeSpaces(S.pickedSpaces(slot)); await refresh(); }, (error) => { err.textContent = B.problem(error); });
+}
 /** Sends the admin to GitHub to install the app; GitHub returns to this page. */
 async function install(id) {
   const started = await B.api.post(`/admin/connections/${id}/github/install`);
@@ -238,7 +491,7 @@ async function install(id) {
 }
 function declarationForm(repo) {
   const name = B.containerName(repo.path);
-  B.openModal(`<div class="modal" role="dialog" aria-label="Request public for ${esc(name)}"><div class="bar"><span>Request public</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>Make ${esc(name)} Public</h2><p class="sub">Every page this repository publishes becomes Public once another admin, or an owner of its domain, approves. Bots can then answer from it, and later changes need no new approval. ${window.DOCS.link('docsDeclaration')}</p><form id="declf" novalidate><label class="hsl" for="declwhy">Why</label><textarea id="declwhy" class="eminp" rows="3" maxlength="500" placeholder="Published at docs.kredete.com"></textarea><div class="hse" id="decle" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="declgo">Request</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
+  openModal(`<div class="modal" role="dialog" aria-label="Request public for ${esc(name)}"><div class="bar"><span>Request public</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>Make ${esc(name)} Public</h2><p class="sub">Every page this repository publishes becomes Public once another admin, or an owner of its domain, approves. Bots can then answer from it, and later changes need no new approval. ${window.DOCS.link('docsDeclaration')}</p><form id="declf" novalidate><label class="hsl" for="declwhy">Why</label><textarea id="declwhy" class="eminp" rows="3" maxlength="500" placeholder="Published at docs.kredete.com"></textarea><div class="hse" id="decle" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="declgo">Request</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
   $('#declwhy').focus();
   $('#declf').onsubmit = (e) => {
     e.preventDefault();
@@ -350,8 +603,9 @@ async function showNotices(box, run) {
   box.innerHTML = B.loadingBlock('Loading held-back pages', 1, 'cnfsk');
   try {
     const page = await B.api.get(`/admin/sync-runs/${run.id}/notices`, { limit: 50 });
-    box.innerHTML = page.items.length
-      ? `<h3 class="cnnh">Kept out of Public</h3><ul class="cnflist">${page.items.map((n) => `<li><span class="cnft">${esc(n.title || n.external_id)}</span><span class="cnfr">${esc(n.notice)}</span>${n.url ? `<a class="cnfo" href="${esc(n.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(n.title || n.external_id)} on the docs site">${ICON('ext', 14)}</a>` : ''}</li>`).join('')}</ul><p class="cndoc">${window.DOCS.link('docsProblems', 'What these mean')}</p>`
+    const held = B.rows(page);
+    box.innerHTML = held.length
+      ? `<h3 class="cnnh">Kept out of Public</h3><ul class="cnflist">${held.map((n) => `<li><span class="cnft">${esc(n.title || n.external_id)}</span><span class="cnfr">${esc(n.notice)}</span>${n.url ? `<a class="cnfo" href="${esc(n.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(n.title || n.external_id)} on the docs site">${ICON('ext', 14)}</a>` : ''}</li>`).join('')}</ul><p class="cndoc">${window.DOCS.link('docsProblems', 'What these mean')}</p>`
       : run.failing > 0 ? '' : '<p class="amute cnfnone">Every page synced, and none was kept out of Public.</p>';
   } catch (error) {
     box.innerHTML = `<p class="cnfe" role="alert">${esc(B.problem(error))}</p>`;
@@ -379,8 +633,8 @@ function showFailures(box, run, system) {
 async function moreFailures(box, run, list, system) {
   try {
     const page = await B.api.get(`/admin/sync-runs/${run.id}/failures`, { limit: 50, cursor: list.next });
-    list.items.push(...page.items);
-    list.next = page.next_cursor || null;
+    list.items.push(...B.rows(page));
+    list.next = B.cursorOf(page);
     list.done = !list.next;
     failedPages.set(failuresKey(run), list);
     failuresHtml(box, run, list, system);
@@ -429,7 +683,7 @@ function watch() {
     runs: runsOf(data.connections, data.containers),
     fetch: async () => {
       const [connections, containers] = await Promise.all([B.api.get('/admin/connections'), B.api.get('/admin/containers')]);
-      latest = { ...data, connections: connections.items, containers: containers.items };
+      latest = { ...data, connections: B.rows(connections), containers: B.rows(containers) };
       return runsOf(latest.connections, latest.containers);
     },
     onUpdate: (runs, finished) => {
@@ -457,7 +711,7 @@ function warningsHtml(warnings) {
   const lines = [];
   const missing = warnings.indexer_group_missing, members = warnings.indexer_group_members;
   if (missing) lines.push([`Create a ${esc(missing.group)} group containing only the indexer account, so restricted pages can opt in.`, 'indexerGroupMissing']);
-  if (members) lines.push([`Only the indexer account should be in ${esc(members.group)}. Also in it: ${members.members.map(esc).join(', ')}.`, 'indexerGroupMembers']);
+  if (members) lines.push([`Only the indexer account should be in ${esc(members.group)}. Also in it: ${B.arr(members.members).map(esc).join(', ')}.`, 'indexerGroupMembers']);
   return lines.map(([l, doc]) => `<div class="notice low cnwarn" role="status"><span>${l} ${window.DOCS.link(doc, 'How to fix it')}</span></div>`).join('');
 }
 
@@ -470,15 +724,17 @@ function settingsDrawer(space) {
   const sensitivity = space.default_sensitivity && space.default_sensitivity !== 'public' ? space.default_sensitivity : 'internal';
   const repo = space.kind === 'repo';
   const connection = data.connections.find((c) => c.id === space.connection_id);
-  B.openDrawer(`<div class="sv" role="dialog" aria-label="Settings for ${esc(name)}"><div class="sv-top"><span class="sv-sys">${B.srcIcon(connection ? connection.system : 'confluence', 20)}${esc(name)}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div><form class="sv-body cnsettings" id="cnsf" novalidate>
-    <h2>${repo ? 'Repository settings' : 'Space settings'}</h2><p class="sub">Every page in this ${repo ? 'repository' : 'space'} starts from these. A page's labels can only make it more cautious.</p><p class="cndoc">${window.DOCS.link(repo ? 'docsDeclaration' : 'spaceSettings')}</p>
+  const system = connection ? connection.system : 'confluence';
+  // The same right-hand shell as a document in the Library: source logo and name, X, a scrolling body and a footer.
+  B.openDrawer(`<div class="sv" role="dialog" aria-modal="true" aria-label="${repo ? 'Repository settings' : 'Space settings'}, ${esc(name)}"><div class="sv-top"><span class="sv-sys">${B.srcIcon(system, 20)}${esc(B.systemName(system))}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div><form class="cnsform" id="cnsf" novalidate><div class="sv-body cnsettings">
+    <h2>${esc(name)}</h2><p class="sub">${repo ? 'Repository settings' : 'Space settings'}. Every page in this ${repo ? 'repository' : 'space'} starts from these. A page's labels can only make it more cautious.</p><p class="cndoc">${window.DOCS.link(repo ? 'docsDeclaration' : 'spaceSettings')}</p>
     ${field('cnsowner', 'Owner', `<select id="cnsowner" aria-describedby="cnsownerh"><option value="">No owner</option>${options(people.map((u) => [u.id, u.name]), space.owner_user_id)}</select>`, SETTINGS_HELP.owner)}
     ${repo ? '<p class="suhint cnrepo">Published docs are approved. They are Internal until the repository is declared Public, then Public unless a page is labelled or holds a customer identifier.</p>' : `${field('cnsauth', 'Default authority', `<select id="cnsauth" aria-describedby="cnsauthh">${options(AUTHORITIES, authority)}</select>`, SETTINGS_HELP.authority)}
     ${field('cnssens', 'Default sensitivity', `<select id="cnssens" aria-describedby="cnssensh">${options(SENSITIVITIES, sensitivity)}</select>`, SETTINGS_HELP.sensitivity)}`}
     ${field('cnsdom', 'Default domain', `<select id="cnsdom" aria-describedby="cnsdomh"><option value="">No domain</option>${window.DOMAIN_TREE.optionTags(window.DOMAIN_TREE.tree(data.domains), { selected: space.default_domain_id })}</select>`, SETTINGS_HELP.domain)}
     ${field('cnsrev', 'Review interval in months', `<input id="cnsrev" class="eminp" type="number" inputmode="numeric" min="1" max="120" step="1" value="${space.review_interval_months}" aria-describedby="cnsrevh">`, SETTINGS_HELP.review)}
-    <div class="hse" id="cnse" role="alert"></div>
-    <div class="actions"><button type="submit" class="btn primary" id="cnsgo">Save</button><button type="button" class="btn" data-close-drawer>Cancel</button></div></form></div>`);
+    <div class="hse" id="cnse" role="alert"></div></div>
+    <div class="sv-act"><button type="submit" class="btn primary" id="cnsgo">Save</button><button type="button" class="btn" data-close-drawer>Cancel</button></div></form></div>`);
   $('#cnsf').onsubmit = (e) => {
     e.preventDefault();
     const months = Number($('#cnsrev').value);
@@ -506,7 +762,7 @@ function settingsDrawer(space) {
 
 function githubAppForm() {
   const [title] = CREDENTIALS.github_app;
-  B.openModal(`<div class="modal" role="dialog" aria-label="${esc(title)}"><div class="bar"><span>${esc(title)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(title)}</h2><p class="sub">The new app replaces the current one right away. The private key and webhook secret are never shown again. ${window.DOCS.link('docsPrivateKey', 'Getting the key')}</p><form id="credf" novalidate><label class="hsl" for="credapp">App ID</label><input id="credapp" class="eminp" inputmode="numeric" autocomplete="off" spellcheck="false"><label class="hsl" for="credkey">Private key</label><textarea id="credkey" class="eminp cnkey" rows="5" autocomplete="off" spellcheck="false" placeholder="-----BEGIN RSA PRIVATE KEY-----"></textarea><label class="hsl" for="credhook">Webhook secret</label><input id="credhook" class="eminp" type="password" autocomplete="off" spellcheck="false"><div class="hse" id="crede" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="credgo">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
+  openModal(`<div class="modal" role="dialog" aria-label="${esc(title)}"><div class="bar"><span>${esc(title)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(title)}</h2><p class="sub">The new app replaces the current one right away. The private key and webhook secret are never shown again. ${window.DOCS.link('docsPrivateKey', 'Getting the key')}</p><form id="credf" novalidate><label class="hsl" for="credapp">App ID</label><input id="credapp" class="eminp" inputmode="numeric" autocomplete="off" spellcheck="false"><label class="hsl" for="credkey">Private key</label><textarea id="credkey" class="eminp cnkey" rows="5" autocomplete="off" spellcheck="false" placeholder="-----BEGIN RSA PRIVATE KEY-----"></textarea><label class="hsl" for="credhook">Webhook secret</label><input id="credhook" class="eminp" type="password" autocomplete="off" spellcheck="false"><div class="hse" id="crede" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="credgo">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
   $('#credapp').focus();
   $('#credf').onsubmit = (e) => {
     e.preventDefault();
@@ -524,14 +780,15 @@ function githubAppForm() {
 function credentialForm(name) {
   if (name === 'github_app') { githubAppForm(); return; }
   const [title] = CREDENTIALS[name] || [name];
-  B.openModal(`<div class="modal" role="dialog" aria-label="${esc(title)}"><div class="bar"><span>${esc(title)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(title)}</h2><p class="sub">The new client replaces the current one right away.</p><form id="credf" novalidate><label class="hsl" for="credid">Client ID</label><input id="credid" class="eminp" autocomplete="off" spellcheck="false"><label class="hsl" for="credsecret">Client secret</label><input id="credsecret" class="eminp" type="password" autocomplete="off" spellcheck="false"><div class="hse" id="crede" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="credgo">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
+  openModal(`<div class="modal" role="dialog" aria-label="${esc(title)}"><div class="bar"><span>${esc(title)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(title)}</h2><p class="sub">The new client replaces the current one right away.</p><form id="credf" novalidate><label class="hsl" for="credid">Client ID</label><input id="credid" class="eminp" autocomplete="off" spellcheck="false"><label class="hsl" for="credsecret">Client secret</label><input id="credsecret" class="eminp" type="password" autocomplete="off" spellcheck="false"><div class="hse" id="crede" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="credgo">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
   $('#credid').focus();
   $('#credf').onsubmit = (e) => {
     e.preventDefault();
     const client_id = $('#credid').value.trim(), client_secret = $('#credsecret').value.trim();
     if (!client_id || !client_secret) { $('#crede').textContent = 'Enter the client ID and the client secret'; return; }
     B.busy($('#credgo'), async () => {
-      await B.api.put(`/admin/credentials/${name}`, { client_id, client_secret });
+      if (name === 'confluence_oauth') await window.SOURCES.saveConfluenceCredentials(client_id, client_secret);
+      else await B.api.put(`/admin/credentials/${name}`, { client_id, client_secret });
       B.closeModal();
       B.toast('Saved');
       await refresh();
@@ -542,5 +799,5 @@ async function refresh() {
   try { data = await fetchAll(); draw(); } catch (error) { B.toast(B.problem(error)); }
 }
 
-window.ADMIN.tabs.connectors = { label: 'Connectors', roles: ['admin'], render };
+window.ADMIN.tabs.connectors = { label: 'Sources', roles: ['admin'], render };
 })();

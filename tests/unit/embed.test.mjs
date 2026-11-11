@@ -256,8 +256,8 @@ describe('the preview (bot admin spec 6.2)', () => {
     assert.match(css, /:host\(:not\(\[data-contained\]\)\) \.panel\{position:fixed;inset:0/);
     assert.match(css, /:host\(\[data-contained\]\)\{position:absolute/);
     // Dark follows the visitor unless the preview names a scheme.
-    assert.match(css, /@media \(prefers-color-scheme:dark\)\{:host\(:not\(\[data-scheme="light"\]\)\)\{--surface:#1c1c20/);
-    assert.match(css, /:host\(\[data-scheme="dark"\]\)\{--surface:#1c1c20/);
+    assert.match(css, /@media \(prefers-color-scheme:dark\)\{:host\(:not\(\[data-scheme="light"\]\)\)\{--surface:#161616/);
+    assert.match(css, /:host\(\[data-scheme="dark"\]\)\{--surface:#161616/);
   });
 
   it('a data-preview script tag mounts nothing, warns nothing, and hands the page the module', async () => {

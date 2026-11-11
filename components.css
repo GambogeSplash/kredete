@@ -59,6 +59,62 @@ svg.ic-svg{transform-origin:50% 50%}
 @keyframes ik-dots{to{transform:rotate(90deg)}}
 @keyframes ik-tiltdown{0%{transform:none}35%{transform:translateY(3px) rotate(10deg)}to{transform:none}}
 @media (hover:hover) and (prefers-reduced-motion:no-preference){
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=refresh]{animation:ik-spin180 .55s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=x],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=plus]{animation:ik-spin90 .48s var(--ease-out) forwards}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=settings],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=sun],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=moon],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=globe],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=cube],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=tune]{animation:ik-spinfull .7s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=clip],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=link],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=pin],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=palette],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=filter],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=sliders],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=apps],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=grid],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=bot],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=hash],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=search],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=compose]{animation:ik-wiggle .48s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=bell]{animation:ik-ring .6s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=home],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=folder],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=user],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=inbox],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=doc],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=image],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=stack],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=library],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=book],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=rows],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=panel],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=shield],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=cal],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=analytics],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=headset],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=lock],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=thumbup],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=copy],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=share]{animation:ik-bounce .48s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=chat],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=helpc],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=check]{animation:ik-pop .48s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=chevr],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=arrow],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=ext],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=logout],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=plug],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=flow]{animation:ik-nudger .48s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=chevd]{animation:ik-nudged .48s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=send]{animation:ik-fly .48s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=mic]{animation:ik-pulse .48s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=kebab],
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=more]{animation:ik-dots .48s var(--ease-out)}
+:is(button,a,.surf,.pm-i,.tab,.hcard,.lh-sug,.cfrow,.att,.pcard,.capp,.gic,.mbbtn,.acct):not(:disabled):hover svg[data-i=thumbdown]{animation:ik-tiltdown .48s var(--ease-out)}
 .pm-go:hover svg[data-i=chevr]{animation:ik-nudger .4s var(--ease-out)}
 .padd:hover .plus{transform:rotate(90deg)}
 }
@@ -118,7 +174,6 @@ svg[data-i=send],.dsend:hover svg,.exs:hover svg,.exi button:hover svg{animation
 .errstate .btn{margin-top:var(--s-3);display:inline-flex}
 .surf.finish .sdot{width:7px;height:7px;border-radius:50%;background:var(--brand);margin-left:auto;flex:none}
 .pvfsk{display:inline-block;vertical-align:middle}
-.obnote{margin:var(--s-3) 0 0}
 .avchg.static{cursor:default}
 .chmore{display:flex;justify-content:center;margin:var(--s-4) 0}
 /* A link that looks like a button reads like one, wherever it is. No specificity, so a
@@ -475,7 +530,7 @@ time{white-space:nowrap}
 .dcprose tr:last-child td{border-bottom:0}
 .dcprose td code{white-space:nowrap;overflow-wrap:normal}
 .dclink{display:inline;padding:5px 0;color:var(--brand-strong);font-size:var(--fs-sm);text-decoration:none}
-.dclink:hover{text-decoration:underline;text-underline-offset:3px}
+.dclink:hover{text-decoration:none}
 .dclink svg{vertical-align:-2px;margin-right:var(--s-1)}
 /* On its own (signed out or during setup): a slim bar, then the same page. */
 #app.dcapp{overflow:auto;height:100%}
@@ -487,7 +542,7 @@ time{white-space:nowrap}
 .dcsolo-b{padding:var(--s-7) var(--s-7) var(--s-8)}
 .dcsolo .dctoc{top:calc(56px + var(--s-6))}
 .dcsolo .dcprose h2,.dcsolo .dcprose h3{scroll-margin-top:calc(56px + var(--s-5))}
-.svwarn .dclink{color:inherit;text-decoration:underline;text-underline-offset:3px}
+.svwarn .dclink{color:inherit;text-decoration:none}
 .cnwarn .dclink{margin-left:var(--s-1);white-space:nowrap}
 .cndoc{margin:calc(var(--s-3) * -1) 0 var(--s-4)}
 .sudoc{color:var(--mute);font-size:var(--fs-sm);margin:0 0 var(--s-5);line-height:var(--lh-base)}
@@ -499,6 +554,9 @@ time{white-space:nowrap}
 .dcprose .dchit{border-radius:var(--r-sm);animation:dchit 2.4s var(--ease-out) both}
 @keyframes dchit{0%,35%{background:var(--brand-wash);box-shadow:0 0 0 6px var(--brand-wash)}100%{background:transparent;box-shadow:0 0 0 6px transparent}}
 @media (prefers-reduced-motion:reduce){.dcprose .dchit{animation:none;background:var(--brand-wash);box-shadow:0 0 0 6px var(--brand-wash)}}
+
+/* Broth wordmark: a mask so it follows the text colour in light and dark */
+.si-wm{display:block;width:104px;height:26px;background:currentColor;-webkit-mask:url(/assets/brand/broth-wordmark.svg) left center/contain no-repeat;mask:url(/assets/brand/broth-wordmark.svg) left center/contain no-repeat}
 
 /* ---------- Support agent (bot admin spec 4 to 7) ---------- */
 .lcont.agwide{max-width:1040px}
@@ -628,3 +686,5 @@ time{white-space:nowrap}
 /* Dark mode inverts the page (styles.css); the preview and the accents show true colours, so they are inverted back. */
 html[data-mode=dark] :is(#exhost,.agpico,.agsw){filter:invert(1) hue-rotate(180deg)}
 .agfs-d{margin:calc(-1 * var(--s-2)) 0 var(--s-3)}
+
+.trashfx{position:fixed;z-index:80;width:36px;height:36px;display:grid;place-items:center;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--line);color:var(--mute);box-shadow:0 6px 18px -8px rgba(0,0,0,.5);pointer-events:none}

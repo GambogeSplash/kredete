@@ -9,6 +9,8 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 
+const hint = (t) => `<span class="hint" tabindex="0" data-tip="${t}" aria-label="${t}">i</span>`;
+
 /* ---------- Chats page ---------- */
 let chatQuery = '';
 let searchTimer = 0;
@@ -54,9 +56,10 @@ async function drawChats() {
       $('#chload').onclick = () => B.loadChats(false);
     }
   }
+  list.className = items.length ? 'actl chl' : 'chl';
   list.innerHTML = items.length
     ? items.map((c, i) => `<div class="actr chr" data-o="${i}" role="button" tabindex="0"><span class="actic">${ICON('chat', 16)}</span><span class="actt"><b>${esc(B.chatTitle(c))}</b><small>${B.when(c.updated_at, B.ago(c.updated_at))}</small></span><span class="actb">${c.pinned ? `<span class="chpin" aria-label="Pinned">${ICON('pin', 13)}</span>` : ''}<button type="button" class="lib" data-m="${i}" aria-label="Chat actions" aria-haspopup="menu">${ICON('more', 16)}</button></span></div>`).join('')
-    : `<p class="actn">${q ? 'No chats match.' : 'No chats yet. Ask Broth a question to start one.'}</p>`;
+    : `<div class="ds-empty"><span class="ds-empty-ic">${ICON(q ? 'search' : 'chat', 22)}</span><b>${q ? 'No chats match' : 'No chats yet'}</b><p>${q ? 'Try a different word.' : 'Ask Broth a question to start one.'}</p></div>`;
   $$('[data-o]', list).forEach((r) => {
     const open = () => B.go('/c/' + items[+r.dataset.o].id);
     r.onclick = (e) => { if (!e.target.closest('[data-m]')) open(); };
@@ -82,20 +85,26 @@ function device(agent) {
   return os ? `${browser} on ${os}` : browser;
 }
 function deviceIcon(agent) {
-  const path = /iPhone|Android|Mobile/i.test(agent || '')
+  const a = String(agent || '');
+  const path = /iPhone|Android|Mobile/i.test(a)
     ? '<rect x="7.5" y="3" width="9" height="18" rx="2.2"/><path d="M11 18h2"/>'
-    : '<rect x="5" y="5" width="14" height="10" rx="1.6"/><path d="M3 18.5h18"/>';
-  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+    : /Windows|Linux/i.test(a)
+      ? '<rect x="3.5" y="4.5" width="17" height="11" rx="1.8"/><path d="M9 20h6M12 15.5V20"/>'
+      : '<rect x="5" y="5" width="14" height="10" rx="1.6"/><path d="M3 18.5h18"/>';
+  return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
 }
-const hint = (t) => `<span class="hint" tabindex="0" data-tip="${t}" aria-label="${t}">i</span>`;
+const dframe = (label, small, action) => `<div class="frow"><div class="frl"><b>${label}</b>${small ? `<small>${small}</small>` : ''}</div><div class="frv"></div><div class="fra">${action}</div></div>`;
 const frow = (label, value, action) => `<div class="frow"><div class="frl"><b>${label}</b></div><div class="frv">${value}</div><div class="fra">${action || ''}</div></div>`;
 
 window.SURFACES.account = (params) => {
   const me = B.S.me;
   const tab = params.tab === 'sessions' ? 'sessions' : 'profile';
-  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button><div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div id="acpane"></div></div></div>`;
+  const adminLinks = B.hasRole('admin', 'compliance')
+    ? `<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administrator settings</div>${[['Sources', '/admin/sources'], ['People and access', '/admin/people'], ['Sharing requests', '/governance'], ['Domains', '/admin/domains'], ['Audit log', '/admin/audit']].map(([l, to]) => `<button type="button" class="tab" data-at="${to}" aria-current="false">${l}</button>`).join('')}`
+    : '';
+  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><div class="lrail-h">Account settings</div><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button>${adminLinks}<div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><div class="ds-head lcont-head"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div class="ds-act" id="acact"></div></div><div id="acpane"></div></div></div>`;
   $$('[data-at]').forEach((b) => { b.onclick = () => B.go(b.dataset.at); });
-  $('#aout').onclick = () => B.signOut();
+  $('#aout').onclick = () => B.armPress($('#aout'), 'Confirm sign out', () => B.signOut());
   if (tab === 'profile') profile(me);
   else sessions();
 };
@@ -103,13 +112,14 @@ window.SURFACES.account = (params) => {
 function profile(me, editing) {
   const el = $('#acpane');
   const nick = me.nickname || String(me.name).split(' ')[0];
-  const roles = me.roles.length ? me.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('') : '<span class="tag">Employee</span>';
+  const roles = me.roles.length ? me.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r.charAt(0).toUpperCase() + r.slice(1))}</span>`).join('') : '<span class="tag">Employee</span>';
   const from = B.sandbox() ? 'From your Google sign-in and your admin' : 'From your work account';
-  el.innerHTML = `<div class="acid"><span class="avchg static">${AVATAR(me.name, 'avimg', 88)}</span><div class="acidt"><h2>${esc(me.name)}</h2><div>${esc(me.title || '')}</div><div class="amute">${esc(me.email)}</div></div></div>
+  el.innerHTML = `<div class="acid"><button type="button" class="avchg" id="avchg" aria-label="Change avatar" title="Change avatar">${AVATAR(me.name, 'avimg', 88)}<span class="avedit">${ICON('compose', 14)}</span></button><div class="acidt"><h2>${esc(me.name)}</h2>${me.title ? `<div>${esc(me.title)}</div>` : ''}<div class="amute">${esc(me.email)}</div></div></div>
    <div class="fgroup">${frow('Preferred name', editing ? `<input id="enick" class="eminp" value="${esc(nick)}" maxlength="60" aria-label="Preferred name" style="margin:0;max-width:260px"><div class="hse" id="enke" role="alert"></div>` : esc(nick), editing ? '<button type="button" class="btn sm primary" id="enks">Save</button><button type="button" class="btn sm" id="enkc">Cancel</button>' : '<button type="button" class="btn sm" id="enk">Edit</button>')}
-   ${frow('Appearance', `<select id="etheme" aria-label="Appearance">${[['light', 'Light'], ['dark', 'Dark'], ['system', 'Match my device']].map(([k, l]) => `<option value="${k}" ${window.AUTH.THEME() === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`)}
-   ${frow('Welcome tour', '<span class="amute">The first-run introduction.</span>', '<button type="button" class="btn sm" id="atour">Replay</button>')}</div>
-   <h3 class="ach">${from} ${hint('Your admin manages these.')}</h3><div class="fgroup">${me.team ? frow('Team', esc(me.team)) : ''}${me.location ? frow('Location', esc(me.location)) : ''}${frow('Roles', `<span class="acchips">${roles}</span>`)}${frow('Clearance', esc(B.clearanceName(me.clearance)))}</div>`;
+   ${frow('Appearance', `<select id="etheme" aria-label="Appearance">${[['light', 'Light'], ['dark', 'Dark'], ['system', 'Match my device']].map(([k, l]) => `<option value="${k}" ${window.AUTH.THEME() === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`)}</div>
+   <h3 class="ach">${from} ${hint('Managed by IT. Ask IT to change these.')}</h3><div class="fgroup">${me.team ? frow('Team', esc(me.team)) : ''}${frow('Location', esc(me.location || ''))}${frow('Roles', `<span class="acchips">${roles}</span>`)}${frow('Clearance', esc(B.clearanceName(me.clearance)))}</div>
+   <h3 class="ach">Sign-in</h3><div class="fgroup"><div class="frow"><div class="frl"><b>Sign-in</b><small>Broth single sign-on</small></div><div class="frv"><span class="tag ok">Managed by IT</span></div><div class="fra"></div></div></div>
+   <h3 class="ach">Your data</h3><div class="fgroup">${dframe('Download my data', 'Your profile and questions, as a file.', '<button type="button" class="btn sm" id="adl">Download</button>')}${dframe('Delete my question history', 'Only you can see it.', '<button type="button" class="btn sm danger-o" id="aclr">Delete</button>')}${dframe('Replay onboarding', '', '<button type="button" class="btn sm" id="atour">Replay</button>')}</div>`;
   const edit = $('#enk');
   if (edit) edit.onclick = () => { profile(me, true); $('#enick').focus(); };
   const cancel = $('#enkc');
@@ -128,37 +138,93 @@ function profile(me, editing) {
   }
   $('#etheme').onchange = (e) => window.AUTH.applyTheme(e.target.value);
   $('#atour').onclick = () => window.AUTH.replayWelcome();
+  $('#adl').onclick = () => dataDownload($('#adl'));
+  $('#aclr').onclick = () => historyClear($('#aclr'));
 }
 
+/** Every page of a list endpoint. */
+async function allPages(path, params) {
+  const out = [];
+  let cursor = null;
+  do {
+    const page = await B.api.get(path, { ...params, cursor });
+    out.push(...B.rows(page));
+    cursor = B.cursorOf(page);
+  } while (cursor);
+  return out;
+}
+/** Download my data: the profile and every question, built in the browser from the same reads the app makes. */
+function dataDownload(btn) {
+  B.busy(btn, async () => {
+    const chats = await allPages('/conversations', { limit: 100 });
+    const details = [];
+    for (const c of chats.slice(0, 300)) details.push(await B.api.get('/conversations/' + c.id));
+    const me = B.S.me;
+    const data = { profile: { name: me.name, email: me.email, nickname: me.nickname, team: me.team, location: me.location, roles: me.roles }, chats: details.map((d) => ({ title: d.title, created_at: d.created_at, questions: d.turns.map((t) => t.question) })) };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    a.download = 'my-broth-data.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }, (error) => B.toast(B.problem(error)));
+}
+/** Delete my question history: every chat, after a second press. */
+function historyClear(btn) {
+  if (!btn.dataset.arm) {
+    btn.dataset.arm = '1';
+    btn.textContent = 'Confirm delete';
+    return;
+  }
+  B.busy(btn, async () => {
+    const chats = await allPages('/conversations', { limit: 100 });
+    for (const c of chats) await B.api.del('/conversations/' + c.id);
+    await B.loadChats(true);
+    B.toast('Your history was deleted');
+  }, (error) => B.toast(B.problem(error)));
+}
+
+const fade = (row) => {
+  if (!row || !row.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
+  const done = () => {};
+  return row.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.96)' }], { duration: 200, fill: 'forwards' }).finished.then(done, done);
+};
 async function sessions() {
   const el = $('#acpane');
   el.innerHTML = B.loadingBlock('Loading sessions', 3, 'dt-r');
   let list;
   try {
-    list = (await B.api.get('/me/sessions')).items;
+    list = B.rows(await B.api.get('/me/sessions'));
   } catch (error) {
     el.innerHTML = B.errorBlock(error, 'sesretry');
     $('#sesretry').onclick = sessions;
     return;
   }
   const others = list.filter((s) => !s.current);
-  el.innerHTML = `<div class="fgroup">${frow('Sign-in', 'Google', '<span class="tag ok">Single sign-on</span>')}</div>
-   <h3 class="ach">Signed in on ${list.length} ${list.length === 1 ? 'device' : 'devices'}</h3><div class="dt sesdt" style="--cols:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) 110px"><div class="dt-r dt-h"><span>Device</span><span>Signed in</span><span>Last active</span><span></span></div>${list.map((s) => `<div class="dt-r"><span class="dtp"><i class="devic" aria-hidden="true">${deviceIcon(s.user_agent)}</i><b style="font-weight:500">${esc(device(s.user_agent))}</b>${s.current ? '<span class="tag ok">This device</span>' : ''}</span><span class="dtm">${B.when(s.created_at, B.fmtDate(s.created_at))}</span><span class="dtm">${B.when(s.last_used_at, B.ago(s.last_used_at))}</span><span>${s.current ? '' : `<button type="button" class="btn sm" data-so="${s.id}">Sign out</button>`}</span></div>`).join('')}</div>
-   ${others.length ? '<div class="actions" style="margin-top:14px"><button type="button" class="btn" id="soall">Sign out of all other devices</button></div>' : ''}`;
+  const row = (s) => `<div class="ds-tr dvcols" data-id="${s.id}" role="row"><span class="dmn"><span class="addvi dvic">${deviceIcon(s.user_agent)}</span><span class="ltb"><b>${esc(device(s.user_agent))}${s.current ? '<span class="tag blue dvme">This device</span>' : ''}</b></span></span><span class="amute dvm">${B.when(s.created_at, B.fmtDate(s.created_at))}</span><span class="amute dvm">${s.current ? '<span class="adok"><i></i>Now</span>' : B.when(s.last_used_at, B.ago(s.last_used_at))}</span><span class="dvact">${s.current ? '' : `<button type="button" class="btn sm" data-so="${s.id}">Sign out</button>`}</span></div>`;
+  el.innerHTML = `
+   <div class="ds-table sesdt" role="table" aria-label="Devices"><div class="ds-tr ds-th dvcols" role="row"><span>Device</span><span class="dvm">First seen</span><span class="dvm">Last active</span><span></span></div>${list.map(row).join('')}</div>`;
   $$('[data-so]', el).forEach((b) => {
-    b.onclick = () => B.busy(b, async () => {
+    b.onclick = () => {
+      B.armPress(b, 'Confirm sign out', () => signOutOne(b));
+    };
+  });
+  function signOutOne(b) {
+    B.busy(b, async () => {
       await B.api.del(`/me/sessions/${b.dataset.so}`);
+      await fade(b.closest('.ds-tr'));
       B.toast('Device signed out');
       sessions();
     });
-  });
+  }
+  $('#acact').innerHTML = others.length ? '<button type="button" class="btn sm" id="soall">Sign out of all other devices</button>' : '';
   const all = $('#soall');
   if (all) {
-    all.onclick = () => B.busy(all, async () => {
+    all.onclick = () => B.armPress(all, 'Confirm sign out of all', () => B.busy(all, async () => {
       for (const s of others) await B.api.del(`/me/sessions/${s.id}`);
+      await Promise.all([...el.querySelectorAll('.ds-tr[data-id]')].filter((r) => !r.querySelector('.tag')).map(fade));
       B.toast('Signed out everywhere else');
       sessions();
-    });
+    }));
   }
 }
 

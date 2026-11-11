@@ -9,7 +9,7 @@ let menu=null, openFor=null, typed='', typedT=0;
 const label=s=>{ const o=s.options[s.selectedIndex]; return o?(o.dataset.label||o.textContent):''; };
 /* Option text is plain text: it is escaped before it goes into the list's HTML. */
 const esc=t=>String(t).replace(/[&<>"']/g,c=>`&#${c.charCodeAt(0)};`);
-function closeMenu(refocus){ if(!menu) return; const m=menu, f=openFor; menu=null; openFor=null; m.remove(); if(f){ f.btn.setAttribute('aria-expanded','false'); if(refocus) f.btn.focus({preventScroll:true}); } document.removeEventListener('pointerdown',outside,true); window.removeEventListener('resize',onWin); document.removeEventListener('scroll',onWin,true); }
+function closeMenu(refocus){ if(!menu) return; const m=menu, f=openFor; menu=null; openFor=null; if(window.BRAIN&&BRAIN.leaveFx) BRAIN.leaveFx(m,{opacity:0,transform:'translateY(-3px)'},90); else m.remove(); if(f){ f.btn.setAttribute('aria-expanded','false'); if(refocus) f.btn.focus({preventScroll:true}); } document.removeEventListener('pointerdown',outside,true); window.removeEventListener('resize',onWin); document.removeEventListener('scroll',onWin,true); }
 const outside=e=>{ if(menu&&!menu.contains(e.target)&&!(openFor&&openFor.btn.contains(e.target))) closeMenu(false); };
 /* A resize, or a scroll that moves the trigger, would leave the list misplaced, so it closes.
    A scroll that leaves the trigger where it was (a late event from a scroll before the list

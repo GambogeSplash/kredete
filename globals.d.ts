@@ -18,13 +18,22 @@ declare global {
   var SURFACES: Record<string, any>;
   var AUTH: any;
   var ASK: any;
+  var BROTH_LOGO: { mount: (root: ParentNode, opts?: { domain?: () => string; toast?: (m: string) => void }) => void; LOGO_LOOKUP: boolean } | undefined;
+  var BROTH_RAIL: (() => void) | undefined;
+  var GOVBADGE: { count: () => number; refresh: () => Promise<void> } | undefined;
+  var __govBadgeChanged: boolean | undefined;
+  var BOOKMARKS: { has: (turn: any) => boolean; toggle: (turn: any) => boolean } | undefined;
+  var BROTH_FX: { trashRow: (row: Element | null) => Promise<void>; renamed: (title: string) => void } | undefined;
   var SETUP: any;
+  var SOURCES: any;
   /** The Library (library.js). */
   var LIBRARY: any;
   /** The document drawer, and how a document reads in lists (document-drawer.js). */
   var DOCUMENTS: any;
   var ADMIN: any;
+  var GOV: any;
   var DOCS: Record<string, any>;
+  var HELP: any;
   /** The Support agent's shell, page registry and form helpers (agent.js). */
   var AGENT: any;
   /** The support bot widget, loaded with data-preview for the Experience preview (embed.js). */
@@ -32,6 +41,7 @@ declare global {
   var Motion: any;
   function ICON(name: string, size?: number): string;
   function SRCICON(system: string, size?: number): string;
+  var SRCLOGO: ((system: string, size?: number) => string) & { has(system: string): boolean; key(system: string): string };
   function AVATAR(name: string, cls?: string, size?: number): string;
   function PERSON(name: string, size?: number, cls?: string): string;
   interface Window {

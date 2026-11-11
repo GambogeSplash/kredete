@@ -4,9 +4,13 @@
 import { expect, test } from './fixtures.mjs';
 
 const phone = (page) => page.viewportSize().width < 900;
+/** The places: the menu on a phone, the icon rail on a desktop (the sidebar's list of places is hidden there). */
 async function nav(page) {
-  if (phone(page)) await page.getByRole('button', { name: 'Open menu' }).click();
-  return page.locator('#surfaces');
+  if (phone(page)) {
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    return page.locator('#surfaces');
+  }
+  return page.locator('#rail');
 }
 async function profileMenu(page) {
   await nav(page);
@@ -29,7 +33,7 @@ test.describe('surfaces follow roles', () => {
     await expect(menu.getByRole('menuitem', { name: 'Account settings' })).toBeVisible();
     await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
     await check(page, 'menu-employee', { mask: ['.lh-t'], chats: true });
-    for (const path of ['/admin', '/admin/people', '/agent', '/setup']) {
+    for (const path of ['/admin', '/admin/people', '/support-agent', '/setup']) {
       await page.evaluate((p) => window.BRAIN.go(p), path);
       await expect(page).toHaveURL(/\/$/);
     }
@@ -39,19 +43,21 @@ test.describe('surfaces follow roles', () => {
     const page = await open('compliance', '/admin/people');
     await expect(page).toHaveURL(/\/admin\/audit$/);
     const rail = page.getByRole('navigation', { name: 'Admin' });
-    await expect(rail.getByRole('button')).toHaveText(['Audit']);
+    await expect(rail.getByRole('button')).toHaveText(['Profile', 'Sessions', 'Sharing requests', 'Audit log', 'Sign out']);
+    await page.getByRole('button', { name: 'Filter' }).click();
     await page.getByRole('button', { name: 'Action' }).click();
     await page.getByRole('option', { name: 'Sharing requested' }).click();
+    await page.getByRole('button', { name: 'Show results' }).click();
     // The pending request, and the two the seed made for the Help centre bot's Public pages.
-    await expect(page.locator('#audt .dt-r:not(.dt-h)')).toHaveCount(3);
+    await expect(page.locator('#audt .aud-r:not(.aud-h)')).toHaveCount(3);
     await expect(page.locator('#audt .audact')).toHaveText(Array(3).fill('Sharing requested'));
     await check(page, 'audit-compliance');
     const menu = await profileMenu(page);
     await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
     // The bot admin API is admin only, and so are its screens (bot admin spec 4.1).
     await page.keyboard.press('Escape');
-    await page.evaluate(() => window.BRAIN.go('/agent'));
-    await expect(page).not.toHaveURL(/\/agent/);
+    await page.evaluate(() => window.BRAIN.go('/support-agent'));
+    await expect(page).not.toHaveURL(/\/support-agent/);
   });
 
   test('a developer has neither Admin nor the Support agent', async ({ open }) => {
@@ -62,7 +68,7 @@ test.describe('surfaces follow roles', () => {
     const menu = await profileMenu(page);
     await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
     await page.keyboard.press('Escape');
-    for (const path of ['/admin', '/agent']) {
+    for (const path of ['/admin', '/support-agent']) {
       await page.evaluate((p) => window.BRAIN.go(p), path);
       await expect(page).toHaveURL(/\/$/);
     }
@@ -70,8 +76,8 @@ test.describe('surfaces follow roles', () => {
 
   test('an admin has every admin screen', async ({ open }) => {
     const page = await open('admin', '/admin');
-    await expect(page).toHaveURL(/\/admin\/connectors$/);
-    await expect(page.getByRole('navigation', { name: 'Admin' }).getByRole('button')).toHaveText(['Connectors', 'People', 'Domains', 'Audit']);
+    await expect(page).toHaveURL(/\/admin\/workspace$/);
+    await expect(page.getByRole('navigation', { name: 'Admin' }).getByRole('button')).toHaveText(['Profile', 'Sessions', 'Workspace', 'People and access', 'Sources', 'Sharing requests', 'Domains', 'Audit log', 'Sign out']);
   });
 
   test('compliance cannot open Domains by its address', async ({ open }) => {
@@ -146,14 +152,14 @@ test.describe('domains', () => {
 
   test('the Parent picker shows the tree and never the domain itself or anything inside it', async ({ open }) => {
     const page = await open('admin', '/admin/domains');
-    await row(page, 'Payouts').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Payouts').click();
     const options = page.locator('#dmparent option');
     await expect(options).toHaveText(['None (top level)', 'Cards', 'Engineering', 'Payments', 'Collections']);
     await expect(page.locator('#dmparent')).toHaveValue(await idOf(page, 'Payments'));
     await expect(page.getByRole('dialog').locator('.ssel-btn')).toHaveText('Payments');
     await page.locator('[data-close-modal]').first().click();
 
-    await row(page, 'Cross-border').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Cross-border').click();
     await expect(page.getByRole('dialog').locator('.ssel-btn')).toHaveText('Payments / Payouts'); // the full path, once chosen
     await page.getByRole('dialog').locator('.ssel-btn').click();
     await expect(page.locator('.ssel-menu .ssel-o')).toHaveText(['None (top level)', 'Cards', 'Engineering', 'Payments', 'Collections', 'Payouts']);
@@ -166,7 +172,7 @@ test.describe('domains', () => {
     const moves = await captured(page, `${DOMAINS}/*`, 'PATCH', (route, bodies) => (bodies.length === 1
       ? problem('domains can be nested up to 6 levels')
       : { json: domainOut({ id: route.request().url().split('/').pop(), slug: 'payouts', name: 'Payouts', parent_id: cards }) }));
-    await row(page, 'Payouts').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Payouts').click();
     const dialog = page.getByRole('dialog', { name: 'Edit Payouts' });
     await dialog.locator('#dmparent').selectOption(cards);
     await dialog.getByRole('button', { name: 'Save' }).click();
@@ -180,7 +186,7 @@ test.describe('domains', () => {
     const page = await open('admin', '/admin/domains');
     const roles = await captured(page, '**/v1/admin/users/*/roles', 'PUT', () => ({ json: {} }));
     const renamed = await captured(page, `${DOMAINS}/*`, 'PATCH', (route) => ({ json: domainOut({ id: route.request().url().split('/').pop(), slug: 'cross-border', name: 'Cross-border payouts' }) }));
-    await row(page, 'Cross-border').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Cross-border').click();
     const dialog = page.getByRole('dialog', { name: 'Edit Cross-border' });
     const dami = dialog.getByRole('checkbox', { name: /Dami Bello/ });
     await expect(dami).toBeChecked();
@@ -199,7 +205,7 @@ test.describe('domains', () => {
       json: domainOut({ id: route.request().url().split('/').pop(), slug: 'payments', name: 'Payments and Transfers' }),
     }));
     const roles = await captured(page, '**/v1/admin/users/*/roles', 'PUT', () => ({ json: {} }));
-    await row(page, 'Payments').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Payments').click();
     const dialog = page.getByRole('dialog', { name: 'Edit Payments' });
     await expect(dialog.getByRole('checkbox', { name: 'Dami Bello' })).toBeChecked();
     await check(page, 'domains-edit');
@@ -231,31 +237,33 @@ test.describe('domains', () => {
     });
     const payments = await idOf(page, 'Payments');
     await captured(page, `${DOMAINS}/*`, 'PATCH', (route) => ({ json: domainOut({ id: route.request().url().split('/').pop(), slug: 'cross-border', name: 'Cross-border', parent_id: payments }) }));
-    await row(page, 'Cross-border').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Cross-border').click();
     await page.getByRole('dialog').locator('#dmparent').selectOption(payments);
     moved = true;
     const reread = page.waitForResponse('**/v1/facets');
     await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
     await reread;
     await page.evaluate(() => window.BRAIN.go('/library/payments'));
-    await expect(page.locator('#libbody [data-folder] .ltt > span')).toHaveText(['Cross-border']);
+    await expect(page.locator('#libbody [data-folder] .ltb b')).toHaveText(['Cross-border']);
   });
 
   test('with no domains, the tab explains what they are for', async ({ open, check }) => {
     const page = await open('admin', '/admin/domains', {
       before: (p) => p.route(DOMAINS, (route) => (route.request().method() === 'GET' ? route.fulfill({ json: { items: [], next_cursor: null } }) : route.fallback())),
     });
-    await expect(page.getByRole('heading', { name: 'No domains yet' })).toBeVisible();
+    await expect(page.locator('.ds-empty').getByText('No domains yet')).toBeVisible();
     await check(page, 'domains-empty');
   });
 });
 
 test.describe('connectors', () => {
+  // Each source is a card; its connection, spaces and credentials open in a dialog (they sit in a hidden holder until then).
+  const openSource = async (page, key = 'confluence') => { await page.locator(`[data-src="${key}"]`).click(); return page; };
   test('the Confluence connection, its spaces, Google Drive and the app credentials', async ({ open, check }) => {
-    const page = await open('admin', '/admin/connectors');
+    const page = await open('admin', '/admin/sources');
+    await openSource(page);
     await expect(page.getByRole('heading', { name: 'Confluence' })).toBeVisible();
-    await expect(page.locator('[data-space]')).toHaveCount(3);
-    await expect(page.getByText('Needs Google Workspace')).toBeVisible();
+    await expect(page.locator('.dt-r[data-space]')).toHaveCount(3);
     await expect(page.locator('.cnc .tag.ok')).toHaveCount(2); // both OAuth clients configured
     // The seed synced the connection as the schedule does, which starts no run (sync runs
     // spec 2): the card says only when it synced, with no run status, bar or failed pages.
@@ -267,12 +275,17 @@ test.describe('connectors', () => {
     await expect(connection.locator('.cnsrun')).toHaveText(['', '', '']); // no space has a read of its own
     await expect(connection.getByRole('button', { name: 'Sync now' })).toBeEnabled();
     await check(page, 'connectors');
-    await page.getByRole('heading', { name: 'App credentials' }).scrollIntoViewIfNeeded();
+    await page.keyboard.press('Escape');
+    await openSource(page, 'gdrive');
+    await expect(page.getByText('Needs Google Workspace')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await openSource(page, 'creds');
+    await expect(page.getByRole('heading', { name: 'App credentials' })).toBeVisible();
     await check(page, 'connectors-credentials');
   });
 
   test('an authorized connection can be authorized again, and personal spaces read as such', async ({ open }) => {
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => p.route('**/v1/admin/containers', async (route) => {
         const response = await route.fetch();
         const body = await response.json();
@@ -280,6 +293,7 @@ test.describe('connectors', () => {
         await route.fulfill({ response, json: { ...body, items: [...body.items, personal] } });
       }),
     });
+    await openSource(page);
     const connection = page.locator('.cnconn').first();
     await expect(connection.getByRole('button', { name: 'Re-authorize' })).toBeVisible();
     await expect(connection.getByText('Ada Okafor (personal space)')).toBeVisible();
@@ -287,7 +301,8 @@ test.describe('connectors', () => {
   });
 
   test("a space's default domain is chosen from the tree, each shown with its path (nested domains spec 4.6)", async ({ open }) => {
-    const page = await open('admin', '/admin/connectors');
+    const page = await open('admin', '/admin/sources');
+    await openSource(page);
     await page.getByRole('button', { name: 'Settings for Engineering (ENG)' }).click();
     const drawer = page.getByRole('dialog', { name: 'Settings for Engineering (ENG)' });
     await expect(drawer.getByRole('button', { name: 'Default domain' })).toHaveText('No domain');
@@ -301,7 +316,7 @@ test.describe('connectors', () => {
 
   test("a space's settings save only what changed, and Broth re-reads it", async ({ open, check }) => {
     const sent = [];
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => p.route('**/v1/admin/containers/*', async (route) => {
         if (route.request().method() !== 'PATCH') return route.fallback();
         const change = route.request().postDataJSON();
@@ -311,6 +326,7 @@ test.describe('connectors', () => {
         return route.fulfill({ json: { ...space, ...change } });
       }),
     });
+    await openSource(page);
     await page.getByRole('button', { name: 'Settings for Payments (PAY)' }).click();
     const drawer = page.getByRole('dialog', { name: 'Settings for Payments (PAY)' });
     await expect(drawer.getByRole('button', { name: 'Default authority' })).toBeVisible();
@@ -325,13 +341,14 @@ test.describe('connectors', () => {
 
   test("a space's settings explain what they cannot save", async ({ open }) => {
     const sent = [];
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => p.route('**/v1/admin/containers/*', (route) => {
         if (route.request().method() !== 'PATCH') return route.fallback();
         sent.push(route.request().postDataJSON());
         return route.fulfill({ status: 422, contentType: 'application/problem+json', json: { type: 'urn:broth:problem:validation_error', title: 'Validation error', status: 422, code: 'validation_error', detail: 'the default domain does not exist' } });
       }),
     });
+    await openSource(page);
     await page.getByRole('button', { name: 'Settings for Cards (CARD)' }).click();
     const drawer = page.getByRole('dialog', { name: 'Settings for Cards (CARD)' });
     await drawer.getByRole('spinbutton', { name: 'Review interval in months' }).fill('0');
@@ -344,7 +361,7 @@ test.describe('connectors', () => {
   });
 
   test('a connection says what to fix about the indexer group', async ({ open, check }) => {
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => p.route('**/v1/admin/connections', async (route) => {
         if (route.request().method() !== 'GET') return route.fallback();
         const response = await route.fetch();
@@ -353,13 +370,14 @@ test.describe('connectors', () => {
         return route.fulfill({ response, json: body });
       }),
     });
+    await openSource(page);
     await expect(page.locator('.cnwarn')).toHaveText('Only the indexer account should be in broth-indexer. Also in it: Kofi Asante, Eve Mensah. How to fix it');
-    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/docs/setting-up-spaces#warn-indexer-group-members');
+    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/help/setting-up-spaces#warn-indexer-group-members');
     await check(page, 'connection-warnings');
   });
 
   test('a connection says when the indexer group is missing', async ({ open }) => {
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => p.route('**/v1/admin/connections', async (route) => {
         if (route.request().method() !== 'GET') return route.fallback();
         const response = await route.fetch();
@@ -368,8 +386,9 @@ test.describe('connectors', () => {
         return route.fulfill({ response, json: body });
       }),
     });
+    await openSource(page);
     await expect(page.locator('.cnwarn')).toHaveText('Create a broth-indexer group containing only the indexer account, so restricted pages can opt in. How to fix it');
-    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/docs/setting-up-spaces#warn-indexer-group-missing');
+    await expect(page.locator('.cnwarn').getByRole('link', { name: 'How to fix it' })).toHaveAttribute('href', '/help/setting-up-spaces#warn-indexer-group-missing');
   });
 
   test('failed pages load a page at a time when the list opens', async ({ open }) => {
@@ -379,7 +398,7 @@ test.describe('connectors', () => {
       { items: [{ external_id: 'p3', title: null, url: null, error: null, change: 'content' }], next_cursor: null },
     ];
     const asked = [];
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: async (p) => {
         await p.route('**/v1/admin/connections', async (route) => {
           if (route.request().method() !== 'GET') return route.fallback();
@@ -400,6 +419,7 @@ test.describe('connectors', () => {
         });
       },
     });
+    await openSource(page);
     const connection = page.locator('.cnconn').first();
     await expect(connection.locator('.cnsync')).toHaveText(/^Synced, 3 failed (just now|\d+ min ago)\s·\s9\spages updated$/);
     expect(asked).toEqual([]); // nothing is fetched until the list opens
@@ -452,12 +472,13 @@ test.describe('connectors', () => {
   ];
 
   test('a sync that could not read some pages says how many, and lists them', async ({ open, check }) => {
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => withRuns(p, {
         connection: (c) => ({ ...c, last_run: run({ connection_id: c.id, status: 'partial', pages_total: 9, pages_done: 7, pages_failed: 2, failing: 2, updated: 6, removed: 1 }) }),
         failures: FAILED,
       }),
     });
+    await openSource(page);
     const connection = page.locator('.cnconn').first();
     await expect(connection.locator('.cnsync')).toHaveText(/^Synced, 2 failed (just now|\d+ min ago)\s·\s6\spages updated, 1\sremoved$/);
     await expect(connection.locator('.cnsync .tag.warn')).toHaveText('Synced, 2 failed');
@@ -472,13 +493,14 @@ test.describe('connectors', () => {
 
   test("a space's read that could not read a page links to it, until a later sync reads it", async ({ open, check }) => {
     let fixed = false;
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => withRuns(p, {
         space: (s) => (s.path !== 'Cards (CARD)' ? s : { ...s, last_run: run({ trigger: 'space_read', connection_id: s.connection_id, container_id: s.id, status: 'partial', tasks_total: 1, tasks_done: 1, pages_total: 2, pages_done: 1, pages_failed: 1, failing: fixed ? 0 : 1, updated: 1 }) }),
         failures: FAILED.slice(1),
       }),
     });
-    const cards = page.locator('[data-space]').filter({ hasText: 'Cards (CARD)' });
+    await openSource(page);
+    const cards = page.locator('.dt-r[data-space]').filter({ hasText: 'Cards (CARD)' });
     await expect(cards.locator('.cnsrun')).toHaveText('1 page · 1 failed');
     await check(page, 'connectors-space-failed');
     await cards.getByRole('button', { name: '1 failed' }).click();
@@ -489,13 +511,14 @@ test.describe('connectors', () => {
     // A later Sync now read the page: the space's own count stays, its amber state goes (spec 3.4.1).
     fixed = true;
     await page.evaluate(() => window.BRAIN.go('/admin/people'));
-    await page.evaluate(() => window.BRAIN.go('/admin/connectors'));
+    await page.evaluate(() => window.BRAIN.go('/admin/sources'));
+    await openSource(page);
     await expect(cards.locator('.cnsrun')).toHaveText('2 pages');
   });
 
   test('a sync that the connection failing ended says so under the connection error', async ({ open, check }) => {
     // As the worker leaves a connection after Atlassian refused its grant (sync runs spec 5.5).
-    const page = await open('admin', '/admin/connectors', {
+    const page = await open('admin', '/admin/sources', {
       before: (p) => withRuns(p, {
         connection: (c) => ({
           ...c,
@@ -505,6 +528,7 @@ test.describe('connectors', () => {
         }),
       }),
     });
+    await openSource(page);
     const connection = page.locator('.cnconn').first();
     await expect(connection.locator('.cnstate .tag.bad')).toHaveText('Failing');
     await expect(connection.locator('.cnerr')).toHaveText('Atlassian refused the refresh token; an admin must authorize again');
@@ -514,7 +538,7 @@ test.describe('connectors', () => {
   });
 
   test('a failed Confluence authorization says what to do', async ({ open, check }) => {
-    const page = await open('admin', '/admin/connectors?error=invalid_state');
+    const page = await open('admin', '/admin/sources?error=invalid_state');
     await expect(page.getByRole('alert')).toHaveText('The Confluence authorization expired or was started in another browser. Authorize again.');
     await expect(page).toHaveURL(/\/admin\/connectors$/);
     await check(page, 'connectors-authorization-failed');
@@ -531,7 +555,7 @@ test.describe('governance', () => {
   test('an approver can decide on a request', async ({ open, check }) => {
     const page = await open('admin', '/governance');
     const request = page.locator('.govr').filter({ hasText: 'Engineering handbook' });
-    await expect(request).toContainText('requested by Eve Mensah');
+    await expect(request.locator('.adrqm')).toContainText('Eve Mensah');
     await expect(request.getByRole('button', { name: 'Approve' })).toBeVisible();
     await expect(request.getByRole('button', { name: 'Reject' })).toBeVisible();
     await check(page, 'governance-approver');
@@ -540,7 +564,7 @@ test.describe('governance', () => {
   test('the requester follows their request but cannot approve it', async ({ open, check }) => {
     const page = await open('employee', '/governance');
     const request = page.locator('.govr').filter({ hasText: 'Engineering handbook' });
-    await expect(request).toContainText('requested by you');
+    await expect(request.locator('.adrqm')).toContainText('you');
     await expect(request.getByRole('button')).toHaveText(['Engineering handbook']);
     await check(page, 'governance-requester');
   });
@@ -571,7 +595,7 @@ test.describe('people', () => {
         await route.fulfill({ response, json: { ...body, items } });
       }),
     });
-    const tag = finn(page).locator('.tag');
+    const tag = finn(page).locator('.adroles .tag');
     await expect(tag).toHaveText('Owns Cross-border');
     await expect(tag).toHaveAttribute('title', 'Payments / Payouts / Cross-border');
 
@@ -624,7 +648,7 @@ test.describe('people', () => {
     await finn(page).getByRole('button', { name: 'Edit' }).click();
     await dialog.getByRole('button', { name: 'Reactivate' }).click();
     await expect(finn(page).getByText('Suspended')).toHaveCount(0);
-    await expect(finn(page).locator('.acchips')).toHaveText('Employee');
+    await expect(finn(page).locator('.adroles')).toHaveText('Employee');
   });
 
   test('an invitation is created, listed and revoked', async ({ open, check }) => {
@@ -639,18 +663,18 @@ test.describe('people', () => {
     await check(page, 'invite');
     await dialog.getByRole('button', { name: 'Invite' }).click();
     await expect(page.locator('#toast')).toContainText('Invited grace.obi@kredete.com');
-    await expect(page.getByRole('tab', { name: 'Invitations' })).toHaveAttribute('aria-selected', 'true');
-    const row = page.locator('#invlist .dt-r').filter({ hasText: 'grace.obi@kredete.com' });
-    await expect(row).toContainText('Waiting to sign in');
+    const row = page.locator('.adrow.pend').filter({ hasText: 'grace.obi@kredete.com' });
+    await expect(row).toContainText('Pending');
     await check(page, 'invitations');
-    await row.getByRole('button', { name: 'Revoke' }).click();
+    await row.getByRole('button', { name: 'Cancel' }).click();
     await row.getByRole('button', { name: 'Confirm' }).click();
-    await expect(row).toContainText('Revoked');
+    await expect(row).toHaveCount(0);
   });
 
   test('a Confluence account is linked to a person, then unlinked', async ({ open, check }) => {
     const page = await open('admin', '/admin/people');
-    await page.getByRole('tab', { name: 'Confluence accounts' }).click();
+    await page.getByRole('button', { name: /Filter people/ }).click();
+    await page.getByRole('option', { name: 'Confluence accounts' }).click();
     const sam = page.locator('.lnrow').filter({ hasText: 'Sam Rivera' });
     await expect(sam).toBeVisible();
     await check(page, 'confluence-accounts');
@@ -670,10 +694,12 @@ test.describe('people', () => {
 
 test('the audit log filters by action', async ({ open, check }) => {
   const page = await open('admin', '/admin/audit');
-  await expect(page.locator('#audt .dt-r:not(.dt-h)').first()).toBeVisible();
+  await expect(page.locator('#audt .aud-r:not(.aud-h)').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Filter' }).click();
   await page.getByRole('button', { name: 'Action' }).click();
   await page.getByRole('option', { name: 'Connection created' }).click();
-  await expect(page.locator('#audt .dt-r:not(.dt-h)')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Show results' }).click();
+  await expect(page.locator('#audt .aud-r:not(.aud-h)')).toHaveCount(1);
   await expect(page.locator('#audt .audact')).toHaveText('Connection created');
   await check(page, 'audit');
 });

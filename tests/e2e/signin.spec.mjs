@@ -5,7 +5,7 @@ import { expect, test } from './fixtures.mjs';
 const REASONS = {
   not_provisioned: 'You do not have access yet',
   suspended: 'Your access is paused',
-  wrong_domain: 'That is not a Kredete account',
+  wrong_domain: 'That is not a Broth account',
   email_not_verified: 'Google has not verified that email address',
   invalid_state: 'That sign-in expired',
   invalid_token: 'Google could not confirm who you are',
@@ -15,7 +15,7 @@ const REASONS = {
 
 test('the sign-in screen', async ({ open, check }) => {
   const page = await open(null, '/signin');
-  await expect(page.getByRole('heading', { name: 'Sign in to Kredete' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute('href', '/v1/auth/google/start');
   await check(page, 'signin');
 });
@@ -59,7 +59,7 @@ test('workspace mode: no setup endpoints, straight to sign-in', async ({ open, c
     before: (p) => p.route('**/v1/setup/status', (route) => route.fulfill({ status: 404, contentType: 'application/problem+json', body: '{"title":"Not found","status":404}' })),
   });
   await expect(page).toHaveURL(/\/signin$/);
-  await expect(page.getByText('Continue with your Kredete Google account.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Continue with Google' })).toBeVisible();
   await check(page, 'signin-workspace');
 });
 
@@ -73,7 +73,7 @@ test('when Broth cannot be reached, the boot screen offers a retry', async ({ op
   await check(page, 'boot-error');
   fail = false;
   await page.getByRole('button', { name: 'Try again' }).click();
-  await expect(page.getByRole('heading', { name: 'Sign in to Kredete' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
 });
 
 test('when Broth answers with a problem of its own, the boot screen shows it', async ({ open }) => {
@@ -89,19 +89,28 @@ test('when Broth answers with a problem of its own, the boot screen shows it', a
 });
 
 test('the first-run welcome', async ({ open, check, seed }) => {
-  const page = await open('compliance', '/', { welcome: true });
+  // Finishing the tour stores onboarding.welcomed through PATCH /me; here it is answered, not saved, so the
+  // shared account is still new for the next project (the browser's own flag keeps the reload below quiet).
+  const patched = [];
+  const page = await open('compliance', '/', {
+    welcome: true,
+    before: (p) => p.route('**/v1/me', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      const change = route.request().postDataJSON();
+      patched.push(change);
+      const me = await (await route.fetch({ method: 'GET' })).json();
+      return route.fulfill({ json: { ...me, ...change } });
+    }),
+  });
   await expect(page.getByRole('heading', { name: 'Is this you?' })).toBeVisible();
   await expect(page.getByText(seed.people.compliance.email)).toBeVisible();
   await check(page, 'welcome-1');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { name: 'How should it look?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ask your first question' })).toBeVisible();
   await check(page, 'welcome-2');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { name: 'What Broth can read for you' })).toBeVisible();
-  await expect(page.getByText('Confluence')).toBeVisible();
-  await check(page, 'welcome-3');
   await page.getByRole('button', { name: 'Start asking' }).click();
   await expect(page.getByRole('textbox', { name: 'Ask a question' })).toBeVisible();
+  await expect.poll(() => patched.some((c) => c.onboarding && c.onboarding.welcomed === true)).toBe(true);
   await page.reload();
   await expect(page.getByRole('textbox', { name: 'Ask a question' })).toBeVisible(); // not shown again
 });

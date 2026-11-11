@@ -67,7 +67,7 @@ async function checkSecurityHeaders() {
     `script-src 'self' ${[...hashes].sort().join(' ')}; ` +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     'font-src https://fonts.gstatic.com; ' +
-    "img-src 'self' data:; " +
+    "img-src 'self' data: https://t3.gstatic.com; " +
     "connect-src 'self'; " +
     "frame-ancestors 'none'; " +
     "base-uri 'none'; " +

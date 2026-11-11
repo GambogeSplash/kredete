@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kredete Broth design system</title>
+<title>Broth design system</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="styles.css">
@@ -35,9 +35,9 @@ body{background:var(--surface);color:var(--ink);font:400 var(--fs-md)/var(--lh-b
 </style>
 </head>
 <body>
-<script>try{var t=localStorage.getItem("brain-theme");if(t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.mode="dark"}catch(e){}</script>
+<script>try{var t=localStorage.getItem("brain-theme");if(!t||t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.mode="dark"}catch(e){}</script>
 <main class="ds">
-  <div class="ds-top"><h1>Kredete Broth design system</h1><button class="btn sm" id="dstheme" type="button">Dark mode</button></div>
+  <div class="ds-top"><h1>Broth design system</h1><button class="btn sm" id="dstheme" type="button">Dark mode</button></div>
   <p class="ds-lead">Tokens first, components second, pages last. Every value you see on a screen comes from <code>tokens.css</code>. This page reads that file live, so it cannot drift from the app.</p>
 
   <h2>Color</h2>

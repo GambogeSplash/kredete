@@ -235,7 +235,7 @@ test('a revoked key, or a site the product does not allow, leaves no widget', as
     before: (page) => page.on('console', (m) => { if (m.type() === 'warning') warnings.push(m.text()); }),
   });
   await expect(revoked.locator('#kredete-help')).toHaveCount(0);
-  await expect.poll(() => warnings).toContain('Kredete help is unavailable on this page.');
+  await expect.poll(() => warnings).toContain('Broth help is unavailable on this page.');
 
   // The same page from an origin the product does not list: the preflight is refused.
   const elsewhere = await open(null, new URL(demo(seed), revoked.url().replace('localhost', '127.0.0.1')).href);

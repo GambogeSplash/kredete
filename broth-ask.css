@@ -1,0 +1,133 @@
+/* broth-ask.css: the Ask home and conversation in the Broth look.
+   The mark and greeting, the avatar that opens the sources panel, example cards, and the
+   rename underline. Entrances use CSS only (life.js leaves .lh-sug alone) so nothing is faded twice. */
+
+/* the home fills the main column; the sources panel is a sibling that starts closed */
+.cx>.cxmain>.lhome{flex:1}
+@media (min-width:901px){.cx>.cxmain>.lhome{min-height:0}}
+@media (max-width:900px){.lhome .dform{border-radius:18px}}
+.cx .lhome>.dchead{display:none}
+.lhome{position:relative}
+
+/* the wordmark above the greeting: a B first, then the name writes itself (wordmark.js) */
+.lh-in .lm{display:grid;place-items:center;align-content:normal;margin:0 auto var(--s-3);min-height:0;opacity:.95}
+.lh-in .lm svg.lmw{color:var(--brand);overflow:visible}
+
+/* the Broth avatar at the top right: opens the sources panel while it is closed */
+.hometog{position:absolute;top:var(--s-3);right:var(--s-3);z-index:3;width:40px;height:40px;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);display:grid;place-items:center;cursor:pointer;transition:background var(--dur-fast),border-color var(--dur-fast),transform var(--dur-fast)}
+.hometog:hover{background:var(--fill-1,var(--wash));border-color:var(--line-strong,var(--line))}
+.hometog:active{transform:scale(.96)}
+.hometog:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.hav{position:relative;width:26px;height:26px;display:block}
+.hav img{width:100%;height:100%;object-fit:contain;display:block}
+.hdot{position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:50%;background:var(--green,#2f9e55);box-shadow:0 0 0 2px var(--surface)}
+.cx:not(.closed) .hometog{display:none}
+
+/* the Broth radius scale on the Ask screens: 8 tags, 12 buttons and fields, 18 cards, 24 composer */
+#app.cxapp{--r-sm:8px;--r-md:12px;--r-lg:18px;--r-xl:24px;--r-2xl:28px}
+.lhome .dform{border-radius:28px}
+#app.cxapp .dsend{background:linear-gradient(180deg,#6b77dd,#5662cb)}
+#app.cxapp .dsend:hover{background:linear-gradient(180deg,#7580e3,var(--brand))}
+
+/* the panel on the home view: Broth's card, then the sources list */
+.cxside{position:relative}
+.cxclose{position:absolute;top:var(--s-3);right:var(--s-3);z-index:2;width:32px;height:32px;display:grid;place-items:center;padding:0;border-radius:12px}
+.cxside .cxclose{width:32px!important;min-width:0!important;height:32px!important;left:auto!important;right:var(--s-3)!important}
+.cxtabs .ltab.ic{width:auto!important;min-width:44px;padding:0 12px!important;display:inline-flex!important;align-items:center;justify-content:center;gap:8px}
+.cxtabs .ltab.ic{height:34px;min-height:34px}
+.cxtabs .ltab .ltl{display:none;font-size:13px;font-weight:500;white-space:nowrap}
+.cxtabs .ltab.on .ltl{display:inline}
+@media (min-width:901px){.cxtabs{padding-left:16px!important;padding-right:16px!important}}
+.cxpro{display:flex;flex-direction:column;align-items:center;gap:var(--s-1);padding:var(--s-6) 0 var(--s-4)}
+.cxav{width:100px;height:100px;border-radius:50%;background:#eef0ff;display:grid;place-items:center;overflow:hidden;margin-bottom:var(--s-2)}
+.cxav img{width:82px;height:auto;margin-top:10px}
+@media (min-width:901px){.cxav{border-radius:32%;corner-shape:squircle}}
+html[data-mode=dark] .cxav{filter:invert(1) hue-rotate(180deg)}
+.cxav img{filter:none!important}
+.cxname{font-size:var(--fs-xl);font-weight:600;letter-spacing:-.01em}
+.cxst{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-size:var(--fs-md)}
+.cxst i{width:8px;height:8px;border-radius:50%;background:var(--mute)}
+.cxst.on i{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+
+/* example question cards: ask.js enters them (the same motion as life.js rows), so no CSS entrance here */
+.lh-in .lh-sug{animation:none}
+/* the prototype's cards do not lift on hover: its entrance animation holds the resting transform. Border, shadow and arrow carry the hover. */
+@media(hover:hover){.lh-in .lh-sug:hover{transform:none}}
+
+.lh-sug:focus-visible{outline:2px solid var(--brand);outline-offset:2px;box-shadow:none}
+
+/* renaming a chat: a thin line draws under the new title, then fades */
+.dtitle{position:relative}
+.dtitle.drawn::after{content:"";position:absolute;left:var(--s-2);right:var(--s-2);bottom:1px;height:1px;background:var(--brand);transform-origin:left center;animation:ttdraw 1.2s var(--ease-out) forwards}
+@keyframes ttdraw{0%{transform:scaleX(0);opacity:1}50%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.dtitle.drawn::after{animation:none;opacity:0}}
+
+@media (max-width:900px){.lhome .dform{border-radius:18px}}
+
+/* conversation: a sent message is our purple, dimmed and translucent, with a soft stroke */
+#app .umsg{background:rgba(94,106,210,.58)!important;border:1px solid rgba(150,160,245,.5);color:#fff!important;box-shadow:0 8px 22px -14px rgba(94,106,210,.7)}
+#app .umsg em{display:block;margin-top:2px;font-style:normal;font-size:var(--fs-xs,12px);color:rgba(255,255,255,.72)!important}
+#app .umsg.editing{border-color:var(--line)}
+.cxcomp .dform{border-radius:28px}
+@media (max-width:900px){.cxcomp .dform{border-radius:22px}}
+html[data-mode=dark] #app .umsg{filter:invert(1) hue-rotate(180deg)}
+html[data-mode=dark] #app .umsg.editing{filter:none}
+
+/* a retry link in a notice reads as the prototype's plain link, never underlined */
+.cxapp .notice .link,.cxapp .banner .link{text-decoration:none;color:var(--brand)}
+
+/* framed empty and error states (shared spec) */
+.ds-empty{display:grid;justify-items:center;gap:var(--s-2);text-align:center;padding:48px var(--s-6);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--fill-1);color:var(--mute);margin:var(--s-4) 0}
+.ds-empty .ds-empty-ic{width:44px;height:44px;border-radius:var(--r-md);background:var(--fill-2);color:var(--ink-2);display:grid;place-items:center;margin-bottom:var(--s-2)}
+.ds-empty b{color:var(--ink);font-weight:500;font-size:var(--fs-md)}
+.ds-empty p{margin:0;font-size:var(--fs-sm)}
+.ds-empty .btn{margin-top:var(--s-2)}
+.ds-empty.ds-empty-sm{padding:var(--s-6) var(--s-4);margin:var(--s-3) var(--s-2)}
+.cxbody>.ds-empty,.cxbody .gall+.glist>.ds-empty{margin:var(--s-3)}
+.lh-feed-empty .ds-empty{margin:var(--s-4) 0 0;padding:var(--s-6)}
+.thempty{margin:0}
+
+.cxh{display:flex;align-items:center;gap:var(--s-2)}
+
+/* attach and dictate in the composer: the prototype's rules */
+.dic{width:30px;height:30px;border:0;background:none;border-radius:var(--r-md);color:var(--mute);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.dic:hover{background:var(--wash);color:var(--ink)}
+.dic.rec{background:var(--danger-soft);color:var(--danger);position:relative}
+.dic.rec::after{content:"";position:absolute;right:5px;top:5px;width:7px;height:7px;border-radius:50%;background:var(--danger);animation:recp 1.1s ease-in-out infinite}
+.dfiles,.umf{display:flex;flex-wrap:wrap;gap:var(--s-2)}
+.dfiles:not(:empty){margin:0 0 var(--s-2)}
+.dform.drop{border-color:var(--brand);box-shadow:0 0 0 3px #e4e6fb}
+.pm-n{margin:var(--s-1) var(--s-2) 6px;color:var(--mute);font-size:var(--fs-xs)}
+@media (prefers-reduced-motion:reduce){.dic.rec::after{animation:none}}
+.dic,.dchip{border:1px solid var(--line)!important;background:var(--surface)!important;border-radius:var(--r-md)!important;box-shadow:0 1px 1px rgba(20,22,40,.03);transition:background var(--dur-fast),border-color var(--dur-fast),color var(--dur-fast),transform var(--dur-fast)}
+.dic{width:32px;height:32px}
+.dic:hover,.dchip:hover{background:var(--brand-wash)!important;border-color:var(--brand-line)!important;color:var(--brand-strong)}
+.dic:active,.dchip:active{transform:scale(.96)}
+.dic:focus-visible,.dchip:focus-visible{box-shadow:var(--ring)}
+.dic.rec{background:var(--danger-soft)!important;border-color:var(--danger-line)!important;color:var(--danger)}
+.dfiles,.umf{display:flex;flex-wrap:wrap;gap:var(--s-2)}
+.dfiles:not(:empty){margin:0 0 var(--s-3)}
+.att{display:inline-flex;align-items:center;position:relative;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-lg);max-width:260px;transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
+.att:hover{border-color:var(--brand-line);box-shadow:0 4px 12px -6px rgba(94,106,210,.3)}
+.atb{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-2) var(--s-7) var(--s-2) var(--s-2);border:0;background:none;text-align:left;cursor:pointer;min-width:0;width:auto;height:auto;border-radius:var(--r-lg);color:var(--ink)}
+.atb:focus-visible{box-shadow:var(--ring);outline:0}
+.athm{width:38px;height:38px;border-radius:var(--r-md);flex:none;object-fit:cover;display:grid;place-items:center;background:var(--wash)}
+.atile{background:color-mix(in srgb,var(--c) 14%,var(--surface));color:var(--c);font:700 10.5px/1 var(--font);letter-spacing:.03em}
+.athm.lib{background:var(--wash)}
+.atx{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.atx b{font-weight:500;font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+.atx small{font-size:var(--fs-xs);color:var(--mute)}
+.atrm{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:var(--r-sm);border:0;background:none;color:var(--mute-2);display:grid;place-items:center;padding:0;cursor:pointer}
+.atrm:hover{background:var(--wash);color:var(--ink)}
+.umf .atb{padding-right:var(--s-3)}
+.dfiles{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding-bottom:var(--s-2);margin-bottom:var(--s-2);scrollbar-width:thin;scrollbar-color:#d4d4d8 transparent;scroll-snap-type:x proximity}
+.dfiles .att{flex:none;scroll-snap-align:start}
+.umf .att{flex:none}
+@media (max-width:900px){
+.dic,.dchip{min-height:40px}
+.dic{width:40px;height:40px}
+.dfiles{margin-bottom:var(--s-2)}
+.atrm{opacity:1!important}
+.att:active{transform:scale(.97);transition:transform .1s}
+}
+@keyframes recp{50%{opacity:.25;transform:scale(.7)}}
