@@ -1,0 +1,44 @@
+/* Broth design system: layout, surfaces, table, popover, field message.
+   Ported from the Broth prototype. Use these classes; a new look is a named modifier, never a one-off. */
+/* ===== Design system: layout and surfaces. Use these; a new look is a named modifier, never a new one-off. =====
+   .ds-grid .c2 .c3 .c4   equal columns, gap s-3, steps down to 2 then 1 column as the width shrinks
+   .ds-card               the one bordered surface (radius lg, surface fill, padding s-4)
+     .lift                hover lift for cards that can be opened
+     .add                 dashed "add another" tile, the first cell of a grid
+   .ds-head               page title row; .ds-act holds its right-hand controls (view toggle, one primary action)
+   .ds-table .ds-tr .ds-th the list view of any grid: header row, one clickable row per item (pair with the .seg toggle) */
+.ds-grid{display:grid;gap:var(--s-3);grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));align-items:start}
+.ds-grid.c2{--cols:2}.ds-grid.c3{--cols:3}.ds-grid.c4{--cols:4}
+@media (max-width:1180px){.ds-grid.c3,.ds-grid.c4{--cols:2}}
+@media (max-width:720px){.ds-grid.c2,.ds-grid.c3,.ds-grid.c4{--cols:1}}
+.ds-card{position:relative;box-sizing:border-box;padding:var(--s-4);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);transition:transform var(--dur-base) var(--ease-out),border-color var(--dur-fast),background var(--dur-fast)}
+.ds-card.lift:hover{transform:translateY(-2px);border-color:var(--mute)}
+.ds-card.add{display:grid;grid-template-columns:auto 1fr;column-gap:var(--s-3);row-gap:0;align-items:center;align-content:center;text-align:left;border-style:dashed;background:transparent;color:var(--mute);cursor:pointer;font:inherit}
+.ds-card.add .ds-ic{grid-row:span 2}.ds-grid{align-items:stretch}
+.ds-card.add:hover{border-color:var(--mute);background:var(--fill-1)}
+.ds-card.add b{color:var(--ink);font-weight:500}.ds-card.add small{font-size:var(--fs-xs)}
+.ds-card.add .ds-ic{margin:0;border-radius:50%}
+.ds-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3)}
+
+/* design system: field message (inline, under a field or a record). .bad is the error tone. */
+.ds-msg{margin:6px 0 0;min-height:0;font-size:var(--fs-xs);color:var(--mute);line-height:1.4}.ds-msg:empty{display:none}.ds-msg.bad{color:#d4543d}
+.eminp[aria-invalid=true]{border-color:#d4543d}
+/* design system: modal body rhythm */
+.dmbody{display:grid;gap:var(--s-4)}.dmbody>p{margin:0}.dmbody .actions{margin-top:var(--s-1)}
+
+.ds-act{display:flex;align-items:center;gap:var(--s-3)}
+/* design system: table (the list view). Columns come from the page, e.g. .dmcols. */
+.ds-table{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);overflow:hidden}
+.ds-tr{display:grid;align-items:center;gap:var(--s-4);width:100%;box-sizing:border-box;padding:0 var(--s-4);min-height:56px;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;font-size:var(--fs-sm)}
+.ds-tr:first-child{border-top:0}
+.ds-th{min-height:40px;color:var(--mute);font-size:var(--fs-xs);background:var(--fill-1)}
+button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:hover{background:var(--fill-1)}
+.ds-tr.ds-add{color:var(--mute)}.ds-tr.ds-add b{color:var(--ink);font-weight:500}
+.dmn{display:flex;align-items:center;gap:var(--s-3);min-width:0}.dmn b{font-weight:500;font-size:var(--fs-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dmn .ds-ic{margin:0;width:30px;height:30px}.dmn .adfav img{width:20px;height:20px}
+
+.dmlab{margin:0 0 var(--s-2);font-size:var(--fs-xs);color:var(--mute)}
+/* design system: popover. Opens under the control that asked for it, never in the middle of the page. */
+.ds-pop{position:fixed;z-index:60;width:min(440px,calc(100vw - 24px));box-sizing:border-box;padding:var(--s-4);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:0 12px 32px rgba(0,0,0,.28);animation:dspop .14s var(--ease-out)}
+@keyframes dspop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ds-pop{animation:none}}
+.ds-ic{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:var(--r-md);background:var(--fill-1);color:var(--ink)}
