@@ -15,19 +15,25 @@ const $ = (s, r = document) => r.querySelector(s);
 /** @type {(s: string, r?: ParentNode) => any[]} */
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
+/** A framed empty or error state (the shared .ds-empty card). */
+const empty = (icon, title, line, action) => `<div class="ds-empty"><span class="ds-empty-ic">${ICON(icon, 20)}</span><b>${esc(title)}</b>${line ? `<p>${line}</p>` : ''}${action || ''}</div>`;
 const S = () => B.S;
 const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- state ---------- */
+/** Whether a conversation shows the sources panel: open on wide screens until it is closed. */
+function panelOn() { const p = askState().panel; return p === null ? innerWidth >= 1200 : !!p; }
 function askState() {
   const s = S();
   if (!s.ask) {
     s.ask = {
-      panel: false,
+      panel: null, // null: the default (open from 1200 px up, like the prototype); true or false once chosen
+      homeOpen: false, // the panel on the home view: closed until the Broth avatar opens it
       pt: 'answer',
       focus: null, // the turn whose sources the panel shows (defaults to the last answer)
       filters: { system: '', domain: '', when: '' },
       exclude: [],
+      files: [], // chips in the composer: kept in this browser, never sent
       docs: { q: '', items: [], next: null, loading: false, error: null, loaded: false },
     };
   }
@@ -145,6 +151,7 @@ async function ask(question) {
     catch (error) { B.toast(B.problem(error)); giveBack(q); return; }
     finally { creating = false; sending(false); }
     conv = S().conv = Object.assign({}, created, { turns: [], loaded: true });
+    askState().panel = null; // a new chat starts with the default panel, as in the prototype
     B.touchChat(created);
   }
   const turn = { id: null, question: q, created_at: new Date().toISOString(), status: 'streaming', text: '', stage: 'searching', searched: 0, answer: null, error: null, feedback: null, reported: false };
@@ -218,42 +225,148 @@ function sourcesLabel() {
   const narrowed = askState().filters.system || askState().filters.domain || askState().filters.when;
   return `${narrowed ? 'Filtered · ' : ''}${n} ${n === 1 ? 'source' : 'sources'}`;
 }
+/* ---------- attached files and dictation: kept in this browser, never sent (the API has no file endpoint) ---------- */
+const FT = { pdf: ['PDF', '#e5484d'], csv: ['CSV', '#26a269'], tsv: ['TSV', '#26a269'], xlsx: ['XLS', '#26a269'], xls: ['XLS', '#26a269'], doc: ['DOC', '#3b82f6'], docx: ['DOC', '#3b82f6'], ppt: ['PPT', '#e2784a'], pptx: ['PPT', '#e2784a'], txt: ['TXT', '#7a7d85'], md: ['MD', '#7a7d85'], json: ['JSON', '#d4a30a'], zip: ['ZIP', '#7a7d85'] };
+const IMG_EXT = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'heic', 'avif'];
+const fmtSize = (n) => (n < 1024 ? n + ' B' : n < 1048576 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(1) + ' MB');
+function attInfo(x) {
+  const ext = (String(x.name).split('.').pop() || '').toLowerCase();
+  const isImg = /^image\//.test(x.type || '') || IMG_EXT.includes(ext);
+  return { ext, isImg, label: isImg ? 'Image' : (FT[ext] ? FT[ext][0] : (ext ? ext.toUpperCase().slice(0, 4) : 'File')) };
+}
+function attCard(x, i) {
+  const inf = attInfo(x);
+  const col = (FT[inf.ext] || [0, '#7a7d85'])[1];
+  const thumb = inf.isImg && x.data ? `<img class="athm" src="${esc(x.data)}" alt="">` : `<span class="athm atile" style="--c:${col}">${inf.isImg ? ICON('image', 16) : esc(inf.label)}</span>`;
+  return `<span class="att"><span class="atb">${thumb}<span class="atx"><b>${esc(x.name)}</b><small>${esc(inf.label + (x.size ? ' · ' + fmtSize(x.size) : ''))}</small></span></span><button type="button" class="atrm" data-rmf="${i}" aria-label="Remove ${esc(x.name)}">${ICON('x', 12)}</button></span>`;
+}
+function filesHtml() {
+  const f = askState().files;
+  return f.length ? `<div class="dfiles">${f.map(attCard).join('')}</div>` : '';
+}
+function drawFiles() {
+  const d = $('#dfiles');
+  if (!d) return;
+  d.innerHTML = filesHtml();
+  $$('[data-rmf]', d).forEach((b) => { b.onclick = () => { askState().files.splice(Number(b.dataset.rmf), 1); drawFiles(); }; });
+}
+function addFiles(list) {
+  const f = askState().files;
+  [...list].forEach((x) => {
+    if (f.length >= 5) return;
+    if (x.size > 10 * 1024 * 1024) { B.toast(x.name + ' is over 10 MB'); return; }
+    const ent = { name: x.name, size: x.size, type: x.type || '', data: '' };
+    f.push(ent);
+    if (/^image\//.test(x.type) && x.size < 4 * 1024 * 1024) { // data: URLs pass the page's image policy, blob: URLs do not
+      const fr = new FileReader();
+      fr.onload = () => { ent.data = String(fr.result || ''); drawFiles(); };
+      fr.readAsDataURL(x);
+    }
+  });
+  drawFiles();
+}
+/** @type {any} */
+let rec = null;
+function stopMic() { if (rec) { try { rec.stop(); } catch (e) { /* already stopped */ } } }
+function toggleMic(btn, ta) {
+  const SR = /** @type {any} */ (window).SpeechRecognition || /** @type {any} */ (window).webkitSpeechRecognition;
+  if (!SR) return;
+  if (rec) { stopMic(); return; }
+  const r = new SR();
+  rec = r;
+  r.lang = navigator.language || 'en-US';
+  r.interimResults = true;
+  r.continuous = true;
+  const base = ta.value ? ta.value.replace(/\s*$/, ' ') : '';
+  let fin = '';
+  r.onresult = (e) => {
+    let it = '';
+    for (let i = e.resultIndex; i < e.results.length; i += 1) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) fin += t; else it += t;
+    }
+    ta.value = base + fin + it;
+    ta.dispatchEvent(new Event('input'));
+  };
+  r.onerror = (e) => { B.toast(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Allow the microphone to speak your question.' : 'Voice input stopped.'); };
+  r.onend = () => { rec = null; btn.classList.remove('rec'); btn.setAttribute('aria-pressed', 'false'); btn.setAttribute('aria-label', 'Dictate'); ta.focus(); };
+  try { r.start(); btn.classList.add('rec'); btn.setAttribute('aria-pressed', 'true'); btn.setAttribute('aria-label', 'Stop dictating'); B.toast('Listening. Speak your question.'); } catch (e) { rec = null; }
+}
+
 function composer(home, placeholder, convId) {
-  return `<form class="dform" id="askform"><textarea id="askin" rows="${home ? 3 : 1}" placeholder="${placeholder}" aria-label="Ask a question" autocomplete="off" maxlength="4000" ${convId ? `data-conv="${esc(convId)}"` : ''}></textarea><div class="drow"><button type="button" class="dchip" id="cxsrc">${ICON('stack', 14)}<span>${esc(sourcesLabel())}</span>${B.CARET}</button><span class="lsp"></span><button class="dsend" type="submit" aria-label="Ask">${ICON('send', 16)}</button></div></form>`;
+  const SR = /** @type {any} */ (window).SpeechRecognition || /** @type {any} */ (window).webkitSpeechRecognition;
+  const mic = SR ? `<button type="button" class="dic" id="cxmic" aria-label="Dictate" aria-pressed="false" title="Speak your question">${ICON('mic', 16)}</button>` : '';
+  return `<form class="dform" id="askform"><div id="dfiles">${filesHtml()}</div><textarea id="askin" rows="${home ? 3 : 1}" placeholder="${placeholder}" aria-label="Ask a question" autocomplete="off" maxlength="4000" ${convId ? `data-conv="${esc(convId)}"` : ''}></textarea><div class="drow"><button type="button" class="dic" id="cxatt" aria-label="Attach" title="Attach a file">${ICON('clip', 16)}</button>${mic}<input type="file" id="cxfile" multiple hidden accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.png,.jpg,.jpeg"><button type="button" class="dchip" id="cxsrc">${ICON('stack', 14)}<span>${esc(sourcesLabel())}</span>${B.CARET}</button><span class="lsp"></span><button class="dsend" type="submit" aria-label="Ask">${ICON('send', 16)}</button></div></form>`;
 }
 function feedHtml() {
   const sys = systems();
   if (!S().facets) return '<p class="lh-feed" id="lhfeed"><i class="pvsk" style="width:160px;display:inline-block"></i></p>';
   if (!sys.length) {
-    return `<p class="lh-feed" id="lhfeed"><span>Nothing is connected yet.${B.isAdmin() ? ' <button type="button" class="link" data-go="/admin/connectors">Connect a source</button>' : ' Your admin connects sources.'}</span></p>`;
+    return `<div class="lh-feed lh-feed-empty" id="lhfeed">${empty('stack', 'Nothing is connected yet', B.isAdmin() ? '' : 'Your admin connects sources.', B.isAdmin() ? '<button type="button" class="btn sm" data-go="/admin/connectors">Connect a source</button>' : '')}</div>`;
   }
   return `<p class="lh-feed" id="lhfeed">${sys.map((k) => B.srcIcon(k, 14)).join('')}<span>Reading from ${sys.length} connected ${sys.length === 1 ? 'app' : 'apps'}</span></p>`;
 }
-function recentHtml() {
-  const c = S().chats;
-  if (!c.loaded) return `<div class="lh-sugs lh-recent" aria-hidden="true">${B.skeletonRows(2, 'lh-sug sksug')}</div>`;
-  const recent = c.items.slice(0, 4);
-  if (!recent.length) return '';
-  return `<div class="lh-recent"><div class="lh-rh">Pick up where you left off</div><div class="lh-sugs">${recent.map((x, i) => `<button type="button" class="lh-sug" style="--i:${i}" data-open-chat="${x.id}"><span class="lh-si">${ICON('chat', 16)}</span><span class="lh-sq">${esc(B.chatTitle(x))}</span><span class="lh-go">${ICON('arrow', 14)}</span></button>`).join('')}</div></div>`;
+/** Questions that show what Broth is for; each starts a chat. The icon is a connected app's. */
+const EXAMPLES = [
+  ['How do I request access to a source?', 'lock'],
+  ['What is our onboarding process?', null],
+  ['Where is the latest expenses policy?', null],
+  ['Who owns the pricing page?', null],
+];
+function examplesHtml() {
+  const sys = systems();
+  if (S().facets && !sys.length) return '';
+  let n = 0;
+  return `<div class="lh-sugs">${EXAMPLES.map(([q, icon], i) => {
+    const mark = icon ? ICON(icon, 16) : sys.length ? B.srcIcon(sys[n++ % sys.length], 18) : ICON('doc', 16);
+    return `<button type="button" class="lh-sug" data-lf="1" style="--i:${i}" data-q="${esc(q)}"><span class="lh-si">${mark}</span><span class="lh-sq">${esc(q)}</span><span class="lh-go">${ICON('arrow', 14)}</span></button>`;
+  }).join('')}</div>`;
 }
-
 function renderHome() {
   $('#app').className = 'cxapp';
-  $('#app').innerHTML = `<div class="lhome"><div class="dchead"><b>New chat</b></div><div class="lh-in"><h1 class="lh-t">${greeting()}</h1>${composer(true, 'Ask a question')}<div id="lhrecent">${recentHtml()}</div>${feedHtml()}</div></div>`;
+  const open = askState().homeOpen;
+  $('#app').innerHTML = `<div class="cx ${open ? '' : 'closed'}"><section class="cxmain"><div class="lhome"><button type="button" class="hometog" id="hometog" aria-label="Show sources" title="Sources" aria-expanded="${open}"><span class="hav"><img src="/assets/brand/mascot-head.png" alt="" width="26" height="26" draggable="false"><i class="hdot"></i></span></button><div class="dchead"><b>New chat</b></div><div class="lh-in"><div class="lm" role="img" aria-label="Broth"></div><h1 class="lh-t">${greeting()}</h1>${composer(true, 'Ask a question')}<div id="lhsugs">${examplesHtml()}</div>${feedHtml()}</div></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
   wireComposer(true);
   wireHome();
+  const tog = $('#hometog');
+  if (tog) tog.onclick = () => { askState().pt = 'sources'; setPanel(true); };
+  if (open) renderPanel();
+  cyclePlaceholder();
+  enterCards();
+}
+/** The example cards rise in one after another, as life.js does for rows (same stagger, length and ease). */
+function enterCards() {
+  const M = window.Motion;
+  const cards = $$('.lh-sug');
+  if (!M || calm() || !cards.length) return;
+  cards.forEach((c) => { c.style.opacity = '0'; });
+  const done = () => cards.forEach((c) => { c.style.opacity = ''; c.style.transform = ''; });
+  M.animate(cards, { opacity: [0, 1], y: [12, 0] }, { delay: M.stagger(0.028), duration: 0.4, ease: [0.22, 1, 0.36, 1] }).finished.then(done).catch(done);
+}
+/** The empty composer on the home view suggests a question every few seconds, fading between them. */
+function cyclePlaceholder() {
+  const ta = $('#askin');
+  if (!ta || calm()) return;
+  const ex = EXAMPLES.filter(([, icon]) => !icon).map(([q]) => q).concat(['What changed this week?']);
+  let k = 0;
+  const tick = () => {
+    if (!document.body.contains(ta)) return;
+    if (!ta.value && document.activeElement !== ta) {
+      k = (k + 1) % ex.length;
+      ta.classList.add('phx');
+      setTimeout(() => { ta.placeholder = ex[k]; ta.classList.remove('phx'); }, 180);
+    }
+    setTimeout(tick, 3200);
+  };
+  setTimeout(tick, 3200);
 }
 function wireHome() {
+  $$('#app [data-q]').forEach((b) => { b.onclick = () => { if (!active && !creating) ask(b.dataset.q); }; });
   $$('[data-open-chat]').forEach((b) => { b.onclick = () => B.go('/c/' + b.dataset.openChat); });
   $$('#app [data-go]').forEach((b) => { b.onclick = () => B.go(b.dataset.go); });
 }
-/** The home page's recent chats arrive after it renders: swap them in place. */
-function refreshRecent() {
-  const box = $('#lhrecent');
-  if (!box) return;
-  box.innerHTML = recentHtml();
-  wireHome();
-}
+/** The sidebar lists recent chats; the home page no longer repeats them. */
+function refreshRecent() {}
 
 /** What is being typed in this conversation's composer, to carry over a re-render. */
 function takeDraft(convId) {
@@ -274,25 +387,33 @@ function renderConversation(conv) {
   const draft = takeDraft(conv.id); // the view re-renders when the chat loads or is renamed
   const a = askState();
   $('#app').className = 'cxapp';
-  $('#app').innerHTML = `<div class="cx ${a.panel ? '' : 'closed'}"><section class="cxmain"><div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(B.chatTitle(conv))}</b><button type="button" class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more', 16)}</button><span class="lsp"></span><button type="button" class="lib ctog" id="cxtog" aria-label="Sources" title="Sources" aria-expanded="${a.panel}">${togInner()}</button></div><div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div><div class="cxcomp">${composer(false, 'Ask a follow-up', conv.id)}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
+  $('#app').innerHTML = `<div class="cx ${panelOn() ? '' : 'closed'}"><section class="cxmain"><div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(B.chatTitle(conv))}</b><button type="button" class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more', 16)}</button><span class="lsp"></span><button type="button" class="lib ctog" id="cxtog" aria-label="Sources" title="Sources" aria-expanded="${panelOn()}">${togInner()}</button></div><div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div><div class="cxcomp">${composer(false, 'Ask a follow-up', conv.id)}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
   const thread = $('#thread');
   if (!conv.loaded) {
     thread.innerHTML = conv.error ? B.errorBlock(conv.error, 'convretry') : `<div class="skwrap" role="status"><span class="sr">Loading the conversation</span>${skeletonTurn()}${skeletonTurn()}</div>`;
     const retry = $('#convretry');
     if (retry) retry.onclick = () => openConversation(conv.id, true);
   } else if (!conv.turns.length) {
-    thread.innerHTML = '<p class="actn thempty">No questions in this chat yet. Ask one below.</p>';
+    thread.innerHTML = `<div class="thempty">${empty('chat', 'No questions yet', 'Ask one below.')}</div>`;
   } else {
     conv.turns.forEach((t, i) => thread.appendChild(turnEl(t, i)));
   }
   const rename = () => {
     const t = $('#cxtitle');
-    if (t) B.editTitle(t, conv, () => { if (S().conv === conv) renderConversation(conv); B.setCrumb(); B.mbTitle(); });
+    const before = B.chatTitle(conv);
+    if (t) {
+      B.editTitle(t, conv, () => {
+        if (S().conv === conv) renderConversation(conv);
+        B.setCrumb(); B.mbTitle();
+        const next = $('#cxtitle');
+        if (next && B.chatTitle(conv) !== before && !calm()) { next.classList.add('drawn'); setTimeout(() => next.classList.remove('drawn'), 1400); }
+      });
+    }
   };
   $('#cxtitle').onclick = rename;
   $('#cxtitle').onkeydown = (e) => { if (e.key === 'Enter' || e.key === 'F2') { e.preventDefault(); rename(); } };
   $('#cxmore').onclick = (e) => { e.stopPropagation(); B.chatMenu($('#cxmore'), conv, { rename }); };
-  $('#cxtog').onclick = () => setPanel(!askState().panel);
+  $('#cxtog').onclick = () => setPanel(!panelOn());
   wireComposer(false);
   putDraft(draft);
   renderPanel();
@@ -330,16 +451,26 @@ function wireComposer(home) {
     if (active || creating) return;
     const v = ta.value.trim();
     if (!v) return;
+    stopMic();
+    if (askState().files.length) { askState().files = []; drawFiles(); B.toast('Files stay on this device. Only your question was sent.'); }
     ta.value = '';
     ta.style.height = '';
     ask(v);
   };
+  const att = $('#cxatt'), mic = $('#cxmic'), fi = $('#cxfile');
+  if (att) {
+    att.onclick = () => fi.click();
+    fi.onchange = () => { addFiles(fi.files); fi.value = ''; };
+    ['dragenter', 'dragover'].forEach((ev) => form.addEventListener(ev, (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); form.classList.add('drop'); } }));
+    ['dragleave', 'drop'].forEach((ev) => form.addEventListener(ev, (e) => { if (ev === 'drop' && e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); addFiles(e.dataTransfer.files); } form.classList.remove('drop'); }));
+  }
+  if (mic) mic.onclick = () => toggleMic(mic, ta);
+  drawFiles();
   $('#cxsrc').onclick = () => {
     askState().pt = 'sources';
-    if (home || innerWidth <= 860) openSourcesDrawer();
+    if (innerWidth <= 860) openSourcesDrawer();
     else setPanel(true);
   };
-  if (home && !matchMedia('(pointer:coarse)').matches) ta.focus({ preventScroll: true });
 }
 
 /* ---------- a turn ---------- */
@@ -415,8 +546,8 @@ function fill(el, turn, index) {
   }
   if (turn.status === 'failed') {
     const e = turn.error || { title: FAILED.internal, retryable: true };
-    ans.textContent = e.title; // a partial answer is never shown as if it were complete
-    extra.innerHTML = `<div class="notice low" role="alert"><span>${e.retryable ? `Your question was not lost. <button type="button" class="link" data-retry="1" ${e.retryAfter ? 'disabled' : ''}>${e.retryAfter ? `Try again in ${e.retryAfter} s` : 'Try again'}</button>` : 'Try asking it a different way.'}</span></div>`;
+    ans.textContent = ''; // a partial answer is never shown as if it were complete
+    extra.innerHTML = `<div role="alert">${empty('refresh', e.title, e.retryable ? 'Your question was not lost.' : 'Try asking it a different way.', e.retryable ? `<button type="button" class="btn sm" data-retry="1" ${e.retryAfter ? 'disabled' : ''}>${e.retryAfter ? `Try again in ${e.retryAfter} s` : 'Try again'}</button>` : '')}</div>`;
     bind(el, turn, index);
     if (e.retryAfter) countdown(el, turn);
     return;
@@ -529,12 +660,14 @@ async function vote(turn, index, feedback) {
 /* ---------- the sources panel ---------- */
 function setPanel(open) {
   const a = askState();
-  a.panel = !!open;
+  const home = !!$('.lhome');
+  if (home) a.homeOpen = !!open; else a.panel = !!open;
+  const on = home ? a.homeOpen : panelOn();
   const cx = $('.cx');
-  if (cx) cx.classList.toggle('closed', !a.panel);
-  const tog = $('#cxtog');
-  if (tog) tog.setAttribute('aria-expanded', String(a.panel));
-  if (a.panel) renderPanel();
+  if (cx) cx.classList.toggle('closed', !on);
+  const tog = $(home ? '#hometog' : '#cxtog');
+  if (tog) tog.setAttribute('aria-expanded', String(on));
+  if (on) renderPanel();
 }
 function focusCitation(turn, n) {
   const a = askState();
@@ -557,7 +690,7 @@ function citationRows(turn) {
 }
 function answerTab() {
   const turn = panelTurn();
-  if (!turn) return `<div class="cxnone"><span class="cxni">${ICON('stack', 20)}</span><b>No sources yet</b><p>The sources behind an answer show up here.</p></div>`;
+  if (!turn) return empty('stack', 'No sources yet', 'The sources behind an answer show up here.');
   return citationRows(turn);
 }
 function sourcesTab() {
@@ -577,8 +710,8 @@ function selectedCount() {
 function docRows() {
   const d = askState().docs;
   if (!d.loaded && d.loading) return B.skeletonRows(4, 'gsrc skgsrc');
-  if (d.error) return `<div class="gempty">${esc(B.problem(d.error))} <button type="button" class="link" id="docretry">Try again</button></div>`;
-  if (!d.items.length) return `<div class="gempty">${d.q ? 'No sources match.' : 'No sources yet.'}</div>`;
+  if (d.error) return empty('refresh', B.problem(d.error), '', '<button type="button" class="btn sm" id="docretry">Try again</button>');
+  if (!d.items.length) return d.q ? empty('stack', 'No sources match', 'Try another word.') : empty('stack', 'No sources yet', 'Your admin connects sources.');
   const ex = new Set(askState().exclude);
   return d.items.map((doc) => `<label class="gsrc">${B.srcIcon(doc.system, 22)}<span class="gt"><span>${esc(doc.title)}</span><small>${esc([B.systemName(doc.system), doc.path].filter(Boolean).join(' · '))}</small></span><input type="checkbox" class="gck" data-sd="${doc.id}" ${ex.has(doc.id) ? '' : 'checked'} aria-label="Use ${esc(doc.title)}"></label>`).join('') + (d.next ? `<button type="button" class="link gmore" id="docmore" ${d.loading ? 'disabled' : ''}>${d.loading ? 'Loading' : 'Show more'}</button>` : '');
 }
@@ -656,7 +789,9 @@ function renderPanel() {
   if (!p) return;
   const a = askState();
   const pt = a.pt === 'sources' ? 'sources' : 'answer';
-  p.innerHTML = `<div class="cxtabs" role="tablist">${[['answer', 'Answer'], ['sources', 'Sources']].map(([k, l]) => `<button type="button" class="ltab ${pt === k ? 'on' : ''}" role="tab" aria-selected="${pt === k}" data-pt="${k}">${l}</button>`).join('')}<span class="lsp"></span><button type="button" class="lib" id="cxclose" aria-label="Close sources">${ICON('x', 16)}</button></div><div class="cxbody">${pt === 'answer' ? answerTab() : sourcesTab()}</div>`;
+  const QUOTE = '<svg class="ic-svg" data-i="quote" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 8H7a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2.5v1.5A2.5 2.5 0 0 1 7 19M18.5 8H16a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2.5v1.5A2.5 2.5 0 0 1 16 19"/></svg>';
+  const tabIcon = { answer: QUOTE, sources: ICON('stack', 18) };
+  p.innerHTML = `${proHtml()}<div class="cxtabs" role="tablist">${[['answer', 'Answer'], ['sources', 'Sources']].map(([k, l]) => `<button type="button" class="ltab ic ${pt === k ? 'on' : ''}" role="tab" aria-selected="${pt === k}" data-pt="${k}" aria-label="${l}" title="${l}">${tabIcon[k]}<span class="ltl">${l}</span></button>`).join('')}</div><div class="cxbody">${pt === 'answer' ? answerTab() : sourcesTab()}</div>`;
   $$('[data-pt]', p).forEach((b) => { b.onclick = () => { a.pt = b.dataset.pt; renderPanel(); }; });
   $('#cxclose', p).onclick = () => setPanel(false);
   const tabs = $('.cxtabs', p), on = $('.ltab.on', tabs);
@@ -677,6 +812,11 @@ function renderPanel() {
     }
   }
   if (pt === 'answer') wireAnswerTab(p); else wireSourcesTab(p);
+}
+/** The close button and Broth's card at the top of the panel. */
+function proHtml() {
+  const connected = systems().length > 0;
+  return `<button type="button" class="lib cxclose" id="cxclose" aria-label="Close panel">${ICON('x', 16)}</button><div class="cxpro"><div class="cxav"><img src="/assets/brand/mascot-head.png" alt="" draggable="false"></div><b class="cxname">Broth</b><span class="cxst ${connected ? 'on' : ''}"><i></i>${connected ? 'Connected' : 'No sources connected'}</span></div>`;
 }
 function openSourcesDrawer(n) {
   const a = askState();
@@ -742,6 +882,16 @@ function askFresh(question) {
 function refreshFeed() {
   // The composer's source count shows in a chat too, not only on the home page.
   $$('#cxsrc span').forEach((x) => { if (!x.querySelector('svg')) x.textContent = sourcesLabel(); });
+  const sg = $('#lhsugs');
+  if (sg) {
+    // Only the icons can change; swapping the cards would restart their entrance.
+    const fresh = document.createElement('div');
+    fresh.innerHTML = examplesHtml();
+    const next = $$('.lh-si', fresh);
+    const now = $$('.lh-si', sg);
+    if (now.length && next.length === now.length) now.forEach((el, i) => { el.innerHTML = next[i].innerHTML; });
+    else { sg.innerHTML = examplesHtml(); wireHome(); }
+  }
   const f = $('#lhfeed');
   if (!f) return;
   f.outerHTML = feedHtml();

@@ -24,12 +24,12 @@ async function idle(page) {
 }
 const lastAnswer = (page) => page.locator('#thread article').last();
 
-test('the Ask home: composer, recent chats and connected sources', async ({ open, check }) => {
+test('the Ask home: composer, example questions and connected sources', async ({ open, check }) => {
   const page = await open('employee', '/');
   await expect(page.getByRole('textbox', { name: 'Ask a question' })).toBeVisible();
-  await expect(page.getByText('Pick up where you left off')).toBeVisible();
+  await expect(page.locator('.lh-sug')).toHaveCount(4);
   await expect(page.getByText('Reading from 1 connected app')).toBeVisible();
-  await check(page, 'ask-home', { mask: ['.lh-t', '#lhrecent'] });
+  await check(page, 'ask-home', { mask: ['.lh-t'] });
 });
 
 test.describe('each answer kind', () => {
