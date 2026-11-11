@@ -66,10 +66,12 @@ test('Sync now checks for changes, and says when it found none', async ({ open, 
       await route.fulfill({ response });
     });
     await p.route('**/v1/admin/connections', async (route) => {
-      if (!held || route.request().method() !== 'GET') return route.fallback();
+      // Read `held` once: the test may release it while this read is in flight.
+      const run = held;
+      if (!run || route.request().method() !== 'GET') return route.fallback();
       const response = await route.fetch();
       const body = await response.json();
-      body.items = body.items.map((c) => (c.id === held.connection_id ? { ...c, active_run: held } : c));
+      body.items = body.items.map((c) => (c.id === run.connection_id ? { ...c, active_run: run } : c));
       return route.fulfill({ response, json: body });
     });
   };
