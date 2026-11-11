@@ -27,7 +27,7 @@ const empty = (title, text, action = '', icon = 'inbox') => `<div class="ds-empt
 /** A framed error with retry. */
 const failed = (error, retryId) => empty(B.problem(error), error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.', `<button type="button" class="btn sm" id="${retryId}">Try again</button>`, 'refresh').replace('role="status"', 'role="alert"');
 /** The page title row: title, (i) hint, then the page's own controls. */
-const head = (title, key, actions = '') => `<div class="ds-head aghd"><h1 class="lcont-t">${esc(title)}</h1><span class="lsp"></span><div class="ds-act">${actions}${DOCS[key] ? window.DOCS.link(DOCS[key]) : ''}</div></div>`;
+const head = (title, key, actions = '') => `<div class="ds-head aghd"><h1 class="lcont-t">${esc(title)}</h1><span class="lsp"></span><div class="ds-act">${DOCS[key] ? window.DOCS.link(DOCS[key]).replace('class="dclink"', 'class="dclink btn sm"') : ''}${actions}</div></div>`;
 /** @type {Record<string, (el: HTMLElement, ctx: any) => void>} */
 const pages = {};
 

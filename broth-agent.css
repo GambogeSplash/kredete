@@ -9,7 +9,7 @@
 .aghd .hint{margin-left:0}
 .aghd .hint:focus-visible{outline:0;box-shadow:var(--ring)}
 .aghd .ds-act{gap:var(--s-3)}
-.aghd .dclink{white-space:nowrap}
+.aghd .dclink{color:var(--ink);white-space:nowrap;display:inline-flex;align-items:center;gap:var(--s-1);text-decoration:none}
 
 /* ---- rail: headings as in the prototype, one sliding highlight ---- */
 .lrail.agtabs .tab{position:relative;z-index:1;border:0}
@@ -69,6 +69,7 @@ a.ds-tr.agrow:focus-visible,.ds-tr.agks:has(:focus-visible){outline:2px solid va
 
 /* ---- phones: the rail is the horizontal tab strip (mobile.css); the title lives in the top bar ---- */
 @media (max-width:900px){
+ .aghd .ds-act{flex-wrap:wrap}
  .agstats,.agcards{grid-template-columns:repeat(2,minmax(0,1fr))}
  .aghd .hint{display:none}
  .lset .lrail.agtabs .lrail-h,.lset .lrail.agtabs .lrail-g,.lset .lrail.agtabs .lrail-sep{display:none}
