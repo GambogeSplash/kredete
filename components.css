@@ -723,3 +723,19 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 @media (max-width:900px){.dcpg.dcview{grid-template-columns:1fr}.dcnav{position:static}.dcnav .dcimg{display:none}}
 
 a.btn,a.btn:hover,a.btn:focus{text-decoration:none}
+
+/* richer article: summary, steps with a line each, a tip, a fix, one action, related reading */
+.dcsum{margin:0 0 var(--s-5);font-size:var(--fs-lg);line-height:1.5;color:var(--ink-2,var(--ink))}
+.dcbody .dcsteps{list-style:none;counter-reset:s;padding:0;margin:0 0 var(--s-5);display:grid;gap:var(--s-4);max-width:none}
+.dcbody .dcsteps li{counter-increment:s;position:relative;padding-left:40px;display:grid;gap:2px;font-size:var(--fs-md);line-height:1.5}
+.dcbody .dcsteps li::before{content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--fill-2);color:var(--ink);display:grid;place-items:center;font-size:var(--fs-xs);font-weight:600}
+.dcbody .dcsteps li b{font-weight:600}.dcbody .dcsteps li span{color:var(--mute);font-size:var(--fs-sm);line-height:1.55}
+.dctip{display:flex;gap:var(--s-3);padding:var(--s-3) var(--s-4);margin:0 0 var(--s-5);border-radius:var(--r-lg);background:var(--fill-1);border:1px solid var(--line)}
+.dctip i{flex:none;margin-top:1px;color:var(--brand-strong,var(--brand))}.dctip b{font-weight:600;font-size:var(--fs-sm)}.dctip p{margin:2px 0 0;color:var(--mute);font-size:var(--fs-sm);line-height:1.55}
+.dcfix{margin:0 0 var(--s-5)}.dcfix h3,.dch3{margin:0 0 var(--s-2);font-size:var(--fs-md);font-weight:600}.dcfix p{margin:0;color:var(--mute);font-size:var(--fs-sm);line-height:1.55}
+.dcgo{margin:0 0 var(--s-5)}
+.dch3{margin-top:var(--s-4)}
+.dcrel{display:grid;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;margin-bottom:var(--s-4)}
+.dcrl{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);width:100%;text-align:left;padding:12px var(--s-4);border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:var(--fs-sm);cursor:pointer}.dcrl:first-child{border-top:0}.dcrl:hover{background:var(--fill-1)}.dcrl span{color:var(--mute);display:grid}
+.dchelp small{color:var(--mute);font-size:var(--fs-xs)}.dchelp .lsp{flex:1}
+.dcbody{max-width:660px}
