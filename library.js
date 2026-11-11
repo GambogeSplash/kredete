@@ -58,9 +58,10 @@ const TINT = { confluence: '#eef3ff', gdrive: '#eef8f2' };
 /** A document row. While browsing, every page shown is filed in the folder itself (or, at the
  *  root, in no domain), so its domain label would only repeat the heading. */
 function row(d) {
-  const label = domainLabel(d);
+  // The domain label is the cell itself, as in the prototype (its width is the column's).
+  const label = domainLabel(d).replace('<span class="llab"', '<span role="cell" class="llab"') || '<span role="cell"></span>';
   const owner = d.owner ? `<span class="lown" role="cell" title="${esc(d.owner.name)}">${AVATAR(d.owner.name, 'lav', 22)}<span class="sr">${esc(d.owner.name)}</span></span>` : '<span class="lown amute" role="cell">None</span>';
-  return `<div class="ds-tr lift libcols" data-open="${d.id}" role="row" tabindex="0"><span class="dmn" role="cell">${B.srcIcon(d.system, 22)}<span class="ltb"><span class="lt1"><b>${esc(d.title)}</b>${authorityTag(d)}</span><small>${subline(d)}</small></span></span><span class="llab-c" role="cell">${label}</span><span class="amute lty" role="cell">${ICON(KIND_ICON[d.kind] || 'doc', 14)}${esc(kindName(d.kind))}</span>${owner}<span class="amute" role="cell">${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span><span class="amute lcv" aria-hidden="true">${ICON('chevr', 14)}</span></div>`;
+  return `<div class="ds-tr lift libcols" data-open="${d.id}" role="row" tabindex="0"><span class="dmn" role="cell">${B.srcIcon(d.system, 22)}<span class="ltb"><span class="lt1"><b>${esc(d.title)}</b>${authorityTag(d)}</span><small>${subline(d)}</small></span></span>${label}<span class="amute lty" role="cell">${ICON(KIND_ICON[d.kind] || 'doc', 14)}${esc(kindName(d.kind))}</span>${owner}<span class="amute" role="cell">${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span><span class="amute lcv" aria-hidden="true">${ICON('chevr', 14)}</span></div>`;
 }
 function card(d) {
   return `<button type="button" class="gcard" data-open="${d.id}"><span class="gc-p" style="background:${TINT[d.system] || '#f4f4f5'}"><span class="gc-l"><i></i><i></i><i></i></span>${B.srcIcon(d.system, 30)}<span class="gc-k">${esc(kindName(d.kind))}</span></span><span class="gc-t">${esc(d.title)}</span><small>${subline(d)}</small><span class="gc-f">${d.owner ? AVATAR(d.owner.name, 'lav', 20) : ''}<span>${esc(d.domain ? d.domain.name : d.owner ? d.owner.name : '')}</span><span class="lsp"></span><span>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span></span></button>`;
@@ -68,7 +69,7 @@ function card(d) {
 /** The folder drawing from the prototype: a back, a front and a lighter stripe, in the folder's colour. */
 const fsvg = (c, px) => `<svg class="fsvg" width="${px}" height="${px}" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 9a3 3 0 0 1 3-3h4.2a2 2 0 0 1 1.5.7l1.3 1.5H22a3 3 0 0 1 3 3v1H3V9z" fill="${c}" opacity=".55"/><rect x="3" y="11" width="22" height="12" rx="3" fill="${c}"/><rect x="3" y="11" width="22" height="3" rx="1.5" fill="#fff" opacity=".22"/></svg>`;
 function folderRow(f) {
-  return `<a class="ds-tr lift libcols lfold" href="/library/${esc(f.slug)}" data-link data-folder role="row" style="--dc:${domainCol(f.slug)}"><span class="dmn" role="cell"><span class="lfic">${fsvg(domainCol(f.slug), 22)}</span><span class="ltb"><b>${esc(f.name)}</b><small>${pages(f.total)}</small></span></span><span role="cell"></span><span class="amute lty" role="cell">${ICON('folder', 14)}Folder</span><span class="lown" role="cell"></span><span role="cell"></span><span class="amute lcv lchev" aria-hidden="true">${ICON('chevr', 14)}</span></a>`;
+  return `<a class="ds-tr lift libcols lfold" href="/library/${esc(f.slug)}" data-link data-folder role="row" style="--dc:${domainCol(f.slug)}"><span class="dmn" role="cell"><span class="lfi lfic">${fsvg(domainCol(f.slug), 22)}</span><span class="ltb"><b>${esc(f.name)}</b><small>${pages(f.total)}</small></span></span><span role="cell"></span><span class="amute lty" role="cell">${ICON('folder', 14)}Folder</span><span class="lown" role="cell"></span><span role="cell"></span><span class="amute lcv lchev" aria-hidden="true">${ICON('chevr', 14)}</span></a>`;
 }
 function folderCard(f) {
   const c = domainCol(f.slug);
@@ -174,8 +175,6 @@ function wireFilterMenu() {
     button.setAttribute('aria-expanded', 'true');
     document.addEventListener('mousedown', outside);
     $$('[data-fk]', menu).forEach((b) => { b.onclick = () => { L[b.dataset.fk] = b.dataset.fv; close(); page({ domain: L.folder }); load(true); }; });
-    const first = $('.fopt', menu);
-    if (first) first.focus();
   };
   button.onclick = () => (menu.hidden ? open() : close());
   menu.onkeydown = (e) => { if (e.key === 'Escape') { close(); button.focus(); } };
@@ -262,9 +261,9 @@ function draw() {
   let docHtml = '';
   let after = '';
   if (!L.loaded && L.error) after = B.errorBlock(L.error, 'libretry');
-  else if (!L.loaded) after = folders.length ? '' : docSkeleton();
+  else if (!L.loaded) after = '';
   else if (L.items.length) docHtml = L.items.map(grid ? card : row).join('');
-  else if (!browsing) after = B.emptyBlock('Nothing matches', 'Try other words or clear a filter.');
+  else if (!browsing) after = B.emptyBlock('Nothing matches', L.system || L.path || L.source || L.problems ? 'Try other words or clear a filter.' : 'Try a different word.');
   else if (!folders.length && tree) {
     after = here
       ? B.emptyBlock('Nothing here yet', `Pages filed in ${esc(here.name)} appear here.`)
@@ -276,8 +275,15 @@ function draw() {
   // the folders (domains span sources) get their own group first. Inside a folder, or with a
   // source filter, it is one flat list.
   const grouped = !here && !L.folder && !L.system && !L.source && !L.path && L.items.length > 0;
+  // Pages still loading: their rows are held in place under the folders, so nothing moves when they land.
+  const pending = !L.loaded && !L.error && folders.length > 0;
+  const pendingRows = pending ? (grid ? Array.from({ length: 3 }, () => '<span class="gcard skcard" aria-hidden="true"><span class="gc-p"></span><i class="pvsk" style="width:70%"></i><i class="pvsk" style="width:45%"></i></span>').join('') : skeletonTr(3)) : '';
   let main;
-  if (grouped) {
+  if (pending && !here && !L.folder) {
+    main = grid ? grp(ICON('folder', 16), 'Folders', folders.length, 'folders') + `<div class="ggrid">${folderHtml}</div><div class="ggrid">${pendingRows}</div>` : table(folderHtml, capRow(ICON('folder', 20), 'Folders', folders.length)) + `<div role="status"><span class="sr">Loading the library</span>${table(pendingRows)}</div>`;
+  } else if (pending) {
+    main = grid ? `<div class="ggrid">${folderHtml}${pendingRows}</div>` : table(folderHtml + pendingRows);
+  } else if (grouped) {
     const parts = [];
     if (lead) parts.push(table(lead));
     if (folders.length) parts.push(grid ? grp(ICON('folder', 16), 'Folders', folders.length, 'folders') + `<div class="ggrid">${folderHtml}</div>` : table(folderHtml, capRow(ICON('folder', 20), 'Folders', folders.length)));

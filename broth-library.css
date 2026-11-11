@@ -62,3 +62,8 @@
 .fcard:hover .fc-front{-webkit-backdrop-filter:blur(9px) saturate(.95);backdrop-filter:blur(9px) saturate(.95);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 16px 26px -12px color-mix(in srgb,var(--c) 45%,transparent)}
 .fc-back,.fc-back::before{background:color-mix(in srgb,var(--c) 45%,#2c2c30)}
 .fc-sheet i:nth-child(1){background:color-mix(in srgb,var(--c) 30%,var(--surface))}
+
+/* dark: menus and the document shell take the elevated shadow, as in the prototype */
+html[data-mode=dark] :is(.fmenu,.drawer){box-shadow:var(--e3)}
+@media (min-width:901px){html[data-mode=dark] #drawer.shell{box-shadow:var(--e3)}}
+.libt .skrow-t .ltb{flex:1}
