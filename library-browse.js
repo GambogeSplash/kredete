@@ -31,6 +31,7 @@
    * @property {string} q search text
    * @property {string} system a source filter
    * @property {string} path a source location filter (the drawer's Location)
+   * @property {string} [source] one container's id (the Support agent's "Open in Library")
    * @property {string} problems '1' to show label problems only
    */
 
@@ -56,7 +57,7 @@
    * @returns {'browse' | 'search'}
    */
   function mode(state) {
-    return state.q || state.system || state.path || state.problems ? 'search' : 'browse';
+    return state.q || state.system || state.path || state.source || state.problems ? 'search' : 'browse';
   }
 
   /**
@@ -80,6 +81,7 @@
     if (state.q) query.q = state.q;
     if (state.system) query.system = state.system;
     if (state.path) query.path = state.path;
+    if (state.source) query.container_id = state.source;
     if (state.problems) query.label_problems = true;
     return query;
   }

@@ -497,7 +497,8 @@ time{white-space:nowrap}
 
 /* ---------- Support agent (bot admin spec 4 to 7) ---------- */
 .lcont.agwide{max-width:1040px}
-.agintro{margin:calc(-1 * var(--s-2)) 0 var(--s-4);max-width:640px}
+.agintro{margin:calc(-1 * var(--s-2)) 0 var(--s-4);max-width:720px}
+.agintro .dclink{white-space:nowrap}
 .agbots{max-width:none}
 .dt-r.agrow{color:inherit;text-decoration:none}
 .dt-r.agrow:hover{background:var(--fill-1)}
@@ -557,3 +558,16 @@ time{white-space:nowrap}
 .agprod-n b{font-weight:500;font-size:var(--fs-sm)}
 .agprod-n small{color:var(--mute);font-size:var(--fs-xs);overflow-wrap:anywhere}
 .agprods li.off .agprod-n b{color:var(--mute)}
+/* Knowledge: one table per connection, a row per source */
+.agksg{display:grid;gap:var(--s-3)}
+.lcont .agksd{max-width:none}
+.agksl{display:flex;align-items:center;gap:var(--s-3);min-width:0;cursor:pointer;min-height:32px}
+.agksl input{width:18px;height:18px;flex:none;margin:0;accent-color:var(--brand)}
+.agksp{display:flex;align-items:center;gap:var(--s-2);min-width:0;font-weight:500}
+.agksp>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agksn{color:var(--mute);font-size:var(--fs-sm)}
+.agkso{text-align:right}
+.agks.off .agksp{color:var(--mute)}
+.agtotal{margin:var(--s-3) 0 0;font-size:var(--fs-sm);color:var(--ink-2)}
+.agtotal.warn{color:var(--amber)}
+@media (max-width:900px){.agks{grid-template-columns:minmax(0,1fr)!important;gap:var(--s-2)}.agksc,.agkso{padding-left:calc(18px + var(--s-3));text-align:left}}

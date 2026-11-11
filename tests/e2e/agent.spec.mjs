@@ -113,3 +113,55 @@ test.describe('Overview', () => {
     await expect(page).toHaveURL(/\/products$/);
   });
 });
+
+test.describe('Knowledge', () => {
+  test('lists every source with its Public pages, the chosen ones ticked', async ({ open, check }) => {
+    const page = await openSeeded(open, 'knowledge');
+    const payments = page.getByRole('checkbox', { name: /Payments \(PAY\)/ });
+    await expect(payments).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: /Cards \(CARD\)/ })).not.toBeChecked();
+    await expect(page.locator('.agks', { has: payments })).toContainText('2 Public pages');
+    await expect(page.locator('.agks', { hasText: 'Cards (CARD)' })).toContainText('No Public pages');
+    await expect(page.locator('#kstotal')).toHaveText('1 source · 2 Public pages');
+    await expect(page.getByRole('region', { name: 'Unsaved changes' })).toBeHidden();
+    await check(page, 'agent-knowledge');
+  });
+
+  test('choosing sources asks before leaving unsaved, and saving keeps them', async ({ open, check }, info) => {
+    const { page } = await newBot(open, info, 'knowledge');
+    await expect(page.locator('#kstotal')).toHaveText("No sources chosen. The bot can't answer anything yet.");
+    await page.getByRole('checkbox', { name: /Cards \(CARD\)/ }).check();
+    await expect(page.locator('#kstotal')).toHaveText("1 source · The bot can't answer anything yet.");
+    await page.getByRole('checkbox', { name: /Payments \(PAY\)/ }).check();
+    const bar = page.getByRole('region', { name: 'Unsaved changes' });
+    await expect(bar).toBeVisible();
+    await check(page, 'agent-knowledge-unsaved', { mask: ['.agname'] });
+    // Leaving asks first; staying keeps the ticks.
+    await page.getByRole('navigation', { name: 'Support agent' }).getByRole('button', { name: 'Overview' }).click();
+    const ask = page.getByRole('alertdialog', { name: 'Leave without saving?' });
+    await expect(ask).toBeVisible();
+    await check(page, 'agent-leave-unsaved', { mask: ['.agname'] });
+    await ask.getByRole('button', { name: 'Keep editing' }).click();
+    await expect(page).toHaveURL(/\/knowledge$/);
+    await expect(page.getByRole('checkbox', { name: /Payments \(PAY\)/ })).toBeChecked();
+    await bar.getByRole('button', { name: 'Save' }).click();
+    await expect(bar).toBeHidden();
+    await page.reload();
+    await expect(page.getByRole('checkbox', { name: /Payments \(PAY\)/ })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: /Cards \(CARD\)/ })).toBeChecked();
+    await page.getByRole('navigation', { name: 'Support agent' }).getByRole('button', { name: 'Overview' }).click();
+    await expect(page.getByRole('region', { name: 'Knowledge' })).toContainText('Cards (CARD) has no Public pages.');
+    await expect(page.getByRole('region', { name: 'Getting it live' }).getByRole('button')).toHaveText(['Go to Products']);
+  });
+
+  test('Open in Library lists only that source\'s pages', async ({ open, check }) => {
+    const page = await openSeeded(open, 'knowledge');
+    await page.getByRole('button', { name: 'Open Payments (PAY) in the Library' }).click();
+    await expect(page).toHaveURL(/\/library$/);
+    await expect(page.getByRole('button', { name: 'Remove filter Source: Payments (PAY)' })).toBeVisible();
+    const rows = page.locator('.lrow:not(.lfold)');
+    await expect(rows.first()).toBeVisible();
+    for (const path of await rows.locator('.lpath').allTextContents()) expect(path).toMatch(/^Payments \(PAY\)/);
+    await check(page, 'library-source-filter');
+  });
+});
