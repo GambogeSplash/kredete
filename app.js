@@ -102,6 +102,18 @@ function ago(iso) {
   return fmtDate(iso);
 }
 /** A rendered date or time, marked up as one so it is machine-readable. */
+/** The rows of a list reply. A reply is not trusted to carry them: null, {} and a missing `items` all read as an empty list. */
+const rows = (page) => (page && Array.isArray(page.items) ? page.items : []);
+/** The cursor of a list reply, or null when there is no next page. */
+const cursorOf = (page) => (page && typeof page.next_cursor === 'string' && page.next_cursor) || null;
+/** A list field of a record (roles, owners, warnings), read as empty when null or absent. */
+const arr = (v) => (Array.isArray(v) ? v : []);
+/** A person as the pages read them: `roles` is always a list. */
+const person = (u) => ({ ...u, roles: arr(u && u.roles) });
+/** A domain as the pages read them: both owner lists are always lists. */
+const domain = (d) => ({ ...d, owners: arr(d && d.owners), inherited_owners: arr(d && d.inherited_owners) });
+/** A bot as the pages read them: sources, starters and products are always lists, and so are a product's sites. */
+const bot = (b) => ({ ...b, sources: arr(b && b.sources), starters: arr(b && b.starters), products: arr(b && b.products).map((p) => ({ ...p, allowed_origins: arr(p && p.allowed_origins) })) });
 function when(iso, text) { return iso ? `<time datetime="${esc(iso)}">${esc(text)}</time>` : ''; }
 function dayLabel(iso, withTime) {
   const d = new Date(iso), n = new Date();
@@ -139,7 +151,7 @@ document.addEventListener('input', (e) => {
 });
 
 /* ---------- roles ---------- */
-const roles = () => (S.me ? S.me.roles : []);
+const roles = () => (S.me ? arr(S.me.roles) : []);
 const hasRole = (...wanted) => wanted.some((r) => roles().includes(r));
 const isAdmin = () => hasRole('admin');
 const sandbox = () => S.mode === 'sandbox';
@@ -446,7 +458,9 @@ async function loadMe() {
 }
 /* Sign-in, the Library and Admin read the facets, sometimes at once: each read settles with the
    one started last, so an earlier answer that lands later never replaces a newer one. */
-const readFacets = API.latest(() => API.get('/facets'));
+/** The facets with every list present: a reply with null or missing lists reads as empty ones. */
+const facetsOf = (f) => ({ ...(f && typeof f === 'object' ? f : {}), authorities: arr(f && f.authorities), domains: arr(f && f.domains), scopes: arr(f && f.scopes), systems: arr(f && f.systems) });
+const readFacets = API.latest(async () => facetsOf(await API.get('/facets')));
 async function loadFacets() {
   try { S.facets = await readFacets(); } catch (e) { S.facets = null; }
   if (window.ASK) window.ASK.refreshFeed();
@@ -849,7 +863,7 @@ window.BRAIN = {
   openDrawer, closeDrawer, openModal, closeModal, exitFx, leaveFx,
   loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, trashFx, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,
   systemName, srcIcon, containerName, isPersonalSpace, SYSTEMS, ROLE_NAMES, CLEARANCES, clearanceName,
-  fmtDate, fmtTime, ago, dayLabel, when,
+  fmtDate, fmtTime, ago, dayLabel, when, rows, cursorOf, arr, person, domain, bot,
   skeletonRows, loadingBlock, errorBlock, emptyBlock, CARET, setCrumb, mbTitle, guardLeaving, askToLeave,
   start() { cleanStorage(); boot(); },
 };

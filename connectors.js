@@ -70,7 +70,7 @@ async function fetchAll() {
     B.api.get('/admin/users', { limit: 200 }),
     B.api.get('/admin/domains'),
   ]);
-  return { connections: connections.items, containers: containers.items, credentials: credentials.items, users: users.items, domains: domains.items };
+  return { connections: B.rows(connections), containers: B.rows(containers), credentials: B.rows(credentials), users: B.rows(users), domains: B.rows(domains) };
 }
 /** Every run the page shows: each connection's and each space's running and last run. */
 const runsOf = (connections, containers) => [...connections, ...containers].flatMap((x) => [x.active_run, x.last_run]);
@@ -603,8 +603,9 @@ async function showNotices(box, run) {
   box.innerHTML = B.loadingBlock('Loading held-back pages', 1, 'cnfsk');
   try {
     const page = await B.api.get(`/admin/sync-runs/${run.id}/notices`, { limit: 50 });
-    box.innerHTML = page.items.length
-      ? `<h3 class="cnnh">Kept out of Public</h3><ul class="cnflist">${page.items.map((n) => `<li><span class="cnft">${esc(n.title || n.external_id)}</span><span class="cnfr">${esc(n.notice)}</span>${n.url ? `<a class="cnfo" href="${esc(n.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(n.title || n.external_id)} on the docs site">${ICON('ext', 14)}</a>` : ''}</li>`).join('')}</ul><p class="cndoc">${window.DOCS.link('docsProblems', 'What these mean')}</p>`
+    const held = B.rows(page);
+    box.innerHTML = held.length
+      ? `<h3 class="cnnh">Kept out of Public</h3><ul class="cnflist">${held.map((n) => `<li><span class="cnft">${esc(n.title || n.external_id)}</span><span class="cnfr">${esc(n.notice)}</span>${n.url ? `<a class="cnfo" href="${esc(n.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(n.title || n.external_id)} on the docs site">${ICON('ext', 14)}</a>` : ''}</li>`).join('')}</ul><p class="cndoc">${window.DOCS.link('docsProblems', 'What these mean')}</p>`
       : run.failing > 0 ? '' : '<p class="amute cnfnone">Every page synced, and none was kept out of Public.</p>';
   } catch (error) {
     box.innerHTML = `<p class="cnfe" role="alert">${esc(B.problem(error))}</p>`;
@@ -632,8 +633,8 @@ function showFailures(box, run, system) {
 async function moreFailures(box, run, list, system) {
   try {
     const page = await B.api.get(`/admin/sync-runs/${run.id}/failures`, { limit: 50, cursor: list.next });
-    list.items.push(...page.items);
-    list.next = page.next_cursor || null;
+    list.items.push(...B.rows(page));
+    list.next = B.cursorOf(page);
     list.done = !list.next;
     failedPages.set(failuresKey(run), list);
     failuresHtml(box, run, list, system);
@@ -682,7 +683,7 @@ function watch() {
     runs: runsOf(data.connections, data.containers),
     fetch: async () => {
       const [connections, containers] = await Promise.all([B.api.get('/admin/connections'), B.api.get('/admin/containers')]);
-      latest = { ...data, connections: connections.items, containers: containers.items };
+      latest = { ...data, connections: B.rows(connections), containers: B.rows(containers) };
       return runsOf(latest.connections, latest.containers);
     },
     onUpdate: (runs, finished) => {
@@ -710,7 +711,7 @@ function warningsHtml(warnings) {
   const lines = [];
   const missing = warnings.indexer_group_missing, members = warnings.indexer_group_members;
   if (missing) lines.push([`Create a ${esc(missing.group)} group containing only the indexer account, so restricted pages can opt in.`, 'indexerGroupMissing']);
-  if (members) lines.push([`Only the indexer account should be in ${esc(members.group)}. Also in it: ${members.members.map(esc).join(', ')}.`, 'indexerGroupMembers']);
+  if (members) lines.push([`Only the indexer account should be in ${esc(members.group)}. Also in it: ${B.arr(members.members).map(esc).join(', ')}.`, 'indexerGroupMembers']);
   return lines.map(([l, doc]) => `<div class="notice low cnwarn" role="status"><span>${l} ${window.DOCS.link(doc, 'How to fix it')}</span></div>`).join('');
 }
 

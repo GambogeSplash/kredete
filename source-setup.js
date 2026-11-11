@@ -35,12 +35,12 @@ async function progress() {
     B.api.get('/admin/credentials'),
     B.api.get('/admin/connections'),
   ]);
-  const confluence = credentials.items.find((c) => c.name === 'confluence_oauth');
-  if (!confluence || !confluence.configured) return { step: 'confluence', credentials: credentials.items };
-  const sites = connections.items.filter((c) => c.system === 'confluence' && c.status !== 'disconnected');
+  const confluence = B.rows(credentials).find((c) => c.name === 'confluence_oauth');
+  if (!confluence || !confluence.configured) return { step: 'confluence', credentials: B.rows(credentials) };
+  const sites = B.rows(connections).filter((c) => c.system === 'confluence' && c.status !== 'disconnected');
   const connection = sites.find((c) => c.authorized) || sites[0] || null;
   if (!connection || !connection.authorized) return { step: 'connect', connection };
-  const containers = (await B.api.get('/admin/containers', { connection_id: connection.id })).items;
+  const containers = B.rows(await B.api.get('/admin/containers', { connection_id: connection.id }));
   if (!containers.some((c) => c.included)) return { step: 'spaces', connection, containers };
   if (SYNC.firstReadsRunning(containers)) return { step: 'sync', connection, containers };
   return { step: 'done', connection, containers };
@@ -69,7 +69,7 @@ async function authorize(connectionId) {
 }
 
 /** The spaces Broth already knows for a connection. */
-const listSpaces = (connection) => B.api.get('/admin/containers', { connection_id: connection.id }).then((r) => r.items);
+const listSpaces = (connection) => B.api.get('/admin/containers', { connection_id: connection.id }).then((r) => B.rows(r));
 /** Asks Confluence for spaces created since, then returns the stored list. Throws when Confluence cannot be reached. */
 async function refreshSpaces(connection) {
   await B.api.post(`/admin/connections/${connection.id}/verify`);

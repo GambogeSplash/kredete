@@ -58,9 +58,9 @@ async function load(reset) {
       people(),
     ]);
     if (mine !== g.seq) return;
-    if (reset) g.repos = repos ? repos.items : [];
-    g.items = reset ? result.items : g.items.concat(result.items);
-    g.next = result.next_cursor || null;
+    if (reset) g.repos = B.rows(repos);
+    g.items = reset ? B.rows(result) : g.items.concat(B.rows(result));
+    g.next = B.cursorOf(result);
     g.loaded = true;
   } catch (error) {
     if (mine !== g.seq) return;
@@ -198,10 +198,11 @@ function reviewPopup(request, anchor, onDone) {
   if (!repo) {
     $('#revopen', pop).onclick = () => { B.closeModal(); window.DOCUMENTS.openDocument(request.document_id); };
     // The document's source and folder, when it can be read.
-    B.api.get('/documents/' + request.document_id).then((d) => {
+    B.api.get('/documents/' + request.document_id).then((doc) => {
       if (!pop.classList.contains('on')) return;
+      const d = doc || {};
       if (d.system) $('#revlogo', pop).innerHTML = B.srcIcon(d.system, 28);
-      const path = d.domain && d.domain.path ? d.domain.path.map((c) => c.name).join(' / ') : '';
+      const path = d.domain ? B.arr(d.domain.path).map((c) => c.name).join(' / ') : '';
       $('#revpath', pop).textContent = path || B.systemName(d.system);
     }).catch(() => { if (pop.classList.contains('on')) $('#revpath', pop).textContent = ''; });
   }

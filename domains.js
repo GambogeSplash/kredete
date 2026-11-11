@@ -57,7 +57,7 @@ async function load() {
   s.loading = true; s.error = null;
   draw();
   try {
-    s.items = (await B.api.get('/admin/domains')).items;
+    s.items = B.rows(await B.api.get('/admin/domains')).map(B.domain);
     s.loaded = true;
   } catch (error) { s.error = error; }
   finally { s.loading = false; }
@@ -148,7 +148,7 @@ function createModal() {
 
 async function editModal(domain) {
   let users = [];
-  try { users = (await B.api.get('/admin/users', { limit: 200 })).items.filter((u) => u.status === 'active'); } catch (error) { B.toast(B.problem(error)); return; }
+  try { users = B.rows(await B.api.get('/admin/users', { limit: 200 })).map(B.person).filter((u) => u.status === 'active'); } catch (error) { B.toast(B.problem(error)); return; }
   const owns = (u) => u.roles.some((r) => r.role === 'domain_owner' && r.domain_id === domain.id);
   // Owners of a domain above already own this one: shown ticked, and not granted twice.
   const through = new Map(domain.inherited_owners.map((o) => [o.user_id, o.from_domain.name]));
@@ -179,7 +179,7 @@ async function editModal(domain) {
       await B.api.put(`/admin/users/${u.id}/roles`, { roles });
     }
     const s = state();
-    s.items = (await B.api.get('/admin/domains')).items;
+    s.items = B.rows(await B.api.get('/admin/domains')).map(B.domain);
     forgetCaches();
     B.closeModal();
     B.toast('Saved');

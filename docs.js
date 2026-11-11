@@ -95,6 +95,9 @@ function state() {
 }
 /** The docs need no session: requests never wait for, or trigger, a token refresh. */
 const get = (path) => B.api.get(path, undefined, { auth: false });
+/** A help article with its lists present, or null when the reply is not an article (empty or null): it reads as a missing one. */
+const articleOf = (r) => (r && r.slug ? { ...r, audiences: B.arr(r.audiences), sections: B.arr(r.sections) } : null);
+const notFound = () => Object.assign(new Error('Not found'), { status: 404 });
 const standalone = () => B.S.phase !== 'app';
 
 /** A small "How this works" link to a section; `newTab` keeps a wizard's progress. */
@@ -213,7 +216,7 @@ async function contents() {
 async function loadIndex() {
   const s = state();
   s.loading = true; s.error = null;
-  try { s.index = (await get('/docs')).items; } catch (error) { s.error = error; } finally { s.loading = false; }
+  try { s.index = B.rows(await get('/docs')); } catch (error) { s.error = error; } finally { s.loading = false; }
 }
 /** Searching reads the text of the service's articles too, so each one is fetched once, quietly. */
 async function loadBodies() {
@@ -221,7 +224,7 @@ async function loadBodies() {
   if (!s.index) return;
   const todo = s.index.filter((a) => !s.articles[a.slug]);
   if (!todo.length) return;
-  await Promise.all(todo.map(async (a) => { try { s.articles[a.slug] = await get(`/docs/${encodeURIComponent(a.slug)}`); } catch (error) { /* it opens, and fails visibly, on its own page */ } }));
+  await Promise.all(todo.map(async (a) => { try { const got = articleOf(await get(`/docs/${encodeURIComponent(a.slug)}`)); if (got) s.articles[a.slug] = got; } catch (error) { /* it opens, and fails visibly, on its own page */ } }));
   if (B.S.route.surface === 'docs' && !B.S.route.params.slug && query.trim()) drawCards();
 }
 /** Everything a search can match in an article: title, summary, steps, tip, fix, button, related titles; for the service's, its text. */
@@ -277,7 +280,7 @@ async function article(slug) {
     paint(`<div class="pg dc dcart">${backLink()}<div class="dcload">${B.loadingBlock('Loading the article', 6, 'dcskl')}</div></div>`);
   }
   let result;
-  try { result = await get(`/docs/${encodeURIComponent(slug)}`); } catch (error) { result = { error }; }
+  try { result = articleOf(await get(`/docs/${encodeURIComponent(slug)}`)); if (!result) throw notFound(); } catch (error) { result = { error }; }
   s.articles[slug] = result;
   if (B.S.route.surface !== 'docs' || B.S.route.params.slug !== slug) return;
   if (result.error) drawFailure(slug, result.error); else drawArticle(result);

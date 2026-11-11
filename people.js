@@ -92,7 +92,7 @@ function render(el) {
 async function domains() {
   const p = state();
   if (p.domains) return p.domains;
-  try { p.domains = (await B.api.get('/admin/domains')).items; } catch (e) { p.domains = []; }
+  try { p.domains = B.rows(await B.api.get('/admin/domains')); } catch (e) { p.domains = []; }
   return p.domains;
 }
 
@@ -117,8 +117,8 @@ async function loadUsers(reset) {
   try {
     const page = await B.api.get('/admin/users', { q: u.q || null, limit: 50, cursor: reset ? null : u.next });
     if (mine !== u.seq) return;
-    u.items = reset ? page.items : u.items.concat(page.items);
-    u.next = page.next_cursor || null;
+    u.items = reset ? B.rows(page).map(B.person) : u.items.concat(B.rows(page).map(B.person));
+    u.next = B.cursorOf(page);
     u.loaded = true;
   } catch (error) { if (mine === u.seq) u.error = error; }
   finally { if (mine === u.seq) u.loading = false; }
@@ -253,8 +253,8 @@ async function loadInvites(reset) {
   try {
     const page = await B.api.get('/admin/invitations', { limit: 50, cursor: reset ? null : v.next });
     if (mine !== v.seq) return;
-    v.items = reset ? page.items : v.items.concat(page.items);
-    v.next = page.next_cursor || null;
+    v.items = reset ? B.rows(page) : v.items.concat(B.rows(page));
+    v.next = B.cursorOf(page);
     v.loaded = true;
   } catch (error) { if (mine === v.seq) v.error = error; }
   finally { if (mine === v.seq) v.loading = false; }
@@ -293,13 +293,15 @@ function inviteModal() {
 }
 
 /* ---------- Confluence account links ---------- */
+/** The account links with both lists present: a reply that is null or lacks one reads as an empty list. */
+const linksOf = (r) => ({ linked: B.arr(r && r.linked), unlinked: B.arr(r && r.unlinked) });
 async function links() {
   const p = state();
   const pane = $('#pppane');
   pane.innerHTML = `<p class="sub ppintro">Link each Confluence account to the person who uses it. A link gives that person what the account can open in Confluence, at once; an unlinked account gives nobody anything.</p><div id="lnbody">${B.loadingBlock('Loading accounts', 3, 'actr')}</div>`;
   try {
     const [result] = await Promise.all([B.api.get('/admin/account-links'), allUsers()]);
-    p.links = result;
+    p.links = linksOf(result);
   } catch (error) {
     $('#lnbody').innerHTML = `<div class="ds-empty">${B.errorBlock(error, 'lnretry')}</div>`;
     $('#lnretry').onclick = links;
@@ -309,7 +311,7 @@ async function links() {
 }
 async function allUsers() {
   const c = B.S.cache;
-  if (!c.allUsers) c.allUsers = (await B.api.get('/admin/users', { limit: 200 })).items;
+  if (!c.allUsers) c.allUsers = B.rows(await B.api.get('/admin/users', { limit: 200 }));
   return c.allUsers;
 }
 function drawLinks() {
@@ -327,7 +329,7 @@ function drawLinks() {
     b.onclick = () => B.busy(b, async () => {
       await B.api.put(`/admin/account-links/${encodeURIComponent(row.dataset.acc)}`, { user_id: pick.value });
       B.toast('Linked. Their access changed now.');
-      p.links = await B.api.get('/admin/account-links');
+      p.links = linksOf(await B.api.get('/admin/account-links'));
       drawLinks();
     });
   });
@@ -338,7 +340,7 @@ function drawLinks() {
       B.busy(b, async () => {
         await B.api.del(`/admin/account-links/${encodeURIComponent(row.dataset.acc)}`);
         B.toast('Unlinked. Their access changed now.');
-        p.links = await B.api.get('/admin/account-links');
+        p.links = linksOf(await B.api.get('/admin/account-links'));
         drawLinks();
       });
     };

@@ -46,7 +46,7 @@ async function load(params) {
       B.api.get('/admin/containers'),
       B.api.get('/admin/connections'),
     ]);
-    s.bots = bots.items; s.containers = containers.items; s.connections = connections.items;
+    s.bots = B.rows(bots).map(B.bot); s.containers = B.rows(containers); s.connections = B.rows(connections);
     s.loaded = true;
   } catch (error) { s.error = error; }
   if (B.S.route.surface === 'bot' && B.S.route.params === params) window.SURFACES.bot(params, true);

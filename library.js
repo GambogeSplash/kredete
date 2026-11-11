@@ -212,8 +212,8 @@ async function load(reset) {
   try {
     const result = await B.api.get('/documents', { ...LB.request(L), limit: 40, cursor: reset ? null : L.next });
     if (mine !== L.seq) return;
-    L.items = reset ? result.items : L.items.concat(result.items);
-    L.next = result.next_cursor || null;
+    L.items = reset ? B.rows(result) : L.items.concat(B.rows(result));
+    L.next = B.cursorOf(result);
     L.loaded = true;
   } catch (error) {
     if (mine !== L.seq) return;

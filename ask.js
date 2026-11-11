@@ -723,8 +723,8 @@ async function loadDocs(reset) {
   redrawDocs();
   try {
     const page = await B.api.get('/documents', { q: d.q || null, limit: 30, cursor: reset ? null : d.next });
-    d.items = reset ? page.items : d.items.concat(page.items);
-    d.next = page.next_cursor || null;
+    d.items = reset ? B.rows(page) : d.items.concat(B.rows(page));
+    d.next = B.cursorOf(page);
     d.loaded = true;
   } catch (error) { d.error = error; }
   finally { d.loading = false; }

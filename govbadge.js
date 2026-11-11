@@ -12,7 +12,7 @@ const countOf = (items) => items.filter((p) => OPEN.includes(p.status) && p.can_
 async function refresh() {
   if (!B.S.me) return;
   let items;
-  try { items = (await B.api.get('/promotions', { limit: 50 })).items; } catch (e) { return; }
+  try { items = B.rows(await B.api.get('/promotions', { limit: 50 })); } catch (e) { return; }
   const next = countOf(items);
   window.__govBadgeChanged = loaded && next !== waiting;
   waiting = next;

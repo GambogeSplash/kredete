@@ -30,11 +30,11 @@ function authorityTag(d) {
   return `<span class="tag warn">${d.authority === 'draft' ? 'Draft' : 'Not approved'}</span>`;
 }
 /** The full path of a document's domain (nested domains spec 4.3): Payments / Payouts. */
-const domainPath = (d) => (d.domain ? d.domain.path.map((c) => c.name).join(' / ') : '');
+const domainPath = (d) => (d.domain ? B.arr(d.domain.path).map((c) => c.name).join(' / ') : '');
 /** A document's domain as a label: its own name, with the full path in the tooltip. */
 const domainLabel = (d) => (d.domain ? `<span class="llab" title="${esc(domainPath(d))}"><i style="background:${domainCol(d.domain.slug)}"></i>${esc(d.domain.name)}</span>` : '');
 /** A document's domain as a breadcrumb of folder links. */
-const domainCrumbs = (d) => d.domain.path.map((c) => `<a href="/library/${esc(c.slug)}" data-link>${esc(c.name)}</a>`).join('<i aria-hidden="true">/</i>');
+const domainCrumbs = (d) => B.arr(d.domain.path).map((c) => `<a href="/library/${esc(c.slug)}" data-link>${esc(c.name)}</a>`).join('<i aria-hidden="true">/</i>');
 
 /** What the source is called, and its mark; a read without a source says "Source" with a neutral mark. */
 const srcName = (d) => (d.system ? B.systemName(d.system) : '') || 'Source';
@@ -55,6 +55,7 @@ async function openDocument(id, opts) {
   let d;
   try {
     d = await B.api.get('/documents/' + id);
+    if (!d || !d.id) throw Object.assign(new Error('The document reply was empty'), { status: 404 }); // read like a document that is not there
   } catch (error) {
     const body = $('#svbody');
     const sys = $('#drawer .sv-sys');
@@ -141,8 +142,9 @@ async function detailsModal(d) {
     const page = await B.api.get('/admin/audit', { document_id: d.id, limit: 50 });
     const box = $('#lin');
     if (!box) return;
-    box.innerHTML = page.items.length
-      ? `<div class="actl">${page.items.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' \u00b7 ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' \u00b7 ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
+    const events = B.rows(page);
+    box.innerHTML = events.length
+      ? `<div class="actl">${events.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' \u00b7 ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' \u00b7 ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
       : emptyFrame('chat', 'Nothing yet', 'Answers that cite this document appear here.');
   } catch (error) {
     const box = $('#lin');

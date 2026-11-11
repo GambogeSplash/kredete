@@ -200,7 +200,7 @@ async function names() {
   if (!c.names) {
     try {
       const page = await B.api.get('/admin/users', { limit: 200 });
-      c.names = Object.fromEntries(page.items.map((u) => [u.id, u.name]));
+      c.names = Object.fromEntries(B.rows(page).map((u) => [u.id, u.name]));
     } catch (error) { c.names = {}; }
   }
   return c.names;
@@ -257,8 +257,8 @@ async function load(reset) {
   try {
     const [page] = await Promise.all([B.api.get('/admin/audit', { action: a.action || null, from: day(a.from, false), to: day(a.to, true), limit: 50, cursor: reset ? null : a.next }), names()]);
     if (mine !== a.seq) return;
-    a.items = reset ? page.items : a.items.concat(page.items);
-    a.next = page.next_cursor || null;
+    a.items = reset ? B.rows(page) : a.items.concat(B.rows(page));
+    a.next = B.cursorOf(page);
     a.loaded = true;
   } catch (error) {
     if (mine !== a.seq) return;
@@ -274,7 +274,7 @@ function exportCsv() {
   if (!a.items.length) { B.toast('No events to export'); return; }
   const cell = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   const names = B.S.cache.names || {};
-  const lines = [['Timestamp', 'Event', 'Actor', 'Resource', 'Outcome'].map(cell).join(',')].concat(a.items.map((e) => [e.ts, actionName(e.action), e.actor ? names[e.actor] || e.actor : 'System', e.action === 'answer.served' ? `${e.sources.length} sources` : String(e.target_type || '').replace(/_/g, ' '), String(e.outcome).replace(/_/g, ' ')].map(cell).join(',')));
+  const lines = [['Timestamp', 'Event', 'Actor', 'Resource', 'Outcome'].map(cell).join(',')].concat(a.items.map((e) => [e.ts, actionName(e.action), e.actor ? names[e.actor] || e.actor : 'System', e.action === 'answer.served' ? `${B.arr(e.sources).length} sources` : String(e.target_type || '').replace(/_/g, ' '), String(e.outcome).replace(/_/g, ' ')].map(cell).join(',')));
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], { type: 'text/csv' }));
   link.download = 'audit-log.csv';
@@ -290,7 +290,7 @@ function actor(id) {
   return n ? `${AVATAR(n, 'lav', 18)} ${esc(n)}` : `<span class="amute mono" title="${esc(id)}">${esc(id.slice(0, 8))}</span>`;
 }
 function target(e) {
-  if (e.action === 'answer.served') return `${e.sources.length} ${e.sources.length === 1 ? 'source' : 'sources'}`;
+  if (e.action === 'answer.served') { const n = B.arr(e.sources).length; return `${n} ${n === 1 ? 'source' : 'sources'}`; }
   if (e.target_type) return esc(e.target_type.replace(/_/g, ' '));
   return '';
 }

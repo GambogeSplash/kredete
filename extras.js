@@ -148,8 +148,8 @@ async function allPages(path, params) {
   let cursor = null;
   do {
     const page = await B.api.get(path, { ...params, cursor });
-    out.push(...page.items);
-    cursor = page.next_cursor || null;
+    out.push(...B.rows(page));
+    cursor = B.cursorOf(page);
   } while (cursor);
   return out;
 }
@@ -193,7 +193,7 @@ async function sessions() {
   el.innerHTML = B.loadingBlock('Loading sessions', 3, 'dt-r');
   let list;
   try {
-    list = (await B.api.get('/me/sessions')).items;
+    list = B.rows(await B.api.get('/me/sessions'));
   } catch (error) {
     el.innerHTML = B.errorBlock(error, 'sesretry');
     $('#sesretry').onclick = sessions;
