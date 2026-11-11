@@ -116,8 +116,23 @@ A.rise = () => {
 /** Signing out is the dive in reverse: the app dims, the sign-in is switched on beneath, the card shrinks into the picture. */
 A.leave = (commit) => {
   if (calm()) { commit(); return; }
-  /* Already on a picture screen (first-run welcome, setup wizard): there is no app to dim, so switch straight to the sign-in and let it fade in, as the prototype does. Dimming here painted a white overlay, because these screens have no page filter. */
-  if ($('#sipv')) { still(commit); return; }
+  /* Already on a picture screen (first-run welcome, setup wizard): there is no app to dim. The picture stays where it is; only the form column fades out, the sign-in is switched on, and its form fades back in (the page-level fade is held off for this swap so the picture does not blink). */
+  if ($('#sipv')) {
+    const hold = document.documentElement.classList;
+    const M = window.Motion;
+    const ease = [0.2, 0.8, 0.2, 1];
+    const swap = () => {
+      hold.add('keepframe');
+      still(commit);
+      const l = $('.si-l');
+      if (l && M && M.animate) { l.style.opacity = '0'; M.animate(l, { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0px)'] }, { duration: 0.36, ease }).finished.then(() => { l.style.opacity = ''; l.style.transform = ''; }); }
+      setTimeout(() => hold.remove('keepframe'), 800);
+    };
+    const sl = $('.si-l');
+    if (sl && M && M.animate) M.animate(sl, { opacity: [1, 0], transform: ['translateX(0px)', 'translateX(-12px)'] }, { duration: 0.2, ease: 'easeIn' }).finished.then(swap, swap);
+    else swap();
+    return;
+  }
   const mp = $('.mainpanel');
   // In dark the panel's own colour is pre-inversion; what is on screen is the dark of the sign-in card.
   const [pr, pg, pb] = dark() ? [19, 19, 20] : rgb(mp ? getComputedStyle(mp).backgroundColor : 'rgb(255,255,255)');

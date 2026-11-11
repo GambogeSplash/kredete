@@ -126,3 +126,7 @@ button.adlogo.busy{animation:logopulse 1s ease-in-out infinite}
 .obnm{display:flex;align-items:center;gap:var(--s-2);min-width:0}
 .obnm b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .obrole{display:inline-flex;align-items:center;flex:none;height:20px;padding:0 8px;border-radius:999px;border:1px solid var(--line-strong);background:var(--fill-2);color:var(--ink-2);font-size:var(--fs-xs);font-weight:500;line-height:1}
+
+/* swapping between two picture screens (e.g. Not you? Sign out): the picture and form do not run their page-level entrances, the swap animates the form itself */
+html.keepframe .si.v2:has(.si-r.pict){animation:none}
+html.keepframe .si-in.in{animation:none}
