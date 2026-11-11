@@ -33,6 +33,10 @@
 .cxside{position:relative}
 .cxclose{position:absolute;top:var(--s-3);right:var(--s-3);z-index:2;width:32px;height:32px;display:grid;place-items:center;padding:0;border-radius:12px}
 .cxside .cxclose{width:32px!important;min-width:0!important;height:32px!important;left:auto!important;right:var(--s-3)!important}
+.cxtabs .ltab.ic{width:auto!important;min-width:44px;padding:0 12px!important;display:inline-flex!important;align-items:center;justify-content:center;gap:8px}
+.cxtabs .ltab .ltl{display:none;font-size:13px;font-weight:500;white-space:nowrap}
+.cxtabs .ltab.on .ltl{display:inline}
+@media (min-width:901px){.cxtabs{padding-left:16px!important;padding-right:16px!important}}
 .cxpro{display:flex;flex-direction:column;align-items:center;gap:var(--s-1);padding:var(--s-6) 0 var(--s-4)}
 .cxav{width:100px;height:100px;border-radius:32%;corner-shape:squircle;background:#eef0ff;display:grid;place-items:center;overflow:hidden;margin-bottom:var(--s-2)}
 .cxav img{width:82px;height:auto;margin-top:10px}

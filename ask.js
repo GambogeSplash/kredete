@@ -703,7 +703,9 @@ function renderPanel() {
   const a = askState();
   if ($('.lhome')) { renderHomePanel(p); return; }
   const pt = a.pt === 'sources' ? 'sources' : 'answer';
-  p.innerHTML = `<div class="cxtabs" role="tablist">${[['answer', 'Answer'], ['sources', 'Sources']].map(([k, l]) => `<button type="button" class="ltab ${pt === k ? 'on' : ''}" role="tab" aria-selected="${pt === k}" data-pt="${k}">${l}</button>`).join('')}<span class="lsp"></span><button type="button" class="lib" id="cxclose" aria-label="Close sources">${ICON('x', 16)}</button></div><div class="cxbody">${pt === 'answer' ? answerTab() : sourcesTab()}</div>`;
+  const QUOTE = '<svg class="ic-svg" data-i="quote" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 8H7a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2.5v1.5A2.5 2.5 0 0 1 7 19M18.5 8H16a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2.5v1.5A2.5 2.5 0 0 1 16 19"/></svg>';
+  const tabIcon = { answer: QUOTE, sources: ICON('stack', 18) };
+  p.innerHTML = `${proHtml()}<div class="cxtabs" role="tablist">${[['answer', 'Answer'], ['sources', 'Sources']].map(([k, l]) => `<button type="button" class="ltab ic ${pt === k ? 'on' : ''}" role="tab" aria-selected="${pt === k}" data-pt="${k}" aria-label="${l}" title="${l}">${tabIcon[k]}<span class="ltl">${l}</span></button>`).join('')}</div><div class="cxbody">${pt === 'answer' ? answerTab() : sourcesTab()}</div>`;
   $$('[data-pt]', p).forEach((b) => { b.onclick = () => { a.pt = b.dataset.pt; renderPanel(); }; });
   $('#cxclose', p).onclick = () => setPanel(false);
   const tabs = $('.cxtabs', p), on = $('.ltab.on', tabs);
@@ -725,10 +727,14 @@ function renderPanel() {
   }
   if (pt === 'answer') wireAnswerTab(p); else wireSourcesTab(p);
 }
+/** The close button and Broth's card at the top of the panel. */
+function proHtml() {
+  const connected = systems().length > 0;
+  return `<button type="button" class="lib cxclose" id="cxclose" aria-label="Close panel">${ICON('x', 16)}</button><div class="cxpro"><div class="cxav"><img src="/assets/brand/mascot-head.png" alt="" draggable="false"></div><b class="cxname">Broth</b><span class="cxst ${connected ? 'on' : ''}"><i></i>${connected ? 'Connected' : 'No sources connected'}</span></div>`;
+}
 /** The panel on the home view: who Broth is, then the sources the next question can read. */
 function renderHomePanel(p) {
-  const connected = systems().length > 0;
-  p.innerHTML = `<button type="button" class="lib cxclose" id="cxclose" aria-label="Close panel">${ICON('x', 16)}</button><div class="cxpro"><div class="cxav"><img src="/assets/brand/mascot-head.png" alt="" draggable="false"></div><b class="cxname">Broth</b><span class="cxst ${connected ? 'on' : ''}"><i></i>${connected ? 'Connected' : 'No sources connected'}</span></div><div class="cxbody">${sourcesTab()}</div>`;
+  p.innerHTML = `${proHtml()}<div class="cxbody">${sourcesTab()}</div>`;
   $('#cxclose', p).onclick = () => setPanel(false);
   wireSourcesTab(p);
 }
