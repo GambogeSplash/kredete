@@ -186,18 +186,17 @@ function showError(root, key, message) {
   if (control) control.setAttribute('aria-invalid', message ? 'true' : 'false');
 }
 
-/** Keeps each field's character counter current. */
+/** Keeps each field's character counter current; calling it again redraws them after a reset. */
 function counters(root) {
   $$('[data-count]', root).forEach((c) => {
     const input = $(`#${c.dataset.count}`, root);
-    if (!input || input.dataset.counted) return;
-    input.dataset.counted = '1';
+    if (!input) return;
     const sync = () => {
       const n = input.value.trim().length;
       c.textContent = `${n}/${c.dataset.max}`;
       c.classList.toggle('over', n > Number(c.dataset.max));
     };
-    input.addEventListener('input', sync);
+    if (!input.dataset.counted) { input.dataset.counted = '1'; input.addEventListener('input', sync); }
     sync();
   });
 }

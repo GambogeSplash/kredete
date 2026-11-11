@@ -156,21 +156,40 @@
   /** @param {{ products: { status: string, allowed_origins: string[] }[] }} bot */
   const liveProducts = (bot) => bot.products.filter((p) => p.status === 'live');
 
+  /**
+   * Live products first, revoked ones after, each group as the server listed it.
+   * @template {{ status: string }} P
+   * @param {P[]} products
+   * @returns {P[]}
+   */
+  const byStatus = (products) => [...products].sort((a, b) => (a.status === b.status ? 0 : a.status === 'live' ? -1 : 1));
+
   /** Distinct sites the bot is live on. @param {{ products: { status: string, allowed_origins: string[] }[] }} bot */
   const liveSites = (bot) => new Set(liveProducts(bot).flatMap((p) => p.allowed_origins)).size;
 
   /**
-   * The chosen sources that are listed and served.
-   * @param {{ sources: string[] }} bot
-   * @param {{ id: string, included: boolean, public_documents: number }[]} containers
+   * Whether Broth serves a container's pages at all: included, and its connection not
+   * disconnected. Every screen asks this one question, so they never disagree.
+   * @param {{ included: boolean, connection_id: string }} container
+   * @param {{ id: string, status: string }[]} connections
    */
-  const chosen = (bot, containers) => containers.filter((c) => c.included && bot.sources.includes(c.id));
+  const serves = (container, connections) => container.included && !connections.some((c) => c.id === container.connection_id && c.status === 'disconnected');
+
+  /**
+   * The bot's chosen sources that Broth serves.
+   * @template {{ id: string, included: boolean, connection_id: string, public_documents: number }} C
+   * @param {{ sources: string[] }} bot
+   * @param {C[]} containers
+   * @param {{ id: string, status: string }[]} connections
+   * @returns {C[]}
+   */
+  const served = (bot, containers, connections) => containers.filter((c) => bot.sources.includes(c.id) && serves(c, connections));
 
   /** Public pages over the bot's served sources. */
-  const publicPages = (/** @type {any} */ bot, /** @type {any[]} */ containers) => chosen(bot, containers).reduce((n, c) => n + c.public_documents, 0);
+  const publicPages = (/** @type {any} */ bot, /** @type {any[]} */ containers, /** @type {any[]} */ connections) => served(bot, containers, connections).reduce((n, c) => n + c.public_documents, 0);
 
   /** Whether at least one chosen source has a Public page (spec 5, step 1). */
-  const canAnswer = (/** @type {any} */ bot, /** @type {any[]} */ containers) => publicPages(bot, containers) > 0;
+  const canAnswer = (/** @type {any} */ bot, /** @type {any[]} */ containers, /** @type {any[]} */ connections) => publicPages(bot, containers, connections) > 0;
 
   /**
    * The contrast of white text on a hex colour (WCAG 2.2): the widget's launcher, header avatar,
@@ -202,5 +221,5 @@
     return { client: origin(src[1]), api: origin(api[1]) };
   }
 
-  return { LENGTHS, MAX_STARTERS, MAX_SITES, normalizeOrigin, fieldError, changes, liveSites, publicPages, canAnswer, whiteContrast, maskKey, snippetOrigins };
+  return { LENGTHS, MAX_STARTERS, MAX_SITES, normalizeOrigin, fieldError, changes, liveProducts, byStatus, liveSites, serves, served, publicPages, canAnswer, whiteContrast, maskKey, snippetOrigins };
 });

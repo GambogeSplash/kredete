@@ -32,7 +32,6 @@ const DOCS = {
   indexerGroupMembers: 'setting-up-spaces#warn-indexer-group-members',
   findLabelProblems: 'fixing-label-problems#find-pages',
   botSources: 'support-bots#sources',
-  botPublic: 'support-bots#public-pages',
   botSnippet: 'support-bots#snippet',
   botKeys: 'support-bots#keys',
   botContact: 'support-bots#contact',

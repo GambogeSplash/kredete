@@ -622,3 +622,4 @@ time{white-space:nowrap}
 .agpempty{margin:0}
 /* Dark mode inverts the page (styles.css); the preview and the accents show true colours, so they are inverted back. */
 html[data-mode=dark] :is(#exhost,.agpico,.agsw){filter:invert(1) hue-rotate(180deg)}
+.agfs-d{margin:calc(-1 * var(--s-2)) 0 var(--s-3)}

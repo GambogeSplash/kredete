@@ -272,10 +272,13 @@ function showLocation(path) {
  */
 function showSource(container) {
   const L = state();
+  // Only that source: no search, and no filter left from earlier, would hide any of its pages.
   L.source = container.id;
   L.sourceName = B.containerName(container.path);
   L.path = '';
   L.q = '';
+  L.system = '';
+  L.problems = '';
   L.loaded = false;
   B.go('/library');
 }

@@ -30,8 +30,9 @@ A.pages.experience = (el, ctx) => {
   let form = valuesOf(bot);
   /** Fields whose error shows: those touched, and all of them after a Save. */
   const touched = new Set();
-  const products = [...bot.products].sort((a, b) => (a.status === b.status ? 0 : a.status === 'live' ? -1 : 1));
-  let look = products[0] || null;
+  const products = F.byStatus(/** @type {any[]} */ (bot.products));
+  /** The product whose accent and side the preview shows. */
+  let previewProduct = products[0] || null;
   let view = 'start';
 
   const f = (key, label, o) => A.field(key, label, { ...o, prefix: 'ex', value: form[key] });
@@ -42,7 +43,7 @@ A.pages.experience = (el, ctx) => {
         ${f('greeting', 'Greeting', { max: F.LENGTHS.greeting[1], rows: 2, hint: 'The first thing visitors read. Leave it empty to start with the starters.' })}
         <div class="agfield" data-field="starters"><div class="aglab"><span class="hsl" id="exst-l">Starters</span></div><p class="suhint agst-h">Up to ${F.MAX_STARTERS} questions visitors can ask with one click.</p><div class="agstarters" id="exstarters" role="group" aria-labelledby="exst-l"></div></div>
       </fieldset>
-      <fieldset class="agfs"><legend>Getting help</legend>
+      <fieldset class="agfs"><legend>Getting help</legend><p class="suhint agfs-d">What visitors see when the bot can't answer. ${window.DOCS.link('botContact')}</p>
         ${f('contact_label', 'Contact label', { max: F.LENGTHS.contact_label[1], hint: "Shown whenever the bot can't answer." })}
         ${f('contact_url', 'Contact link', { hint: 'A web page, or mailto: and an email address.', placeholder: 'https://kredete.com/support' })}
       </fieldset>
@@ -109,8 +110,8 @@ A.pages.experience = (el, ctx) => {
   const settings = () => ({
     ...form,
     starters: form.starters.map((s) => s.trim()).filter(Boolean),
-    accent: (look || DEFAULT_LOOK).accent,
-    side: (look || DEFAULT_LOOK).side,
+    accent: (previewProduct || DEFAULT_LOOK).accent,
+    side: (previewProduct || DEFAULT_LOOK).side,
   });
   function drawPreview(extra) {
     if (!window.BrothBot) return;
@@ -131,7 +132,7 @@ A.pages.experience = (el, ctx) => {
     };
   });
   const as = $('#exas', el);
-  if (as) as.onchange = () => { look = products.find((p) => p.id === as.value) || null; drawPreview(); };
+  if (as) as.onchange = () => { previewProduct = products.find((p) => p.id === as.value) || null; drawPreview(); };
 
   function changed() {
     showErrors(false);
@@ -164,9 +165,7 @@ A.pages.experience = (el, ctx) => {
     form = valuesOf(bot);
     touched.clear();
     for (const k of TEXT_FIELDS) $(`#ex${k}`, el).value = form[k];
-    $$('[data-count]', el).forEach((c) => $(`#${c.dataset.count}`, el).dispatchEvent(new Event('input')));
-    form = valuesOf(bot); // the counters' input events above must not leave touched fields
-    touched.clear();
+    A.counters(el);
     drawStarters();
     showErrors(false);
     bar.update();

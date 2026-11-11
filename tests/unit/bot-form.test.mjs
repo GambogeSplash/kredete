@@ -75,11 +75,23 @@ describe('status', () => {
     assert.equal(F.liveSites({ products: [product('revoked', ['https://c.com'])] }), 0);
   });
   it('is ready to answer when a chosen source has a Public page', () => {
-    const containers = [{ id: 'a', public_documents: 0, included: true }, { id: 'b', public_documents: 3, included: true }, { id: 'c', public_documents: 5, included: false }];
-    assert.equal(F.canAnswer({ sources: ['a'] }, containers), false);
-    assert.equal(F.canAnswer({ sources: ['c'] }, containers), false);
-    assert.equal(F.canAnswer({ sources: ['a', 'b'] }, containers), true);
-    assert.equal(F.publicPages({ sources: ['a', 'b', 'c', 'gone'] }, containers), 3);
+    const connections = [{ id: 'k1', status: 'healthy' }, { id: 'k2', status: 'disconnected' }];
+    const containers = [
+      { id: 'a', connection_id: 'k1', public_documents: 0, included: true },
+      { id: 'b', connection_id: 'k1', public_documents: 3, included: true },
+      { id: 'c', connection_id: 'k1', public_documents: 5, included: false },
+      { id: 'd', connection_id: 'k2', public_documents: 7, included: true },
+    ];
+    assert.equal(F.canAnswer({ sources: ['a'] }, containers, connections), false);
+    assert.equal(F.canAnswer({ sources: ['c'] }, containers, connections), false);
+    assert.equal(F.canAnswer({ sources: ['d'] }, containers, connections), false); // its connection is gone
+    assert.equal(F.canAnswer({ sources: ['a', 'b'] }, containers, connections), true);
+    assert.equal(F.publicPages({ sources: ['a', 'b', 'c', 'd', 'gone'] }, containers, connections), 3);
+    assert.deepEqual(F.served({ sources: ['b', 'c', 'd'] }, containers, connections).map((c) => c.id), ['b']);
+  });
+  it('lists live products before revoked ones, keeping their order', () => {
+    const ps = [{ id: 1, status: 'revoked' }, { id: 2, status: 'live' }, { id: 3, status: 'revoked' }, { id: 4, status: 'live' }];
+    assert.deepEqual(F.byStatus(ps).map((p) => p.id), [2, 4, 1, 3]);
   });
   it('masks a key to its first 12 and last 4 characters', () => {
     assert.equal(F.maskKey('bk_live_abcd0123456789012345678901234wxyz'), 'bk_live_abcd••••wxyz');

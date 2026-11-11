@@ -10,6 +10,7 @@
 'use strict';
 const B = window.BRAIN;
 const A = window.AGENT;
+const F = window.BOT_FORM;
 const esc = B.esc;
 /** @type {(s: string, r?: ParentNode) => any} */
 const $ = (s, r = document) => r.querySelector(s);
@@ -19,8 +20,10 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 A.pages.knowledge = (el, ctx) => {
   let bot = ctx.bot;
   const connections = new Map(ctx.connections.map((c) => [c.id, c]));
-  /** Whether Broth serves a container's pages at all. */
-  const serves = (c) => c.included && (connections.get(c.connection_id) || {}).status !== 'disconnected';
+  /** Whether Broth serves a container's pages at all (one rule for every screen). */
+  const serves = (c) => F.serves(c, ctx.connections);
+  /** A container's connection, or a stand-in when it is gone. */
+  const connectionOf = (c) => connections.get(c.connection_id) || { system: '', status: 'disconnected' };
   /** Listed: every served container, and any chosen one that is not served any more. */
   const listed = (chosen) => ctx.containers.filter((c) => serves(c) || chosen.includes(c.id));
   let picked = new Set(bot.sources);
@@ -34,14 +37,15 @@ A.pages.knowledge = (el, ctx) => {
 
   function row(c) {
     const used = serves(c);
+    const conn = connectionOf(c);
     const name = B.containerName(c.path);
     const id = `ks-${c.id}`;
     const note = !used
-      ? `<span class="agksn">${(connections.get(c.connection_id) || {}).status === 'disconnected' ? 'Its connection is disconnected.' : 'Excluded in Connectors.'} Nothing from it is used.</span>`
+      ? `<span class="agksn">${c.included ? 'Its connection is disconnected.' : 'Excluded in Connectors.'} Nothing from it is used.</span>`
       : c.public_documents
         ? `<span class="agksn">${A.count(c.public_documents, 'Public page')}</span>`
         : '<span class="tag warn">No Public pages</span>';
-    return `<div class="dt-r agks${used ? '' : ' off'}"><label class="agksl" for="${id}"><input type="checkbox" id="${id}" data-source="${c.id}" ${picked.has(c.id) ? 'checked' : ''}><span class="agksp">${B.srcIcon((connections.get(c.connection_id) || {}).system, 18)}<span>${esc(name)}</span></span></label><span class="agksc">${note}</span><span class="agkso">${used ? `<button type="button" class="btn sm" data-open="${c.id}" aria-label="Open ${esc(name)} in the Library">Open in Library</button>` : ''}</span></div>`;
+    return `<div class="dt-r agks${used ? '' : ' off'}"><label class="agksl" for="${id}"><input type="checkbox" id="${id}" data-source="${c.id}" ${picked.has(c.id) ? 'checked' : ''}><span class="agksp">${B.srcIcon(conn.system, 18)}<span>${esc(name)}</span></span></label><span class="agksc">${note}</span><span class="agkso">${used ? `<button type="button" class="btn sm" data-open="${c.id}" aria-label="Open ${esc(name)} in the Library">Open in Library</button>` : ''}</span></div>`;
   }
 
   function draw() {

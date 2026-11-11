@@ -21,13 +21,12 @@ const SWATCHES = [['#5e6ad2', 'Indigo'], ['#5a0fc8', 'Kredete purple'], ['#1f7a4
 /** The product shown on each bot's page, kept while moving between pages. */
 const shown = new Map();
 
-const byStatus = (products) => [...products].sort((a, b) => (a.status === b.status ? 0 : a.status === 'live' ? -1 : 1));
 
 A.pages.products = (el, ctx) => {
   let bot = ctx.bot;
 
   function draw() {
-    const products = byStatus(bot.products);
+    const products = F.byStatus(/** @type {any[]} */ (bot.products));
     const current = products.find((p) => p.id === shown.get(bot.id)) || products[0] || null;
     if (current) shown.set(bot.id, current.id);
     el.innerHTML = `<p class="sub agintro">Each site the bot runs on is a product, with its own key and the sites it may load on. ${window.DOCS.link('botSnippet')}</p>
@@ -156,7 +155,15 @@ A.pages.products = (el, ctx) => {
         B.toast('Saved. Sites show the change within 5 minutes.');
       }, (error) => { if (!A.serverErrors(el, error, null)) bar.error(B.problem(error)); else bar.error('Check the fields marked above.'); });
     }
-    function discard() { form = { name: p.name, sites: [...p.allowed_origins], accent: p.accent, side: p.side }; touched.clear(); $('#pdname', el).value = form.name; $('#pdname', el).dispatchEvent(new Event('input')); touched.clear(); hex.value = form.accent; sites(); changed(); }
+    function discard() {
+      form = { name: p.name, sites: [...p.allowed_origins], accent: p.accent, side: p.side };
+      touched.clear();
+      $('#pdname', el).value = form.name;
+      A.counters(pf);
+      hex.value = form.accent;
+      sites();
+      changed();
+    }
 
     const bar = A.saveBar(pf, { dirty, valid, save, discard });
     sites();

@@ -14,12 +14,12 @@ const esc = B.esc;
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 A.pages.overview = (el, ctx) => {
-  const { bot, containers } = ctx;
+  const { bot, containers, connections } = ctx;
   const sites = F.liveSites(bot);
   const chosen = containers.filter((c) => bot.sources.includes(c.id));
-  const served = chosen.filter((c) => c.included);
-  const pages = F.publicPages(bot, containers);
-  const answers = F.canAnswer(bot, containers);
+  const served = F.served(bot, /** @type {any[]} */ (containers), connections);
+  const pages = F.publicPages(bot, containers, connections);
+  const answers = F.canAnswer(bot, containers, connections);
   const live = bot.products.some((p) => p.status === 'live');
   const head = el.parentElement.querySelector('.aghd');
   head.insertAdjacentHTML('beforeend', sites ? `<span class="tag ok">Live on ${A.count(sites, 'site')}</span>` : '<span class="tag">Not live</span>');
@@ -39,9 +39,9 @@ A.pages.overview = (el, ctx) => {
 
   const knowledge = card('Knowledge', 'knowledge', `<dl class="agkvs">${row('Sources', String(served.length))}${row('Public pages', String(pages))}</dl>${
     served.filter((c) => !c.public_documents).map((c) => warn(`${B.containerName(c.path)} has no Public pages.`)).join('')}${
-    chosen.filter((c) => !c.included).map((c) => warn(`${B.containerName(c.path)} is excluded in Connectors, so nothing from it is used.`)).join('')}`);
+    chosen.filter((c) => !served.includes(c)).map((c) => warn(`${B.containerName(c.path)} ${c.included ? 'is on a disconnected connection' : 'is excluded in Connectors'}, so nothing from it is used.`)).join('')}`);
   const experience = card('Experience', 'experience', `<dl class="agkvs">${row('Name', esc(bot.name))}${row('Greeting', bot.greeting ? esc(bot.greeting) : muted('None'))}${row('Contact', `${esc(bot.contact_label)}, ${link(bot.contact_url)}`)}${row('Privacy', link(bot.privacy_url))}${row('Daily limit', `${bot.daily_question_limit.toLocaleString('en-US')} questions`)}</dl>`);
-  const ordered = [...bot.products].sort((a, b) => (a.status === b.status ? 0 : a.status === 'live' ? -1 : 1));
+  const ordered = F.byStatus(/** @type {any[]} */ (bot.products));
   const products = card('Products', 'products', ordered.length
     ? `<ul class="agprods">${ordered.map((p) => `<li${p.status === 'live' ? '' : ' class="off"'}><span class="agprod-n"><b>${esc(p.name)}</b><small>${p.allowed_origins.map(esc).join(', ')}</small></span>${p.status === 'live' ? '<span class="tag ok">Live</span>' : '<span class="tag">Revoked</span>'}</li>`).join('')}</ul>`
     : `<p class="agnote">${muted('No products yet.')}</p>`);
