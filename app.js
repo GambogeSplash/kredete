@@ -229,7 +229,6 @@ const ROUTES = [
   { re: /^\/c\/([0-9a-f-]{36})$/i, surface: 'ask', keys: ['id'] },
   { re: /^\/chats$/, surface: 'chats' },
   { re: /^\/bookmarks$/, surface: 'bookmarks' },
-  { re: /^\/inbox$/, surface: 'inbox' },
   { re: /^\/library(?:\/([a-z0-9-]+))?$/, surface: 'library', keys: ['domain'] },
   { re: /^\/connectors$/, surface: 'connectors' },
   { re: /^\/governance$/, surface: 'governance' },
@@ -343,6 +342,8 @@ function route() {
   }
   if (S.phase === 'signedout' && path !== '/signin' && !docs) { go('/signin', { replace: true }); return; }
   if (S.phase === 'app' && path === '/signin') { go('/', { replace: true }); return; }
+  // The Inbox is gone: Governance holds what needs a person. Old links land there.
+  if (/^\/(?:account\/)?inbox$/.test(path)) { go('/governance', { replace: true }); return; }
   const found = match(path);
   if (!found || (found.allow && !found.allow())) { go('/', { replace: true }); return; }
   if (found.surface === 'setup' && S.phase === 'app' && !(isAdmin() && sandbox())) { go('/', { replace: true }); return; }
@@ -411,6 +412,7 @@ async function boot() {
   if (isAdmin() && sandbox()) await refreshSetupProgress();
   loadFacets();
   loadChats(true);
+  if (window.GOVBADGE) window.GOVBADGE.refresh();
   route();
   if (window.AUTH && window.AUTH.rise) window.AUTH.rise();
 }
@@ -649,7 +651,7 @@ function chatMenu(anchor, conv, opts) {
     const b = /** @type {any} */ (e.target).closest('[data-a]');
     if (!b) return;
     const a = b.dataset.a;
-    if (a === 'del' && !b.dataset.arm) { b.dataset.arm = '1'; $('span', b).textContent = 'Confirm delete'; return; }
+    if (a === 'del') { if (armPress(b, 'Confirm delete', () => { /* falls through below */ })) return; }
     close();
     const rowEl = anchor.closest('.surf,.chr,.lrow');
     try {
@@ -672,10 +674,9 @@ function renderSurfaces() {
   let h = navItem('data-home="1"', 'compose', 'New chat', atHome, '', 'newchat-nav');
   h += navItem('data-search="1"', 'search', 'Search', false, '<kbd class="skbd">⌘K</kbd>');
   h += navItem('data-go="/library"', 'library', 'Library', r.surface === 'library');
-  const ib = window.INBOX ? window.INBOX.open() : 0;
-  h += navItem(`data-go="/inbox" ${ib ? `data-badge="${ib}"` : ''}`, 'inbox', 'Inbox', r.surface === 'inbox');
   h += navItem('data-go="/bookmarks"', 'bookmark', 'Bookmarks', r.surface === 'bookmarks');
-  h += navItem('data-go="/governance"', 'shield', 'Governance', r.surface === 'governance');
+  const gw = window.GOVBADGE ? window.GOVBADGE.count() : 0;
+  h += navItem(`data-go="/governance"${gw ? ` data-badge="${gw > 9 ? '9+' : gw}" data-waiting="${gw}"` : ''}`, 'shield', 'Governance', r.surface === 'governance', gw ? `<span class="lbadge">${gw > 9 ? '9+' : gw}</span>` : '');
   h += navItem('data-go="/docs"', 'book', 'Help center', r.surface === 'docs');
   $('#surfaces').innerHTML = `<div class="snav">${h}</div><div class="srec" id="srec" role="list" aria-label="Chats"></div>`;
   // The chats shell belongs to the chat pages; the icon rail (rail.js) stands in for the places list.
@@ -743,7 +744,7 @@ function newChat() {
 }
 
 /* ---------- breadcrumb and mobile title ---------- */
-const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], inbox: ['Workspace', 'Inbox'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Connectors'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
+const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Connectors'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
   const label = S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
@@ -757,7 +758,7 @@ function setCrumb() {
 function mbTitle() {
   const t = $('#mbtitle');
   if (!t) return;
-  const names = { library: 'Library', connectors: 'Connectors', governance: 'Governance', docs: 'Help center', account: 'Account', chats: 'Chats', bookmarks: 'Bookmarks', inbox: 'Inbox', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
+  const names = { library: 'Library', connectors: 'Connectors', governance: 'Governance', docs: 'Help center', account: 'Account', chats: 'Chats', bookmarks: 'Bookmarks', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
   t.textContent = S.route.title || names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
 }
 
@@ -786,10 +787,40 @@ function mbTitle() {
 }
 
 window.SURFACES = window.SURFACES || {};
+/** Two presses for anything that cannot be undone (Delete chat, Sign out): the first arms the control, the label swaps
+ *  to `confirmText` and it turns danger-styled; the second runs `run`. It disarms after 2.6 s or when focus leaves.
+ *  Returns true when this press only armed it. Works for a button with a label span or a plain button. */
+function armPress(btn, confirmText, run, ms = 2600) {
+  const label = btn.querySelector('span') || btn;
+  if (btn.dataset.arm) {
+    disarm(btn);
+    run();
+    return false;
+  }
+  btn.dataset.arm = '1';
+  btn._armWas = label.textContent;
+  label.textContent = confirmText;
+  btn.classList.add('danger');
+  const live = document.getElementById('live');
+  if (live) live.textContent = confirmText;
+  const off = () => disarm(btn);
+  btn._armTimer = setTimeout(off, ms);
+  btn.addEventListener('focusout', off, { once: true });
+  return true;
+}
+function disarm(btn) {
+  if (!btn.dataset.arm) return;
+  clearTimeout(btn._armTimer);
+  delete btn.dataset.arm;
+  const label = btn.querySelector('span') || btn;
+  if (btn._armWas != null) label.textContent = btn._armWas;
+  if (!btn.matches('.pm-i.danger, .btn.danger-fixed')) btn.classList.remove('danger');
+}
+
 window.BRAIN = {
   get S() { return S; },
   api: API, esc, toast, haptic, problem, isAbort, busy, ICON: window.ICON,
-  go, route, boot, signOut, loadMe, loadFacets, readFacets, refreshSetupProgress, clearServerState,
+  go, route, boot, signOut, armPress, loadMe, loadFacets, readFacets, refreshSetupProgress, clearServerState,
   hasRole, isAdmin, sandbox, setupPending,
   openDrawer, closeDrawer, openModal, closeModal, exitFx, leaveFx,
   loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, trashFx, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,

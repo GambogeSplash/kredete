@@ -172,7 +172,7 @@ function wireRail(nav) {
   if (!nav) return;
   $$('[data-go]', nav).forEach((b) => { b.onclick = () => B.go(b.dataset.go); });
   const out = $('[data-out]', nav);
-  if (out) out.onclick = () => B.signOut();
+  if (out) out.onclick = () => B.armPress(out, 'Confirm sign out', () => B.signOut());
 }
 // Setup can finish while an Admin tab is open (a space's first read ends): the rail follows.
 document.addEventListener('brain:setupchange', () => {

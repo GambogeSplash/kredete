@@ -104,7 +104,7 @@ window.SURFACES.account = (params) => {
     : '';
   $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><div class="lrail-h">Account settings</div><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button>${adminLinks}<div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><div class="ds-head lcont-head"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div class="ds-act" id="acact"></div></div><div id="acpane"></div></div></div>`;
   $$('[data-at]').forEach((b) => { b.onclick = () => B.go(b.dataset.at); });
-  $('#aout').onclick = () => B.signOut();
+  $('#aout').onclick = () => B.armPress($('#aout'), 'Confirm sign out', () => B.signOut());
   if (tab === 'profile') profile(me);
   else sessions();
 };
@@ -205,14 +205,7 @@ async function sessions() {
    <div class="ds-table sesdt" role="table" aria-label="Devices"><div class="ds-tr ds-th dvcols" role="row"><span>Device</span><span class="dvm">First seen</span><span class="dvm">Last active</span><span></span></div>${list.map(row).join('')}</div>`;
   $$('[data-so]', el).forEach((b) => {
     b.onclick = () => {
-      if (!b.dataset.arm) {
-        b.dataset.arm = '1';
-        b.textContent = 'Confirm sign out';
-        b.classList.add('danger');
-        setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.textContent = 'Sign out'; b.classList.remove('danger'); } }, 2600);
-        return;
-      }
-      signOutOne(b);
+      B.armPress(b, 'Confirm sign out', () => signOutOne(b));
     };
   });
   function signOutOne(b) {

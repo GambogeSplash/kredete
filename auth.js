@@ -299,9 +299,10 @@ function profileMenu(a) {
   $$('[data-pm]', el).forEach((b) => {
     b.onclick = () => {
       const k = b.dataset.pm;
+      // Sign out takes two presses, like Delete chat: the first arms it and the menu stays open.
+      if (k === 'out') { B.haptic('light'); B.armPress(b, 'Confirm sign out', () => { closeMenu(false); B.signOut(); }); return; }
       closeMenu(false);
       B.haptic('light');
-      if (k === 'out') { B.signOut(); return; }
       B.go({ bot: '/agent', admin: '/admin', docs: '/docs' }[k] || '/account');
       window.scrollTo(0, 0);
     };

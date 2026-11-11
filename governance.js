@@ -149,6 +149,7 @@ function draw() {
       if (act !== 'approve' && !b.dataset.arm) { b.dataset.arm = '1'; b.textContent = act === 'reject' ? 'Confirm reject' : 'Confirm revoke'; b.classList.add('danger'); return; }
       B.busy(b, async () => {
         const updated = await B.api.post(`/promotions/${b.dataset.id}/${act}`, {});
+        if (window.GOVBADGE) window.GOVBADGE.refresh();
         const i = g.items.findIndex((x) => x.id === updated.id);
         // Decision responses carry no title or dates: keep the listed ones.
         if (i >= 0) g.items[i] = Object.assign({}, g.items[i], { status: updated.status, approved_by: updated.approved_by, can_decide: updated.can_decide });
@@ -207,6 +208,7 @@ function reviewPopup(request, anchor, onDone) {
   const fail = (error) => { $('#reve', pop).textContent = B.problem(error); };
   const decide = (act, button) => B.busy(button, async () => {
     const updated = await B.api.post(repo ? `/public-declarations/${request.id}/${act}` : `/promotions/${request.id}/${act}`, {});
+    if (!repo && window.GOVBADGE) window.GOVBADGE.refresh();
     if (repo) {
       g.repos = g.repos.map((x) => (x.id === updated.id ? Object.assign({}, x, { status: updated.status, approved_by: updated.approved_by, decided_at: updated.decided_at, can_decide: updated.can_decide }) : x)).filter((x) => !g.status || x.status === g.status);
     } else {

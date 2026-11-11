@@ -100,30 +100,29 @@ app.addEventListener('click',e=>{ const n=e.target.closest('svg.graph .n'); if(n
 app.addEventListener('mouseover',e=>{ const n=e.target.closest('svg.graph .n'); if(!n) return; const id=n.dataset.n; const near=new Set([id]); $$('svg.graph line[data-e]').forEach(l=>{ const [a,b]=l.dataset.e.split('-'); if(a===id)near.add(b); if(b===id)near.add(a); animate(l,{opacity:(a===id||b===id)?1:.15},{duration:.2}); }); $$('svg.graph .n').forEach(x=>animate(x,{opacity:near.has(x.dataset.n)?1:.25},{duration:.2})); });
 app.addEventListener('mouseout',e=>{ const n=e.target.closest('svg.graph .n'); if(!n||n.contains(e.relatedTarget)) return; $$('svg.graph .n,svg.graph line').forEach(x=>animate(x,{opacity:1},{duration:.2})); });
 
-/* ---------- search palette: pages, recent chats, and the API's search ---------- */
+/* ---------- search palette: asking, chats and Library documents (no page list) ---------- */
 const esc=B.esc;
-const pages=()=>{ const p=[['New chat','compose',()=>B.newChat()],['Chats','chat',()=>B.go('/chats')],['Library','library',()=>B.go('/library')],['Governance','shield',()=>B.go('/governance')],['Help center','book',()=>B.go('/docs')],['Account','user',()=>B.go('/account')]];
-  if(!B.hasRole('admin')) p.push(['Connectors','plug',()=>B.go('/connectors')]);
-  if(B.hasRole('admin')) p.push(['Connectors','plug',()=>B.go('/admin/connectors')],['People','user',()=>B.go('/admin/people')],['Domains','globe',()=>B.go('/admin/domains')],['Support agent','headset',()=>B.go('/agent')]);
-  if(B.hasRole('admin','compliance')) p.push(['Audit','book',()=>B.go('/admin/audit')]);
-  return p; };
-let found={q:'',conversations:[],documents:[]}; let timer=0, seq=0;
-const build=()=>{ const raw=$('#kq').value.trim(); const q=raw.toLowerCase(); const g=[];
+let libCache=null; let found={q:'',conversations:[],documents:[],lib:null}; let timer=0, seq=0, libSeq=0;
+const docRow=d=>({ic:B.srcIcon(d.system,18),t:d.title,s:d.path||B.systemName(d.system),f:()=>window.DOCUMENTS.openDocument(d.id)});
+const build=()=>{ const raw=$('#kq').value.trim(); const g=[];
   if(raw) g.push(['Ask',[{ic:B.ICON('arrow',16),t:'Ask Broth: '+raw,ask:true,f:()=>window.ASK&&window.ASK.askFresh(raw)}]]);
-  const chats=(raw?(found.q===raw?found.conversations:[]):B.S.chats.items).slice(0,raw?6:4).map(c=>({ic:B.ICON('chat',16),t:B.chatTitle(c),f:()=>B.go('/c/'+c.id)}));
+  const chats=(raw?(found.q===raw?found.conversations:[]):B.S.chats.items).slice(0,raw?6:4).map(c=>({ic:'<img class="kface" src="/assets/brand/mascot-head.png" alt="" aria-hidden="true" width="18" height="18" draggable="false">',t:B.chatTitle(c),f:()=>B.go('/c/'+c.id)}));
   if(chats.length) g.push([raw?'Chats':'Recent chats',chats]);
-  const docs=(raw&&found.q===raw?found.documents:[]).slice(0,6).map(d=>({ic:B.srcIcon(d.system,18),t:d.title,s:B.systemName(d.system),f:()=>window.DOCUMENTS.openDocument(d.id)}));
-  if(docs.length) g.push(['Documents',docs]);
-  const pg=pages().filter(p=>!q||p[0].toLowerCase().includes(q)).map(p=>({ic:B.ICON(p[1],16),t:p[0],f:p[2]})); if(pg.length) g.push(['Go to',pg]);
+  const docs=(raw?(found.q===raw?found.documents:[]):(found.lib||[])).slice(0,raw?6:8).map(docRow);
+  if(docs.length) g.push(['Library',docs]);
   return g; };
+// "Nothing found" shows above the Ask row once a search has come back empty, or before typing when there is nothing to list
+const nothing=()=>{ const raw=$('#kq').value.trim(); const g=build(); const rows=g.filter(x=>x[0]!=='Ask').reduce((n,x)=>n+x[1].length,0); if(rows) return false; return raw?found.q===raw:found.lib!==null; };
 const search=()=>{ const raw=$('#kq').value.trim(); clearTimeout(timer); draw(); if(!raw||!B.S.me) return;
   timer=setTimeout(async()=>{ const mine=++seq; let r={conversations:[],documents:[]}; try{ r=await B.api.get('/search',{q:raw}); }catch(e){ /* the palette still offers pages and asking */ } if(mine!==seq) return; found={q:raw,conversations:r.conversations,documents:r.documents}; draw(); },180); };
 const k=document.createElement('div'); k.id='cmdk'; k.innerHTML='<div class="box" role="dialog" aria-modal="true" aria-label="Search"><div class="kin">'+B.ICON('search',16)+'<input id="kq" placeholder="Search or ask" aria-label="Search" autocomplete="off"><button type="button" class="kx" id="kx" aria-label="Close search">'+B.ICON('x',16)+'</button></div><div id="kl" role="listbox"></div><div class="kfoot"><span><kbd>↑</kbd><kbd>↓</kbd> Move</span><span><kbd>↵</kbd> Open</span><span><kbd>esc</kbd> Close</span></div></div>'; document.body.appendChild(k);
 let sel=0, list=[];
 const draw=()=>{ const g=build(); list=g.flatMap(x=>x[1]); sel=Math.min(sel,Math.max(0,list.length-1)); let n=0;
-  $('#kl').innerHTML=list.length?g.map(([h,items])=>`<div class="kg"><div class="kh">${h}</div>${items.map(i=>{ const idx=n++; return `<div class="kr ${i.ask?'kask':''}" role="option" aria-selected="${idx===sel}" data-n="${idx}"><span class="ki">${i.ic}</span><span class="kt">${esc(i.t)}</span>${i.s?`<small>${esc(i.s)}</small>`:''}</div>`; }).join('')}</div>`).join(''):'<div class="ds-empty kempty"><span class="ds-empty-ic">'+B.ICON('search',20)+'</span><b>Nothing found</b></div>';
+  const empty=nothing()?'<div class="ds-empty kempty"><span class="ds-empty-ic">'+B.ICON('search',20)+'</span><b>Nothing found</b></div>':'';
+  $('#kl').innerHTML=(list.length||empty)?empty+g.map(([h,items])=>`<div class="kg"><div class="kh">${h}</div>${items.map(i=>{ const idx=n++; return `<div class="kr ${i.ask?'kask':''}" role="option" aria-selected="${idx===sel}" data-n="${idx}"><span class="ki">${i.ic}</span><span class="kt">${esc(i.t)}</span>${i.s?`<small>${esc(i.s)}</small>`:''}</div>`; }).join('')}</div>`).join(''):'';
   $$('#kl .kr').forEach(li=>{ li.onclick=()=>run(+li.dataset.n); li.onmousemove=()=>{ if(sel===+li.dataset.n) return; sel=+li.dataset.n; $$('#kl .kr').forEach((x,i)=>x.setAttribute('aria-selected',i===sel)); }; }); };
-const open=()=>{ if(!B.S.me) return; if(kx){ kx.cancel(); kx=null; k.classList.remove('on'); void k.offsetWidth; } found={q:'',conversations:[],documents:[]}; k._op=document.activeElement; k.classList.add('on'); $('#kq').value=''; sel=0; draw(); $('#kq').focus(); if(!RM){ animate($('.box',k),{opacity:[0,1],scale:[.96,1],y:[-8,0]},{duration:.18,ease:[.2,.8,.2,1]}); animate(k,{opacity:[0,1]},{duration:.14}); } };
+const loadLib=async()=>{ const mine=++libSeq; let items=null; try{ items=(await B.api.get('/documents',{limit:8})).items; }catch(e){ /* the palette still offers asking and chats */ } if(mine!==libSeq) return; libCache=items||libCache||[]; if(found.q===''&&k.classList.contains('on')){ found.lib=libCache; draw(); } };
+const open=()=>{ if(!B.S.me) return; if(kx){ kx.cancel(); kx=null; k.classList.remove('on'); void k.offsetWidth; } found={q:'',conversations:[],documents:[],lib:libCache}; loadLib(); k._op=document.activeElement; k.classList.add('on'); $('#kq').value=''; sel=0; draw(); $('#kq').focus(); if(!RM){ animate($('.box',k),{opacity:[0,1],scale:[.96,1],y:[-8,0]},{duration:.18,ease:[.2,.8,.2,1]}); animate(k,{opacity:[0,1]},{duration:.14}); } };
 let kx=null;
 const kdone=()=>{ k.classList.remove('on'); k.getAnimations().forEach(a=>a.cancel()); const bx=$('.box',k); if(bx) bx.getAnimations().forEach(a=>a.cancel()); };
 const close=()=>{ if(!k.classList.contains('on')||kx) return; const o=k._op; if(o&&o!==document.body&&document.contains(o)&&o.focus) o.focus({preventScroll:true});
