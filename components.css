@@ -570,7 +570,6 @@ time{white-space:nowrap}
 .agks.off .agksp{color:var(--mute)}
 .agtotal{margin:var(--s-3) 0 0;font-size:var(--fs-sm);color:var(--ink-2)}
 .agtotal.warn{color:var(--amber)}
-@media (max-width:900px){.agks{grid-template-columns:minmax(0,1fr)!important;gap:var(--s-2)}.agksc,.agkso{padding-left:calc(18px + var(--s-3));text-align:left}}
 /* Experience: the form beside the real widget in its preview mode */
 .agexp{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:var(--s-7);align-items:start}
 .agexf{min-width:0;max-width:560px}
@@ -621,3 +620,5 @@ time{white-space:nowrap}
 .agkey{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap}
 .agkey-h{margin:0}
 .agpempty{margin:0}
+/* Dark mode inverts the page (styles.css); the preview and the accents show true colours, so they are inverted back. */
+html[data-mode=dark] :is(#exhost,.agpico,.agsw){filter:invert(1) hue-rotate(180deg)}

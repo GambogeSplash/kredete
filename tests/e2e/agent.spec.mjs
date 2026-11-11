@@ -308,6 +308,7 @@ test.describe('Products', () => {
     await expect(product.getByText('White text is hard to read on this colour.', { exact: false })).toHaveCount(0);
     await product.getByRole('button', { name: 'Left' }).click();
     await page.getByRole('region', { name: 'Unsaved changes' }).getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('region', { name: 'Unsaved changes' })).toBeHidden();
     await page.reload();
     const saved = page.getByRole('region', { name: 'App' });
     await expect(saved.getByRole('textbox', { name: 'Site 2' })).toHaveValue('https://docs.kredete.com');
