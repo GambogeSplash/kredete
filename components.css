@@ -554,3 +554,13 @@ code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:va
 .addvb{display:flex;gap:var(--s-2)}
 @media (max-width:900px){.addevs{grid-template-columns:1fr}.addvm{grid-template-columns:1fr 1fr}}
 .addvb{align-items:flex-start}.addv{align-content:start}.addvb .btn{height:auto}
+/* phone: sign-in and first-run screens */
+@media (max-width:900px){
+ body.noauth .mbar,body.noauth #mbar{display:none!important}
+ body.noauth .mainpanel{padding-top:0!important}
+ .si{display:block!important}
+ .si-l{width:100%!important;box-sizing:border-box;padding:28px 20px 40px!important;min-height:100dvh}
+ .si-in{width:100%!important;max-width:420px;margin:0 auto;padding:0!important}
+ .si-r{display:none!important}
+ .emchip .lav,.emchip .avimg{border:1px solid var(--line)!important}
+}
