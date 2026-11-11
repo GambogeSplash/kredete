@@ -368,7 +368,7 @@ function fbHtml(entry,idx,o){ o=o||{};
   const f = entry.fb; const reasons = ['Wrong','Outdated','Incomplete','Could not check'];
   return `<div class="fb arow gact" data-fb="${idx}">
     ${o.share?`<button class="gic" data-copy="1" aria-label="Copy">${ICON('copy',18)}</button><button class="gic" data-regen="1" aria-label="Regenerate" title="Regenerate">${ICON('refresh',18)}</button>`:''}
-    ${o.share?`<button class="gic" data-save="1" aria-pressed="${window.SAVED&&window.SAVED.has(entry.q)}" aria-label="Save answer" title="Save answer">${ICON('bookmark',18)}</button>`:''}
+    ${o.share?`<button class="gic" data-save="1" aria-pressed="${window.SAVED&&window.SAVED.has(entry.q)}" aria-label="Bookmark answer" title="Bookmark answer">${ICON('bookmark',18)}</button>`:''}
     <button class="gic" aria-pressed="${f&&f.v==='up'}" data-v="up" aria-label="Helpful">${ICON('thumbup',18)}</button>
     <button class="gic" aria-pressed="${f&&f.v==='down'}" data-v="down" aria-label="Not helpful">${ICON('thumbdown',18)}</button>
     ${f&&f.v==='down'&&!f.r?`<div class="reasons">${reasons.map(r=>`<button class="chip" data-r="${r}">${r}</button>`).join('')}</div>`:''}
@@ -410,7 +410,7 @@ function bind(el, entry, idx){
   el.querySelectorAll('[data-fu]').forEach(b=>b.onclick=()=>ask(b.dataset.fu));
   const r = $('#report',el); if(r) r.onclick=()=>report();
   const rq=$('#retryq',el); if(rq) rq.onclick=()=>{ S.ask.err=false; S.thread.pop(); save(); ask(entry.q); };
-  el.querySelectorAll('.fb [data-save]').forEach(b=>b.onclick=()=>{ if(window.SAVED.has(entry.q)){ window.SAVED.drop(entry.q); b.setAttribute('aria-pressed','false'); toast('Removed from Saved'); } else { window.SAVED.add(entry.q,String((entry.a&&entry.a.text)||'').replace(/<[^>]*>/g,'').slice(0,160),((entry.a&&entry.a.sources)||[]).map(s=>s.system).filter((v,i,a2)=>v&&a2.indexOf(v)===i)); b.setAttribute('aria-pressed','true'); toast('Saved. Broth will tell you if it changes.'); } });
+  el.querySelectorAll('.fb [data-save]').forEach(b=>b.onclick=()=>{ if(window.SAVED.has(entry.q)){ window.SAVED.drop(entry.q); b.setAttribute('aria-pressed','false'); toast('Removed from bookmarks'); } else { window.SAVED.add(entry.q,String((entry.a&&entry.a.text)||'').replace(/<[^>]*>/g,'').slice(0,160),((entry.a&&entry.a.sources)||[]).map(s=>s.system).filter((v,i,a2)=>v&&a2.indexOf(v)===i)); b.setAttribute('aria-pressed','true'); toast('Bookmarked. Broth will tell you if it changes.'); } });
   el.querySelectorAll('.fb [data-v]').forEach(b=>b.onclick=()=>{ entry.fb={v:b.dataset.v}; save(); rerender(el,entry,idx); });
   el.querySelectorAll('.fb [data-r]').forEach(b=>b.onclick=()=>{ entry.fb={v:'down',r:b.dataset.r}; save(); rerender(el,entry,idx); });
 }
@@ -474,7 +474,7 @@ function renderSurfaces(){
     let h='';
   h+=nb('data-home="1"',ICON('compose',16),'New chat',inAsk&&!S.thread.length&&!S.ask.stack,'','newchat-nav');
   h+=nb('data-search="1"',ICON('search',16),'Search',false,'<kbd class="skbd">⌘K</kbd>','');
-  h+=navBtn('library','Library',sf==='library')+navBtn('inbox','Inbox',sf==='inbox',(window.INBOX&&window.INBOX.open())||0)+navBtn('saved','Saved',sf==='saved');
+  h+=navBtn('library','Library',sf==='library')+navBtn('inbox','Inbox',sf==='inbox',(window.INBOX&&window.INBOX.open())||0)+navBtn('saved','Bookmarks',sf==='saved');
   { const tsOf=q=>(S.saved&&S.saved[q]&&S.saved[q][0]&&S.saved[q][0].ts)||0; const now=new Date(); const sod=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(); const cur=S.thread[0]&&S.thread[0].cid;
     const grp=q=>{ if(S.pins&&S.pins[q]) return 'Pinned'; const t=tsOf(q); if(!t) return 'Earlier'; if(t>=sod) return 'Today'; if(t>=sod-864e5) return 'Yesterday'; if(t>=sod-6*864e5) return 'Previous 7 days'; return 'Earlier'; };
     const order=['Pinned','Today','Yesterday','Previous 7 days','Earlier']; const by={}; S.history.forEach((q,i)=>{ (by[grp(q)]=by[grp(q)]||[]).push([q,i]); });
@@ -491,11 +491,11 @@ function renderSurfaces(){
   document.querySelectorAll('[data-ren]').forEach(p=>{ const go=e=>{ e.stopPropagation(); e.preventDefault(); const row=p.closest('.surf'); const q=S.history[+p.dataset.ren]; chatMenu(p,q,{rename:()=>{ const n=row.querySelector('.chn'); row.dataset.editing='1'; editTitle(n,q,()=>{ renderSurfaces(); if(S.thread[0]) renderAsk(); }); }}); }; p.onclick=go; p.onkeydown=e=>{ if(e.key==='Enter'||e.key===' ') go(e); }; });
   document.querySelectorAll('[data-chat]').forEach(b=>b.onclick=(e)=>{ if(e.target.closest('.ttin,.chedit')||b.dataset.editing) return; openChat(S.history[+b.dataset.chat]); });
 }
-const CRUMB={article:['Workspace','Help'],chats:['Workspace','Chats'],library:['Workspace','Library'],connectors:['Workspace','Connectors'],inbox:['Workspace','Inbox'],docs:['Workspace','Help center'],saved:['Workspace','Saved'],account:['Account',''],app:['Workspace','New chat'],bot:['Workspace','Support agent']};
+const CRUMB={article:['Workspace','Help'],chats:['Workspace','Chats'],library:['Workspace','Library'],connectors:['Workspace','Connectors'],inbox:['Workspace','Inbox'],docs:['Workspace','Help center'],saved:['Workspace','Bookmarks'],account:['Account',''],app:['Workspace','New chat'],bot:['Workspace','Support agent']};
 function setCrumb(){ const sf=S.surface||'app'; let c=CRUMB[sf]||['Workspace',''];
   $('#crumb').innerHTML=`<span>${c[0]}</span><i>›</i><span class="cur">${c[1]}</span><span class="lsp"></span><button class="lib" id="ccopy" aria-label="Copy link">${ICON('link',16)}</button>`; const cb=$('#ccopy'); if(cb) cb.onclick=()=>{ try{navigator.clipboard.writeText(location.href).catch(()=>{});}catch(e){} toast('Link copied'); }; }
 function signin(){ if(window.AUTH) window.AUTH.signin(); }
-function mbTitle(){ const t=document.getElementById('mbtitle'); if(!t) return; const sf=S.surface||'app'; const M={library:'Library',docs:'Help center',inbox:'Inbox',saved:'Saved',connectors:'Connectors',account:'Account',chats:'Chats',bot:'Support agent',article:'Help'}; t.textContent=M[sf]||(S.thread.length?titleOf(S.thread[0].q):'New chat'); }
+function mbTitle(){ const t=document.getElementById('mbtitle'); if(!t) return; const sf=S.surface||'app'; const M={library:'Library',docs:'Help center',inbox:'Inbox',saved:'Bookmarks',connectors:'Connectors',account:'Account',chats:'Chats',bot:'Support agent',article:'Help'}; t.textContent=M[sf]||(S.thread.length?titleOf(S.thread[0].q):'New chat'); }
 function setTheme(){ mbTitle(); document.body.classList.remove('navopen'); const nt=$('#navtog'); if(nt) nt.setAttribute('aria-expanded','false'); document.body.dataset.theme='lin'; document.body.dataset.sf=S.surface||'app'; setCrumb(); }
 let _rk=null;
 function route(){

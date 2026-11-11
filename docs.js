@@ -17,7 +17,7 @@ const TOPICS = [
 const ARTICLES = [
   { id: 'a1', t: 'start', title: 'Ask your first question', steps: ['Open New chat from the rail on the left.', 'Type a question the way you would ask a colleague.', 'Read the answer, then open the sources it cites.', 'If something looks wrong, tell Broth with the thumbs-down.'] },
   { id: 'a2', t: 'start', title: 'What Broth can and cannot do', steps: ['Broth answers from documents you already have access to.', 'It cites every source and shows when they disagree.', 'It does not give personal advice or guess when no source fits.', 'When it cannot find an answer, it tells you who probably owns the topic.'] },
-  { id: 'a3', t: 'start', title: 'Find your way around', steps: ['The rail on the left has New chat, Search, Library, Inbox and Saved.', 'Your account, admin settings and these docs are in the menu at the bottom.', 'The Broth card on the right shows what it did today, your sources, and what it remembers.'] },
+  { id: 'a3', t: 'start', title: 'Find your way around', steps: ['The rail on the left has New chat, Search, Library, Inbox and Bookmarks.', 'Your account, admin settings and these docs are in the menu at the bottom.', 'The Broth card on the right shows what it did today, your sources, and what it remembers.'] },
   { id: 'a4', t: 'ask', title: 'Write questions that get good answers', steps: ['Name the thing: "card replacement fee" beats "how much".', 'Add the audience when it matters: "for business accounts".', 'Ask one thing at a time, then follow up.', 'Use Choose what to ask in the card to limit which sources are used.'] },
   { id: 'a5', t: 'ask', title: 'Read an answer and its sources', steps: ['Each claim has a number that matches a source in the card.', 'Open a source to see the quote and its owner.', 'A "Recommended" tag means it is the most recent and authoritative one.'] },
   { id: 'a6', t: 'ask', title: 'Use the search palette', steps: ['Press ⌘K anywhere.', 'Type to search chats and documents, or press Enter to ask Broth.', 'Use the arrow keys to move and Enter to open.'] },
@@ -38,28 +38,56 @@ const ARTICLES = [
 
 const st = () => { const S = B.S; S.doc = S.doc || { q: '', open: null }; return S.doc; };
 
-function docs() {
+
+/* One step from the card to the answer: the topic's articles sit in a list on the left, the article is already open on the right. */
+const artHtml = (a, t) => `<div class="dcmeta">${esc(t.title)}</div><h1>${esc(a.title)}</h1><ol class="dcsteps">${a.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol><div class="dchelp"><span>Was this helpful?</span><button type="button" class="btn sm" data-h="y">Yes</button><button type="button" class="btn sm" data-h="n">No</button></div>`;
+const calmMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function view(from) {
+  const s = st();
+  const art = s.open ? ARTICLES.find((x) => x.id === s.open) : null;
+  const t = TOPICS.find((x) => x.id === (art ? art.t : s.topic));
+  const list = ARTICLES.filter((x) => x.t === t.id);
+  const cur = art || list[0];
+  s.topic = t.id; s.open = cur.id; B.save();
+  $('#app').innerHTML = `<div class="pg dcpg dcview"><aside class="dcnav"><button type="button" class="link dcback" id="dcb">${ICON('chevl', 16)}Help center</button><span class="dcimg" id="dcim"><img src="assets/help/${t.id}.jpg" alt="" draggable="false"></span><h2 class="dct">${esc(t.title)}</h2><p class="dcbl">${esc(t.blurb)}</p><div class="dcarts" role="list">${list.map((x) => `<button type="button" role="listitem" class="dcai ${x.id === cur.id ? 'on' : ''}" data-a="${x.id}" aria-current="${x.id === cur.id ? 'true' : 'false'}">${esc(x.title)}</button>`).join('')}</div></aside><article class="dcbody" id="dcbody">${artHtml(cur, t)}</article></div>`;
+  const wireHelp = () => $$('[data-h]').forEach((b) => { b.onclick = () => { $('.dchelp').innerHTML = '<span>Thanks. That helps us improve this page.</span>'; }; });
+  wireHelp();
+  $('#dcb').onclick = () => {
+    const pg = $('.dcview');
+    const go = () => { s.topic = null; s.open = null; B.save(); docs('back'); };
+    if (pg && pg.animate && !calmMotion()) pg.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(6px)' }], { duration: 140, easing: 'ease-in', fill: 'forwards' }).finished.then(go).catch(go); else go();
+  };
+  $$('.dcai').forEach((b) => {
+    b.onclick = () => {
+      if (b.dataset.a === s.open) return;
+      s.open = b.dataset.a; B.save();
+      const a2 = ARTICLES.find((x) => x.id === s.open);
+      $$('.dcai').forEach((o) => { const on = o === b; o.classList.toggle('on', on); o.setAttribute('aria-current', on ? 'true' : 'false'); });
+      const body = $('#dcbody');
+      const swap = () => { body.innerHTML = artHtml(a2, t); wireHelp(); if (body.animate && !calmMotion()) body.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' }); };
+      if (body.animate && !calmMotion()) body.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 90, fill: 'forwards' }).finished.then(swap).catch(swap); else swap();
+    };
+  });
+  if (calmMotion()) return;
+  const nav = $('.dcnav'); const body = $('#dcbody'); const im = $('#dcim');
+  if (from && from.width && im.animate) {
+    /* the card's picture travels to its place at the top of the list */
+    const to = im.getBoundingClientRect();
+    const dx = from.left - to.left, dy = from.top - to.top, sx = from.width / to.width, sy = from.height / to.height;
+    im.style.transformOrigin = 'top left';
+    im.animate([{ transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})`, borderRadius: '14px' }, { transform: 'none', borderRadius: '14px' }], { duration: 520, easing: 'cubic-bezier(.2,.85,.2,1)' });
+    [...nav.children].filter((el) => el !== im).forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 200 + i * 40, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
+    body.animate([{ opacity: 0, transform: 'translateX(18px)' }, { opacity: 1, transform: 'none' }], { duration: 440, delay: 260, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' });
+  } else {
+    [nav, body].forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: i * 70, easing: 'ease-out', fill: 'backwards' }));
+  }
+}
+
+function docs(from) {
   const s = st();
   const q = (s.q || '').toLowerCase().trim();
   $('#app').className = '';
-  if (s.open) {
-    const a = ARTICLES.find((x) => x.id === s.open); const t = TOPICS.find((x) => x.id === a.t);
-    const more = ARTICLES.filter((x) => x.t === a.t && x.id !== a.id);
-    $('#app').innerHTML = `<div class="pg dcpg dcart"><button type="button" class="link dcback" id="dcb">← ${esc(t.title)}</button><div class="dcmeta">Help center</div><h1>${esc(a.title)}</h1><ol class="dcsteps">${a.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
-      <div class="dchelp"><span>Was this helpful?</span><button type="button" class="btn sm" data-h="y">Yes</button><button type="button" class="btn sm" data-h="n">No</button></div>
-      ${more.length ? `<h2 class="dch2">More in ${esc(t.title)}</h2><div class="dclist">${more.map((x) => `<button type="button" class="dcrow" data-a="${x.id}">${esc(x.title)}<span>${ICON('chevr', 14)}</span></button>`).join('')}</div>` : ''}</div>`;
-    $('#dcb').onclick = () => { s.open = null; s.topic = a.t; B.save(); docs(); };
-    $$('[data-a]').forEach((b) => { b.onclick = () => { s.open = b.dataset.a; B.save(); docs(); window.scrollTo(0, 0); }; });
-    $$('[data-h]').forEach((b) => { b.onclick = () => { $('.dchelp').innerHTML = '<span>Thanks. That helps us improve this page.</span>'; }; });
-    return;
-  }
-  if (s.topic && !q) {
-    const t = TOPICS.find((x) => x.id === s.topic); const list = ARTICLES.filter((a) => a.t === t.id);
-    $('#app').innerHTML = `<div class="pg dcpg dcart"><button type="button" class="link dcback" id="dcb">← Help center</button><div class="dctopic"><span class="dcimg sm"><img src="assets/help/${t.id}.jpg" alt="" draggable="false"></span><div><h1>${esc(t.title)}</h1><p class="amute">${esc(t.blurb)}</p></div></div><div class="dclist">${list.map((x) => `<button type="button" class="dcrow" data-a="${x.id}">${esc(x.title)}<span>${ICON('chevr', 14)}</span></button>`).join('')}</div></div>`;
-    $('#dcb').onclick = () => { s.topic = null; B.save(); docs(); };
-    $$('[data-a]').forEach((b) => { b.onclick = () => { s.open = b.dataset.a; B.save(); docs(); window.scrollTo(0, 0); }; });
-    return;
-  }
+  if ((s.open || s.topic) && !q) { view(from); return; }
   const hits = q ? ARTICLES.filter((a) => (a.title + ' ' + a.steps.join(' ')).toLowerCase().includes(q)) : [];
   const body = q
     ? `<div class="dclist">${hits.length ? hits.map((a) => `<button type="button" class="dcrow" data-a="${a.id}">${esc(a.title)}<small>${esc(TOPICS.find((t) => t.id === a.t).title)}</small><span>${ICON('chevr', 14)}</span></button>`).join('') : `<div class="dcnone"><b>No articles match</b><p>Try fewer words, or ask us below.</p></div>`}</div>`
@@ -69,8 +97,16 @@ function docs() {
     <p class="dcstat"><i></i>All systems normal</p></div>`;
   const inp = $('#dcq'); if (s.q) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
   inp.oninput = () => { s.q = inp.value; B.save(); docs(); };
-  $$('[data-topic]').forEach((b) => { b.onclick = () => { s.topic = b.dataset.topic; B.save(); docs(); window.scrollTo(0, 0); }; });
-  $$('[data-a]').forEach((b) => { b.onclick = () => { s.open = b.dataset.a; B.save(); docs(); window.scrollTo(0, 0); }; });
+  $$('[data-topic]').forEach((b) => { b.onclick = () => {
+    const r = $('.dcimg', b).getBoundingClientRect();
+    const rect = { left: r.left, top: r.top, width: r.width, height: r.height };
+    s.topic = b.dataset.topic; s.open = null; B.save(); window.scrollTo(0, 0);
+    const grid = $('.dcgrid'); const go = () => docs(rect);
+    go();
+    if (grid && grid.animate) { /* the old page stays gone; the new one is already in place */ }
+  }; });
+  $$('[data-a]').forEach((b) => { b.onclick = () => { s.open = b.dataset.a; B.save(); window.scrollTo(0, 0); docs(); }; });
+  if (from === 'back' && !calmMotion()) $$('.dccard').forEach((c, i) => c.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: i * 45, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
   $('#dcask').onclick = () => { B.S.surface = 'app'; B.S.thread = []; B.save(); B.route(); setTimeout(() => B.ask && B.ask('How do I connect a source?'), 350); };
 }
 

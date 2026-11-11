@@ -709,3 +709,17 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 .slist{display:grid;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
 .srow{display:flex;align-items:center;gap:var(--s-3);padding:10px var(--s-3);border-top:1px solid var(--line)}.srow:first-child{border-top:0}
 .srow .ltb{flex:1;min-width:0;display:grid}.srow .ltb b{font-weight:500;font-size:var(--fs-md);line-height:20px}.srow .ltb small{font-size:var(--fs-xs);line-height:16px;color:var(--mute)}
+
+/* help center, one step in: the topic's articles on the left, the article open on the right */
+.dcpg.dcview{max-width:1040px;display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--s-7,40px);align-items:start}
+.dcnav{position:sticky;top:var(--s-4);display:grid;gap:var(--s-2);align-content:start}
+.dcnav .dcback{display:inline-flex;align-items:center;gap:4px;margin:0 0 var(--s-2);justify-self:start;color:var(--mute);text-decoration:none}.dcnav .dcback:hover{color:var(--ink)}
+.dcnav .dcimg{aspect-ratio:16/10;border-radius:14px;margin-bottom:var(--s-2)}
+.dct{margin:0;font-size:var(--fs-h3);font-weight:600;letter-spacing:-.01em}.dcbl{margin:0 0 var(--s-3);color:var(--mute);font-size:var(--fs-sm)}
+.dcarts{display:grid;gap:2px}
+.dcai{display:block;width:100%;text-align:left;padding:9px 12px;border:0;border-radius:var(--r-md);background:none;color:var(--mute);font:inherit;font-size:var(--fs-sm);cursor:pointer;transition:background var(--dur-fast),color var(--dur-fast)}
+.dcai:hover{background:var(--fill-1);color:var(--ink)}.dcai.on{background:var(--fill-2);color:var(--ink);font-weight:500}
+.dcbody{max-width:640px;padding-top:var(--s-2)}.dcbody h1{margin:0 0 var(--s-3)}
+@media (max-width:900px){.dcpg.dcview{grid-template-columns:1fr}.dcnav{position:static}.dcnav .dcimg{display:none}}
+
+a.btn,a.btn:hover,a.btn:focus{text-decoration:none}

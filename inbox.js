@@ -66,15 +66,15 @@ window.SAVED = {
 
 function saved() {
   const s = savedSt(); const L = window.SAVED.list();
-  const rows = L.map((x) => `<div class="ds-tr lift svcols" data-ask="${esc(x.q)}" role="row" tabindex="0"><span class="ltb"><b>${esc(x.q)}</b><small>${esc(x.a)}</small></span><span class="svsrc">${x.src.map((n) => window.SRCICON(n, 18)).join('')}</span><span>${x.st === 'changed' ? '<span class="tag warn">Changed</span>' : '<span class="tag ok">Current</span>'}</span><span class="amute">${esc(x.when)}</span><span class="svx"><button type="button" class="btn sm" data-unsave="${x.id}" aria-label="Remove from Saved">${ICON('x', 14)}</button></span></div>`).join('');
+  const rows = L.map((x) => `<div class="ds-tr lift svcols" data-ask="${esc(x.q)}" role="row" tabindex="0"><span class="ltb"><b>${esc(x.q)}</b><small>${esc(x.a)}</small></span><span class="svsrc">${x.src.map((n) => window.SRCICON(n, 18)).join('')}</span><span>${x.st === 'changed' ? '<span class="tag warn">Changed</span>' : '<span class="tag ok">Current</span>'}</span><span class="amute">${esc(x.when)}</span><span class="svx"><button type="button" class="btn sm" data-unsave="${x.id}" aria-label="Remove bookmark">${ICON('x', 14)}</button></span></div>`).join('');
   $('#app').className = '';
-  $('#app').innerHTML = `<div class="pg ixpg"><h1>Saved</h1>${L.length ? `<div class="ds-table libt" role="table"><div class="ds-tr ds-th svcols" role="row"><span>Answer</span><span>Sources</span><span>Status</span><span>Saved</span><span></span></div>${rows}</div>` : `<div class="ixempty"><span class="ixok">${ICON('bookmark', 22)}</span><b>Nothing saved yet</b><p>Save an answer in chat and it is kept here. Broth tells you if it changes.</p></div>`}</div>`;
+  $('#app').innerHTML = `<div class="pg ixpg"><h1>Bookmarks</h1>${L.length ? `<div class="ds-table libt" role="table"><div class="ds-tr ds-th svcols" role="row"><span>Answer</span><span>Sources</span><span>Status</span><span>Added</span><span></span></div>${rows}</div>` : `<div class="ixempty"><span class="ixok">${ICON('bookmark', 22)}</span><b>No bookmarks yet</b><p>Bookmark an answer in chat and it is kept here. Broth tells you if it changes.</p></div>`}</div>`;
   $$('[data-ask]').forEach((r) => {
     const go = () => { B.S.surface = 'app'; B.S.thread = []; B.save(); B.route(); setTimeout(() => B.ask && B.ask(r.dataset.ask), 350); };
     r.onclick = (e) => { if (e.target.closest('[data-unsave]')) return; go(); };
     r.onkeydown = (e) => { if (e.key === 'Enter') go(); };
   });
-  $$('[data-unsave]').forEach((b) => { b.onclick = () => { const id = b.dataset.unsave; if (id[0] === 'm') s.mine = s.mine.filter((x) => x.id !== id); else s.gone[id] = true; B.save(); saved(); B.toast('Removed from Saved'); }; });
+  $$('[data-unsave]').forEach((b) => { b.onclick = () => { const id = b.dataset.unsave; if (id[0] === 'm') s.mine = s.mine.filter((x) => x.id !== id); else s.gone[id] = true; B.save(); saved(); B.toast('Removed from bookmarks'); }; });
 }
 
 window.SURFACES.inbox = inbox;
