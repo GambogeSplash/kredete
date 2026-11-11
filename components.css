@@ -862,3 +862,16 @@ html[data-mode=dark] .pvbg svg g{stroke:#00000f}
 html[data-mode=dark] .pvtitle{filter:none;background:#000}
 html[data-mode=dark] .pvmark{filter:drop-shadow(0 0 1.2cqh rgba(0,0,0,.95)) drop-shadow(0 0 4.6cqh rgba(78,50,146,.85))}
 html[data-mode=dark] .pvmark .pvb{color:#000}
+
+/* sign-in, sign-up and first-run get a real dark theme of their own instead of the page-wide inversion, so the violet picture shows its true colours */
+html[data-mode=dark]:has(body.noauth){filter:none;background:#131314}
+html[data-mode=dark] body.noauth{--surface:#131314;--shell:#0e0e10;--wash:#171719;--fill-1:#19191c;--fill-2:#222226;--fill-3:#2a2a30;--line:#2b2b31;--line-strong:#3a3a42;--line2:#222227;--ink:#ececf1;--ink-2:#c8c8d2;--mute:#9a9aa6;--mute-2:#8a8a96;--mute-3:#6f6f7a;--brand-soft:#23254a;--brand-wash:#1a1b33;--brand-line:#3a3f86;--e1:0 1px 2px rgba(0,0,0,.4);--e2:0 8px 16px -4px rgba(0,0,0,.5);--e3:0 16px 40px -8px rgba(0,0,0,.6);color-scheme:dark;background:#131314;color:var(--ink)}
+html[data-mode=dark] body.noauth :is(img,video,canvas,.stile,.wsav,.avimg,.lav,.kav,.adot,.dsend,.btn.primary,.btn.blue,.lbadge,.obsw,.agst,.agbar2 i,.lvs i,.cmp-tick){filter:none}
+html[data-mode=dark] body.noauth .pvbg{filter:none}
+html[data-mode=dark] body.noauth .pvbgi{background-color:#3a1a9a;background-image:url(assets/auth/bg.jpg)}
+html[data-mode=dark] body.noauth .pvbg svg g{stroke:#fff}
+html[data-mode=dark] body.noauth .pvtitle{filter:none;background:#fff}
+html[data-mode=dark] body.noauth .pvmark{filter:drop-shadow(0 0 1.2cqh rgba(255,255,255,.95)) drop-shadow(0 0 4.6cqh rgba(196,172,255,.85))}
+html[data-mode=dark] body.noauth .pvmark .pvb{color:#fff}
+
+html[data-mode=dark] body.noauth :is(.btn.primary,.si-btn,.oa-allow,.emchip.on){color:#fff}
