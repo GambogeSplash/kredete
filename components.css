@@ -388,3 +388,11 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
 .ixq{padding:var(--s-4);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}.ixq b{font-size:28px;font-weight:600}.ixq small{color:var(--mute);margin-left:8px}
 .ixr{display:flex;gap:var(--s-5);color:var(--mute);font-size:var(--fs-sm)}.ixr em{font-style:normal;color:var(--ink);margin-left:4px}
 @media (max-width:900px){.ixstats{grid-template-columns:repeat(2,1fr)}.ixrow{grid-template-columns:auto 1fr}.ixa{grid-column:1/-1}.ixgap{grid-template-columns:1fr auto}.ixgap .ixbar{display:none}.ixdoc{grid-template-columns:auto 1fr}.ixdoc .ixown,.ixdoc .btn{display:none}}
+/* active rail item: a clear frame; badge sits off the icon */
+@media (min-width:901px){
+ .rl[aria-current=page]{background:#e4e4e7;color:var(--ink)}
+ html[data-mode=dark] .rl[aria-current=page]{background:#dadada}
+ .rl:hover:not([aria-current=page]){background:var(--fill-1)}
+ .rl-dot{top:1px;right:-4px;box-shadow:0 0 0 2px var(--shell)}
+}
+@media (min-width:901px){ .rail .rl-grp{gap:10px} }
