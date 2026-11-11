@@ -104,3 +104,11 @@ button.adlogo.busy{animation:logopulse 1s ease-in-out infinite}
 .si-in .prov.si-btn{height:44px}
 @media (max-width:900px){.si.v2:has(.si-r.pict) .si-l{padding:28px 20px 40px}}
 .obq{margin-top:var(--s-2)}
+
+/* "Not you? Sign out" and the other text buttons on the sign-in column: clearly clickable (pointer, brighter text, soft pill, focus ring) */
+.si-in .link{cursor:pointer;transition:color var(--dur-fast,.12s),background var(--dur-fast,.12s)}
+.si-in .link:hover{color:var(--ink)}
+.si-in .link:focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:var(--r-sm)}
+.si-in .obout{display:inline-flex;align-items:center;margin-top:var(--s-4);margin-left:-8px;padding:4px 8px;border-radius:var(--r-sm);color:var(--mute)}
+.si-in .obout:hover{color:var(--ink);background:var(--fill-1)}
+.si-in .obout:active{transform:scale(.98)}
