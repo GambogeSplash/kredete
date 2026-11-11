@@ -71,22 +71,45 @@ function updateChecklist(current) {
 }
 /** A page title with its (i) hint; the hint carries what used to be a subtitle. */
 const head = (title, hint) => `<div class="suhd"><h1>${esc(title)}</h1>${hint ? `<span class="hint" tabindex="0" data-tip="${esc(hint)}" aria-label="${esc(hint)}">i</span>` : ''}</div>`;
+/** The step swap, as in the prototype: the old form fades out where it stood, the new one fades in
+ * rising 5 px, and the picture is left alone. */
+function swapIn(old) {
+  const c = $('#sin');
+  if (!c || !old || window.__entering || matchMedia('(prefers-reduced-motion: reduce)').matches || !c.animate) return;
+  const cr = c.getBoundingClientRect();
+  const ghost = document.createElement('div');
+  ghost.setAttribute('aria-hidden', 'true');
+  ghost.style.cssText = `position:fixed;pointer-events:none;z-index:5;left:${cr.left}px;top:${old.top}px;width:${cr.width}px`;
+  old.nodes.forEach((n) => { n.removeAttribute('id'); $$('[id]', n).forEach((x) => x.removeAttribute('id')); ghost.appendChild(n); });
+  document.body.appendChild(ghost);
+  [...c.children].filter((el) => !el.classList.contains('stp')).forEach((el) => el.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 240, delay: 30, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
+  const g = ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 170, easing: 'ease-out', fill: 'forwards' });
+  g.onfinish = () => ghost.remove();
+}
 function render(step, left, idle) {
   const n = index(step) + 1;
   const count = step === 'done' ? '' : `<p class="sustepn" aria-hidden="true">Step ${n} of ${STEPS.length}</p>`;
   const framed = !!$('#sipv .pvsup');
-  const sin = $('#sin');
-  if (sin) sin.classList.add('sustep'); // later steps cross-fade; the first paint fades in with the page
+  const c = $('#sin');
+  const kids = c ? [...c.children].filter((el) => !el.classList.contains('stp')) : [];
+  const old = kids.length ? { top: kids[0].getBoundingClientRect().top, nodes: kids.map((k) => k.cloneNode(true)) } : null;
   A().shell(`${count}${left}`, framed ? null : A().frame(checklist(step, idle)), step === 'done' ? null : [n, STEPS.length]);
+  swapIn(old);
   if (!idle) updateChecklist(step);
 }
 const field = (id, label, attrs, hint) => `<label class="emlab" for="${id}">${label}</label><input id="${id}" class="eminp" ${attrs || ''}>${hint ? `<p class="suhint">${hint}</p>` : ''}`;
 const errorSlot = '<div class="hse" id="sue" role="alert"></div>';
-const primary = (id, label) => `<button type="submit" class="btn primary si-btn" id="${id}"><span class="spin" aria-hidden="true"></span><span>${label}</span></button>`;
+/** A refusal reads as the design system's bad banner; an empty message clears it. */
+const setMessage = (e, text) => { e.innerHTML = text ? `<div class="banner bad">${esc(text)}</div>` : ''; };
+/** Marks the fields a message is about (cleared as soon as the person types again). */
+function markInvalid(ids) {
+  ids.forEach((id) => { const f = $('#' + id); if (!f) return; f.setAttribute('aria-invalid', 'true'); f.addEventListener('input', () => f.removeAttribute('aria-invalid'), { once: true }); });
+}
+const primary = (id, label) => `<div class="obnav"><button type="submit" class="btn primary si-btn obgo" id="${id}"><span class="spin" aria-hidden="true"></span><span>${label}</span></button></div>`;
 function showError(error) {
   const e = $('#sue');
   if (!e) return;
-  e.textContent = B.problem(error);
+  setMessage(e, B.problem(error));
   const wait = error && error.retryAfter;
   const button = $('#sin .si-btn');
   if (wait && button) {
@@ -94,8 +117,8 @@ function showError(error) {
     button.disabled = true;
     const tick = () => {
       if (!button.isConnected) return;
-      if (left <= 0) { button.disabled = false; e.textContent = ''; return; }
-      e.textContent = `${B.problem(error)}. Try again in ${left} s.`;
+      if (left <= 0) { button.disabled = false; setMessage(e, ''); return; }
+      setMessage(e, `${B.problem(error)}. Try again in ${left} s.`);
       left -= 1;
       setTimeout(tick, 1000);
     };
@@ -118,7 +141,7 @@ function wireCopies() {
 const companyRow = () => `<label class="emlab" for="suco">Company</label><div class="colog"><button type="button" class="adlogo sm" id="sulogo" aria-label="Add company logo"></button><input id="suco" class="eminp" autocomplete="organization" placeholder="Acme Bank"><input type="file" id="sulf" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden></div><p class="logomiss" id="sumiss" hidden><span>No logo found.</span> <button type="button" class="link" id="sulu">Upload yours</button><span class="hint" tabindex="0" data-tip="Your logo stays in this browser." aria-label="Your logo stays in this browser.">i</span></p>`;
 function claimStep() {
   render('claim', `${head('Set up Broth', 'You are the first person here, so you become its admin. Enter the setup code from the server, and the Google account you will sign in with.')}
-    <form id="suf" novalidate>${field('sucode', 'Setup code', 'autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX" class="eminp mono"')}${field('suemail', 'Your Google account', 'type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"')}${companyRow()}${errorSlot}${primary('sugo', 'Continue')}</form>
+    <form id="suf" novalidate>${errorSlot}${field('sucode', 'Setup code', 'autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX" class="eminp mono"')}<label class="emlab" for="suemail">Your Google account</label><div class="emw"><span class="emi">${ICON('user', 16)}</span><input id="suemail" class="eminp" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"></div>${companyRow()}${primary('sugo', 'Continue')}</form>
     <p class="disc">Lost the code, or it expired? Run <code>make sandbox-setup-code</code> on the server for a new one.</p>`);
   $('#sucode').focus();
   if (window.BROTH_LOGO) window.BROTH_LOGO.mount($('#suf'), { domain: () => $('#suemail').value, toast: B.toast });
@@ -127,6 +150,7 @@ function claimStep() {
     const code = $('#sucode').value.trim(), email = $('#suemail').value.trim();
     if (!code || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       showError({ title: !code ? 'Enter the setup code' : 'Enter the email of your Google account' });
+      markInvalid([!code ? 'sucode' : 'suemail']);
       return;
     }
     B.busy($('#sugo'), async () => {
@@ -138,13 +162,13 @@ function claimStep() {
 function googleStep() {
   const redirect = `${location.origin}/v1/auth/google/callback`;
   render('google', `${head('Connect Google sign-in', 'Create an OAuth client (web application) in your Google Cloud project and add this redirect URI.')}<p class="emlab sucl">Redirect URI</p>${copyButton(redirect)}
-    <form id="suf" novalidate>${field('suid', 'Client ID', 'autocomplete="off" spellcheck="false" placeholder="1234.apps.googleusercontent.com"')}${field('susecret', 'Client secret', 'type="password" autocomplete="off" spellcheck="false"', 'Stored encrypted. It is never shown again.')}${errorSlot}${primary('sugo', 'Save')}</form>`);
+    <form id="suf" novalidate>${errorSlot}${field('suid', 'Client ID', 'autocomplete="off" spellcheck="false" placeholder="1234.apps.googleusercontent.com"')}${field('susecret', 'Client secret', 'type="password" autocomplete="off" spellcheck="false"', 'Stored encrypted. It is never shown again.')}${primary('sugo', 'Save')}</form>`);
   wireCopies();
   $('#suid').focus();
   $('#suf').onsubmit = (e) => {
     e.preventDefault();
     const client_id = $('#suid').value.trim(), client_secret = $('#susecret').value.trim();
-    if (!client_id || !client_secret) { showError({ title: 'Enter the client ID and the client secret' }); return; }
+    if (!client_id || !client_secret) { showError({ title: 'Enter the client ID and the client secret' }); markInvalid([!client_id ? 'suid' : 'susecret']); return; }
     B.busy($('#sugo'), async () => {
       await B.api.put('/setup/credentials/google_oauth', { client_id, client_secret }, { auth: false });
       await show();
@@ -152,7 +176,7 @@ function googleStep() {
   };
 }
 function signinStep() {
-  render('signin', `${head('Sign in as the first admin', 'Use the Google account you entered with the setup code. Setup continues after you sign in.')}<a class="btn primary si-btn" id="sugoogle" href="${B.api.signInUrl}"><span class="spin" aria-hidden="true"></span><span>Continue with Google</span></a>`);
+  render('signin', `${head('Sign in as the first admin', 'Use the Google account you entered with the setup code. Setup continues after you sign in.')}<div class="obnav"><a class="btn primary si-btn obgo" id="sugoogle" href="${B.api.signInUrl}"><span class="spin" aria-hidden="true"></span><span>Continue with Google</span></a></div>`);
   const b = $('#sugoogle');
   b.onclick = () => b.classList.add('busy');
 }
@@ -167,7 +191,7 @@ async function show(known) {
   if (!p) {
     try { p = await progress(); }
     catch (error) {
-      render('claim', `${head('Setup could not load')}<div class="hse sushow" role="alert">${esc(B.problem(error))}</div><button type="button" class="btn primary si-btn" id="suretry">Try again</button>`);
+      render('claim', `${head('Setup could not load', 'Broth could not reach the server. Nothing was changed.')}<div class="ds-empty" role="alert"><span class="ds-empty-ic">${ICON('refresh', 20)}</span><b>${esc(B.problem(error))}</b><p>Check your connection and try again.</p><button type="button" class="btn primary si-btn" id="suretry"><span>Try again</span></button></div>`);
       $('#suretry').onclick = () => show();
       return;
     }

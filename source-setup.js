@@ -164,7 +164,7 @@ function watchReads(state, onUpdate) {
 }
 
 /** The calm empty state for a workspace with no source yet: one title, one button (the caller wires it). */
-const emptyHtml = () => `<div class="empty suempty"><h2>Connect your first source</h2><button type="button" class="btn primary si-btn" id="susrc"><span>Connect Confluence</span></button></div>`;
+const emptyHtml = () => `<div class="ds-empty suempty"><span class="ds-empty-ic">${ICON('plug', 20)}</span><b>Connect your first source</b><p>Broth reads the pages you connect.</p><button type="button" class="btn primary si-btn" id="susrc"><span>Connect Confluence</span></button></div>`;
 
 window.SOURCES = {
   progress, saveConfluenceCredentials, cleanSite, createConnection, authorize,
