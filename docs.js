@@ -7,12 +7,12 @@ const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const ICON = (n, s) => window.ICON(n, s);
 
 const TOPICS = [
-  { id: 'start', icon: 'compose', title: 'Getting started', blurb: 'Your first question, and what to expect.' },
-  { id: 'ask', icon: 'search', title: 'Asking questions', blurb: 'Better questions, better answers.' },
-  { id: 'sources', icon: 'grid', title: 'Sources and connectors', blurb: 'What Broth reads, and how it stays current.' },
-  { id: 'owners', icon: 'inbox', title: 'Owners and conflicts', blurb: 'Fixing what Broth finds wrong.' },
-  { id: 'admin', icon: 'settings', title: 'Admin', blurb: 'People, policies, and the audit log.' },
-  { id: 'trust', icon: 'shield', title: 'Privacy and security', blurb: 'Who can see what.' }
+  { id: 'start', hue: ['#8b95f0', '#5e6ad2'], icon: 'compose', title: 'Getting started', blurb: 'Your first question, and what to expect.' },
+  { id: 'ask', hue: ['#f08bb8', '#d9468a'], icon: 'search', title: 'Asking questions', blurb: 'Better questions, better answers.' },
+  { id: 'sources', hue: ['#5fd3c4', '#13a899'], icon: 'grid', title: 'Sources and connectors', blurb: 'What Broth reads, and how it stays current.' },
+  { id: 'owners', hue: ['#ffc46b', '#f08a1c'], icon: 'inbox', title: 'Owners and conflicts', blurb: 'Fixing what Broth finds wrong.' },
+  { id: 'admin', hue: ['#b58cf2', '#7c4ddb'], icon: 'settings', title: 'Admin', blurb: 'People, policies, and the audit log.' },
+  { id: 'trust', hue: ['#7ad28a', '#2f9e55'], icon: 'shield', title: 'Privacy and security', blurb: 'Who can see what.' }
 ];
 const ARTICLES = [
   { id: 'a1', t: 'start', title: 'Ask your first question', steps: ['Open New chat from the rail on the left.', 'Type a question the way you would ask a colleague.', 'Read the answer, then open the sources it cites.', 'If something looks wrong, tell Broth with the thumbs-down.'] },
@@ -35,6 +35,27 @@ const ARTICLES = [
   { id: 'a18', t: 'trust', title: 'What Broth remembers about you', steps: ['Open the Memory tab in the Broth card.', 'You will see your preferred name, team, access level and recent topics.', 'Choose Forget to remove anything. It is removed for good.'] }
 ];
 
+
+/* Topic art: three chunky tiles with a soft shadow, tilted a little differently for each topic. Each card gets its own colour. */
+const POSE = {
+  start: [[-10, 18, 22], [8, 118, 46], [-3, 64, 52]],
+  ask: [[9, 20, 40], [-8, 128, 22], [4, 70, 54]],
+  sources: [[-6, 24, 28], [10, 128, 40], [-2, 72, 50]],
+  owners: [[8, 16, 24], [-9, 124, 34], [3, 66, 54]],
+  admin: [[-9, 30, 20], [6, 120, 44], [-4, 70, 52]],
+  trust: [[7, 22, 38], [-7, 126, 26], [2, 68, 52]]
+};
+function art(t) {
+  const [c1, c2] = t.hue; const id = 'ha' + t.id; const p = POSE[t.id];
+  const tile = (rot, x, y, w, h, fill, glyph) => `<g transform="rotate(${rot} ${x + w / 2} ${y + h / 2})"><rect x="${x}" y="${y + 9}" width="${w}" height="${h}" rx="${h * .34}" fill="#000" opacity=".16" filter="url(#${id}b)"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h * .34}" fill="${fill}"/><rect x="${x + 3}" y="${y + 3}" width="${w - 6}" height="${h * .46}" rx="${h * .28}" fill="#fff" opacity=".28"/>${glyph || ''}</g>`;
+  const glyph = `<g transform="translate(${p[2][1] + 55 - 15} ${p[2][2] + 18 - 15})" style="color:${c2}">${ICON(t.icon, 30)}</g>`;
+  return `<svg class="dcart-svg" viewBox="0 0 300 150" aria-hidden="true"><defs><filter id="${id}b" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="6"/></filter><linearGradient id="${id}1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient><linearGradient id="${id}2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}" stop-opacity=".78"/><stop offset="1" stop-color="${c2}" stop-opacity=".78"/></linearGradient><linearGradient id="${id}3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e9ebf6"/></linearGradient></defs>
+    <g class="dca dca1">${tile(p[0][0], p[0][1], p[0][2], 110, 72, `url(#${id}2)`)}</g>
+    <g class="dca dca2">${tile(p[1][0], p[1][1], p[1][2], 100, 66, `url(#${id}1)`)}</g>
+    <g class="dca dca3">${tile(p[2][0], p[2][1], p[2][2], 110, 66, `url(#${id}3)`, glyph)}</g>
+    <circle cx="${t.id === 'ask' || t.id === 'trust' ? 38 : 262}" cy="${t.id === 'owners' ? 112 : 34}" r="11" fill="url(#${id}1)" opacity=".9"/><circle cx="${t.id === 'sources' || t.id === 'admin' ? 36 : 266}" cy="${t.id === 'start' ? 122 : 124}" r="6" fill="${c1}" opacity=".7"/></svg>`;
+}
+
 const st = () => { const S = B.S; S.doc = S.doc || { q: '', open: null }; return S.doc; };
 
 function docs() {
@@ -55,7 +76,7 @@ function docs() {
   const hits = q ? ARTICLES.filter((a) => (a.title + ' ' + a.steps.join(' ')).toLowerCase().includes(q)) : [];
   const body = q
     ? `<div class="dclist">${hits.length ? hits.map((a) => `<button type="button" class="dcrow" data-a="${a.id}">${esc(a.title)}<small>${esc(TOPICS.find((t) => t.id === a.t).title)}</small><span>${ICON('chevr', 14)}</span></button>`).join('') : `<div class="dcnone"><b>No articles match</b><p>Try fewer words, or ask us below.</p></div>`}</div>`
-    : `<div class="dcgrid">${TOPICS.map((t) => `<section class="dccard"><span class="dcic">${ICON(t.icon, 18)}</span><h3>${esc(t.title)}</h3><p>${esc(t.blurb)}</p>${ARTICLES.filter((a) => a.t === t.id).map((a) => `<button type="button" class="dclink" data-a="${a.id}">${esc(a.title)}</button>`).join('')}</section>`).join('')}</div>`;
+    : `<div class="dcgrid">${TOPICS.map((t) => `<section class="dccard" style="--h1:${t.hue[0]};--h2:${t.hue[1]}"><div class="dcart">${art(t)}</div><h3>${esc(t.title)}</h3><p>${esc(t.blurb)}</p>${ARTICLES.filter((a) => a.t === t.id).map((a) => `<button type="button" class="dclink" data-a="${a.id}">${esc(a.title)}</button>`).join('')}</section>`).join('')}</div>`;
   $('#app').innerHTML = `<div class="pg dcpg"><div class="dchero"><h1>Help center</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the help center" aria-label="Search the help center" value="${esc(s.q || '')}" autocomplete="off"></div></div>${body}
     <div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth, or write to a person. We reply within one working day.</p></div><div class="dcbtns"><button type="button" class="btn primary" id="dcask">Ask Broth</button><a class="btn" href="mailto:support@broth.app">Email support</a></div></div>
     <p class="dcstat"><i></i>All systems normal</p></div>`;
