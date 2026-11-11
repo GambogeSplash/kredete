@@ -186,7 +186,7 @@ function profileMenu(a){ if(pm){ closePM(true); return; } const s=S(), u=s.user;
  h+=it('account','Account settings','user');
  if(adm) h+=it('admin','Admin settings','gear');
  if(adm||dev) h+=it('bot','Support agent','headset');
- h+=it('docs','Docs and support','book');
+ h+=it('docs','Help center','book');
 
  h+='<div class="pm-s"></div><button type="button" class="pm-i danger" role="menuitem" data-pm="out">'+ICON('logout',18)+'<span>Sign out</span></button>';
  const el=document.createElement('div'); el.className='pmenu'; el.setAttribute('role','menu'); el.setAttribute('aria-label','Profile'); el.innerHTML=h; document.body.appendChild(el);

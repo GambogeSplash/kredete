@@ -1,4 +1,4 @@
-/* Docs and support: a small help centre. Search, six topics, short articles, and a way to reach a person. */
+/* Help center: a small help centre. Search, six topics, short articles, and a way to reach a person. */
 (() => {
 const B = window.BRAIN; if (!B) return;
 const $ = (s, r = document) => r.querySelector(s);
@@ -44,7 +44,7 @@ function docs() {
   if (s.open) {
     const a = ARTICLES.find((x) => x.id === s.open); const t = TOPICS.find((x) => x.id === a.t);
     const more = ARTICLES.filter((x) => x.t === a.t && x.id !== a.id);
-    $('#app').innerHTML = `<div class="pg dcpg"><button type="button" class="link dcback" id="dcb">← Docs and support</button><div class="dcmeta">${esc(t.title)}</div><h1>${esc(a.title)}</h1><ol class="dcsteps">${a.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
+    $('#app').innerHTML = `<div class="pg dcpg dcart"><button type="button" class="link dcback" id="dcb">← Help center</button><div class="dcmeta">${esc(t.title)}</div><h1>${esc(a.title)}</h1><ol class="dcsteps">${a.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
       <div class="dchelp"><span>Was this helpful?</span><button type="button" class="btn sm" data-h="y">Yes</button><button type="button" class="btn sm" data-h="n">No</button></div>
       ${more.length ? `<h2 class="dch2">More in ${esc(t.title)}</h2><div class="dclist">${more.map((x) => `<button type="button" class="dcrow" data-a="${x.id}">${esc(x.title)}<span>${ICON('chevr', 14)}</span></button>`).join('')}</div>` : ''}</div>`;
     $('#dcb').onclick = () => { s.open = null; B.save(); docs(); };
@@ -56,7 +56,7 @@ function docs() {
   const body = q
     ? `<div class="dclist">${hits.length ? hits.map((a) => `<button type="button" class="dcrow" data-a="${a.id}">${esc(a.title)}<small>${esc(TOPICS.find((t) => t.id === a.t).title)}</small><span>${ICON('chevr', 14)}</span></button>`).join('') : `<div class="dcnone"><b>No articles match</b><p>Try fewer words, or ask us below.</p></div>`}</div>`
     : `<div class="dcgrid">${TOPICS.map((t) => `<section class="dccard"><span class="dcic">${ICON(t.icon, 18)}</span><h3>${esc(t.title)}</h3><p>${esc(t.blurb)}</p>${ARTICLES.filter((a) => a.t === t.id).map((a) => `<button type="button" class="dclink" data-a="${a.id}">${esc(a.title)}</button>`).join('')}</section>`).join('')}</div>`;
-  $('#app').innerHTML = `<div class="pg dcpg"><h1>Docs and support</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the docs" aria-label="Search the docs" value="${esc(s.q || '')}" autocomplete="off"></div>${body}
+  $('#app').innerHTML = `<div class="pg dcpg"><div class="dchero"><h1>Help center</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the help center" aria-label="Search the help center" value="${esc(s.q || '')}" autocomplete="off"></div></div>${body}
     <div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth, or write to a person. We reply within one working day.</p></div><div class="dcbtns"><button type="button" class="btn primary" id="dcask">Ask Broth</button><a class="btn" href="mailto:support@broth.app">Email support</a></div></div>
     <p class="dcstat"><i></i>All systems normal</p></div>`;
   const inp = $('#dcq'); if (s.q) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
