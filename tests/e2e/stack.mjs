@@ -32,7 +32,9 @@ export async function restartApi() {
   const deadline = Date.now() + 90_000;
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(`${BASE}/readyz`);
+      // Each check gives up on its own: a connection kept alive to the process that was just
+      // stopped can otherwise hang for many minutes, far past the deadline.
+      const response = await fetch(`${BASE}/readyz`, { signal: AbortSignal.timeout(2_000) });
       if (response.ok) return;
     } catch (error) { /* starting */ }
     await new Promise((r) => setTimeout(r, 500));
