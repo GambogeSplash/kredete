@@ -468,6 +468,29 @@ const CARET = '<svg class="car" width="10" height="10" viewBox="0 0 10 10" fill=
 function navItem(attr, icon, label, current, extra, cls) {
   return `<button type="button" class="surf ${cls || ''}" ${attr} aria-current="${current ? 'page' : 'false'}">${ICON(icon, 16)}<span>${label}</span>${extra || ''}</button>`;
 }
+/* The icon rail: the same places as the sidebar's list, as large line icons down the far left (desktop). */
+function railItem(attr, icon, label, current, cls) {
+  return `<button type="button" class="rl ${cls || ''}" ${attr} aria-label="${label}" title="${label}" aria-current="${current ? 'page' : 'false'}">${ICON(icon, 22)}</button>`;
+}
+function renderRail(r, atHome) {
+  let rail = $('#rail');
+  if (!rail) {
+    rail = document.createElement('nav');
+    rail.id = 'rail'; rail.className = 'rail'; rail.setAttribute('aria-label', 'Main');
+    document.body.insertBefore(rail, $('.top'));
+  }
+  let h = railItem('data-home="1"', 'compose', 'New chat', atHome);
+  h += railItem('data-search="1"', 'search', 'Search', false);
+  h += railItem('data-go="/library"', 'library', 'Library', r.surface === 'library');
+  h += railItem('data-go="/governance"', 'shield', 'Governance', r.surface === 'governance');
+  if (hasRole('admin', 'compliance')) h += railItem('data-go="/admin"', 'settings', 'Admin', r.surface === 'admin');
+  h += railItem('data-go="/docs"', 'book', 'Docs', r.surface === 'docs');
+  if (setupPending()) h += railItem('data-go="/setup"', 'check', 'Finish setup', r.surface === 'setup', 'finish');
+  rail.innerHTML = h;
+  $$('#rail [data-go]').forEach((b) => { b.onclick = () => { go(b.dataset.go); window.scrollTo(0, 0); }; });
+  $$('#rail [data-home]').forEach((b) => { b.onclick = newChat; });
+  $$('#rail [data-search]').forEach((b) => { b.onclick = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true })); });
+}
 function renderSurfaces() {
   const r = S.route;
   const atHome = r.surface === 'ask' && !r.params.id;
@@ -479,6 +502,7 @@ function renderSurfaces() {
   h += navItem('data-go="/docs"', 'book', 'Docs', r.surface === 'docs');
   if (setupPending()) h += navItem('data-go="/setup"', 'check', 'Finish setup', r.surface === 'setup', '<span class="sdot" aria-hidden="true"></span>', 'finish');
   $('#surfaces').innerHTML = `<div class="snav">${h}</div><div class="srec" id="srec" role="list" aria-label="Chats"></div>`;
+  renderRail(r, atHome);
   $$('#surfaces [data-go]').forEach((b) => { b.onclick = () => { go(b.dataset.go); window.scrollTo(0, 0); }; });
   $$('#surfaces [data-home]').forEach((b) => { b.onclick = newChat; });
   $$('#surfaces [data-search]').forEach((b) => { b.onclick = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true })); });
