@@ -783,3 +783,21 @@ html[data-mode=dark] .pvbg{filter:invert(1) hue-rotate(180deg)}
 .pvsh{box-shadow:0 30px 70px -24px rgba(8,4,40,.7)}
 
 .lm.lmleft{place-items:start;margin:0;justify-items:start;opacity:1}.lm.lmleft svg.lmw{color:var(--ink)}.si-brand .lm{min-height:30px;align-content:center}
+
+/* the crew wraps the whole dashboard: standing on the top edge, climbing the right edge, hanging from the bottom edge, peeking round the left */
+.pvcr.c1{left:236px;top:-62px;width:50px;--r:-6deg}
+.pvcr.c2{right:70px;top:-40px;width:68px;--r:7deg}
+.pvcr.c3{right:-4px;top:70px;width:56px;--r:-84deg}
+.pvcr.c4{right:150px;bottom:-38px;width:60px;--r:174deg}
+.pvcr.c5{left:58px;top:-46px;width:36px;--r:7deg}
+.pvcr.c6{z-index:2;left:420px;top:-52px;width:38px;--r:5deg;animation-delay:.9s,1.05s}
+.pvcr.c7{right:-2px;top:210px;width:50px;--r:-98deg;animation-delay:1.3s,1.15s}
+.pvcr.c8{left:300px;bottom:-34px;width:56px;--r:188deg;animation-delay:.5s,1.25s}
+.pvcr.c9{left:196px;top:120px;width:46px;--r:94deg;animation-delay:1.7s,1.35s}
+
+.pvcr.c3{right:-36px;top:64px;width:58px;--r:86deg}
+.pvcr.c7{right:-32px;top:206px;width:52px;--r:94deg}
+.pvcr.c9{left:70px;top:auto;bottom:-36px;width:54px;--r:184deg}
+.pvcap{display:none}
+
+.pvcr.c3{right:-52px}.pvcr.c7{right:-48px}.pvcr.c4{bottom:-54px}.pvcr.c8{bottom:-50px}.pvcr.c9{bottom:-52px}
