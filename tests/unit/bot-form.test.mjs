@@ -89,3 +89,12 @@ describe('status', () => {
     assert.equal(F.snippetOrigins(null), null);
   });
 });
+
+describe('whiteContrast', () => {
+  it('measures white text on an accent, as the launcher and contact button draw it', () => {
+    assert.ok(Math.abs(F.whiteContrast('#000000') - 21) < 0.01);
+    assert.ok(Math.abs(F.whiteContrast('#ffffff') - 1) < 0.01);
+    for (const ok of ['#5e6ad2', '#5a0fc8', '#1f7a4a', '#1b1b1f']) assert.ok(F.whiteContrast(ok) >= 4.5, ok);
+    for (const weak of ['#26a269', '#f5a623', '#e5e5e5']) assert.ok(F.whiteContrast(weak) < 4.5, weak);
+  });
+});

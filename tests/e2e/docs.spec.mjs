@@ -12,7 +12,7 @@ test('the contents, from the sidebar', async ({ open, check }) => {
   await page.locator('#surfaces').getByRole('button', { name: 'Docs' }).click();
   await expect(page).toHaveURL(/\/docs$/);
   await expect(page.locator('.dcchips').getByRole('button', { name: 'All', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(cards(page)).toHaveCount(4);
+  await expect(cards(page)).toHaveCount(6);
   await expect(cards(page).first()).toContainText('Asking Broth');
   const size = page.viewportSize() || { width: 1440, height: 900 };
   await page.mouse.move(size.width - 4, size.height - 4); // off the cards, so none shows its hover
@@ -22,7 +22,7 @@ test('the contents, from the sidebar', async ({ open, check }) => {
 test('admins start on their audience, and a chosen audience is remembered', async ({ open, check }) => {
   const page = await open('admin', '/docs');
   await expect(page.locator('.dcchips').getByRole('button', { name: 'Admin', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(cards(page).locator('b')).toHaveText(['Asking Broth', 'Labelling pages', 'Setting up spaces', 'Fixing label problems']);
+  await expect(cards(page).locator('b')).toHaveText(['Asking Broth', 'Labelling pages', 'Setting up spaces', 'Connecting docs repositories', 'Fixing label problems', 'Support bots']);
   await page.locator('.dcchips').getByRole('button', { name: 'Asking', exact: true }).click();
   await expect(cards(page).locator('b')).toHaveText(['Asking Broth']);
   await check(page, 'docs-filtered');
@@ -58,7 +58,7 @@ test('an article, its sections, and links between articles', async ({ open, chec
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: 'Labelling pages' })).toBeVisible();
   await page.getByRole('link', { name: 'All docs' }).click();
-  await expect(cards(page)).toHaveCount(4);
+  await expect(cards(page)).toHaveCount(6);
 });
 
 test('an unknown section opens the article at the top, and an unknown article says so', async ({ open, check }) => {
@@ -68,7 +68,7 @@ test('an unknown section opens the article at the top, and an unknown article sa
   await expect(missing.getByRole('heading', { name: "This article doesn't exist" })).toBeVisible();
   await check(missing, 'docs-missing');
   await missing.getByRole('link', { name: 'See all docs' }).click();
-  await expect(cards(missing)).toHaveCount(4);
+  await expect(cards(missing)).toHaveCount(6);
 });
 
 test('the docs say when they cannot be loaded, and try again', async ({ open, check }) => {
@@ -80,7 +80,7 @@ test('the docs say when they cannot be loaded, and try again', async ({ open, ch
   await check(page, 'docs-error');
   fail = false;
   await page.getByRole('button', { name: 'Try again' }).click();
-  await expect(cards(page)).toHaveCount(4);
+  await expect(cards(page)).toHaveCount(6);
 });
 
 test('signed out, the docs open on their own with a way back', async ({ open, check }) => {

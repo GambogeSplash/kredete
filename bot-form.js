@@ -172,6 +172,20 @@
   /** Whether at least one chosen source has a Public page (spec 5, step 1). */
   const canAnswer = (/** @type {any} */ bot, /** @type {any[]} */ containers) => publicPages(bot, containers) > 0;
 
+  /**
+   * The contrast of white text on a hex colour (WCAG 2.2): the widget's launcher, header avatar,
+   * sent questions and contact button all draw white on the accent.
+   * @param {string} hex
+   */
+  function whiteContrast(hex) {
+    const channel = (/** @type {number} */ i) => {
+      const c = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    const luminance = 0.2126 * channel(0) + 0.7152 * channel(1) + 0.0722 * channel(2);
+    return 1.05 / (luminance + 0.05);
+  }
+
   /** @param {string} key */
   const maskKey = (key) => `${key.slice(0, 12)}••••${key.slice(-4)}`;
 
@@ -188,5 +202,5 @@
     return { client: origin(src[1]), api: origin(api[1]) };
   }
 
-  return { LENGTHS, MAX_STARTERS, MAX_SITES, normalizeOrigin, fieldError, changes, liveSites, publicPages, canAnswer, maskKey, snippetOrigins };
+  return { LENGTHS, MAX_STARTERS, MAX_SITES, normalizeOrigin, fieldError, changes, liveSites, publicPages, canAnswer, whiteContrast, maskKey, snippetOrigins };
 });

@@ -6,6 +6,9 @@
 // them by where they land rather than by name, and never assume how many bots there are.
 import { expect, test } from './fixtures.mjs';
 
+// The demo page calls the bot API on another localhost port, as bot.spec.mjs does.
+test.use({ launchOptions: { args: ['--disable-features=LocalNetworkAccessChecks'] } });
+
 const SEEDED = 'Kredete Help';
 const phone = (page) => page.viewportSize().width < 700;
 /** A name for the view's own bots: names need not be unique, and a fixed one keeps snapshots steady. */
@@ -223,5 +226,93 @@ test.describe('Experience', () => {
     await expect(preview(page)).toHaveAttribute('data-scheme', mode === 'dark' ? 'dark' : 'light');
     await page.evaluate(() => { document.documentElement.dataset.mode = document.documentElement.dataset.mode === 'dark' ? 'light' : 'dark'; });
     await expect(preview(page)).toHaveAttribute('data-scheme', mode === 'dark' ? 'light' : 'dark');
+  });
+});
+
+test.describe('Products', () => {
+  test('a live product shows its snippet, the sites setup and its key; a revoked one is read only', async ({ open, check }) => {
+    const page = await openSeeded(open, 'products');
+    const live = page.getByRole('region', { name: 'Help site' });
+    await expect(live.getByLabel('Snippet')).toContainText('data-key="bk_live_');
+    await expect(live).toContainText('script-src');
+    await expect(live.getByRole('link', { name: 'Open the demo page' })).toBeVisible();
+    await expect(live.getByRole('textbox', { name: 'Site 1' })).toHaveValue(new URL(page.url()).origin);
+    await check(page, 'agent-products', { mask: ['#agsnip', '.agkey-v'] });
+    await page.getByRole('button', { name: /Old help site/ }).click();
+    const old = page.getByRole('region', { name: 'Old help site' });
+    await expect(old).toContainText("can't be restored");
+    await expect(old.getByRole('button')).toHaveCount(0);
+    await check(page, 'agent-products-revoked', { mask: ['.agkey-v', '.agpd-sub'] });
+  });
+
+  test('a new bot goes live: a product on this site, its demo page, a new key, then revoked', async ({ open, check }, info) => {
+    const { page, name } = await newBot(open, info, 'knowledge');
+    await page.getByRole('checkbox', { name: /Payments \(PAY\)/ }).check();
+    await page.getByRole('region', { name: 'Unsaved changes' }).getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('region', { name: 'Unsaved changes' })).toBeHidden();
+    await page.getByRole('navigation', { name: 'Support agent' }).getByRole('button', { name: 'Products' }).click();
+    await expect(page.getByRole('heading', { name: 'No products yet' })).toBeVisible();
+
+    // Adding a product checks its site first.
+    await page.getByRole('button', { name: /Add a product/ }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add a product' });
+    await dialog.getByLabel('Name').fill('Docs site');
+    await dialog.getByLabel('Site it runs on').fill(`${new URL(page.url()).origin}/docs`);
+    await dialog.getByRole('button', { name: 'Create key' }).click();
+    await expect(dialog.getByText('Use only the site, like https://help.kredete.com.')).toBeVisible();
+    await check(page, 'agent-add-product', { mask: ['.agname'] });
+    await dialog.getByLabel('Site it runs on').fill(new URL(page.url()).origin);
+    await dialog.getByRole('button', { name: 'Create key' }).click();
+    const product = page.getByRole('region', { name: 'Docs site' });
+    await expect(product.getByLabel('Snippet')).toContainText('data-key="bk_live_');
+
+    // The demo page loads the new bot for a visitor.
+    const demo = await product.getByRole('link', { name: 'Open the demo page' }).getAttribute('href');
+    const visitor = await open(null, demo);
+    await visitor.getByRole('button', { name: 'Open help' }).click();
+    await expect(visitor.getByRole('dialog', { name })).toBeVisible();
+
+    // A replaced key stops working at once.
+    const oldKey = new URL(demo, page.url()).searchParams.get('key');
+    await product.getByRole('button', { name: 'Replace key' }).click();
+    await page.getByRole('alertdialog', { name: 'Replace this key?' }).getByRole('button', { name: 'Replace key' }).click();
+    await expect(page.getByRole('region', { name: 'Docs site' }).getByLabel('Snippet')).not.toContainText(oldKey);
+    const again = await open(null, demo);
+    await expect(again.locator('#kredete-help')).toHaveCount(0);
+
+    // Revoking cannot be undone, and says so first.
+    await page.getByRole('region', { name: 'Docs site' }).getByRole('button', { name: 'Revoke' }).click();
+    const sure = page.getByRole('alertdialog', { name: 'Revoke Docs site?' });
+    await expect(sure).toContainText("This can't be undone.");
+    await check(page, 'agent-revoke', { mask: ['.agname', '#agsnip', '.agkey-v'] });
+    await sure.getByRole('button', { name: 'Revoke' }).click();
+    await expect(page.getByRole('region', { name: 'Docs site' })).toContainText("can't be restored");
+    await expect(page.getByRole('button', { name: /Docs site/ })).toContainText('Revoked');
+  });
+
+  test('settings save with their own bar, and a colour that hides white text is flagged', async ({ open }, info) => {
+    const { page } = await newBot(open, info, 'products');
+    await page.getByRole('button', { name: /Add a product/ }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add a product' });
+    await dialog.getByLabel('Name').fill('App');
+    await dialog.getByLabel('Site it runs on').fill('https://app.kredete.com');
+    await dialog.getByRole('button', { name: 'Create key' }).click();
+    const product = page.getByRole('region', { name: 'App' });
+    await product.getByRole('button', { name: 'Add a site' }).click();
+    await product.getByRole('textbox', { name: 'Site 2' }).fill('HTTPS://Docs.Kredete.com:443/');
+    await product.getByRole('textbox', { name: 'Site 2' }).blur();
+    await expect(product.getByRole('textbox', { name: 'Site 2' })).toHaveValue('https://docs.kredete.com');
+    await product.getByRole('textbox', { name: 'Colour as a hex value' }).fill('#26a269');
+    await expect(product.getByText('White text is hard to read on this colour.', { exact: false })).toBeVisible();
+    await product.getByRole('button', { name: 'Green' }).click();
+    await expect(product.getByText('White text is hard to read on this colour.', { exact: false })).toHaveCount(0);
+    await product.getByRole('button', { name: 'Left' }).click();
+    await page.getByRole('region', { name: 'Unsaved changes' }).getByRole('button', { name: 'Save' }).click();
+    await page.reload();
+    const saved = page.getByRole('region', { name: 'App' });
+    await expect(saved.getByRole('textbox', { name: 'Site 2' })).toHaveValue('https://docs.kredete.com');
+    await expect(saved.getByRole('button', { name: 'Green' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(saved.getByRole('button', { name: 'Left' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: /App/ })).toContainText('+1 more');
   });
 });
