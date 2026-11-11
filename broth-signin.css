@@ -121,7 +121,7 @@ button.adlogo.busy{animation:logopulse 1s ease-in-out infinite}
 .obid{background:var(--fill-1);padding:var(--s-3) var(--s-4);gap:var(--s-3)}
 
 /* the button row sits 8 px under the field (the 12 px field margin makes 20): this beats components.css `#obe+.obnav` */
-.si-in #obe+.obnav{margin-top:8px}
+.si-in #obe+.obnav{margin-top:6px}
 /* role pill beside the name on the "Is this you?" card */
 .obnm{display:flex;align-items:center;gap:var(--s-2);min-width:0}
 .obnm b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
