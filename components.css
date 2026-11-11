@@ -883,3 +883,11 @@ html[data-mode=dark] body.noauth :is(.btn.primary,.si-btn,.oa-allow,.emchip.on){
 .pvdash{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:1.8cqh;object-fit:cover;z-index:1;box-shadow:0 0 0 1px rgba(255,255,255,.22),0 0 5cqh rgba(196,172,255,.55),0 4cqh 9cqh rgba(8,4,40,.55)}
 
 .pvlogo2{width:66cqh;height:41.25cqh;top:52cqh}
+
+/* the picture shows the app in miniature, the way the real layout floats: a rail, then two separate shells */
+.pvmock.pvw.pvfl{position:absolute;left:50%;top:50%;width:640px;height:400px;min-height:0;z-index:1;transform:translate(-50%,-50%) scale(calc(var(--pvk,1) * .82));transform-origin:50% 50%;grid-template-columns:34px 170px minmax(0,1fr);gap:10px}
+.pvmock .pvsh{box-shadow:0 30px 70px -26px rgba(8,4,40,.7),0 0 0 1px rgba(255,255,255,.08)}
+.pvmock .pvg{font-size:18px;font-weight:600;color:var(--ink)}
+.pvmock .pvm{padding:0 40px}
+
+.svx .btn:hover,.svx .btn:focus-visible{color:var(--danger);border-color:var(--danger-line);background:var(--danger-soft)}
