@@ -63,7 +63,7 @@ function picker() {
       b.onclick = () => { if (b.dataset.av === 'photo') return; sel = { kind: 'lib', id: b.dataset.av }; B.haptic('select'); prev(); grid(); };
     });
   };
-  m.innerHTML = `<div class="modal avpick" role="dialog" aria-modal="true" aria-label="Choose your avatar"><div class="bar"><span>Choose your avatar</span><button type="button" class="link" id="mclose">Close</button></div><div class="body avbody"><div class="avprev" id="avprev"></div><div class="avgrid" id="avgrid"></div><input type="file" id="avfile" accept="image/*" hidden><div class="actions"><button type="button" class="btn" id="avrm">Use the default</button><span class="lsp"></span><button type="button" class="btn primary" id="avsave">Save</button></div></div></div>`;
+  m.innerHTML = `<div class="modal avpick" role="dialog" aria-modal="true" aria-label="Choose your avatar"><div class="bar"><span>Choose your avatar</span><button type="button" class="link" id="mclose">Close</button></div><div class="body avbody"><div class="avprev" id="avprev"></div><div class="avgrid" id="avgrid"></div><input type="file" id="avfile" accept="image/*" hidden><p class="suhint">Your picture is kept on this device only.</p><div class="actions"><button type="button" class="btn" id="avrm">Use the default</button><span class="lsp"></span><button type="button" class="btn primary" id="avsave">Save</button></div></div></div>`;
   m.classList.add('on');
   m.setAttribute('aria-hidden', 'false');
   $('#mclose').onclick = B.closeModal;
@@ -95,7 +95,7 @@ function picker() {
   $('#avsave').onclick = () => {
     keep(sel);
     B.closeModal();
-    B.toast('Avatar updated');
+    B.toast('Avatar saved on this device');
     B.haptic('success');
     if (window.AUTH && window.AUTH.mountAccount) window.AUTH.mountAccount();
     B.route();

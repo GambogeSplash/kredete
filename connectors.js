@@ -128,21 +128,12 @@ function sourceCard(src) {
   const st = stateOf(src);
   return `<button type="button" class="ds-card lift adsc srccard${st.soon ? ' soonc' : ''}" data-src="${src.key}" aria-haspopup="dialog" aria-label="${esc(src.name)}, ${esc(st.tag[0])}"><div class="adsch"><span class="adsl">${src.logo ? B.srcIcon(src.logo, 28) : ICON('lock', 20)}</span><div><b>${esc(src.name)}</b><small>${esc(st.line)}</small></div><span class="tag ${st.tag[1]}">${st.tag[0]}</span></div></button>`;
 }
-/* "Notify me" for a source that is not supported yet is kept in this browser only. */
-const NOTIFY = 'broth-notify';
-const notified = () => { try { return JSON.parse(localStorage.getItem(NOTIFY) || '[]'); } catch (e) { return []; } };
-function notify(key) {
-  const list = notified();
-  if (!list.includes(key)) { try { localStorage.setItem(NOTIFY, JSON.stringify(list.concat(key))); } catch (e) { /* storage unavailable */ } }
-  B.toast('Noted');
-}
 /** What a card opens: its setup section when it has one, its first step when it is not connected, or the Coming soon dialog. */
 function sourcePop(anchor, src) {
   const st = stateOf(src);
   if (src.key === 'creds' || st.conns.length || src.key === 'gdrive') { if (openSection(src)) return; }
   if (src.real) { connectForm(src); return; }
   openModal(shell(src.name, `<div class="dmbody"><div class="slist">${soonRow(src)}</div></div>`, 480, B.srcIcon(src.logo, 22)));
-  wireNotify();
 }
 /* Every dialog here is the prototype's: a centred .modal in the shared #modal host, a title bar with a
    Close link, a body. A source's setup (its section: connections, spaces, steps, credentials) is moved
@@ -178,7 +169,7 @@ const row = (logo, name, line, action) => `<div class="srow"><span class="adsl">
 /** The sources not yet connected, in this order. A connected source has its card and is not offered again. */
 const PICK_ORDER = ['confluence', 'github', 'gdrive', 'notion', 'gcs', 'slack', 'sharepoint'];
 const offered = () => PICK_ORDER.map((k) => SOURCES.find((x) => x.key === k)).filter((src) => src && !stateOf(src).conns.length);
-const soonRow = (src) => { const done = notified().includes(src.key); return row(B.srcIcon(src.logo, 28), src.name, 'Coming soon.', `<button type="button" class="btn sm" data-nt="${src.key}" ${done ? 'disabled' : ''}>${done ? 'We will tell you' : 'Notify me'}</button>`); };
+const soonRow = (src) => row(B.srcIcon(src.logo, 28), src.name, 'Coming soon.', '');
 /** Add a source: a picker. Choosing a real source opens its own setup. */
 function addSource() {
   const list = offered();
@@ -187,10 +178,6 @@ function addSource() {
     : soonRow(src))).join('');
   openModal(shell('Add a source', list.length ? `<div class="dmbody"><div class="slist">${rows}</div></div>` : '<div class="ds-empty"><b>Every source is connected</b></div>'));
   $$('[data-pickgo]', $('#modal')).forEach((b) => { b.onclick = () => { const src = SOURCES.find((x) => x.key === b.dataset.pickgo); sourcePop(null, src); }; });
-  wireNotify();
-}
-function wireNotify() {
-  $$('[data-nt]', $('#modal')).forEach((b) => { b.onclick = () => { notify(b.dataset.nt); b.disabled = true; b.textContent = 'We will tell you'; }; });
 }
 /** A real source that is not connected yet: its first step (the app, or the site) in the dialog. */
 function connectForm(src) {

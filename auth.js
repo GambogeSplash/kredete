@@ -153,12 +153,30 @@ const TOUR = 'brain-tour';
 function toured() {
   try { return JSON.parse(localStorage.getItem(TOUR) || '[]'); } catch (e) { return []; }
 }
+/** The welcome is done when this account says so (PATCH /v1/me onboarding.welcomed), or, for an account that never
+ *  recorded it, when this browser already showed it. */
+function saveWelcomed(welcomed) {
+  const me = B.S.me;
+  if (!me) return Promise.resolve();
+  return B.api.patch('/me', { onboarding: { ...(me.onboarding || {}), welcomed } }).then((next) => { B.S.me = next; }, () => {
+    // The flag could not be stored: keep it for this visit, and in this browser for the next.
+    me.onboarding = { ...(me.onboarding || {}), welcomed };
+  });
+}
 function markToured(id) {
   try { localStorage.setItem(TOUR, JSON.stringify([...new Set([...toured(), id])])); } catch (e) { /* storage unavailable */ }
+  saveWelcomed(true);
 }
-AUTH.needsWelcome = () => !!(B.S.me && !toured().includes(B.S.me.id));
-AUTH.replayWelcome = () => {
+AUTH.needsWelcome = () => {
+  const me = B.S.me;
+  if (!me) return false;
+  const saved = me.onboarding && me.onboarding.welcomed;
+  if (typeof saved === 'boolean') return !saved;
+  return !toured().includes(me.id);
+};
+AUTH.replayWelcome = async () => {
   try { localStorage.setItem(TOUR, JSON.stringify(toured().filter((x) => x !== (B.S.me && B.S.me.id)))); } catch (e) { /* storage unavailable */ }
+  await saveWelcomed(false);
   B.go('/');
 };
 let ob = null;

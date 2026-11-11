@@ -23,7 +23,6 @@ declare global {
   var GOVBADGE: { count: () => number; refresh: () => Promise<void> } | undefined;
   var __govBadgeChanged: boolean | undefined;
   var BOOKMARKS: { has: (turn: any) => boolean; toggle: (turn: any) => boolean } | undefined;
-  var INBOX: { open: () => number; load: () => Promise<void> } | undefined;
   var BROTH_FX: { trashRow: (row: Element | null) => Promise<void>; renamed: (title: string) => void } | undefined;
   var SETUP: any;
   var SOURCES: any;
