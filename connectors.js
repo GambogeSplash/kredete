@@ -89,8 +89,42 @@ function readReturn() {
   return undefined;
 }
 
+/** The Add a source popover: a Confluence site or a GitHub account to connect. */
+function addSource() {
+  const anchor = $('#cnadds');
+  if (anchor.getAttribute('aria-expanded') === 'true') { window.ADMIN.closePop(); return; }
+  const confluence = data ? data.connections.some((c) => c.system === 'confluence' && c.status !== 'disconnected') : false;
+  const docs = data ? data.connections.some((c) => c.system === 'github_docs' && c.status !== 'disconnected') : false;
+  const p = window.ADMIN.pop(anchor, `<div class="dmbody cnpop"><form id="cnadd" novalidate><label class="dmlab" for="cnsite">${confluence ? 'Connect another Confluence site' : 'Confluence site'}</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse ds-msg bad" id="cnadde" role="alert"></div></form>
+    <form id="ghadd" novalidate><label class="dmlab" for="ghlogin">${docs ? 'Connect another GitHub account' : 'GitHub docs'}</label><div class="cnaddrow"><input id="ghlogin" class="eminp" placeholder="Organization or user, like kredete" autocomplete="off" spellcheck="false"><button type="submit" class="btn primary" id="ghaddgo">Connect</button></div><div class="hse ds-msg bad" id="ghadde" role="alert"></div></form>
+    <div class="cnsoon"><span class="cnsec-i">${B.srcIcon('gdrive', 18)}</span><span><b>Google Drive</b><small>${B.sandbox() ? 'Needs Google Workspace' : 'Set up under Google Drive below'}</small></span><span class="tag">${B.sandbox() ? 'Coming soon' : 'Below'}</span></div></div>`, 'Add a source');
+  const flag = (id, msg) => { const f = $(id === 'cn' ? '#cnsite' : '#ghlogin', p); $(`#${id}adde`, p).textContent = msg; if (msg) f.setAttribute('aria-invalid', 'true'); else f.removeAttribute('aria-invalid'); };
+  $('#cnsite', p).oninput = () => flag('cn', '');
+  $('#ghlogin', p).oninput = () => flag('gh', '');
+  $('#cnadd', p).onsubmit = (e) => {
+    e.preventDefault();
+    const site = $('#cnsite', p).value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(site)) { flag('cn', 'Enter the site address, like yourteam.atlassian.net'); return; }
+    B.busy($('#cnaddgo', p), async () => {
+      const created = await B.api.post('/admin/connections', { system: 'confluence', site });
+      await window.SETUP.authorize(created.id);
+    }, (error) => { flag('cn', B.problem(error)); refresh(); });
+  };
+  $('#ghadd', p).onsubmit = (e) => {
+    e.preventDefault();
+    const login = $('#ghlogin', p).value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/.*$/, '');
+    if (!GITHUB_LOGIN.test(login)) { flag('gh', 'Enter the GitHub organization or user name, like kredete'); return; }
+    B.busy($('#ghaddgo', p), async () => {
+      const created = await B.api.post('/admin/connections', { system: 'github_docs', site: login });
+      await install(created.id);
+    }, (error) => { flag('gh', B.problem(error)); refresh(); });
+  };
+}
+
 async function render(el) {
   if (readReturn() === 'moved') return;
+  window.ADMIN.actions('<button type="button" class="btn primary sm" id="cnadds" aria-haspopup="dialog">Add a source</button>');
+  $('#cnadds').onclick = addSource;
   el.innerHTML = `${banner ? `<div class="banner bad" role="alert">${esc(banner)}</div>` : ''}<div id="cnbody">${B.loadingBlock('Loading connectors', 3, 'cnsec skcapp')}</div>`;
   try { data = await fetchAll(); }
   catch (error) {
@@ -113,18 +147,18 @@ function draw() {
   const conf = data.credentials.find((c) => c.name === 'confluence_oauth');
   const docs = data.connections.filter((c) => c.system === 'github_docs' && c.status !== 'disconnected');
   const app = data.credentials.find((c) => c.name === 'github_app');
-  body.innerHTML = `<section class="cnsec"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2><p class="amute">Broth reads the spaces you include, with each person's Confluence access.</p></div></div>
+  body.innerHTML = `<section class="cnsec"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2><p class="amute">Broth reads the spaces you include, with each person's Confluence access.</p></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && conf && !conf.configured ? `<div class="notice low"><span>Add the Confluence app below before connecting a site.</span></div>` : ''}
       ${confluence.map(connectionHtml).join('') || `<div class="cnempty"><p class="amute">No Confluence site is connected.</p></div>`}
-      <form class="cnadd" id="cnadd" novalidate><label class="hsl" for="cnsite">${confluence.length ? 'Connect another site' : 'Connect a site'}</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse" id="cnadde" role="alert"></div></form></section>
-    <section class="cnsec"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive</h2><p class="amute">${B.sandbox() ? 'Unavailable in this sandbox.' : 'Broth reads the shared drives you include.'}</p></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : ''}</div>
+</section>
+    <section class="cnsec"><div class="cnsec-h">${B.srcIcon('gdrive', 32)}<div><h2>Google Drive</h2><p class="amute">${B.sandbox() ? 'Unavailable in this sandbox.' : 'Broth reads the shared drives you include.'}</p></div>${B.sandbox() ? '<span class="tag">Needs Google Workspace</span>' : drive.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() ? '<div class="notice none"><span>Google Drive needs a Google Workspace account: Broth reads Drive through domain-wide delegation, which a personal Google account does not have.</span></div>' : ''}
       <ol class="cncheck ${B.sandbox() ? 'off' : ''}"><li><b>Authorize Broth in the Google Admin console</b><span>Add Broth's client ID with the Drive and Admin SDK read scopes under domain-wide delegation.</span></li><li><b>Add the indexer to each shared drive</b><span>Invite broth-indexer@ as a viewer on every shared drive Broth should read.</span></li><li><b>Verify</b><span>Broth checks that it can see each shared drive, then you include them.</span></li></ol>
       ${drive.map(connectionHtml).join('')}</section>
-    <section class="cnsec" id="cndocs"><div class="cnsec-h">${B.srcIcon('github_docs', 32)}<div><h2>Docs repositories</h2><p class="amute">Broth reads the product docs from the GitHub repositories you include, and links each answer to the page on the docs site. ${window.DOCS.link('docsInstall', 'How to connect')}</p></div></div>
+    <section class="cnsec" id="cndocs"><div class="cnsec-h">${B.srcIcon('github_docs', 32)}<div><h2>Docs repositories</h2><p class="amute">Broth reads the product docs from the GitHub repositories you include, and links each answer to the page on the docs site. ${window.DOCS.link('docsInstall', 'How to connect')}</p></div>${docs.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && app && !app.configured ? `<div class="notice low"><span>Add the GitHub App below before connecting an account.</span></div>` : ''}
       ${docs.map(connectionHtml).join('') || `<div class="cnempty"><p class="amute">No GitHub account is connected.</p></div>`}
-      <form class="cnadd" id="ghadd" novalidate><label class="hsl" for="ghlogin">${docs.length ? 'Connect another GitHub account' : 'Connect a GitHub account'}</label><div class="cnaddrow"><input id="ghlogin" class="eminp" placeholder="GitHub organization or user, like kredete" autocomplete="off" spellcheck="false"><button type="submit" class="btn primary" id="ghaddgo">Connect</button></div><div class="hse" id="ghadde" role="alert"></div></form></section>
+</section>
     ${B.sandbox() ? `<section class="cnsec"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials</h2><p class="amute">The apps Broth uses in this sandbox. Secrets are stored encrypted and never shown again.</p></div></div><div class="fgroup cncreds">${data.credentials.map(credentialRow).join('')}</div></section>` : ''}`;
   paint();
   wire();
@@ -167,24 +201,6 @@ function credentialRow(c) {
 }
 function wire() {
   const body = $('#cnbody');
-  $('#cnadd').onsubmit = (e) => {
-    e.preventDefault();
-    const site = $('#cnsite').value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(site)) { $('#cnadde').textContent = 'Enter the site address, like yourteam.atlassian.net'; return; }
-    B.busy($('#cnaddgo'), async () => {
-      const created = await B.api.post('/admin/connections', { system: 'confluence', site });
-      await window.SETUP.authorize(created.id);
-    }, (error) => { $('#cnadde').textContent = B.problem(error); refresh(); });
-  };
-  $('#ghadd').onsubmit = (e) => {
-    e.preventDefault();
-    const login = $('#ghlogin').value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/.*$/, '');
-    if (!GITHUB_LOGIN.test(login)) { $('#ghadde').textContent = 'Enter the GitHub organization or user name, like kredete'; return; }
-    B.busy($('#ghaddgo'), async () => {
-      const created = await B.api.post('/admin/connections', { system: 'github_docs', site: login });
-      await install(created.id);
-    }, (error) => { $('#ghadde').textContent = B.problem(error); refresh(); });
-  };
   $$('[data-cact]', body).forEach((b) => {
     const id = b.closest('[data-conn]').dataset.conn;
     b.onclick = () => {
@@ -542,5 +558,5 @@ async function refresh() {
   try { data = await fetchAll(); draw(); } catch (error) { B.toast(B.problem(error)); }
 }
 
-window.ADMIN.tabs.connectors = { label: 'Connectors', roles: ['admin'], render };
+window.ADMIN.tabs.connectors = { label: 'Connectors', hint: 'Where Broth reads from. People still only see what they can already open.', roles: ['admin'], render };
 })();

@@ -43,7 +43,7 @@ test.describe('surfaces follow roles', () => {
     await page.getByRole('button', { name: 'Action' }).click();
     await page.getByRole('option', { name: 'Sharing requested' }).click();
     // The pending request, and the two the seed made for the Help centre bot's Public pages.
-    await expect(page.locator('#audt .dt-r:not(.dt-h)')).toHaveCount(3);
+    await expect(page.locator('#audt .ds-tr:not(.ds-th)')).toHaveCount(3);
     await expect(page.locator('#audt .audact')).toHaveText(Array(3).fill('Sharing requested'));
     await check(page, 'audit-compliance');
     const menu = await profileMenu(page);
@@ -640,7 +640,7 @@ test.describe('people', () => {
     await dialog.getByRole('button', { name: 'Invite' }).click();
     await expect(page.locator('#toast')).toContainText('Invited grace.obi@kredete.com');
     await expect(page.getByRole('tab', { name: 'Invitations' })).toHaveAttribute('aria-selected', 'true');
-    const row = page.locator('#invlist .dt-r').filter({ hasText: 'grace.obi@kredete.com' });
+    const row = page.locator('#invlist .ds-tr').filter({ hasText: 'grace.obi@kredete.com' });
     await expect(row).toContainText('Waiting to sign in');
     await check(page, 'invitations');
     await row.getByRole('button', { name: 'Revoke' }).click();
@@ -670,10 +670,10 @@ test.describe('people', () => {
 
 test('the audit log filters by action', async ({ open, check }) => {
   const page = await open('admin', '/admin/audit');
-  await expect(page.locator('#audt .dt-r:not(.dt-h)').first()).toBeVisible();
+  await expect(page.locator('#audt .ds-tr:not(.ds-th)').first()).toBeVisible();
   await page.getByRole('button', { name: 'Action' }).click();
   await page.getByRole('option', { name: 'Connection created' }).click();
-  await expect(page.locator('#audt .dt-r:not(.dt-h)')).toHaveCount(1);
+  await expect(page.locator('#audt .ds-tr:not(.ds-th)')).toHaveCount(1);
   await expect(page.locator('#audt .audact')).toHaveText('Connection created');
   await check(page, 'audit');
 });

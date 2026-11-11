@@ -31,9 +31,10 @@ const who = (id, names) => (id === B.S.me.id ? 'you' : names[id] || 'a colleague
 
 function page() {
   const g = state();
-  $('#app').innerHTML = `<div class="pg gov"><h1>Governance</h1><p class="sub pgsub">Requests to share a document, or a whole docs repository, more widely. Its owner, a domain owner of its domain, or an admin decides; nobody approves their own request.</p>
+  const tip = 'Requests to share a document, or a whole docs repository, more widely. Its owner, a domain owner of its domain, or an admin decides; nobody approves their own request.';
+  $('#app').innerHTML = `<div class="pg gov"><div class="ds-head"><h1>Governance<span class="hint" tabindex="0" data-tip="${esc(tip)}" aria-label="${esc(tip)}">i</span></h1></div>
     <div class="libchips govtabs" role="tablist" aria-label="Status">${STATUSES.map(([k, l]) => `<button type="button" class="lchip ${g.status === k ? 'on' : ''}" role="tab" aria-selected="${g.status === k}" data-st="${k}">${l}</button>`).join('')}</div>
-    <div class="actl govlist" id="govlist"></div><div class="chmore" id="govmore"></div></div>`;
+    <div class="ds-table bt govlist" role="table" aria-label="Requests" id="govlist" style="--cols:minmax(0,1.7fr) minmax(0,1fr) minmax(0,1fr) 120px minmax(150px,auto)"></div><div class="chmore" id="govmore"></div></div>`;
   $$('[data-st]').forEach((b) => { b.onclick = () => { g.status = b.dataset.st; page(); load(true); }; });
   if (!g.loaded || g.error) load(true); else draw();
 }
@@ -87,10 +88,11 @@ function repoActions(d) {
   }
   return d.status === 'approved' ? `<button type="button" class="btn sm" data-ract="revoke" data-id="${d.id}">Revoke</button>` : '';
 }
+const HEAD = '<div class="ds-tr ds-th" role="row"><span role="columnheader">Request</span><span role="columnheader">Shared with</span><span role="columnheader">Requested by</span><span role="columnheader">Status</span><span role="columnheader"><span class="sr">Actions</span></span></div>';
 function repoRow(d) {
   const names = B.S.cache.names || {};
   const tag = STATUS_TAG[d.status] || [d.status, ''];
-  return `<div class="actr govr govrepo"><span class="actic">${B.srcIcon('github_docs', 16)}</span><span class="actt"><b>${esc(B.containerName(d.container_path || 'A docs repository'))}</b><small>Whole repository · Public · requested by ${esc(who(d.requested_by, names))} · ${B.when(d.created_at, B.ago(d.created_at))}</small>${d.reason ? `<span class="govreason">${esc(d.reason)}</span>` : ''}</span><span class="actb"><span class="tag ${tag[1]}">${tag[0]}</span>${repoActions(d)}</span></div>`;
+  return `<div class="ds-tr govr govrepo" role="row"><span class="dtp m-main"><span class="actic">${B.srcIcon('github_docs', 16)}</span><span><b>${esc(B.containerName(d.container_path || 'A docs repository'))}</b><small>Whole repository · ${B.when(d.created_at, B.ago(d.created_at))}</small>${d.reason ? `<small class="govreason">${esc(d.reason)}</small>` : ''}</span></span><span class="dtm">Public</span><span class="dtm">${esc(who(d.requested_by, names))}</span><span><span class="tag ${tag[1]}">${tag[0]}</span></span><span class="m-end govact">${repoActions(d)}</span></div>`;
 }
 function draw() {
   const g = state();
@@ -98,16 +100,16 @@ function draw() {
   if (!list) return;
   const names = B.S.cache.names || {};
   if (!g.loaded) {
-    list.innerHTML = g.error ? B.errorBlock(g.error, 'govretry') : `<div class="skwrap" role="status"><span class="sr">Loading requests</span>${B.skeletonRows(4)}</div>`;
+    list.innerHTML = HEAD + (g.error ? `<div class="ds-tr dterr">${B.errorBlock(g.error, 'govretry')}</div>` : B.skeletonRows(4, 'ds-tr'));
     const r = $('#govretry');
     if (r) r.onclick = () => load(true);
     more.innerHTML = '';
     return;
   }
   list.classList.toggle('isempty', !g.items.length && !g.repos.length);
-  list.innerHTML = g.repos.map(repoRow).join('') + (g.items.length || g.repos.length
-    ? g.items.map((p) => { const tag = STATUS_TAG[p.status] || [p.status, '']; return `<div class="actr govr"><span class="actic">${ICON('shield', 16)}</span><span class="actt"><button type="button" class="link govdoc" data-doc="${p.document_id}">${esc(p.document_title || 'A document')}</button><small>${esc(SCOPE[p.to_scope] || p.to_scope)} · requested by ${esc(who(p.requested_by, names))}${p.created_at ? ' · ' + B.when(p.created_at, B.ago(p.created_at)) : ''}</small>${p.reason ? `<span class="govreason">${esc(p.reason)}</span>` : ''}</span><span class="actb"><span class="tag ${tag[1]}">${tag[0]}</span>${actions(p)}</span></div>`; }).join('')
-    : `<div class="empty govempty"><h2>${g.status ? 'Nothing here' : 'No requests yet'}</h2><p>${g.status ? 'No requests have this status.' : 'Ask to share a document more widely from its details in the Library.'}</p></div>`);
+  list.innerHTML = g.items.length || g.repos.length
+    ? HEAD + g.repos.map(repoRow).join('') + g.items.map((p) => { const tag = STATUS_TAG[p.status] || [p.status, '']; return `<div class="ds-tr govr" role="row"><span class="dtp m-main"><span class="actic">${ICON('shield', 16)}</span><span><button type="button" class="link govdoc" data-doc="${p.document_id}">${esc(p.document_title || 'A document')}</button><small>${p.created_at ? B.when(p.created_at, B.ago(p.created_at)) : ''}</small>${p.reason ? `<small class="govreason">${esc(p.reason)}</small>` : ''}</span></span><span class="dtm">${esc(SCOPE[p.to_scope] || p.to_scope)}</span><span class="dtm">${esc(who(p.requested_by, names))}</span><span><span class="tag ${tag[1]}">${tag[0]}</span></span><span class="m-end govact">${actions(p)}</span></div>`; }).join('')
+    : `<div class="empty govempty"><h2>${g.status ? 'Nothing here' : 'No requests yet'}</h2><p>${g.status ? 'No requests have this status.' : 'Ask to share a document more widely from its details in the Library.'}</p></div>`;
   more.innerHTML = g.next ? `<button type="button" class="btn sm" id="govload" ${g.loading ? 'disabled' : ''}>${g.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#govload');
   if (m) m.onclick = () => load(false);

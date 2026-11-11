@@ -15,6 +15,8 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 
 const INVITABLE = [['admin', 'Admin'], ['compliance', 'Compliance'], ['developer', 'Developer']];
+/* The role filter narrows the people loaded so far; search asks the server. */
+const ROLE_FILTERS = [['', 'All'], ['admin', 'Admin'], ['compliance', 'Compliance'], ['developer', 'Developer'], ['domain_owner', 'Domain owner'], ['suspended', 'Suspended']];
 const INVITE_STATUS = { open: ['Waiting to sign in', 'blue'], accepted: ['Signed in', 'ok'], revoked: ['Revoked', ''] };
 
 function state() {
@@ -43,7 +45,8 @@ function render(el) {
   const p = state();
   const tabs = [['people', 'People'], ['invitations', 'Invitations']];
   if (B.sandbox()) tabs.push(['links', 'Confluence accounts']);
-  el.innerHTML = `<div class="pphead"><div class="libchips govtabs" role="tablist" aria-label="People">${tabs.map(([k, l]) => `<button type="button" class="lchip ${p.tab === k ? 'on' : ''}" role="tab" aria-selected="${p.tab === k}" data-pt="${k}">${l}</button>`).join('')}</div>${B.sandbox() ? '<button type="button" class="btn primary sm" id="ppinvite">Invite people</button>' : ''}</div><div id="pppane"></div>`;
+  window.ADMIN.actions(B.sandbox() ? '<button type="button" class="btn primary sm" id="ppinvite" aria-haspopup="dialog">Invite people</button>' : '');
+  el.innerHTML = `<div class="pphead"><div class="libchips govtabs" role="tablist" aria-label="People">${tabs.map(([k, l]) => `<button type="button" class="lchip ${p.tab === k ? 'on' : ''}" role="tab" aria-selected="${p.tab === k}" data-pt="${k}">${l}</button>`).join('')}</div></div><div id="pppane"></div>`;
   $$('[data-pt]', el).forEach((b) => { b.onclick = () => { p.tab = b.dataset.pt; render(el); }; });
   const inv = $('#ppinvite');
   if (inv) inv.onclick = inviteModal;
@@ -64,7 +67,14 @@ async function domains() {
 /* ---------- people ---------- */
 function people() {
   const u = state().users;
-  $('#pppane').innerHTML = `<div class="libs ppsearch"><span class="libs-i">${ICON('search', 15)}</span><input id="ppq" type="search" placeholder="Search people" aria-label="Search people" value="${esc(u.q)}" autocomplete="off"></div><div class="dt ppdt" style="--cols:minmax(0,1.6fr) minmax(0,1.6fr) minmax(0,.9fr) 100px" id="pplist"></div><div class="chmore" id="ppmore"></div>`;
+  $('#pppane').innerHTML = `<div class="bt-bar"><div class="libs ppsearch"><span class="libs-i">${ICON('search', 15)}</span><input id="ppq" type="search" placeholder="Search people" aria-label="Search people" value="${esc(u.q)}" autocomplete="off"></div><div class="bt-chips" role="group" aria-label="Filter by role">${ROLE_FILTERS.map(([k, l]) => `<button type="button" class="lchip ${(u.role || '') === k ? 'on' : ''}" aria-pressed="${(u.role || '') === k}" data-rf="${k}">${l}</button>`).join('')}</div></div><div class="ds-table bt ppdt" role="table" aria-label="People" style="--cols:minmax(0,1.6fr) minmax(0,1.6fr) minmax(0,.9fr) 100px" id="pplist"></div><div class="chmore" id="ppmore"></div>`;
+  $$('[data-rf]').forEach((b) => {
+    b.onclick = () => {
+      u.role = b.dataset.rf;
+      $$('[data-rf]').forEach((o) => { o.classList.toggle('on', o === b); o.setAttribute('aria-pressed', String(o === b)); });
+      drawUsers();
+    };
+  });
   let timer = 0;
   $('#ppq').oninput = (e) => { clearTimeout(timer); timer = setTimeout(() => { u.q = e.target.value.trim(); loadUsers(true); }, 220); };
   if (!u.loaded || u.error) loadUsers(true); else drawUsers();
@@ -90,18 +100,19 @@ function drawUsers() {
   const u = state().users;
   const list = $('#pplist'), more = $('#ppmore');
   if (!list) return;
-  const head = '<div class="dt-r dt-h"><span>Person</span><span>Roles</span><span>Clearance</span><span></span></div>';
+  const head = '<div class="ds-tr ds-th" role="row"><span role="columnheader">Person</span><span role="columnheader">Roles</span><span role="columnheader">Clearance</span><span role="columnheader"><span class="sr">Actions</span></span></div>';
   if (!u.loaded) {
-    list.innerHTML = head + (u.error ? `<div class="dt-r dterr">${B.errorBlock(u.error, 'ppretry')}</div>` : B.skeletonRows(5, 'dt-r'));
+    list.innerHTML = head + (u.error ? `<div class="ds-tr dterr">${B.errorBlock(u.error, 'ppretry')}</div>` : B.skeletonRows(5, 'ds-tr'));
     const r = $('#ppretry');
     if (r) r.onclick = () => loadUsers(true);
     more.innerHTML = '';
     return;
   }
   const doms = state().domains;
-  list.innerHTML = head + (u.items.length
-    ? u.items.map((x) => `<div class="dt-r" data-user="${x.id}"><span class="dtp ppwho">${AVATAR(x.name, 'lav', 28)}<span><b>${esc(x.name)}</b><small>${esc(x.email)}</small></span>${x.status === 'suspended' ? '<span class="tag bad">Suspended</span>' : ''}</span><span class="dtm acchips">${roleTags(x.roles, doms)}</span><span class="dtm">${esc(B.clearanceName(x.clearance))}</span><span><button type="button" class="btn sm" data-edit="${x.id}">Edit</button></span></div>`).join('')
-    : `<div class="dt-r dtempty"><span class="amute">${u.q ? 'Nobody matches.' : 'Nobody has signed in yet.'}</span></div>`);
+  const shown = u.items.filter((x) => !u.role || (u.role === 'suspended' ? x.status === 'suspended' : x.roles.some((r) => r.role === u.role)));
+  list.innerHTML = head + (shown.length
+    ? shown.map((x) => `<div class="ds-tr" role="row" data-user="${x.id}"><span class="dtp ppwho m-main">${AVATAR(x.name, 'lav', 28)}<span><b>${esc(x.name)}</b><small>${esc(x.email)}</small></span>${x.status === 'suspended' ? '<span class="tag bad">Suspended</span>' : ''}</span><span class="dtm acchips">${roleTags(x.roles, doms)}</span><span class="dtm">${esc(B.clearanceName(x.clearance))}</span><span class="m-end"><button type="button" class="btn sm rowa" data-edit="${x.id}" aria-label="Edit ${esc(x.name)}">Edit</button></span></div>`).join('')
+    : `<div class="ds-tr dtempty"><span class="amute">${u.q || u.role ? 'Nobody matches.' : 'Nobody has signed in yet.'}</span></div>`);
   more.innerHTML = u.next ? `<button type="button" class="btn sm" id="ppload" ${u.loading ? 'disabled' : ''}>${u.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#ppload');
   if (m) m.onclick = () => loadUsers(false);
@@ -175,7 +186,7 @@ function replaceUser(updated) {
 
 /* ---------- invitations ---------- */
 function invitations() {
-  $('#pppane').innerHTML = `<div class="dt ppdt" style="--cols:minmax(0,1.6fr) minmax(0,1.4fr) minmax(0,1fr) 100px" id="invlist"></div><div class="chmore" id="invmore"></div>`;
+  $('#pppane').innerHTML = `<div class="ds-table bt ppdt" role="table" aria-label="Invitations" style="--cols:minmax(0,1.6fr) minmax(0,1.4fr) minmax(0,1fr) 100px" id="invlist"></div><div class="chmore" id="invmore"></div>`;
   const v = state().invites;
   if (!v.loaded || v.error) loadInvites(true); else drawInvites();
 }
@@ -200,17 +211,17 @@ function drawInvites() {
   const v = state().invites;
   const list = $('#invlist'), more = $('#invmore');
   if (!list) return;
-  const head = '<div class="dt-r dt-h"><span>Email</span><span>Roles and clearance</span><span>Status</span><span></span></div>';
+  const head = '<div class="ds-tr ds-th" role="row"><span role="columnheader">Email</span><span role="columnheader">Roles and clearance</span><span role="columnheader">Status</span><span role="columnheader"><span class="sr">Actions</span></span></div>';
   if (!v.loaded) {
-    list.innerHTML = head + (v.error ? `<div class="dt-r dterr">${B.errorBlock(v.error, 'invretry')}</div>` : B.skeletonRows(4, 'dt-r'));
+    list.innerHTML = head + (v.error ? `<div class="ds-tr dterr">${B.errorBlock(v.error, 'invretry')}</div>` : B.skeletonRows(4, 'ds-tr'));
     const r = $('#invretry');
     if (r) r.onclick = () => loadInvites(true);
     more.innerHTML = '';
     return;
   }
   list.innerHTML = head + (v.items.length
-    ? v.items.map((x) => { const st = INVITE_STATUS[x.status] || [x.status, '']; return `<div class="dt-r"><span class="dtp"><b style="font-weight:500">${esc(x.email)}</b><small class="amute ppago"> · ${B.when(x.created_at, B.ago(x.created_at))}</small></span><span class="dtm acchips">${x.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('')}<span class="tag">${esc(B.clearanceName(x.clearance))}</span></span><span class="dtm"><span class="tag ${st[1]}">${st[0]}</span></span><span>${x.status === 'open' ? `<button type="button" class="btn sm" data-revoke="${x.id}">Revoke</button>` : ''}</span></div>`; }).join('')
-    : '<div class="dt-r dtempty"><span class="amute">No invitations yet. Invite the people who should use Broth.</span></div>');
+    ? v.items.map((x) => { const st = INVITE_STATUS[x.status] || [x.status, '']; return `<div class="ds-tr" role="row"><span class="dtp m-main"><b style="font-weight:500">${esc(x.email)}</b><small class="amute ppago"> · ${B.when(x.created_at, B.ago(x.created_at))}</small></span><span class="dtm acchips">${x.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('')}<span class="tag">${esc(B.clearanceName(x.clearance))}</span></span><span class="dtm"><span class="tag ${st[1]}">${st[0]}</span></span><span class="m-end">${x.status === 'open' ? `<button type="button" class="btn sm rowa" data-revoke="${x.id}">Revoke</button>` : ''}</span></div>`; }).join('')
+    : '<div class="ds-tr dtempty"><span class="amute">No invitations yet. Invite the people who should use Broth.</span></div>');
   more.innerHTML = v.next ? `<button type="button" class="btn sm" id="invload" ${v.loading ? 'disabled' : ''}>${v.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#invload');
   if (m) m.onclick = () => loadInvites(false);
@@ -229,25 +240,31 @@ function drawInvites() {
 }
 function inviteModal() {
   const origin = location.origin;
-  B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="Invite people"><div class="bar"><span>Invite people</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>Invite someone</h2><p class="sub">They sign in at ${esc(origin)} with this Google account. No email is sent: share the address yourself.</p>
-    <form id="invf" novalidate><label class="hsl" for="invemail">Google account</label><input id="invemail" class="eminp" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com">
-    <fieldset class="ppfs"><legend class="hsl">Roles</legend>${INVITABLE.map(([k, l]) => `<label class="ppck"><input type="checkbox" data-irole="${k}"><span>${l}</span></label>`).join('')}<p class="suhint ppnote">Everyone can ask and use the library. Make someone a domain owner after they sign in.</p></fieldset>
-    <label class="hsl" for="invclear">Clearance</label><select id="invclear" aria-label="Clearance">${B.CLEARANCES.map(([k, l]) => `<option value="${k}" ${k === 'internal' ? 'selected' : ''}>${l}</option>`).join('')}</select>
-    <div class="hse" id="inve" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="invgo">Invite</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
-  $('#invemail').focus();
-  $('#invf').onsubmit = (e) => {
+  const anchor = $('#ppinvite');
+  if (anchor && anchor.getAttribute('aria-expanded') === 'true') { window.ADMIN.closePop(); return; }
+  const p = window.ADMIN.pop(anchor, `<form id="invf" class="dmbody" novalidate><div><label class="dmlab" for="invemail">Google account</label><input id="invemail" class="eminp" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com" aria-describedby="inve"><div class="hse ds-msg bad" id="inve" role="alert"></div><p class="ds-msg">They sign in at ${esc(origin)} with this account. No email is sent: share the address yourself.</p></div>
+    <fieldset class="ppfs"><legend class="dmlab">Roles</legend>${INVITABLE.map(([k, l]) => `<label class="ppck"><input type="checkbox" data-irole="${k}"><span>${l}</span></label>`).join('')}<p class="ds-msg">Everyone can ask and use the library. Make someone a domain owner after they sign in.</p></fieldset>
+    <div><label class="dmlab" for="invclear">Clearance</label><select id="invclear" aria-label="Clearance">${B.CLEARANCES.map(([k, l]) => `<option value="${k}" ${k === 'internal' ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="actions"><button type="button" class="btn" id="invcancel">Cancel</button><span class="lsp"></span><button type="submit" class="btn primary" id="invgo">Invite</button></div></form>`, 'Invite people');
+  const field = $('#invemail', p), err = $('#inve', p);
+  const bad = (text) => { err.textContent = text; if (text) field.setAttribute('aria-invalid', 'true'); else field.removeAttribute('aria-invalid'); };
+  const valid = () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value.trim());
+  field.oninput = () => { if (err.textContent) bad(''); };
+  field.onblur = () => { if (field.value.trim() && !valid()) bad('Enter the email of their Google account'); };
+  $('#invcancel', p).onclick = () => window.ADMIN.closePop();
+  $('#invf', p).onsubmit = (e) => {
     e.preventDefault();
-    const email = $('#invemail').value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $('#inve').textContent = 'Enter the email of their Google account'; return; }
-    B.busy($('#invgo'), async () => {
-      const created = await B.api.post('/admin/invitations', { email, roles: $$('[data-irole]:checked').map((c) => c.dataset.irole), clearance: $('#invclear').value });
+    const email = field.value.trim();
+    if (!valid()) { bad('Enter the email of their Google account'); field.focus(); return; }
+    B.busy($('#invgo', p), async () => {
+      const created = await B.api.post('/admin/invitations', { email, roles: $$('[data-irole]:checked', p).map((c) => c.dataset.irole), clearance: $('#invclear', p).value });
       const v = state().invites;
       v.items = [created, ...v.items];
-      B.closeModal();
+      window.ADMIN.closePop();
       B.toast(`Invited ${created.email}`);
       state().tab = 'invitations';
       B.route();
-    }, (error) => { $('#inve').textContent = B.problem(error); });
+    }, (error) => { bad(B.problem(error)); });
   };
 }
 
@@ -304,5 +321,5 @@ function drawLinks() {
   });
 }
 
-window.ADMIN.tabs.people = { label: 'People', roles: ['admin'], render };
+window.ADMIN.tabs.people = { label: 'People', hint: 'Who can use Broth, and what each person can do.', roles: ['admin'], render };
 })();

@@ -1,0 +1,123 @@
+/* Broth admin and governance screens: People, Domains, Audit, Connectors, Governance.
+   Built on the design-system family (.ds-head .ds-table .ds-tr .ds-th .ds-card .ds-grid .ds-pop .ds-msg).
+   A new look is a named modifier here, never an inline style. Radii: 12px controls, 18px cards. */
+
+/* ---- page chrome: title row with its (i) hint and one primary action ---- */
+.lcont .ds-head,.pg .ds-head{margin:0 0 var(--s-5);min-height:36px}
+.ds-head>h1,.ds-head .lcont-t{display:flex;align-items:center;margin:0;font-size:var(--fs-h2);font-weight:600;letter-spacing:-.015em}
+.ds-head .hint{margin-left:var(--s-2);flex:none}
+.ds-head .hint:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.ds-act .dclink{color:var(--mute);text-decoration:none;border-bottom:0;font-size:var(--fs-sm)}
+.ds-act .dclink:hover{color:var(--ink)}
+.fcount{display:inline-grid;place-items:center;min-width:16px;height:16px;margin-left:var(--s-2);padding:0 4px;border-radius:8px;background:var(--brand);color:#fff;font:600 10px/1 var(--font);font-style:normal}
+
+/* ---- controls and cards in these screens ---- */
+.lcont .btn,.gov .btn,.ds-pop .btn,.ds-pop .eminp,.lcont .eminp,.ds-pop .ssel-btn,.lcont .libs{border-radius:12px}
+.ds-card,.ds-table,.cnsec,.lcont .actl,.ds-pop,.gov .ds-table{border-radius:18px}
+.cnconn{border-radius:14px}
+.lcont .btn:focus-visible,.gov .btn:focus-visible,.ds-pop .btn:focus-visible,.lchip:focus-visible,.segb:focus-visible,.hint:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.lcont .btn.sm,.gov .btn.sm{min-height:32px;padding:0 var(--s-3)}
+
+/* ---- the list view: header, rows, sticky header, hover ---- */
+.ds-table.bt{overflow:clip}
+.ds-table.bt .ds-tr{grid-template-columns:var(--cols);padding:var(--s-3) var(--s-4);min-height:56px;transition:background var(--dur-fast)}
+.ds-table.bt .ds-th{position:sticky;top:0;z-index:2;min-height:40px;padding-top:0;padding-bottom:0;border-bottom:1px solid var(--line)}
+.ds-table.bt .ds-tr:not(.ds-th):not(.skrow):not(.dterr):not(.dtempty):hover{background:var(--fill-1)}
+.ds-table.bt .ds-tr:focus-within:not(.ds-th){background:var(--fill-1)}
+.ds-tr.dterr,.ds-tr.dtempty{display:block;padding:var(--s-5) var(--s-4)}
+.ds-tr.skrow{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px}
+.ds-tr .dtp{display:flex;align-items:center;gap:var(--s-3);min-width:0;flex-wrap:nowrap}
+.ds-tr .dtp>span{display:grid;min-width:0}
+.ds-tr .dtp b{font-weight:500}
+.ds-tr .dtp small{color:var(--mute);font-size:var(--fs-xs);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ds-tr .dtm{color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.ds-tr .dtm.acchips{white-space:normal;display:flex;flex-wrap:wrap;gap:var(--s-1)}
+.ds-tr .tag{white-space:nowrap}
+.ds-tr .m-end{display:flex;justify-content:flex-end;align-items:center;gap:var(--s-2);flex-wrap:wrap}
+/* row actions: quiet until the row is hovered or focused, never hidden */
+.rowa{background:transparent;border-color:transparent;color:var(--mute)}
+.ds-tr:hover .rowa,.ds-tr:focus-within .rowa,.dmcard:hover .rowa,.dmcard:focus-within .rowa,.rowa:focus-visible{background:var(--surface);border-color:var(--line-strong);color:var(--ink)}
+.rowa:hover{background:var(--fill-2)!important}
+.rowa.danger{color:var(--danger-strong);border-color:var(--danger-line);background:var(--danger-soft)}
+@media (hover:none){.rowa{background:var(--surface);border-color:var(--line-strong);color:var(--ink)}}
+
+/* ---- toolbar over a list: search and role chips ---- */
+.bt-bar{display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;margin:0 0 var(--s-3)}
+.bt-bar .libs{flex:1 1 240px;max-width:360px;min-height:40px}
+.bt-chips{display:flex;gap:var(--s-2);flex-wrap:wrap}
+.lchip[aria-pressed=true]{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand-strong)}
+.pphead{margin:0 0 var(--s-3)}
+
+/* ---- popover forms ---- */
+.ds-pop{max-height:calc(100vh - 24px);overflow:auto}
+.ds-pop .dmbody{gap:var(--s-4)}
+.ds-pop .dmlab{display:block;margin:0 0 var(--s-2);font-size:var(--fs-xs);color:var(--mute)}
+.ds-pop .eminp{margin:0}
+.ds-pop .ppfs{border:0;padding:0;margin:0;min-width:0}
+.ds-pop .ppfs legend{padding:0}
+.ds-pop .ds-msg{margin-top:var(--s-2)}
+.ds-pop .hse.ds-msg{min-height:0;margin:var(--s-2) 0 0}
+.ds-pop .actions{display:flex;align-items:center;gap:var(--s-2)}
+.audf2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3)}
+.audf2 .dmlab{margin-bottom:var(--s-2)}
+.cnpop{gap:var(--s-5)}
+.cnpop .cnaddrow{display:flex;gap:var(--s-2)}
+.cnsoon{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-3);border:1px dashed var(--line-strong);border-radius:12px;color:var(--mute)}
+.cnsoon>span:nth-child(2){flex:1;display:grid;min-width:0}.cnsoon b{color:var(--ink);font-weight:500}.cnsoon small{font-size:var(--fs-xs)}
+
+/* ---- Domains: cards ---- */
+.dmcard{display:grid;gap:var(--s-3);align-content:start}
+.dmcard:hover{border-color:var(--mute)}
+.dmc-h{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s-3)}
+.dmc-t{display:grid;min-width:0}.dmc-t b{font-weight:500;font-size:var(--fs-md);overflow:hidden;text-overflow:ellipsis}.dmc-t small{color:var(--mute);font-size:var(--fs-xs);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dmcard .dmlabel{display:flex;align-items:center;gap:var(--s-2);min-width:0}
+.dmcard .acchips{display:flex;flex-wrap:wrap;gap:var(--s-1)}
+.dmcard .dmpages{font-size:var(--fs-xs);display:flex;gap:var(--s-2);align-items:baseline}
+.dmcard .dmpages .dmtotal::before{content:' · '}
+.dmsk{display:flex;flex-direction:column;gap:var(--s-3);min-height:148px}
+.dmsk .pvsk{height:8px;margin:0;animation:skpulse 1.4s ease-in-out infinite}.dmsk .pvsk.sksub{height:6px;opacity:.7}
+.dmtbl .dmpages .dmtotal{display:block}
+.ds-tr .dmlabel{display:flex;align-items:center;gap:var(--s-2);min-width:0}
+.ds-act .seg{border-radius:12px}
+.segb.on{background:var(--fill-2);color:var(--ink)}
+.segb{cursor:pointer}
+
+/* ---- Connectors ---- */
+.cnsec{max-width:none}
+.cnsec-h .tag{flex:none;align-self:flex-start}
+.cnspaces .dt{border-radius:14px}
+.cnspaces .dt-h{background:var(--fill-1)}
+.cnspaces .dt-r{transition:background var(--dur-fast)}
+.cnspaces .dt-r:not(.dt-h):hover{background:var(--fill-1)}
+
+/* ---- Governance ---- */
+.gov .libchips{padding:0;margin:0 0 var(--s-3)}
+.govlist.isempty{border:0;background:none}
+.ds-tr.govr{align-items:center}
+.ds-tr.govr .dtp{align-items:flex-start}
+.ds-tr.govr .govreason{white-space:normal;color:var(--ink-2);font-size:var(--fs-sm);margin-top:2px}
+.ds-tr.govr .govdoc{background:none;border:0;padding:0;text-align:left;font:inherit;font-weight:500;color:var(--ink);cursor:pointer;text-decoration:none}
+.ds-tr.govr .govdoc:hover{color:var(--brand-strong)}
+.ds-tr.govr .govdoc:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+.ds-tr.govr .actic{margin-top:2px}
+
+/* ---- phones: one row per item, details beneath, header hidden ---- */
+@media (max-width:900px){
+  .lcont .ds-head,.pg .ds-head{justify-content:flex-end;flex-wrap:wrap}
+  .ds-head>h1,.ds-head .lcont-t{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .ds-table.bt .ds-th{display:none}
+  .ds-table.bt .ds-tr{grid-template-columns:minmax(0,1fr) auto;gap:var(--s-1) var(--s-3);padding:var(--s-3) var(--s-4)}
+  .ds-table.bt .ds-tr>.m-main{grid-column:1;grid-row:1}
+  .ds-table.bt .ds-tr>.m-end{grid-column:2;grid-row:1;justify-self:end}
+  .ds-table.bt .ds-tr>:not(.m-main):not(.m-end){grid-column:1/-1;grid-row:auto;font-size:var(--fs-xs);color:var(--mute)}
+  .ds-table.bt .ds-tr>.dmlabel{font-size:var(--fs-xs)}
+  .ds-table.bt .ds-tr>.dterr,.ds-table.bt .ds-tr.dterr{display:block}
+  .bt-bar .libs{flex-basis:100%;max-width:none}
+  .audf2{grid-template-columns:1fr}
+  .ds-act{flex-wrap:wrap;justify-content:flex-end}
+  .ds-pop{left:12px;right:12px!important;width:auto}
+}
+
+/* buttons in these screens centre their label */
+.lcont .btn,.gov .btn,.ds-pop .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2)}
+.dmunit{display:inline}
