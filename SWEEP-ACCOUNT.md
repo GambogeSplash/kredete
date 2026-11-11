@@ -26,7 +26,7 @@ Rows (distinct rule groups that differed at any point): 169. Fixed: 118. Explain
 - Profile: avatar block height 94 px, title line only when set, Location row always, "Your data" group, Delete history stays armed (the prototype never reverts it).
 - Dark menu and modal shadow as the prototype; name field focus colour and ring as the prototype.
 - Phone: sidebar group label colour, account title margin.
-- New: empty states in one framed `.ds-empty` card (Bookmarks, Inbox, Chats empty, Chats no match, sidebar chat list), (i) hints on every page title and section heading, Review request popup.
+- New: empty states in one framed `.ds-empty` card (Bookmarks, Inbox, Chats empty, Chats no match, sidebar chat list), Review request popup.
 
 ## Explained, not changed
 
@@ -44,3 +44,5 @@ Nine prototype behaviours were run in both apps (`behave.mjs`). Same: Edit opens
 Differences kept on purpose: the avatar reset button reads "Use the default" (the real app has no initials fallback), the bookmark toast reads "Bookmark removed" (as requested), Pin or Unpin and the Inbox counts follow the data, and the no-match chat message now sits in the framed empty card ("No chats match", "Try a different word.").
 
 The Review request popup (Escape, outside click, focus return, Approve, toast, row slide-out, badge update) was run at 1440 and 390 in dark and light against the local stub.
+
+Update: the (i) hints added to page titles and group headings were removed again on request. Only the prototype's own hint (Profile, From your work account) remains.

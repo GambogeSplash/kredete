@@ -42,7 +42,7 @@ function page() {
   }).join('');
   const empty = st.error ? B.errorBlock(st.error, 'ixretry') : st.loaded ? `<div class="ds-empty"><span class="ds-empty-ic">${ICON('check', 22)}</span><b>All caught up</b><p>Nothing needs your review right now.</p></div>` : B.skeletonRows(3);
   $('#app').className = '';
-  $('#app').innerHTML = `<div class="pg ixpg"><h1>Inbox <span class="hint" tabindex="0" data-tip="Things that need your attention, such as sharing requests you can decide." aria-label="Things that need your attention, such as sharing requests you can decide.">i</span></h1><div class="ixchips" role="tablist">${chips}</div><div class="ixlist">${rows || empty}</div></div>`;
+  $('#app').innerHTML = `<div class="pg ixpg"><h1>Inbox</h1><div class="ixchips" role="tablist">${chips}</div><div class="ixlist">${rows || empty}</div></div>`;
   const retry = $('#ixretry');
   if (retry) retry.onclick = load;
   /** @type {any[]} */ ([...document.querySelectorAll('[data-f]')]).forEach((b) => { b.onclick = () => { st.filter = b.dataset.f; page(); }; });
