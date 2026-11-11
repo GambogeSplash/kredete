@@ -1,19 +1,17 @@
 /* Broth account and chats: the Devices table, the account groups, and chat motion.
    Corners: 12px on buttons and fields, 18px on cards. */
 .adh3{font-size:var(--fs-md);font-weight:600;margin:0}
-.ach2row{max-width:860px;display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);margin-bottom:var(--s-4)}
+.ach2row{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);margin-bottom:var(--s-4)}
 .lcont .fgroup,.lcont .ds-table{border-radius:18px}
-.lcont .btn,.lcont .btn.sm,.lcont .eminp,.lcont .ssel-btn,.pg .btn,.pg .btn.sm{border-radius:12px!important}
 .lcont .fgroup{overflow:hidden}
-.ds-table.sesdt{max-width:860px}
-.dvcols{grid-template-columns:minmax(0,1fr) 110px 120px 110px;padding-top:var(--s-2);padding-bottom:var(--s-2)}
+.dvcols{grid-template-columns:minmax(0,1fr) 90px 110px 190px;padding-top:var(--s-2);padding-bottom:var(--s-2)}
 .dvcols .ltb{min-width:0;display:grid}
 .dvcols .ltb b{font-weight:500;font-size:var(--fs-md);line-height:20px;display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap}
 .dvcols .dvme{margin:0}
 .dvcols .dmn{gap:var(--s-3)}
-.addvi{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:12px;background:var(--fill-1);color:var(--ink)}
+.addvi{display:grid;place-items:center;flex:none;background:var(--fill-1);color:var(--ink)}
 .dvact{display:flex;gap:var(--s-2);justify-content:flex-end}
-.adok{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--green,#1f8f4e)}
+.adok{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:#1f8f4e}
 .adok i{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:adpulse 1.8s ease-in-out infinite}
 @keyframes adpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
 .ds-tr.dvcols:hover{background:var(--fill-1)}
@@ -37,13 +35,24 @@
 .svcols[data-id]:hover{background:var(--fill-1)}
 .svcols[data-id]:focus-visible{outline:2px solid var(--ring,var(--brand));outline-offset:-2px}
 .svsrc{display:flex;gap:6px;align-items:center}
-.svs{position:relative;display:inline-grid;place-items:center;border-radius:8px}
+.svs{position:relative;display:inline-flex;border-radius:8px}
 .svs:focus-visible{outline:2px solid var(--ring,var(--brand));outline-offset:2px}
-.svs:hover::after,.svs:focus-visible::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--ink);color:var(--surface);padding:4px 8px;border-radius:8px;font-size:var(--fs-xs);z-index:5;pointer-events:none}
+.svs em{position:absolute;left:50%;bottom:calc(100% + 6px);transform:translate(-50%,4px);padding:4px 8px;border-radius:var(--r-sm,6px);background:var(--ink);color:var(--bg,#fff);font:500 var(--fs-xs,12px)/1.2 inherit;font-style:normal;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s,transform .12s;z-index:5}
+.svs:hover em,.svs:focus-within em,.svs:focus-visible em{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.svs em{transition:none}}
 .svx{justify-self:end}
-.svx .btn{width:32px;height:32px;padding:0;display:grid;place-items:center}
+.svx .btn{width:28px;height:28px;padding:0;display:grid;place-items:center}
 .svx .btn:hover,.svx .btn:focus-visible{color:var(--danger);border-color:var(--danger-line);background:var(--danger-soft)}
 .pg .ds-table{border-radius:18px}
 .pg .ds-head h1{display:flex;align-items:center;gap:var(--s-2)}
 .gic.gbk[aria-pressed=true] svg path{fill:currentColor}
 @media (max-width:900px){.svcols{grid-template-columns:minmax(0,1fr) 40px}.svcols>.svsrc,.svcols>.svw{display:none}}
+/* account menu, as the prototype */
+.lrail-h{padding:10px 12px 6px;color:var(--mute);font-size:var(--fs-xs);font-weight:450}
+.lrail>.lrail-h:first-child{padding-top:6px}
+.lrail .tab{border-radius:12px}
+.lcont .btn,.lcont .btn.sm,.lcont .eminp,.lcont .ssel-btn,.pg .btn,.pg .btn.sm{border-radius:8px}
+.lcont .tag,.ds-table .tag{border-radius:8px!important}
+.lcont .ach2row{margin-top:var(--s-5)}
+.addvi{width:44px;height:44px;border-radius:32%}
+.lcont .acid{min-height:94px}.lcont .acidt{padding-bottom:2px}

@@ -6,7 +6,6 @@ const B = window.BRAIN;
 const $ = (s, r = document) => r.querySelector(s);
 const KEY = 'broth-bookmarks';
 const esc = B.esc;
-const TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6.5 7l.8 11.2a1.5 1.5 0 0 0 1.5 1.3h6.4a1.5 1.5 0 0 0 1.5-1.3L17.5 7M10 11v5M14 11v5"/></svg>';
 const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function read() {
@@ -49,7 +48,7 @@ function toggle(turn) {
 
 function page() {
   const list = read();
-  const rows = list.map((x) => `<div class="ds-tr svcols" data-id="${esc(x.id)}" data-c="${esc(x.conversation)}" role="row" tabindex="0"><span class="ltb"><b>${esc(x.question)}</b><small>${esc(x.answer)}</small></span><span class="svsrc">${(x.sources || []).map((s) => `<span class="svs" tabindex="0" data-tip="${esc(B.systemName(s.system))}" aria-label="${esc(B.systemName(s.system))}">${B.srcIcon(s.system, 20)}</span>`).join('')}</span><span class="amute svw">${B.when(x.savedAt, B.ago(x.savedAt))}</span><span class="svx"><button type="button" class="btn sm svrm" data-rm="${esc(x.id)}" aria-label="Remove bookmark">${TRASH}</button></span></div>`).join('');
+  const rows = list.map((x) => `<div class="ds-tr svcols" data-id="${esc(x.id)}" data-c="${esc(x.conversation)}" role="row" tabindex="0"><span class="ltb"><b>${esc(x.question)}</b><small>${esc(x.answer)}</small></span><span class="svsrc">${(x.sources || []).map((s) => `<span class="svs" tabindex="0" aria-label="${esc(B.systemName(s.system))}">${B.srcIcon(s.system, 18)}<em>${esc(B.systemName(s.system))}</em></span>`).join('')}</span><span class="amute svw">${B.when(x.savedAt, B.ago(x.savedAt))}</span><span class="svx"><button type="button" class="btn sm svrm" data-rm="${esc(x.id)}" aria-label="Remove bookmark">${ICON('x', 14)}</button></span></div>`).join('');
   $('#app').innerHTML = `<div class="pg"><div class="ds-head"><h1>Bookmarks <span class="hint" tabindex="0" data-tip="Saved in this browser only." aria-label="Saved in this browser only.">i</span></h1></div>
    ${list.length ? `<div class="ds-table" role="table" aria-label="Bookmarks"><div class="ds-tr ds-th svcols" role="row"><span>Question</span><span class="svsrc">Sources</span><span class="svw">Saved</span><span></span></div>${rows}</div>` : '<p class="actn">Nothing bookmarked yet. <button type="button" class="link" id="bkask">Ask Broth</button></p>'}</div>`;
   const ask = $('#bkask');

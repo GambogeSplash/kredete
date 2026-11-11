@@ -93,7 +93,7 @@ const frow = (label, value, action) => `<div class="frow"><div class="frl"><b>${
 window.SURFACES.account = (params) => {
   const me = B.S.me;
   const tab = params.tab === 'sessions' ? 'sessions' : 'profile';
-  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button><div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div id="acpane"></div></div></div>`;
+  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><div class="lrail-h">Account settings</div><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button><div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div id="acpane"></div></div></div>`;
   $$('[data-at]').forEach((b) => { b.onclick = () => B.go(b.dataset.at); });
   $('#aout').onclick = () => B.signOut();
   if (tab === 'profile') profile(me);
@@ -105,12 +105,12 @@ function profile(me, editing) {
   const nick = me.nickname || String(me.name).split(' ')[0];
   const roles = me.roles.length ? me.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('') : '<span class="tag">Employee</span>';
   const from = B.sandbox() ? 'From your Google sign-in and your admin' : 'From your work account';
-  el.innerHTML = `<div class="acid"><span class="avchg static">${AVATAR(me.name, 'avimg', 88)}</span><div class="acidt"><h2>${esc(me.name)}</h2><div>${esc(me.title || '')}</div><div class="amute">${esc(me.email)}</div></div></div>
+  el.innerHTML = `<div class="acid"><span class="avchg static">${AVATAR(me.name, 'avimg', 88)}</span><div class="acidt"><h2>${esc(me.name)}</h2>${me.title ? `<div>${esc(me.title)}</div>` : ''}<div class="amute">${esc(me.email)}</div></div></div>
    <div class="fgroup">${frow('Preferred name', editing ? `<input id="enick" class="eminp" value="${esc(nick)}" maxlength="60" aria-label="Preferred name" style="margin:0;max-width:260px"><div class="hse" id="enke" role="alert"></div>` : esc(nick), editing ? '<button type="button" class="btn sm primary" id="enks">Save</button><button type="button" class="btn sm" id="enkc">Cancel</button>' : '<button type="button" class="btn sm" id="enk">Edit</button>')}
-   ${frow('Appearance', `<select id="etheme" aria-label="Appearance">${[['light', 'Light'], ['dark', 'Dark'], ['system', 'Match my device']].map(([k, l]) => `<option value="${k}" ${window.AUTH.THEME() === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`)}
-   ${frow('Welcome tour', '<span class="amute">The first-run introduction.</span>', '<button type="button" class="btn sm" id="atour">Replay</button>')}</div>
+   ${frow('Appearance', `<select id="etheme" aria-label="Appearance">${[['light', 'Light'], ['dark', 'Dark'], ['system', 'Match my device']].map(([k, l]) => `<option value="${k}" ${window.AUTH.THEME() === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`)}</div>
    <h3 class="ach">${from} ${hint('Your admin manages these.')}</h3><div class="fgroup">${me.team ? frow('Team', esc(me.team)) : ''}${me.location ? frow('Location', esc(me.location)) : ''}${frow('Roles', `<span class="acchips">${roles}</span>`)}${frow('Clearance', esc(B.clearanceName(me.clearance)))}</div>
-   <h3 class="ach">Sign-in</h3><div class="fgroup">${frow('Sign-in', 'Google', '<span class="tag ok">Single sign-on</span>')}</div>`;
+   <h3 class="ach">Sign-in</h3><div class="fgroup"><div class="frow"><div class="frl"><b>Sign-in</b><small>Google</small></div><div class="frv"><span class="tag ok">Single sign-on</span></div><div class="fra"></div></div></div>
+   <h3 class="ach">Your data</h3><div class="fgroup">${frow('Replay onboarding', '', '<button type="button" class="btn sm" id="atour">Replay</button>')}</div>`;
   const edit = $('#enk');
   if (edit) edit.onclick = () => { profile(me, true); $('#enick').focus(); };
   const cancel = $('#enkc');
@@ -134,7 +134,7 @@ function profile(me, editing) {
 const fade = (row) => {
   if (!row || !row.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
   const done = () => {};
-  return row.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 200, easing: 'ease-out', fill: 'forwards' }).finished.then(done, done);
+  return row.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.96)' }], { duration: 200, fill: 'forwards' }).finished.then(done, done);
 };
 async function sessions() {
   const el = $('#acpane');

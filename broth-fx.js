@@ -20,7 +20,7 @@ function trashRow(row) {
   can.style.left = (r.left + cx - 18) + 'px';
   can.style.top = (r.top + h / 2 - 18) + 'px';
   document.body.appendChild(can);
-  can.animate([{ opacity: 0, transform: 'scale(.4) translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'forwards' });
+  can.animate([{ opacity: 0, transform: 'scale(.4) translateY(6px)' }, { opacity: 1, transform: 'scale(1) translateY(0)' }], { duration: 180, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'forwards' });
   const done = () => can.remove();
   return row.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${cx - r.width / 2}px) scale(.35)` }], { duration: 320, delay: 80, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).finished
     .then(() => {
@@ -44,7 +44,7 @@ function renamed(title) {
     ln.setAttribute('aria-hidden', 'true');
     txt.appendChild(ln);
     const gone = () => ln.remove();
-    ln.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 340, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' }).finished
+    ln.animate([{ transform: 'scaleX(0)', opacity: 0.9 }, { transform: 'scaleX(1)', opacity: 0.9 }], { duration: 340, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' }).finished
       .then(() => ln.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 360, easing: 'ease-out', fill: 'forwards' }).finished)
       .then(gone, gone);
   });
