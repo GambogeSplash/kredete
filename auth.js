@@ -274,7 +274,7 @@ function profileMenu(a) {
   const me = B.S.me;
   const current = B.S.route.surface;
   const item = (k, l, ic) => `<button type="button" class="pm-i" role="menuitem" data-pm="${k}" ${current === k ? 'aria-current="page"' : ''}>${ICON(ic, 18)}<span>${l}</span></button>`;
-  let h = `<div class="pm-head"><button type="button" class="pm-who" role="menuitem" data-pm="account">${AVATAR(me.name, 'avimg', 40)}<span><b>${esc(me.name)}</b><small>${esc(me.email)}</small><em>${esc(me.team || '')}</em></span></button><span class="pm-go" data-pm="account" aria-hidden="true">${ICON('chevr', 16)}</span></div>`;
+  let h = `<div class="pm-head"><button type="button" class="pm-who" role="menuitem" data-pm="account">${AVATAR(me.name, 'avimg', 40)}<span><b>${esc(me.name)}</b><small>${esc(me.email)}</small><em>${esc(me.team || '')}</em></span><i class="pm-ch">${ICON('chevr', 16)}</i></button></div>`;
   h += '<div class="pm-s"></div>' + item('account', 'Account settings', 'user');
   if (B.hasRole('admin', 'compliance')) h += item('admin', 'Admin settings', 'gear');
   if (B.hasRole('admin')) h += item('bot', 'Support agent', 'headset');

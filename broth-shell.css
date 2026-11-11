@@ -61,3 +61,9 @@
 #cmdk .ds-empty.kempty{margin:var(--s-3);padding:var(--s-7) var(--s-6)}
 /* the breadcrumb row is gone on desktop everywhere (the prototype has none); phones already hide it in mobile.css */
 @media (min-width:901px){#crumb{display:none!important}}
+
+/* account menu head: the chevron lives inside the card and nudges right on hover (prototype) */
+.pm-who .pm-ch{margin-left:auto;flex:none;color:var(--mute);display:grid;place-items:center;transition:transform var(--dur-fast),color var(--dur-fast)}
+.pm-who:hover .pm-ch,.pm-who:focus-visible .pm-ch{color:var(--ink);transform:translateX(2px)}
+html[data-mode=dark] :is(.ssel-menu,.pmenu,.cmenu,.fmenu,.hiapop,.drawer,.modal,#cmdk .box,.oa-card){box-shadow:var(--e3)}
+.pm-i.danger:hover,.pm-i.danger:hover svg{color:var(--danger)}
