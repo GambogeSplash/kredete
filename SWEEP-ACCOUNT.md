@@ -39,4 +39,8 @@ Rows (distinct rule groups that differed at any point): 169. Fixed: 118. Explain
 
 ## Behaviour checklist
 
-Prototype behaviours exercised in both apps (`behave.mjs`, not re-run after the last edits): Edit opens a focused field with Save and Cancel; Appearance lists Light, Dark, Match my device; avatar badge opens the picker, Escape closes it, Save toasts "Avatar updated"; Sign out arms to "Confirm sign out" and reverts after 2.6 s; Delete history arms to "Confirm delete"; chat search; chat menu Delete arms; bookmark remove goes red on hover and toasts; Inbox Later toasts "Snoozed for a week". The Review request popup (Escape, outside click, focus return, approve, toast, slide-out, badge) was run at 1440 and 390.
+Nine prototype behaviours were run in both apps (`behave.mjs`). Same: Edit opens a focused field with Save and Cancel; Appearance lists Light, Dark, Match my device and switches the mode; the avatar badge opens the picker with 10 tiles, Escape closes it, Save toasts "Avatar updated"; Sign out arms to "Confirm sign out" and reverts after 2.6 s; Delete history arms to "Confirm delete" and stays armed; the chat menu lists Rename, Pin, Copy link, Delete chat, Delete arms to "Confirm delete" and Escape closes; bookmark remove turns red (rgb 210,58,48) on hover and removes one row; Inbox Later toasts "Snoozed for a week".
+
+Differences kept on purpose: the avatar reset button reads "Use the default" (the real app has no initials fallback), the bookmark toast reads "Bookmark removed" (as requested), Pin or Unpin and the Inbox counts follow the data, and the no-match chat message now sits in the framed empty card ("No chats match", "Try a different word.").
+
+The Review request popup (Escape, outside click, focus return, Approve, toast, row slide-out, badge update) was run at 1440 and 390 in dark and light against the local stub.
