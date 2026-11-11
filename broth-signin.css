@@ -116,3 +116,6 @@ button.adlogo.busy{animation:logopulse 1s ease-in-out infinite}
 /* first-run welcome: the field and the buttons sit close (the empty error slot takes no room, the button row adds 8 px: a 20 px gap in all, as in the prototype) */
 .si-in .hse:empty{display:none}
 .si-in .obnav{margin-top:var(--s-2)}
+
+/* the "Is this you?" card: soft grey fill, 72 px tall with a 46 px picture (the prototype's final size) */
+.obid{background:var(--fill-1);padding:var(--s-3) var(--s-4);gap:var(--s-3)}
