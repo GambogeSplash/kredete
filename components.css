@@ -338,3 +338,8 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
  .rl-acct .acct .avimg,.rl-acct .acct .lav,.rl-acct .acct>span:first-child{border-radius:32%!important;corner-shape:squircle}
  .cxav{border-radius:32%;corner-shape:squircle}
 }
+
+/* the mark above the greeting: small, one colour, quiet (how most AI products do it) */
+.lm img{display:none}
+.lm svg{display:block;width:26px;height:auto;color:var(--brand);filter:none}
+.lm{margin:0 auto var(--s-3);opacity:.95}
