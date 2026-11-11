@@ -244,6 +244,16 @@ new MutationObserver(() => {
   const FOC = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea,[tabindex]:not([tabindex="-1"])';
   let opener = null;
   const bg = () => $$('.top,.mainpanel');
+  /** Something modal is open: the modal, or a drawer that is a sheet over the page (not docked beside it). */
+  const modalOpen = () => !!document.querySelector('#modal.on') || (!!document.querySelector('#drawer.on') && !window.BRAIN.drawerDocked());
+  /** The page is inert exactly while something modal covers it. */
+  const syncInert = () => {
+    const lock = modalOpen();
+    bg().forEach((x) => x.toggleAttribute('inert', lock));
+    const d = document.getElementById('drawer');
+    if (d && d.classList.contains('on')) d.setAttribute('aria-modal', String(!window.BRAIN.drawerDocked()));
+  };
+  window.BRAIN.WIDE.addEventListener('change', syncInert);
   const wire = (id, label) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -255,18 +265,17 @@ new MutationObserver(() => {
       if (on && !el.dataset.open) {
         el.dataset.open = '1';
         opener = document.activeElement;
-        bg().forEach((x) => x.setAttribute('inert', ''));
         el.setAttribute('aria-hidden', 'false');
         setTimeout(() => { const f = /** @type {HTMLElement | null} */ (el.querySelector(FOC)); (f || el).focus(); }, 60);
       } else if (!on && el.dataset.open) {
         delete el.dataset.open;
         el.setAttribute('aria-hidden', 'true');
-        if (!document.querySelector('#modal.on,#drawer.on')) bg().forEach((x) => x.removeAttribute('inert'));
         if (opener && opener.focus && document.contains(opener)) opener.focus();
       }
+      syncInert();
     }).observe(el, { attributes: true, attributeFilter: ['class'] });
     el.addEventListener('keydown', (ev) => {
-      if (ev.key !== 'Tab') return;
+      if (ev.key !== 'Tab' || (el.id === 'drawer' && window.BRAIN.drawerDocked())) return; // a docked panel is not modal: Tab moves on to the page
       const f = $$(FOC, el).filter((x) => x.offsetParent !== null);
       if (!f.length) { ev.preventDefault(); return; }
       const first = f[0], last = f[f.length - 1];

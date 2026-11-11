@@ -314,6 +314,20 @@ test.describe('connectors', () => {
     await expect(drawer.getByRole('button', { name: 'Default domain' })).toHaveText('Payments / Payouts / Cross-border');
   });
 
+  test("beside a space's settings the page stays usable, and a click on it keeps the edits", async ({ open }, info) => {
+    test.skip(info.project.use.viewport.width < 900, 'a phone opens a sheet over the page');
+    const page = await open('admin', '/admin/sources');
+    await openSource(page);
+    await page.getByRole('button', { name: 'Settings for Payments (PAY)' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Space settings, Payments (PAY)' });
+    await drawer.getByRole('spinbutton', { name: 'Review interval in months' }).fill('7');
+    await expect(page.locator('.mainpanel')).not.toHaveAttribute('inert', '');
+    await page.getByRole('heading', { name: 'Confluence' }).click();
+    await expect(drawer.getByRole('spinbutton', { name: 'Review interval in months' })).toHaveValue('7');
+    await page.getByRole('button', { name: 'Settings for Engineering (ENG)' }).click();
+    await expect(page.getByRole('dialog', { name: 'Space settings, Engineering (ENG)' })).toBeVisible();
+  });
+
   test("a space's settings save only what changed, and Broth re-reads it", async ({ open, check }) => {
     const sent = [];
     const page = await open('admin', '/admin/sources', {

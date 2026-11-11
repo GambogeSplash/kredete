@@ -158,7 +158,25 @@ const sandbox = () => S.mode === 'sandbox';
 const setupPending = () => isAdmin() && sandbox() && S.setupDone === false;
 
 /* ---------- drawer and modal ---------- */
+/**
+ * The drawer comes in two kinds. Docked (a Library document, a source's settings, on a screen wider
+ * than 900 px) it sits beside the page and is not modal: the page stays usable, and a click on the
+ * page closes it unless it holds a form. Everywhere else it is a sheet over the page, modal, and its
+ * scrim closes it. extras.js makes the page inert only while something modal is open.
+ */
+const WIDE = matchMedia('(min-width:901px)');
+const drawerDocked = () => $('#drawer').classList.contains('shell') && WIDE.matches;
+/** Set by the click that opened the drawer, so that same click does not count as one outside it. */
+let openedByClick = false;
+document.addEventListener('click', () => { openedByClick = false; }, true);
+document.addEventListener('click', (e) => {
+  const d = $('#drawer');
+  if (openedByClick || !d.classList.contains('on') || !drawerDocked() || $('form', d)) return;
+  const t = /** @type {Element} */ (e.target);
+  if (t.closest && t.closest('.top,.mainpanel')) closeDrawer();
+});
 function openDrawer(html, wide) {
+  openedByClick = true;
   const d = $('#drawer');
   d.innerHTML = html;
   d.classList.toggle('wide', !!wide);
@@ -173,6 +191,7 @@ function openDrawer(html, wide) {
   d.classList.add('on');
   $('#scrim').classList.add('on');
   d.setAttribute('aria-hidden', 'false');
+  d.setAttribute('aria-modal', String(!drawerDocked()));
   const close = $('[data-close-drawer]', d);
   if (close) close.onclick = closeDrawer;
 }
@@ -860,7 +879,7 @@ window.BRAIN = {
   api: API, esc, toast, haptic, problem, isAbort, busy, ICON: window.ICON,
   go, route, boot, signOut, armPress, loadMe, loadFacets, readFacets, refreshSetupProgress, clearServerState,
   hasRole, isAdmin, sandbox, setupPending,
-  openDrawer, closeDrawer, openModal, closeModal, exitFx, leaveFx,
+  openDrawer, closeDrawer, drawerDocked, WIDE, openModal, closeModal, exitFx, leaveFx,
   loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, trashFx, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,
   systemName, srcIcon, containerName, isPersonalSpace, SYSTEMS, ROLE_NAMES, CLEARANCES, clearanceName,
   fmtDate, fmtTime, ago, dayLabel, when, rows, cursorOf, arr, person, domain, bot,

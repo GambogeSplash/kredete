@@ -293,6 +293,68 @@ test("a document's details, its domain as folders, and its location as a filter"
   await check(page, 'library-location');
 });
 
+/* A document docks beside the page on a desktop; the page beside it keeps working. */
+test.describe('beside an open document', () => {
+  test.beforeEach(({}, info) => { test.skip(info.project.use.viewport.width < 900, 'a phone opens a sheet over the page'); });
+  const drawer = (page) => page.locator('#drawer');
+  const heading = (page, name) => drawer(page).getByRole('heading', { name });
+
+  test('another document opens in the panel in its place', async ({ open }) => {
+    const page = await open('employee', '/library/payments');
+    await docRows(page).filter({ hasText: 'KYC onboarding procedure' }).click();
+    await expect(heading(page, 'KYC onboarding procedure')).toBeVisible();
+    await expect(drawer(page)).toHaveAttribute('aria-modal', 'false');
+    await docRows(page).filter({ hasText: 'Savings rate sheet' }).click();
+    await expect(heading(page, 'Savings rate sheet')).toBeVisible();
+    await expect(drawer(page)).toHaveClass(/\bon\b/);
+  });
+
+  test('a folder opens and the panel closes', async ({ open }) => {
+    const page = await open('employee', '/library/payments');
+    await docRows(page).first().click();
+    await expect(drawer(page)).toHaveClass(/\bon\b/);
+    await folders(page).first().click();
+    await expect(page).toHaveURL(/\/library\/payouts$/);
+    await expect(drawer(page)).not.toHaveClass(/\bon\b/);
+  });
+
+  test('a click on the page beside it, or Escape, closes it', async ({ open }) => {
+    const page = await open('employee', '/library');
+    await docRows(page).first().click();
+    await expect(drawer(page)).toHaveClass(/\bon\b/);
+    await page.getByRole('heading', { name: 'Library', level: 1 }).click();
+    await expect(drawer(page)).not.toHaveClass(/\bon\b/);
+    await docRows(page).last().click();
+    await expect(drawer(page)).toHaveClass(/\bon\b/);
+    await page.keyboard.press('Escape');
+    await expect(drawer(page)).not.toHaveClass(/\bon\b/);
+  });
+
+  test('a dialog opened from it leaves it open, and the page usable after', async ({ open }) => {
+    const page = await open('employee', '/library/payments');
+    await docRows(page).filter({ hasText: 'KYC onboarding procedure' }).click();
+    await drawer(page).getByRole('button', { name: 'Details and lineage' }).click();
+    await page.locator('#modal [data-close-modal]').first().click();
+    await expect(page.locator('#modal')).not.toHaveClass(/\bon\b/);
+    await expect(heading(page, 'KYC onboarding procedure')).toBeVisible();
+    await docRows(page).filter({ hasText: 'Savings rate sheet' }).click();
+    await expect(heading(page, 'Savings rate sheet')).toBeVisible();
+  });
+});
+
+test('on a phone a document is a sheet over the page, and closing it gives the page back', async ({ open }, info) => {
+  test.skip(info.project.use.viewport.width >= 900, 'a desktop docks the document beside the page');
+  const page = await open('employee', '/library/payments');
+  await docRows(page).first().click();
+  const drawer = page.locator('#drawer');
+  await expect(drawer).toHaveClass(/\bon\b/);
+  await expect(drawer).toHaveAttribute('aria-modal', 'true');
+  await expect(page.locator('.mainpanel')).toHaveAttribute('inert', '');
+  await drawer.getByRole('button', { name: 'Close' }).click();
+  await expect(drawer).not.toHaveClass(/\bon\b/);
+  await expect(page.locator('.mainpanel')).not.toHaveAttribute('inert', '');
+});
+
 test("a page's Domain breadcrumb opens any folder on its path", async ({ open }) => {
   const page = await open('employee', '/library/cross-border');
   await docRows(page).filter({ hasText: 'Transfer limits policy' }).click();
