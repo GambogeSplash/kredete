@@ -74,3 +74,8 @@ html[data-mode=dark] :is(.ssel-menu,.pmenu,.cmenu,.fmenu,.hiapop,.drawer,.modal,
 
 /* a button's label is always centred: a button stretched taller by a flex or grid parent keeps its text in the middle, not at the top */
 .btn,a.btn{display:inline-flex;align-items:center;justify-content:center;text-align:center;box-sizing:border-box}
+
+/* the loader is the Broth wordmark (wordmark.js fills .lm: the B, then the name writes itself), breathing gently */
+.bootsplash .lm{place-items:center;min-height:0;transform:scale(1.8)}
+.bootsplash .lm svg.lmw{margin:0 auto;animation:bootpulse 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.bootsplash .lm svg.lmw{animation:none}}

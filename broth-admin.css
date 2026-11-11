@@ -465,3 +465,16 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 .wsval .wsg{margin-right:0}
 .wsstack{display:inline-flex;align-items:center;gap:4px}
 .wsstack svg,.wsstack img{border-radius:4px}
+
+/* a source's own page is one frame: the app credential, each site with its actions, and its spaces share a card, divided by lines */
+.srcpage.srcm .cnsec{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);overflow:hidden;max-width:none}
+.srcpage.srcm .cncreds.fgroup{border:0;border-radius:0;max-width:none;background:none;border-bottom:1px solid var(--line)}
+.srcpage.srcm .cnconn{padding:var(--s-4)}
+.srcpage.srcm .cnconn:has(.cnspaces){padding-bottom:0}
+.srcpage.srcm .cnconn+.cnconn{margin-top:0;border-top:1px solid var(--line)}
+.srcpage.srcm .cnspaces{margin:var(--s-4) calc(-1 * var(--s-4)) 0}
+.srcpage.srcm .cnspaces .dt{border:0;border-top:1px solid var(--line);border-radius:0}
+.srcpage.srcm .cnspaces .ds-empty{margin:0;border:0;border-top:1px solid var(--line);border-radius:0}
+@media (max-width:900px){.srcpage.srcm .cnconn{padding:var(--s-4)}.srcpage.srcm .cnspaces{margin-left:calc(-1 * var(--s-4));margin-right:calc(-1 * var(--s-4))}}
+.srcpage.srcm .cnsec>*{margin-top:0;margin-bottom:0}
+.srcpage.srcm .cnsec>.banner,.srcpage.srcm .cnsec .banner{border-radius:0;margin:0;border-bottom:1px solid var(--line)}
