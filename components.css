@@ -704,3 +704,8 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 .dctopic{display:flex;align-items:center;gap:var(--s-4);margin:var(--s-3) 0 var(--s-5)}.dctopic h1{margin:0 0 4px}.dctopic p{margin:0}
 
 .soonc{opacity:.78;min-height:0}.soonc:hover{transform:none}
+
+/* add-a-source popup: a small catalogue, one row per source */
+.slist{display:grid;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.srow{display:flex;align-items:center;gap:var(--s-3);padding:10px var(--s-3);border-top:1px solid var(--line)}.srow:first-child{border-top:0}
+.srow .ltb{flex:1;min-width:0;display:grid}.srow .ltb b{font-weight:500;font-size:var(--fs-md);line-height:20px}.srow .ltb small{font-size:var(--fs-xs);line-height:16px;color:var(--mute)}
