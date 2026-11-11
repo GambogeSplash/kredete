@@ -214,7 +214,6 @@ button.ds-card.add,button.ds-card.addom{font:inherit}
 .cnsec .ds-empty{margin:0 0 var(--s-3);padding:32px var(--s-6)}
 .cnsec-h{align-items:center}
 .cnsec-h h2{display:flex;align-items:center}
-.cnsec-h .dclink{margin-top:var(--s-1);display:inline-flex}
 
 /* ===== source cards and their popup ===== */
 .srccard{text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%;display:grid;gap:var(--s-3);align-content:start}
@@ -282,3 +281,22 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 .srccard .adsch>div{min-width:0}
 .srccard .adsch b,.srccard .adsch small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .srccard{grid-template-columns:minmax(0,1fr)}
+
+/* a docs link in a title row or section header is a framed secondary button, before the primary action */
+.ds-act .dclink.btn,.cnsec-h .dclink.btn{color:var(--ink);white-space:nowrap;display:inline-flex;align-items:center;gap:var(--s-1);text-decoration:none;border-bottom:1px solid var(--line-strong)}
+.ds-act .dclink.btn:hover,.cnsec-h .dclink.btn:hover{background:var(--fill-1);color:var(--ink)}
+
+/* ===== one framed field: a prefix, a unit or a button beside an input sits inside its frame ===== */
+.dmslug,.modal .cnaddrow{display:flex;align-items:center;gap:var(--s-2);box-sizing:border-box;min-height:42px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);padding:0 var(--s-3);transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
+.dmslug:hover,.modal .cnaddrow:hover{border-color:var(--line-strong)}
+.dmslug:focus-within,.modal .cnaddrow:focus-within{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.dmslug:has(.eminp[aria-invalid=true]),.modal .cnaddrow:has(.eminp[aria-invalid=true]){border-color:#d4543d}
+.dmslug .eminp,.modal .cnaddrow .eminp{flex:1;min-width:0;border:0!important;box-shadow:none!important;background:none;border-radius:0;padding:0;margin:0;height:40px}
+.dmslug .dmpre{color:var(--mute);font:inherit;font-family:var(--mono);flex:none;line-height:1}
+.modal .cnaddrow{padding-right:5px;max-width:none}
+.modal .cnaddrow .btn{flex:none;margin:0}
+/* a read-only label with its Copy button: one frame */
+.modal .dmfixed .dmlabel{display:flex;align-items:center;justify-content:space-between;gap:var(--s-2);min-height:42px;box-sizing:border-box;border:1px solid var(--line);border-radius:var(--r-md);background:var(--fill-1);padding:0 var(--s-2) 0 var(--s-3)}
+.modal .dmfixed .dmlabel code{border:0;background:none;padding:0}
+.modal .dmfixed{gap:var(--s-2)}
+.modal .dmfixed .dmlabel code{align-self:center;line-height:1.4;display:block;max-width:calc(100% - 40px)}

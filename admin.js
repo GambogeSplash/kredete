@@ -250,13 +250,15 @@ function draw() {
   if (!t) return;
   const head = '<div class="aud-r aud-h" role="row"><span role="columnheader">Timestamp</span><span role="columnheader">Event</span><span role="columnheader">Actor</span><span role="columnheader">Resource</span><span role="columnheader">Outcome</span></div>';
   if (!a.loaded) {
-    t.innerHTML = head + (a.error ? `<div class="ds-empty">${B.errorBlock(a.error, 'audretry')}</div>` : B.skeletonRows(6, 'aud-r'));
+    // An error is one framed card in place of the table; loading keeps the table's shape.
+    t.classList.toggle('isempty', !!a.error);
+    t.innerHTML = a.error ? `<div class="ds-empty">${B.errorBlock(a.error, 'audretry')}</div>` : head + B.skeletonRows(6, 'aud-r');
     const r = $('#audretry');
     if (r) r.onclick = () => load(true);
     more.innerHTML = '';
     return;
   }
-  t.innerHTML = head + (a.items.length
+  t.innerHTML = (a.items.length ? head : '') + (a.items.length
     ? a.items.map((e) => `<div class="aud-r" role="row"><span class="amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="audw"><i class="audi">${ICON(actionIcon(e.action), 14)}</i><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="audwho">${actor(e.actor)}</span><span>${target(e)}</span><span><span class="tag ${outcomeTone(e.outcome)}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('')
     : '<div class="ds-empty"><b>No events match</b><p>Try a different action or dates.</p></div>');
   t.classList.toggle('isempty', a.loaded && !a.items.length);
