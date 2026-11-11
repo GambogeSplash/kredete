@@ -64,7 +64,7 @@ async function loadFacets() {
   const L = state();
   L.facets = { loading: true, error: null };
   try {
-    S().facets = await B.api.get('/facets');
+    S().facets = await B.readFacets();
     L.facets = { loading: false, error: null };
   } catch (error) {
     L.facets = { loading: false, error };

@@ -195,6 +195,8 @@ export const test = base.extend({
       for (const page of context.pages()) {
         const violations = await page.evaluate(() => window.__csp).catch(() => []);
         expect(violations, 'Content-Security-Policy violations').toEqual([]);
+        // A test's own routes may still be answering a request as it ends; that is not a failure.
+        await page.unrouteAll({ behavior: 'ignoreErrors' });
       }
       await context.unrouteAll({ behavior: 'ignoreErrors' });
       await context.close();

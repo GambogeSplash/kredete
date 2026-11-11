@@ -145,33 +145,70 @@ test('when the pages cannot load, the Library says so and retries', async ({ ope
   await expect(docRows(page)).toHaveCount(2);
 });
 
+/** The facets without Cards, as if Cards had no pages yet. */
+const withoutCards = (body) => ({ ...body, domains: body.domains.filter((d) => d.value !== 'cards') });
+
 test('the Library reads its folders again each time it opens, not on every folder', async ({ open }) => {
   let hideCards = true;
-  let reads = 0;
+  let asked = 0;
+  let answered = 0;
   const page = await open('employee', '/', {
     before: (p) => p.route('**/v1/facets', async (route) => {
-      reads += 1;
+      asked += 1;
+      const hide = hideCards; // what the server holds when the read reaches it
       const response = await route.fetch();
       const body = await response.json();
-      await route.fulfill({ response, json: hideCards ? { ...body, domains: body.domains.filter((d) => d.value !== 'cards') } : body });
+      await route.fulfill({ response, json: hide ? withoutCards(body) : body });
+      answered += 1;
     }),
   });
   await page.evaluate(() => window.BRAIN.go('/library'));
+  await expect.poll(() => answered).toBe(2); // one at sign-in, one as the Library opens
   await expect(folders(page)).toHaveText([/Payments/]);
-  await expect.poll(() => reads).toBe(2); // one at sign-in, one as the Library opens
-  const opened = reads;
+  const opened = asked;
   await folders(page).filter({ hasText: 'Payments' }).click();
   await expect(title(page)).toHaveText('Payments');
   await page.locator('#libcrumb').getByRole('link', { name: 'Library' }).click();
   await expect(folders(page)).toHaveText([/Payments/]);
-  expect(reads).toBe(opened); // moving between folders reads nothing new
+  expect(asked).toBe(opened); // moving between folders reads nothing new
 
   hideCards = false; // Cards gains its first page meanwhile
   await page.evaluate(() => window.BRAIN.go('/governance'));
   await page.evaluate(() => window.BRAIN.go('/library'));
+  await expect.poll(() => answered).toBe(opened + 1);
   await expect(folders(page)).toHaveCount(2);
   expect(await folderNames(page)).toEqual(['Cards', 'Payments']);
-  expect(reads).toBe(opened + 1);
+  expect(asked).toBe(opened + 1);
+});
+
+test('a slow folder read that lands after a newer one does not bring back the older folders', async ({ open }) => {
+  let asked = 0;
+  let answered = 0;
+  let release = () => {};
+  const held = new Promise((r) => { release = r; });
+  const page = await open('employee', '/', {
+    before: (p) => p.route('**/v1/facets', async (route) => {
+      asked += 1;
+      const read = asked;
+      const response = await route.fetch();
+      const body = await response.json();
+      if (read === 2) await held; // the Library's first read is slow, and Cards is still empty for it
+      await route.fulfill({ response, json: read <= 2 ? withoutCards(body) : body });
+      answered += 1;
+    }),
+  });
+  await page.evaluate(() => window.BRAIN.go('/library'));
+  await expect.poll(() => asked).toBe(2);
+  await page.evaluate(() => window.BRAIN.go('/governance'));
+  await page.evaluate(() => window.BRAIN.go('/library'));
+  await expect.poll(() => answered).toBe(2); // sign-in's read and the newer Library read
+  await expect(folders(page)).toHaveCount(2);
+
+  release();
+  await expect.poll(() => answered).toBe(3);
+  await page.waitForTimeout(150); // time for the late answer to be drawn, if it were
+  await expect(folders(page)).toHaveCount(2);
+  expect(await folderNames(page)).toEqual(['Cards', 'Payments']);
 });
 
 /* ---------- searching and filtering ---------- */

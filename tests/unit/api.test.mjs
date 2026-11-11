@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { describe, it } from 'node:test';
 
-const { createApi, ApiError } = createRequire(import.meta.url)('../../api.js');
+const { createApi, ApiError, latest } = createRequire(import.meta.url)('../../api.js');
 
 const encoder = new TextEncoder();
 
@@ -485,5 +485,102 @@ describe('answer streams', () => {
     const result = await api.ask('c1', { question: 'q' });
     assert.equal(result.event, 'turn.completed');
     assert.equal(asks, 2);
+  });
+});
+
+describe('overlapping reads of one thing', () => {
+  /** A read the test answers or fails by hand, in any order. */
+  function reads() {
+    const pending = [];
+    const read = () => new Promise((resolve, reject) => pending.push({ resolve, reject }));
+    return { read, pending };
+  }
+
+  it('a lone read settles with its own answer', async () => {
+    const { read, pending } = reads();
+    const facets = latest(read);
+    const first = facets();
+    pending[0].resolve('a');
+    assert.equal(await first, 'a');
+  });
+
+  it('reads one after another each settle with their own answer', async () => {
+    const { read, pending } = reads();
+    const facets = latest(read);
+    const first = facets();
+    pending[0].resolve('a');
+    assert.equal(await first, 'a');
+    const second = facets();
+    pending[1].resolve('b');
+    assert.equal(await second, 'b');
+  });
+
+  it('an earlier read that lands after a later one settles with the later answer', async () => {
+    const { read, pending } = reads();
+    const facets = latest(read);
+    const earlier = facets();
+    const later = facets();
+    pending[1].resolve('new');
+    assert.equal(await later, 'new');
+    pending[0].resolve('old');
+    assert.equal(await earlier, 'new');
+  });
+
+  it('an earlier read that lands first waits for the later one', async () => {
+    const { read, pending } = reads();
+    const facets = latest(read);
+    const earlier = facets();
+    const later = facets();
+    pending[0].resolve('old');
+    let settled = false;
+    earlier.then(() => { settled = true; });
+    await new Promise((r) => setTimeout(r, 5));
+    assert.equal(settled, false);
+    pending[1].resolve('new');
+    assert.deepEqual(await Promise.all([earlier, later]), ['new', 'new']);
+  });
+
+  it('when the later read fails, the earlier one fails with it even though it was answered', async () => {
+    const { read, pending } = reads();
+    const facets = latest(read);
+    const earlier = facets();
+    const later = facets();
+    pending[0].resolve('old');
+    pending[1].reject(new Error('down'));
+    await assert.rejects(later, /down/);
+    await assert.rejects(earlier, /down/);
+  });
+
+  it('when the earlier read fails, the later answer still counts for both', async () => {
+    const { read, pending } = reads();
+    const facets = latest(read);
+    const earlier = facets();
+    const later = facets();
+    pending[0].reject(new Error('blip'));
+    pending[1].resolve('new');
+    assert.deepEqual(await Promise.all([earlier, later]), ['new', 'new']);
+  });
+
+  it('three reads answered in reverse settle with the third answer', async () => {
+    const { read, pending } = reads();
+    const facets = latest(read);
+    const all = [facets(), facets(), facets()];
+    pending[2].resolve('c');
+    pending[1].resolve('b');
+    pending[0].resolve('a');
+    assert.deepEqual(await Promise.all(all), ['c', 'c', 'c']);
+  });
+
+  it('a read started while an overtaken one waits takes over in turn', async () => {
+    const { read, pending } = reads();
+    const facets = latest(read);
+    const first = facets();
+    const second = facets();
+    pending[0].resolve('a'); // first now waits for second
+    await new Promise((r) => setTimeout(r, 0));
+    const third = facets();
+    pending[1].resolve('b');
+    pending[2].resolve('c');
+    assert.deepEqual(await Promise.all([first, second, third]), ['c', 'c', 'c']);
   });
 });

@@ -299,8 +299,11 @@ async function loadMe() {
   S.me = await API.get('/me');
   return S.me;
 }
+/* Sign-in, the Library and Admin read the facets, sometimes at once: each read settles with the
+   one started last, so an earlier answer that lands later never replaces a newer one. */
+const readFacets = API.latest(() => API.get('/facets'));
 async function loadFacets() {
-  try { S.facets = await API.get('/facets'); } catch (e) { S.facets = null; }
+  try { S.facets = await readFacets(); } catch (e) { S.facets = null; }
   if (window.ASK) window.ASK.refreshFeed();
   return S.facets;
 }
@@ -595,7 +598,7 @@ window.SURFACES = window.SURFACES || {};
 window.BRAIN = {
   get S() { return S; },
   api: API, esc, toast, haptic, problem, isAbort, busy, ICON: window.ICON,
-  go, route, boot, signOut, loadMe, loadFacets, refreshSetupProgress, clearServerState,
+  go, route, boot, signOut, loadMe, loadFacets, readFacets, refreshSetupProgress, clearServerState,
   hasRole, isAdmin, sandbox, setupPending,
   openDrawer, closeDrawer, openModal, closeModal,
   loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,

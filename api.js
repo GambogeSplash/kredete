@@ -86,6 +86,33 @@
   const settled = () => undefined;
 
   /**
+   * Wraps a read that is repeated while earlier ones may still be in flight (the facets are
+   * read at sign-in, as the Library opens and after an admin change). Every call settles with
+   * the outcome of the read started last, so an earlier read that lands later never replaces
+   * a newer answer, and the order the answers arrive in does not matter.
+   * @template T
+   * @param {() => Promise<T>} read
+   * @returns {() => Promise<T>}
+   */
+  function latest(read) {
+    /** @type {Promise<T> | null} */
+    let newest = null;
+    return async () => {
+      /** @type {Promise<T>} */
+      let mine = (newest = read());
+      for (;;) {
+        try {
+          const value = await mine;
+          if (mine === newest) return value;
+        } catch (error) {
+          if (mine === newest) throw error;
+        }
+        mine = /** @type {Promise<T>} */ (newest); // a later read took over: its outcome counts
+      }
+    };
+  }
+
+  /**
    * Seconds until a Retry-After value (delta seconds or an HTTP date), or null.
    * @param {string | null} value
    * @param {number} now
@@ -391,6 +418,7 @@
 
     return {
       ApiError,
+      latest,
       /** Where a full-page navigation starts Google sign-in. */
       signInUrl: `${base}/auth/google/start`,
       /** @param {string | null} value */
@@ -462,5 +490,5 @@
     };
   }
 
-  return { createApi, ApiError, parseRetryAfter };
+  return { createApi, ApiError, parseRetryAfter, latest };
 });
