@@ -278,3 +278,12 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
  .rl-acct .acct .avimg,.rl-acct .acct .lav,.rl-acct .acct>span:first-child{width:36px!important;height:36px!important;border-radius:50%!important}
  .cx .lhome>.dchead{display:none}
 }
+
+/* history shell: a lighter shade, joined to the main panel with no gap */
+@media (min-width:901px){
+ body:not(.noauth) .top{background:var(--shell);border-radius:var(--r-lg) 0 0 var(--r-lg);border-right:0}
+ html[data-mode=dark] body:not(.noauth) .top{background:#eeeeee}
+ body:not(.noauth) .mainpanel{margin:8px 8px 8px calc(64px + 236px);border-radius:0 var(--r-lg) var(--r-lg) 0}
+ body:not(.noauth).sbc .mainpanel{margin-left:calc(64px + var(--s-2));border-radius:var(--r-lg)}
+ body:not(.noauth).sbc .top{border-radius:var(--r-lg)}
+}
