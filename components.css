@@ -440,3 +440,8 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
 html[data-mode=dark] .umsg{filter:invert(1) hue-rotate(180deg)}
 .umsg.editing{background:var(--fill-1)!important;color:var(--ink)!important;box-shadow:none}
 html[data-mode=dark] .umsg.editing{filter:none}
+
+/* card tabs: the active one shows its name beside the icon */
+.cxtabs .ltab.ic{width:auto!important;min-width:44px;padding:0 12px!important;display:inline-flex!important;align-items:center;justify-content:center;gap:8px}
+.cxtabs .ltab .ltl{display:none;font-size:13px;font-weight:500;white-space:nowrap}
+.cxtabs .ltab.on .ltl{display:inline}

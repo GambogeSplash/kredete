@@ -1,6 +1,7 @@
 // Inline SVG icon set (24px grid, 1.7 stroke). Used across the three reference-exact screens.
 (() => {
 const P={
+ quote:'<path d="M9.5 8H7a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2.5v1.5A2.5 2.5 0 0 1 7 19M18.5 8H16a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2.5v1.5A2.5 2.5 0 0 1 16 19"/>',
  inbox:'<path d="M4 13l2.6-7h10.8L20 13v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 13h4.6l1 2h4.8l1-2H20"/>',
  bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.2 1.1 2.2h5c0-1 .5-1.7 1.1-2.2A6 6 0 0 0 12 3z"/>',
  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/>',
