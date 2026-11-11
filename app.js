@@ -520,7 +520,6 @@ function renderSurfaces() {
   h += navItem('data-search="1"', 'search', 'Search', false, '<kbd class="skbd">⌘K</kbd>');
   h += navItem('data-go="/library"', 'library', 'Library', r.surface === 'library');
   h += navItem('data-go="/governance"', 'shield', 'Governance', r.surface === 'governance');
-  if (hasRole('admin', 'compliance')) h += navItem('data-go="/admin"', 'gear', 'Admin', r.surface === 'admin');
   h += navItem('data-go="/docs"', 'book', 'Help center', r.surface === 'docs');
   $('#surfaces').innerHTML = `<div class="snav">${h}</div><div class="srec" id="srec" role="list" aria-label="Chats"></div>`;
   // The chats shell belongs to the chat pages; the icon rail (rail.js) stands in for the places list.
