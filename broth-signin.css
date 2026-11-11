@@ -137,3 +137,7 @@ a.prov[aria-disabled=true]{pointer-events:none}
 .si-alt .link{display:inline-flex;align-items:center;padding:3px 8px;margin:-3px 0 -3px -4px;border-radius:var(--r-sm);transition:color var(--dur-fast,.12s),background var(--dur-fast,.12s)}
 .si-alt .link:hover{background:var(--fill-1);color:var(--brand-strong)}
 .si-alt .link:active{transform:scale(.98)}
+.si-btn,.ob-back{border-radius:var(--r-md)}
+
+/* "Is this you?" card: the email line is quiet, the name carries the weight */
+.obidt span:not(.obrole){color:var(--mute);font-size:var(--fs-sm)}
