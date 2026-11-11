@@ -24,6 +24,7 @@ const P={
  thumbup:'<path d="M7.5 11v8.5h-3V11h3zM7.5 11l3.5-7a2 2 0 0 1 2 2v3.5h5.2a2 2 0 0 1 2 2.4l-1.2 5.6a2 2 0 0 1-2 1.6H7.5"/>',
  thumbdown:'<path d="M7.5 13V4.5h-3V13h3zM7.5 13l3.5 7a2 2 0 0 0 2-2v-3.5h5.2a2 2 0 0 0 2-2.4l-1.2-5.6a2 2 0 0 0-2-1.6H7.5"/>',
  share:'<circle cx="6" cy="12" r="2.3"/><circle cx="17.5" cy="6" r="2.3"/><circle cx="17.5" cy="18" r="2.3"/><path d="M8 11l7.5-3.8M8 13l7.5 3.8"/>',
+ bookmark:'<path d="M7 4.5h10a.5.5 0 0 1 .5.5v14.5L12 15.8l-5.5 3.7V5a.5.5 0 0 1 .5-.5z"/>',
  pin:'<path d="M9 4h6l-1 5 3 3H7l3-3-1-5zM12 12v8"/>',
  refresh:'<path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18 3v4h-4M6 21v-4h4"/>',
  cal:'<rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>',

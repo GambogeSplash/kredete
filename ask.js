@@ -470,7 +470,7 @@ function authorityTag(authority) {
 function fbHtml(turn, share) {
   const f = turn.feedback;
   return `<div class="fb arow gact">
-    ${share ? `<button type="button" class="gic" data-copy="1" aria-label="Copy">${ICON('copy', 18)}</button><button type="button" class="gic" data-regen="1" aria-label="Regenerate" title="Regenerate">${ICON('refresh', 18)}</button>` : ''}
+    ${share ? `<button type="button" class="gic" data-copy="1" aria-label="Copy">${ICON('copy', 18)}</button><button type="button" class="gic" data-regen="1" aria-label="Regenerate" title="Regenerate">${ICON('refresh', 18)}</button><button type="button" class="gic gbk" data-bk="1" aria-pressed="${window.BOOKMARKS ? window.BOOKMARKS.has(turn) : false}" aria-label="Bookmark this answer" title="Bookmark this answer">${ICON('bookmark', 18)}</button>` : ''}
     <button type="button" class="gic" aria-pressed="${!!(f && f.vote === 'up')}" data-v="up" aria-label="Helpful">${ICON('thumbup', 18)}</button>
     <button type="button" class="gic" aria-pressed="${!!(f && f.vote === 'down')}" data-v="down" aria-label="Not helpful">${ICON('thumbdown', 18)}</button>
     ${f && f.vote === 'down' && !f.reason ? `<div class="reasons">${REASONS.map(([k, l]) => `<button type="button" class="chip" data-r="${k}">${l}</button>`).join('')}</div>` : ''}
@@ -488,6 +488,7 @@ function bind(el, turn, index) {
   $$('[data-pill]', el).forEach((b) => {
     b.onclick = () => { askState().focus = turn; askState().pt = 'answer'; if (innerWidth > 860) setPanel(true); else openSourcesDrawer(); };
   });
+  $$('[data-bk]', el).forEach((b) => { b.onclick = () => { if (window.BOOKMARKS) b.setAttribute('aria-pressed', String(window.BOOKMARKS.toggle(turn))); }; });
   $$('[data-regen]', el).forEach((b) => { b.onclick = () => regenerate(turn); });
   $$('[data-retry]', el).forEach((b) => { b.onclick = () => regenerate(turn); });
   $$('[data-fu]', el).forEach((b) => { b.onclick = () => ask(b.dataset.fu); });

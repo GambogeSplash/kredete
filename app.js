@@ -176,6 +176,8 @@ const ROUTES = [
   { re: /^\/$/, surface: 'ask' },
   { re: /^\/c\/([0-9a-f-]{36})$/i, surface: 'ask', keys: ['id'] },
   { re: /^\/chats$/, surface: 'chats' },
+  { re: /^\/bookmarks$/, surface: 'bookmarks' },
+  { re: /^\/inbox$/, surface: 'inbox' },
   { re: /^\/library(?:\/([a-z0-9-]+))?$/, surface: 'library', keys: ['domain'] },
   { re: /^\/governance$/, surface: 'governance' },
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
@@ -420,8 +422,9 @@ async function pinChat(id, pinned) {
   toast(pinned ? 'Pinned' : 'Unpinned');
   return updated;
 }
-async function deleteChat(id) {
+async function deleteChat(id, row) {
   await API.del(`/conversations/${id}`);
+  if (row && window.BROTH_FX) await window.BROTH_FX.trashRow(row);
   forgetChat(id);
   toast('Chat deleted');
   if (S.conv && S.conv.id === id) { S.conv = null; go('/', { replace: true }); }
@@ -460,7 +463,11 @@ function editTitle(el, conv, onDone) {
     finished = true;
     const value = input.value.trim();
     if (save && value && value !== chatTitle(conv)) {
-      try { await renameChat(conv.id, value); toast('Renamed'); } catch (error) { toast(problem(error)); }
+      let renamed = false;
+      try { await renameChat(conv.id, value); toast('Renamed'); renamed = true; } catch (error) { toast(problem(error)); }
+      onDone();
+      if (renamed && window.BROTH_FX) window.BROTH_FX.renamed(value);
+      return;
     }
     onDone();
   };
@@ -503,7 +510,7 @@ function chatMenu(anchor, conv, opts) {
       if (a === 'ren') opts.rename();
       else if (a === 'pin') await pinChat(conv.id, !conv.pinned);
       else if (a === 'link') { try { await navigator.clipboard.writeText(location.origin + '/c/' + conv.id); } catch (err) { /* clipboard blocked */ } toast('Link copied'); }
-      else if (a === 'del') await deleteChat(conv.id);
+      else if (a === 'del') await deleteChat(conv.id, anchor.closest('.chr,.surf.chat'));
     } catch (error) { toast(problem(error)); }
   };
 }
@@ -519,6 +526,9 @@ function renderSurfaces() {
   let h = navItem('data-home="1"', 'compose', 'New chat', atHome, '', 'newchat-nav');
   h += navItem('data-search="1"', 'search', 'Search', false, '<kbd class="skbd">⌘K</kbd>');
   h += navItem('data-go="/library"', 'library', 'Library', r.surface === 'library');
+  const ib = window.INBOX ? window.INBOX.open() : 0;
+  h += navItem(`data-go="/inbox" ${ib ? `data-badge="${ib}"` : ''}`, 'inbox', 'Inbox', r.surface === 'inbox');
+  h += navItem('data-go="/bookmarks"', 'bookmark', 'Bookmarks', r.surface === 'bookmarks');
   h += navItem('data-go="/governance"', 'shield', 'Governance', r.surface === 'governance');
   h += navItem('data-go="/docs"', 'book', 'Help center', r.surface === 'docs');
   $('#surfaces').innerHTML = `<div class="snav">${h}</div><div class="srec" id="srec" role="list" aria-label="Chats"></div>`;
@@ -555,7 +565,7 @@ function renderChatList() {
     $('#chretry').onclick = () => loadChats(true);
     return;
   }
-  if (!c.items.length) { rec.innerHTML = '<p class="sempty">Your chats show up here.</p>'; return; }
+  if (!c.items.length) { rec.innerHTML = '<div class="ds-empty sm"><p>Your chats show up here.</p></div>'; return; }
   const by = {};
   c.items.forEach((x) => { (by[chatGroup(x)] = by[chatGroup(x)] || []).push(x); });
   const row = (x) => `<button type="button" class="surf chat" data-chat="${x.id}" data-pinned="${x.pinned ? 1 : 0}" title="${esc(chatTitle(x))}" aria-current="${current === x.id ? 'page' : 'false'}"><span class="chn">${esc(chatTitle(x))}</span><span class="chedit" data-ren="${x.id}" role="button" tabindex="0" aria-label="Chat actions" aria-haspopup="menu">${ICON('more', 16)}</span></button>`;
@@ -587,7 +597,7 @@ function newChat() {
 }
 
 /* ---------- breadcrumb and mobile title ---------- */
-const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], library: ['Workspace', 'Library'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
+const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], inbox: ['Workspace', 'Inbox'], library: ['Workspace', 'Library'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Account', ''], admin: ['Admin', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
   const label = S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
@@ -601,7 +611,7 @@ function setCrumb() {
 function mbTitle() {
   const t = $('#mbtitle');
   if (!t) return;
-  const names = { library: 'Library', governance: 'Governance', docs: 'Help center', account: 'Account', chats: 'Chats', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
+  const names = { library: 'Library', governance: 'Governance', docs: 'Help center', account: 'Account', chats: 'Chats', bookmarks: 'Bookmarks', inbox: 'Inbox', admin: 'Admin', bot: 'Support agent', setup: 'Finish setup' };
   t.textContent = S.route.title || names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
 }
 
