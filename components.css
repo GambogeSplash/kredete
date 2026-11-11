@@ -464,3 +464,7 @@ html[data-mode=dark] .umsg.editing{filter:none}
 .domadd{display:flex;gap:var(--s-2);margin-top:var(--s-4);max-width:480px}.domadd .eminp{margin:0;flex:1}
 code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:var(--fill-1);padding:1px 6px;border-radius:6px}
 @media (max-width:900px){.aud-r{grid-template-columns:1fr 1fr}.aud-h{display:none}}
+/* sent message: our purple, dimmed and translucent, with a soft stroke */
+.umsg{background:rgba(94,106,210,.58)!important;border:1px solid rgba(150,160,245,.5);color:#fff!important;box-shadow:0 8px 22px -14px rgba(94,106,210,.7)}
+.umsg em{display:block;margin-top:2px;font-style:normal;font-size:var(--fs-xs,12px);color:rgba(255,255,255,.72)!important}
+.umsg.editing{border-color:var(--line)}
