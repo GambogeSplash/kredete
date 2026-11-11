@@ -57,9 +57,7 @@ a.prov:hover{background:var(--fill-1);border-color:var(--line-strong)}
 .orline::before,.orline::after{content:"";flex:1;height:1px;background:var(--line)}
 .si-in .eminp{height:40px;box-sizing:border-box;border-radius:var(--r-md);margin:0}
 .si-in .eminp:focus,.si-in .eminp:focus-visible{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
-.si-in .eminp[aria-invalid=true]{border-color:var(--danger)}
-.emerr{margin:var(--s-2) 0 0;padding:var(--s-2) var(--s-3);border-radius:var(--r-md);background:var(--red-w);color:var(--red);font-size:var(--fs-sm)}
-.emerr[hidden]{display:none}
+.si-in .eminp[aria-invalid=true]{border-color:#d4543d}
 .si-in .si-btn{height:40px;padding-top:0;padding-bottom:0;border-radius:var(--r-md);box-sizing:border-box}
 #emf .si-btn{margin-top:var(--s-3)}
 .si-alt{margin:var(--s-4) 0 0;color:var(--mute);font-size:var(--fs-sm)}
@@ -130,3 +128,12 @@ button.adlogo.busy{animation:logopulse 1s ease-in-out infinite}
 /* swapping between two picture screens (e.g. Not you? Sign out): the picture and form do not run their page-level entrances, the swap animates the form itself */
 html.keepframe .si.v2:has(.si-r.pict){animation:none}
 html.keepframe .si-in.in{animation:none}
+/* sweep fixes: content alignment and the disabled passkey row match the prototype */
+.prov{text-align:center}
+.prov.soon{pointer-events:auto;padding:1px 6px}
+a.prov[aria-disabled=true]{pointer-events:none}
+
+/* "Create a workspace": a soft frame appears on hover, so it reads as clickable (like Not you? Sign out) */
+.si-alt .link{display:inline-flex;align-items:center;padding:3px 8px;margin:-3px 0 -3px -4px;border-radius:var(--r-sm);transition:color var(--dur-fast,.12s),background var(--dur-fast,.12s)}
+.si-alt .link:hover{background:var(--fill-1);color:var(--brand-strong)}
+.si-alt .link:active{transform:scale(.98)}

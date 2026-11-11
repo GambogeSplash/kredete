@@ -1,20 +1,22 @@
-/* transitions.js: the sign-in <-> app transition (ported from the Broth prototype).
+/* transitions.js: the sign-in <-> app transition (ported from the Broth prototype), driven by motion.dev.
  *
  * Continue with Google: the dashboard card in the sign-in picture grows until it fills the screen, then the
  * browser goes to Google. A flag in sessionStorage tells the app, when it paints after the return, to lift that
  * same colour away and let the shells settle in. Signing out plays it in reverse. Neither runs for people who
  * ask for reduced motion, on a phone, or when the picture is not on screen: they go straight there.
+ * Every animation here is Motion's `animate` (window.Motion, vendor/motion.js): timed tweens and springs.
  */
 (() => {
 'use strict';
 const A = window.AUTH;
 if (!A) return;
 const FLAG = 'broth-enter';
-const EASE = 'cubic-bezier(.2,.8,.2,1)';
+const EASE = [0.2, 0.8, 0.2, 1];
 /** @type {(s: string, r?: ParentNode) => any} */
 const $ = (s, r = document) => r.querySelector(s);
 const html = document.documentElement;
-const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches || innerWidth < 900 || !document.body.animate;
+const motion = () => window.Motion && window.Motion.animate;
+const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches || innerWidth < 900 || !motion();
 const dark = () => html.dataset.mode === 'dark';
 /** In dark mode the app sits under a page-wide inversion: this is the raw colour that shows as `v`. */
 const raw = (v) => (dark() ? Math.round(Math.min(255, Math.max(0, ((0.93 - v / 255) / 0.86) * 255))) : v);
@@ -36,28 +38,16 @@ function overlay() {
 }
 const box = (r) => ({ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
 const FULL = () => ({ left: '0px', top: '0px', width: innerWidth + 'px', height: innerHeight + 'px' });
-const keep = { fill: 'forwards', easing: EASE };
 const lerp = (a, b, p) => a + (b - a) * p;
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-/** The prototype's small spring: eases to 1 with a little overshoot, stepped frame by frame (k stiffness, c damping). */
-const spring = (o) => new Promise((resolve) => {
-  let x = 0, v = 0, last = performance.now();
-  const t0 = last, kk = o.k || 150, cc = o.c || 18;
-  const tick = (now) => {
-    const dt = Math.min(0.032, (now - last) / 1000);
-    last = now;
-    if (now - t0 >= (o.delay || 0)) {
-      const n = Math.max(1, Math.ceil(dt / 0.004)), h = dt / n;
-      for (let i = 0; i < n; i += 1) { v += (-kk * (x - 1) - cc * v) * h; x += v * h; }
-      o.on(x);
-      if (Math.abs(x - 1) < (o.eps || 0.0007) && Math.abs(v) < (o.eps ? 0.6 : 0.01)) { o.on(1); resolve(); return; }
-    }
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-});
+/** A timed tween on an element: `ms` and `delay` in milliseconds, `ease` a bezier array or a Motion easing name. */
+const tween = (el, props, ms, delay, ease) => window.Motion.animate(el, props, { duration: ms / 1000, delay: (delay || 0) / 1000, ease: ease || EASE });
+/** The prototype's small spring, as a Motion spring from 0 to 1 (k stiffness, c damping). `on` gets the value each frame. */
+const spring = (o) => window.Motion.animate(0, 1, { type: 'spring', stiffness: o.k || 150, damping: o.c || 18, mass: 1, delay: (o.delay || 0) / 1000, restDelta: o.eps || 0.0007, restSpeed: o.eps ? 0.6 : 0.01, onUpdate: o.on });
+/** Motion leaves the last keyframe as an inline style: clear it so the element goes back to its stylesheet. */
+const clear = (el, ...props) => { if (el) props.forEach((p) => { el.style[p] = ''; }); };
 
-/** Sign-in: the card dives, then `go()` leaves for Google. Resolves after the dive. */
+/** Sign-in: the card dives, then `go()` leaves for Google. */
 A.dive = (go) => {
   const frame = $('#sipv');
   const card = frame && $('.pvmock .pvm', frame);
@@ -72,8 +62,9 @@ A.dive = (go) => {
   ov.appendChild(c);
   card.style.visibility = 'hidden';
   const sl = $('.si-l');
-  if (sl) sl.animate([{ opacity: 1, transform: 'none', filter: 'blur(0)' }, { opacity: 0, transform: 'translateX(-22px) scale(.985)', filter: 'blur(4px)' }], { duration: 300, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
-  if (frame) frame.animate([{ transform: 'scale(1)', filter: 'blur(0px)', opacity: 1 }, { transform: 'scale(1.16)', filter: 'blur(14px)', opacity: 0 }], { duration: 520, delay: 70, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'forwards' });
+  const ctl = [];
+  if (sl) ctl.push(tween(sl, { opacity: [1, 0], transform: ['translateX(0px) scale(1)', 'translateX(-22px) scale(0.985)'], filter: ['blur(0px)', 'blur(4px)'] }, 300, 0, [0.4, 0, 0.2, 1]));
+  if (frame) ctl.push(tween(frame, { transform: ['scale(1)', 'scale(1.16)'], filter: ['blur(0px)', 'blur(14px)'], opacity: [1, 0] }, 520, 70, [0.5, 0, 0.2, 1]));
   const rad = parseFloat(cs.borderTopLeftRadius) || 18;
   const sx = innerWidth / r.width, sy = innerHeight / r.height;
   Object.assign(c.style, { transformOrigin: '0 0', willChange: 'transform' });
@@ -88,7 +79,8 @@ A.dive = (go) => {
   window.addEventListener('pageshow', (e) => {
     if (!e.persisted) return;
     ov.remove(); card.style.visibility = '';
-    [sl, frame].forEach((n) => { if (n) n.getAnimations().forEach((a) => a.cancel()); });
+    ctl.concat([dive]).forEach((a) => { try { a.stop(); } catch (err) { /* already done */ } });
+    clear(sl, 'opacity', 'transform', 'filter'); clear(frame, 'opacity', 'transform', 'filter');
     try { sessionStorage.removeItem(FLAG); } catch (err) { /* storage unavailable */ }
   }, { once: true });
 };
@@ -104,13 +96,20 @@ A.rise = () => {
   const [r, g, b] = flag.rgb;
   Object.assign(c.style, FULL(), { position: 'absolute', background: `rgb(${raw(r)},${raw(g)},${raw(b)})` });
   ov.appendChild(c);
-  const settle = (el, from, delay, dur) => { if (el && el.animate) el.animate([from, { transform: 'none', opacity: 1 }], { duration: dur, delay, easing: EASE, fill: 'backwards' }); };
-  settle($('.top'), { transform: 'translateX(-26px)', opacity: 1 }, 40, 680);
-  settle($('.mainpanel'), { transform: 'translateY(12px) scale(.988)', opacity: 1 }, 90, 680);
-  settle($('#rail'), { transform: 'translateX(-12px)', opacity: 0 }, 0, 520);
-  const out = c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 460, delay: 60, easing: 'ease-out', fill: 'forwards' });
+  /* each shell starts offset and settles; its inline transform/opacity is cleared after, so fixed children keep working */
+  const settle = (el, from, to, delay, dur, fade) => {
+    if (!el) return;
+    el.style.transform = from;
+    if (fade) el.style.opacity = '0';
+    const props = { transform: [from, to] };
+    if (fade) props.opacity = [0, 1];
+    tween(el, props, dur, delay).finished.then(() => clear(el, 'transform', 'opacity'), () => clear(el, 'transform', 'opacity'));
+  };
+  settle($('.top'), 'translateX(-26px)', 'translateX(0px)', 40, 680, false);
+  settle($('.mainpanel'), 'translateY(12px) scale(0.988)', 'translateY(0px) scale(1)', 90, 680, false);
+  settle($('#rail'), 'translateX(-12px)', 'translateX(0px)', 0, 520, true);
   const done = () => ov.remove();
-  out.finished.then(done, done);
+  tween(c, { opacity: [1, 0] }, 460, 60, 'easeOut').finished.then(done, done);
 };
 
 /** Signing out is the dive in reverse: the app dims, the sign-in is switched on beneath, the card shrinks into the picture. */
@@ -118,18 +117,16 @@ A.leave = (commit) => {
   if (calm()) { commit(); return; }
   /* Already on a picture screen (first-run welcome, setup wizard): there is no app to dim. The picture stays where it is; only the form column fades out, the sign-in is switched on, and its form fades back in (the page-level fade is held off for this swap so the picture does not blink). */
   if ($('#sipv')) {
-    const hold = document.documentElement.classList;
-    const M = window.Motion;
-    const ease = [0.2, 0.8, 0.2, 1];
+    const hold = html.classList;
     const swap = () => {
       hold.add('keepframe');
       still(commit);
       const l = $('.si-l');
-      if (l && M && M.animate) { l.style.opacity = '0'; M.animate(l, { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0px)'] }, { duration: 0.36, ease }).finished.then(() => { l.style.opacity = ''; l.style.transform = ''; }); }
+      if (l) { l.style.opacity = '0'; tween(l, { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0px)'] }, 360).finished.then(() => clear(l, 'opacity', 'transform')); }
       setTimeout(() => hold.remove('keepframe'), 800);
     };
     const sl = $('.si-l');
-    if (sl && M && M.animate) M.animate(sl, { opacity: [1, 0], transform: ['translateX(0px)', 'translateX(-12px)'] }, { duration: 0.2, ease: 'easeIn' }).finished.then(swap, swap);
+    if (sl) tween(sl, { opacity: [1, 0], transform: ['translateX(0px)', 'translateX(-12px)'] }, 200, 0, 'easeIn').finished.then(swap, swap);
     else swap();
     return;
   }
@@ -140,21 +137,22 @@ A.leave = (commit) => {
   const c = document.createElement('div');
   Object.assign(c.style, FULL(), { position: 'absolute', background: `rgb(${raw(pr)},${raw(pg)},${raw(pb)})`, opacity: '0' });
   ov.appendChild(c);
-  const dim = c.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out', fill: 'forwards' });
+  const dim = tween(c, { opacity: [0, 1] }, 300, 0, 'easeOut');
   const run = () => {
     guard(1800);
     still(commit);
     const frame = $('#sipv');
     const card = frame && $('.pvmock .pvm', frame);
-    if (!card) { c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished.then(() => ov.remove(), () => ov.remove()); return; }
+    if (!card) { tween(c, { opacity: [1, 0] }, 300, 0, 'easeOut').finished.then(() => ov.remove(), () => ov.remove()); return; }
     const r = card.getBoundingClientRect();
     const cs = getComputedStyle(card);
-    c.getAnimations().forEach((a) => a.cancel());
+    try { dim.stop(); } catch (e) { /* already done */ }
     Object.assign(c.style, { opacity: '1', position: 'absolute', boxSizing: 'border-box', background: cs.backgroundColor });
     card.style.visibility = 'hidden';
-    frame.animate([{ opacity: 0, transform: 'scale(1.1)', filter: 'blur(12px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 560, delay: 100, easing: EASE, fill: 'backwards' });
+    frame.style.opacity = '0';
+    tween(frame, { opacity: [0, 1], transform: ['scale(1.1)', 'scale(1)'], filter: ['blur(12px)', 'blur(0px)'] }, 560, 100).finished.then(() => clear(frame, 'opacity', 'transform', 'filter'));
     const sl = $('.si-l');
-    if (sl) sl.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 200, easing: 'ease-out', fill: 'backwards' });
+    if (sl) { sl.style.opacity = '0'; tween(sl, { opacity: [0, 1] }, 300, 200, 'easeOut').finished.then(() => clear(sl, 'opacity')); }
     const rad = parseFloat(cs.borderTopLeftRadius) || 18;
     const shrink = spring({ k: 150, c: 23, delay: 50, on: (x) => {
       Object.assign(c.style, { left: lerp(0, r.left, x) + 'px', top: lerp(0, r.top, x) + 'px', width: lerp(innerWidth, r.width, x) + 'px', height: lerp(innerHeight, r.height, x) + 'px', borderRadius: lerp(0, rad, smooth(0.2, 1, x)) + 'px', border: x > 0.7 ? '1px solid ' + cs.borderTopColor : '0' });
