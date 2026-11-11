@@ -13,20 +13,34 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 
-/** @type {Record<string, { label: string, hint?: string, roles: string[], render: (el: HTMLElement) => void }>} */
+/** @type {Record<string, { label: string, hint?: string, roles: string[], render: (el: HTMLElement, params?: any) => void }>} */
 const tabs = {};
 const ORDER = ['workspace', 'people', 'connectors', 'domains', 'audit'];
 const allowed = () => ORDER.filter((k) => tabs[k] && B.hasRole(...tabs[k].roles));
 
 window.SURFACES.admin = (params) => {
   const mine = allowed();
-  const tab = params.tab;
+  // Sources lives at /admin/sources; the tab is still called connectors here.
+  const tab = params.tab === 'sources' ? 'connectors' : params.tab;
+  // The old address keeps working; the address bar moves to the canonical one, query string untouched.
+  if (location.pathname.startsWith('/admin/connectors')) history.replaceState(history.state, '', location.pathname.replace('/admin/connectors', '/admin/sources') + location.search + location.hash);
   if (!tab || !mine.includes(tab)) { B.go('/admin/' + (mine[0] || ''), { replace: true }); return; }
   closePop();
   $('#app').innerHTML = `<div class="lset">${railHtml(tab)}<div class="lcont"><div class="ds-head"><h1 class="lcont-t">${tabs[tab].label}</h1><div class="ds-act" id="adact"></div></div><div id="adpane"></div></div></div>`;
   wireRail($('.lrail'));
-  tabs[tab].render($('#adpane'));
+  tabs[tab].render($('#adpane'), params);
 };
+
+/** A page inside a tab (a source's own page): its title, with a plain back link before it. */
+function setTitle(html, backHref, backLabel) {
+  const h1 = $('.lcont-t');
+  if (!h1) return;
+  h1.innerHTML = html;
+  const head = h1.parentElement;
+  const old = $('.srcback', head);
+  if (old) old.remove();
+  if (backHref) head.insertAdjacentHTML('afterbegin', `<a class="srcback" href="${backHref}" data-link>${ICON('chevl', 14)}<span>${backLabel}</span></a>`);
+}
 
 /** The (i) hint: a short sentence on hover or focus, in place of a subtitle. */
 const hint = (text) => `<span class="hint" tabindex="0" data-tip="${esc(text)}" aria-label="${esc(text)}">i</span>`;
@@ -161,8 +175,8 @@ function rail(tab) {
  */
 function railHtml(current) {
   const item = (href, label, on) => `<button type="button" class="tab" data-go="${href}" aria-current="${on ? 'page' : 'false'}">${label}</button>`;
-  const admin = allowed().filter((k) => k !== 'audit' && k !== 'domains').map((k) => item('/admin/' + k, tabs[k].label, k === current));
-  const after = ['domains', 'audit'].filter((k) => allowed().includes(k)).map((k) => item('/admin/' + k, tabs[k].label, k === current));
+  const admin = allowed().filter((k) => k !== 'audit' && k !== 'domains').map((k) => item(k === 'connectors' ? '/admin/sources' : '/admin/' + k, tabs[k].label, k === current));
+  const after = ['domains', 'audit'].filter((k) => allowed().includes(k)).map((k) => item(k === 'connectors' ? '/admin/sources' : '/admin/' + k, tabs[k].label, k === current));
   const sharing = item('/governance', 'Sharing requests', current === 'governance');
   // Workspace, People, Sources, then Sharing requests, Domains and Audit log, in the prototype's order.
   return `<nav class="lrail" aria-label="Admin"><div class="lrail-h">Account settings</div>${item('/account', 'Profile', false)}${item('/account/sessions', 'Sessions', false)}<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administrator settings</div>${admin.join('')}${sharing}${after.join('')}<div class="lrail-f"><button type="button" class="tab out" data-out>Sign out</button></div></nav>`;
@@ -307,5 +321,5 @@ function draw() {
 }
 tabs.audit = { label: 'Audit log', roles: ['admin', 'compliance'], render: audit };
 
-window.ADMIN = { tabs, names, hint, actions, pop, closePop, life, railHtml, wireRail, domainTile, hydrateTiles };
+window.ADMIN = { tabs, names, setTitle, hint, actions, pop, closePop, life, railHtml, wireRail, domainTile, hydrateTiles };
 })();

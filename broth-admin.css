@@ -359,3 +359,32 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 .slist .srow{min-height:64px;padding:var(--s-3);gap:var(--s-3)}
 .srcm .btn,.modal.bt .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);line-height:1.2}
 .srcm .cndecl .btn{white-space:nowrap}
+
+/* ===== a connected source's own page ===== */
+.srcpage{max-width:880px}
+.ds-head .srcback{display:inline-flex;align-items:center;gap:var(--s-1);margin-right:var(--s-3);color:var(--mute);text-decoration:none;border-bottom:0;font-size:var(--fs-sm);white-space:nowrap}
+.ds-head .srcback:hover{color:var(--ink)}
+.ds-head .srcback:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+.ds-head:has(.srcback){justify-content:flex-start;flex-wrap:wrap}
+.ds-head:has(.srcback) .ds-act{margin-left:auto}
+.srctl{display:inline-flex;align-items:center;gap:var(--s-3)}
+.srctl .adsl{width:40px;height:40px;display:grid;place-items:center;border-radius:var(--r-md);background:var(--fill-1)}
+.srctl .tag{font-size:var(--fs-xs);font-weight:400}
+.srcpage .cnsec{margin:0}
+#cnpick:not(:empty){margin-bottom:var(--s-4)}
+@media (max-width:900px){.ds-head:has(.srcback) .lcont-t{position:static;width:auto;height:auto;overflow:visible}}
+
+/* a space's settings in the shell: the form wraps the scrolling body and the footer without changing their layout */
+.cnsform{display:contents}
+#drawer.shell .cnsettings h2{margin:0 0 var(--s-1);font-size:var(--fs-h3)}
+#drawer.shell .cnsettings .sub{margin:0 0 var(--s-3)}
+#drawer.shell .sv-act{display:flex;gap:var(--s-2);border-top:1px solid var(--line)}
+
+/* the Coming soon story: three hairline separated blocks, each with a small icon */
+.srcstate{display:flex}
+.story{display:grid;border-top:1px solid var(--line)}
+.storyblk{display:grid;grid-template-columns:32px minmax(0,1fr);gap:var(--s-3);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+.storyic{display:grid;place-items:center;width:32px;height:32px;border-radius:var(--r-md);background:var(--fill-1);color:var(--ink-2)}
+.storyblk b{display:block;font-weight:500;margin:0 0 2px}
+.storyblk p{margin:0;color:var(--mute);font-size:var(--fs-sm);line-height:1.5}
+.storyend{margin:0;color:var(--ink-2);font-size:var(--fs-sm)}

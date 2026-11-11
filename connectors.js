@@ -15,7 +15,7 @@
  * connection's finished run also lists the pages it kept out of Public, with why.
  * Google Drive: a setup checklist; in sandbox mode it explains that Drive needs a Google
  * Workspace account. In sandbox mode the OAuth clients are managed here too. The Confluence
- * authorization returns to /admin/connectors?connected=<id> or ?error=<reason>.
+ * authorization returns to /admin/connectors?connected=<id> (now /admin/sources, the old address redirects) or ?error=<reason>.
  */
 (() => {
 'use strict';
@@ -81,17 +81,24 @@ function readReturn() {
   if (!q.has('connected') && !q.has('error')) return;
   if (q.has('connected')) {
     banner = null;
-    history.replaceState({}, '', '/admin/connectors');
+    history.replaceState({}, '', BASE);
     connected = q.get('connected');
   } else {
     banner = OAUTH_ERRORS[q.get('error')] || 'The Confluence authorization did not finish. Authorize again.';
-    history.replaceState({}, '', '/admin/connectors');
+    history.replaceState({}, '', BASE);
   }
   return undefined;
 }
 
 /* Every source Broth can read now or will: the real ones show their state from the API; the rest
    are honest Coming soon cards. */
+/** The address of a source's own page. */
+const SLUG = { confluence: 'confluence', github: 'docs-repositories', gdrive: 'google-drive' };
+/** The canonical address of Sources. The old /admin/connectors still works: the router sends it here, query string kept. */
+const BASE = '/admin/sources';
+const pagePath = (src) => `${BASE}/${SLUG[src.key]}`;
+/** The source whose page is open, or null on the grid. */
+let pageSrc = null;
 const SOURCES = [
   { key: 'confluence', name: 'Confluence', logo: 'confluence', systems: ['confluence'], real: true, blurb: 'Read your wiki.' },
   { key: 'github', name: 'Docs repositories', logo: 'github', systems: ['github_docs'], real: true, blurb: 'Read docs from GitHub.' },
@@ -126,14 +133,33 @@ function stateOf(src) {
 }
 function sourceCard(src) {
   const st = stateOf(src);
-  return `<button type="button" class="ds-card lift adsc srccard${st.soon ? ' soonc' : ''}" data-src="${src.key}" aria-haspopup="dialog" aria-label="${esc(src.name)}, ${esc(st.tag[0])}"><div class="adsch"><span class="adsl">${src.logo ? B.srcIcon(src.logo, 28) : ICON('lock', 20)}</span><div><b>${esc(src.name)}</b><small>${esc(st.line)}</small></div><span class="tag ${st.tag[1]}">${st.tag[0]}</span></div></button>`;
+  return `<button type="button" class="ds-card lift adsc srccard${st.soon ? ' soonc' : ''}" data-src="${src.key}" ${st.conns.length ? '' : ' aria-haspopup="dialog"'} aria-label="${st.conns.length ? 'Open ' : ''}${esc(src.name)}, ${esc(st.tag[0])}"><div class="adsch"><span class="adsl">${src.logo ? B.srcIcon(src.logo, 28) : ICON('lock', 20)}</span><div><b>${esc(src.name)}</b><small>${esc(st.line)}</small></div><span class="tag ${st.tag[1]}">${st.tag[0]}</span></div></button>`;
 }
 /** What a card opens: its setup section when it has one, its first step when it is not connected, or the Coming soon dialog. */
 function sourcePop(anchor, src) {
   const st = stateOf(src);
-  if (src.key === 'creds' || st.conns.length || src.key === 'gdrive') { if (openSection(src)) return; }
+  if (st.conns.length && SLUG[src.key]) { B.go(pagePath(src)); return; }
+  if (src.key === 'creds' || src.key === 'gdrive') { if (openSection(src)) return; }
   if (src.real) { connectForm(src); return; }
-  openModal(shell(src.name, `<div class="dmbody"><div class="slist">${soonRow(src)}</div></div>`, 480, B.srcIcon(src.logo, 22)));
+  openModal(shell(src.name, soonStory(src), 480, B.srcIcon(src.logo, 22)));
+}
+/** A source's own page: the title with its logo and state, the section laid out as the page body. */
+function showPage(body) {
+  const st = stateOf(pageSrc);
+  const key = SECTIONS[pageSrc.key];
+  const sec = $(`#cnhold [data-sec="${key}"]`, body);
+  if (!sec) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'srcpage srcm';
+  const link = $('.cnsec-h .dclink', sec);
+  wrap.appendChild(sec);
+  body.insertBefore(wrap, $('#cnpick', body));
+  const hold = $('#cnhold', body);
+  if (hold) hold.hidden = true;
+  const head = $('.cnsec-h', sec);
+  if (head) head.remove();
+  window.ADMIN.setTitle(`<span class="srctl"><span class="adsl">${B.srcIcon(pageSrc.logo, 28)}</span><span>${esc(pageSrc.name)}</span><span class="tag ${st.tag[1]}">${st.tag[0]}</span></span>`, BASE, 'Sources');
+  window.ADMIN.actions(link ? window.DOCS.link('docsInstall', 'How to connect').replace('class="dclink"', 'class="dclink btn sm"') : '');
 }
 /* Every dialog here is the prototype's: a centred .modal in the shared #modal host, a title bar with a
    Close link, a body. A source's setup (its section: connections, spaces, steps, credentials) is moved
@@ -169,6 +195,42 @@ const row = (logo, name, line, action) => `<div class="srow"><span class="adsl">
 /** The sources not yet connected, in this order. A connected source has its card and is not offered again. */
 const PICK_ORDER = ['confluence', 'github', 'gdrive', 'notion', 'gcs', 'slack', 'sharepoint'];
 const offered = () => PICK_ORDER.map((k) => SOURCES.find((x) => x.key === k)).filter((src) => src && !stateOf(src).conns.length);
+/* What a source that is not built yet will do, written in one place. Each entry has three blocks:
+   read (what Broth will read), answers (how answers use it) and access (who can see what). A source
+   without an entry gets the generic story. */
+const SOURCE_STORIES = {
+  notion: {
+    read: 'Pages and databases in the Notion workspaces you pick, with their text and properties.',
+    answers: 'Answers will cite the original page with a link back, and show its owner and when it was last verified, as they do for other sources. Its pages will appear in the Library under their own Notion section.',
+    access: "Broth will keep Notion's own access rules, so people only get answers from pages they can already open in Notion. Admins choose which workspaces to connect and who owns each.",
+  },
+  slack: {
+    read: 'Public channels you choose, with their messages and threads.',
+    answers: 'Answers will cite the original message with a link back, and show its owner and when it was last verified, as they do for other sources. Its messages will appear in the Library under their own Slack section.',
+    access: "Broth will keep Slack's own access rules, so people only get answers from channels they can already open in Slack. Admins choose which channels to connect and who owns each.",
+  },
+  sharepoint: {
+    read: 'Sites, document libraries and pages you choose, and the documents in them.',
+    answers: 'Answers will cite the original page or document with a link back, and show its owner and when it was last verified, as they do for other sources. Its content will appear in the Library under its own SharePoint section.',
+    access: "Broth will keep SharePoint's own access rules, so people only get answers from items they can already open in SharePoint. Admins choose which sites to connect and who owns each.",
+  },
+  gcs: {
+    read: 'Documents in the buckets you choose, such as PDFs and text files.',
+    answers: 'Answers will cite the original file with a link back, and show its owner and when it was last verified, as they do for other sources. Its files will appear in the Library under their own Google Cloud Storage section.',
+    access: "Broth will keep the bucket's own access rules, so people only get answers from files they can already open in Google Cloud. Admins choose which buckets to connect and who owns each.",
+  },
+};
+const STORY_FALLBACK = (name) => ({
+  read: `The content you pick in ${name}.`,
+  answers: 'Answers will cite the original item with a link back, and show its owner and when it was last verified, as they do for other sources. Its content will appear in the Library under its own section.',
+  access: `Broth will keep ${name}'s own access rules, so people only get answers from items they can already open there. Admins choose which parts to connect and who owns each.`,
+});
+/** The Coming soon dialog's body: three short blocks and an honest closing line. */
+function soonStory(src) {
+  const story = SOURCE_STORIES[src.key] || STORY_FALLBACK(src.name);
+  const block = (icon, title, text) => `<div class="storyblk"><span class="storyic" aria-hidden="true">${ICON(icon, 16)}</span><div><b>${title}</b><p>${esc(text)}</p></div></div>`;
+  return `<div class="dmbody"><div class="srcstate"><span class="tag">Coming soon</span></div><div class="story">${block('doc', 'What Broth will read', story.read)}${block('link', 'How answers use it', story.answers)}${block('lock', 'Who can see what', story.access)}</div><p class="storyend">Not available yet. Connecting will work like Confluence: authorise once, pick what to include, and Broth reads it on a schedule.</p><div class="actions"><span class="lsp"></span><button type="button" class="btn" data-close-modal>Close</button></div></div>`;
+}
 const soonRow = (src) => row(B.srcIcon(src.logo, 28), src.name, 'Coming soon.', '');
 /** Add a source: a picker. Choosing a real source opens its own setup. */
 function addSource() {
@@ -219,8 +281,9 @@ function connectForm(src) {
   }
 }
 
-async function render(el) {
+async function render(el, params) {
   if (readReturn() === 'moved') return;
+  pageSrc = params && params.source ? SOURCES.find((x) => SLUG[x.key] === params.source) || null : null;
   riseDone = false;
   stopReads();
   window.ADMIN.actions('');
@@ -235,13 +298,17 @@ async function render(el) {
     const c = data.connections.find((x) => x.id === connected);
     B.toast(c && c.system === 'github_docs' ? 'The GitHub App is installed. Find the repositories next.' : 'Confluence is connected');
     connected = null;
+    // A new connection lands on its own page.
+    if (c) { B.go(c.system === 'github_docs' ? `${BASE}/docs-repositories` : c.system === 'gdrive' ? `${BASE}/google-drive` : `${BASE}/confluence`, { replace: true }); return; }
   }
   draw();
 }
 function draw() {
   const body = $('#cnbody');
   if (!body || !data) return;
-  const open = secHome ? secHome.key : null;
+  // A source's own page: only connected sources have one; anything else goes back to the grid.
+  if (pageSrc && !stateOf(pageSrc).conns.length) { B.go(BASE, { replace: true }); return; }
+  const open = pageSrc ? null : (secHome ? secHome.key : null);
   const confluence = data.connections.filter((c) => c.system === 'confluence' && c.status !== 'disconnected');
   const drive = data.connections.filter((c) => c.system === 'gdrive' && c.status !== 'disconnected');
   const conf = data.credentials.find((c) => c.name === 'confluence_oauth');
@@ -252,7 +319,7 @@ function draw() {
   // Nothing connected yet (an admin right after setup): the framed header card, about sources in general.
   const none = !SOURCES.some((src) => liveOf(src).length);
   const first = none ? `<div class="ds-empty suempty cnfirst"><span class="ds-empty-ic">${ICON('plug', 20)}</span><b>Connect your first source</b><p>Broth reads the pages you connect.</p><button type="button" class="btn primary" id="cnfirst">Add a source</button></div>` : '';
-  body.innerHTML = first + cards + '<div id="cnpick"></div><div id="cnhold" hidden>' + `<section class="cnsec" data-sec="confluence"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
+  body.innerHTML = (pageSrc ? '' : first + cards) + '<div id="cnpick"></div><div id="cnhold"' + (pageSrc ? ' data-page' : ' hidden') + '>' + `<section class="cnsec" data-sec="confluence"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && conf && !conf.configured ? `<div class="notice low"><span>Add the Confluence app below before connecting a site.</span></div>` : ''}
       ${B.sandbox() && conf ? `<div class="fgroup cncreds">${credentialRow(conf)}</div>` : ''}
       ${confluence.map(connectionHtml).join('') || `<div class="ds-empty"><b>No Confluence site is connected</b><p>Use Add a source to connect one.</p></div>`}
@@ -272,11 +339,13 @@ function draw() {
     const box = $('#srcbody');
     if (fresh && box) { box.replaceChildren(fresh); secHome = { sec: fresh, key: open }; } else secHome = null;
   }
-  $('#cnaddcard').onclick = addSource;
+  if (pageSrc) showPage(body);
+  const addCard = $('#cnaddcard');
+  if (addCard) addCard.onclick = addSource;
   const fb = $('#cnfirst');
   if (fb) fb.onclick = addSource;
   pickSpaces(body, conf);
-  if (!riseDone) { riseDone = true; window.ADMIN.life($('.cnover', body)); }
+  if (!riseDone && $('.cnover', body)) { riseDone = true; window.ADMIN.life($('.cnover', body)); }
   $$('[data-src]', body).forEach((b) => { b.onclick = () => sourcePop(b, SOURCES.find((x) => x.key === b.dataset.src)); });
   paint();
   wire();
@@ -370,6 +439,7 @@ function wire() {
 let stopReads = () => {};
 function pickSpaces(body, conf) {
   stopReads();
+  if (pageSrc && pageSrc.key !== 'confluence') return;
   const c = data.connections.find((x) => x.system === 'confluence' && x.status !== 'disconnected' && x.authorized);
   const slot = $('#cnpick', body);
   if (!c || !slot) return;
@@ -653,15 +723,17 @@ function settingsDrawer(space) {
   const sensitivity = space.default_sensitivity && space.default_sensitivity !== 'public' ? space.default_sensitivity : 'internal';
   const repo = space.kind === 'repo';
   const connection = data.connections.find((c) => c.id === space.connection_id);
-  B.openDrawer(`<div class="sv" role="dialog" aria-label="Settings for ${esc(name)}"><div class="sv-top"><span class="sv-sys">${B.srcIcon(connection ? connection.system : 'confluence', 20)}${esc(name)}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div><form class="sv-body cnsettings" id="cnsf" novalidate>
-    <h2>${repo ? 'Repository settings' : 'Space settings'}</h2><p class="sub">Every page in this ${repo ? 'repository' : 'space'} starts from these. A page's labels can only make it more cautious.</p><p class="cndoc">${window.DOCS.link(repo ? 'docsDeclaration' : 'spaceSettings')}</p>
+  const system = connection ? connection.system : 'confluence';
+  // The same right-hand shell as a document in the Library: source logo and name, X, a scrolling body and a footer.
+  B.openDrawer(`<div class="sv" role="dialog" aria-modal="true" aria-label="${repo ? 'Repository settings' : 'Space settings'}, ${esc(name)}"><div class="sv-top"><span class="sv-sys">${B.srcIcon(system, 20)}${esc(B.systemName(system))}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div><form class="cnsform" id="cnsf" novalidate><div class="sv-body cnsettings">
+    <h2>${esc(name)}</h2><p class="sub">${repo ? 'Repository settings' : 'Space settings'}. Every page in this ${repo ? 'repository' : 'space'} starts from these. A page's labels can only make it more cautious.</p><p class="cndoc">${window.DOCS.link(repo ? 'docsDeclaration' : 'spaceSettings')}</p>
     ${field('cnsowner', 'Owner', `<select id="cnsowner" aria-describedby="cnsownerh"><option value="">No owner</option>${options(people.map((u) => [u.id, u.name]), space.owner_user_id)}</select>`, SETTINGS_HELP.owner)}
     ${repo ? '<p class="suhint cnrepo">Published docs are approved. They are Internal until the repository is declared Public, then Public unless a page is labelled or holds a customer identifier.</p>' : `${field('cnsauth', 'Default authority', `<select id="cnsauth" aria-describedby="cnsauthh">${options(AUTHORITIES, authority)}</select>`, SETTINGS_HELP.authority)}
     ${field('cnssens', 'Default sensitivity', `<select id="cnssens" aria-describedby="cnssensh">${options(SENSITIVITIES, sensitivity)}</select>`, SETTINGS_HELP.sensitivity)}`}
     ${field('cnsdom', 'Default domain', `<select id="cnsdom" aria-describedby="cnsdomh"><option value="">No domain</option>${window.DOMAIN_TREE.optionTags(window.DOMAIN_TREE.tree(data.domains), { selected: space.default_domain_id })}</select>`, SETTINGS_HELP.domain)}
     ${field('cnsrev', 'Review interval in months', `<input id="cnsrev" class="eminp" type="number" inputmode="numeric" min="1" max="120" step="1" value="${space.review_interval_months}" aria-describedby="cnsrevh">`, SETTINGS_HELP.review)}
-    <div class="hse" id="cnse" role="alert"></div>
-    <div class="actions"><button type="submit" class="btn primary" id="cnsgo">Save</button><button type="button" class="btn" data-close-drawer>Cancel</button></div></form></div>`);
+    <div class="hse" id="cnse" role="alert"></div></div>
+    <div class="sv-act"><button type="submit" class="btn primary" id="cnsgo">Save</button><button type="button" class="btn" data-close-drawer>Cancel</button></div></form></div>`);
   $('#cnsf').onsubmit = (e) => {
     e.preventDefault();
     const months = Number($('#cnsrev').value);
