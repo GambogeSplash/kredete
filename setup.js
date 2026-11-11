@@ -138,13 +138,13 @@ function wireCopies() {
 
 /* ---------- steps ---------- */
 /** Company and its logo square. Kept in this browser only (logo.js); the API never sees it. */
-const companyRow = () => `<label class="emlab" for="suco">Company</label><div class="colog"><button type="button" class="adlogo sm" id="sulogo" aria-label="Add company logo"></button><input id="suco" class="eminp" autocomplete="organization" placeholder="Acme Bank"><input type="file" id="sulf" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden></div><p class="logomiss" id="sumiss" hidden><span>No logo found.</span> <button type="button" class="link" id="sulu">Upload yours</button><span class="hint" tabindex="0" data-tip="Your logo stays in this browser." aria-label="Your logo stays in this browser.">i</span></p>`;
+const companyRow = () => `<label class="emlab" for="suco">Company</label><div class="colog"><button type="button" class="adlogo sm" id="sulogo" aria-label="Add company logo"></button><input id="suco" class="eminp" autocomplete="organization" placeholder="Acme Bank"><input type="file" id="sulf" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden></div><label class="emlab" for="suweb">Company website (optional)</label><div class="emw suweb"><span class="supre" aria-hidden="true">https://</span><input id="suweb" class="eminp" type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="company.com"></div><p class="logomiss" id="sumiss" hidden><span>No logo found.</span> <button type="button" class="link" id="sulu">Upload yours</button><span class="hint" tabindex="0" data-tip="Your logo stays in this browser." aria-label="Your logo stays in this browser.">i</span></p>`;
 function claimStep() {
   render('claim', `${head('Set up Broth', 'You are the first person here, so you become its admin. Enter the setup code from the server, and the Google account you will sign in with.')}
     <form id="suf" novalidate>${errorSlot}${field('sucode', 'Setup code', 'autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX" class="eminp mono"')}<label class="emlab" for="suemail">Your Google account</label><div class="emw"><span class="emi">${ICON('user', 16)}</span><input id="suemail" class="eminp" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"></div>${companyRow()}${primary('sugo', 'Continue')}</form>
     <p class="disc">Lost the code, or it expired? Run <code>make sandbox-setup-code</code> on the server for a new one.</p>`);
   $('#sucode').focus();
-  if (window.BROTH_LOGO) window.BROTH_LOGO.mount($('#suf'), { domain: () => $('#suemail').value, toast: B.toast });
+  if (window.BROTH_LOGO) window.BROTH_LOGO.mount($('#suf'), { toast: B.toast });
   $('#suf').onsubmit = (e) => {
     e.preventDefault();
     const code = $('#sucode').value.trim(), email = $('#suemail').value.trim();

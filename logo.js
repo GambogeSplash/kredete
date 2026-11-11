@@ -1,9 +1,10 @@
 /* logo.js: the company logo square beside a Company field (the Broth prototype's sign-up row).
  *
- * The square shows the first letter of the company at first. With LOGO_LOOKUP on, it then asks Google's favicon
- * service (t3.gstatic.com, allowed by the CSP's img-src) for a few domains guessed from the company name and the
- * email's domain, and shows the first real logo that comes back. Without one, "Upload yours" takes an image, which is
- * cut to a square and kept in a local library in this browser, checked first on the next lookup.
+ * The square shows the first letter of the company. Nothing is guessed: the company name is just a name, and the email
+ * is never used. When the person types their company's website in the optional Company website field, and it looks like
+ * a host, Google's favicon service (t3.gstatic.com, allowed by the CSP's img-src) is asked for that one host, once, about
+ * 600 ms after typing stops; its logo is shown if it is bigger than 16 px. Otherwise "Upload yours" takes an image,
+ * which is cut to a square and kept in a local library in this browser.
  * Nothing here is sent to Broth's API: the company and its logo stay in this browser (localStorage).
  */
 (() => {
@@ -19,27 +20,35 @@ const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'nul
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } };
 const slug = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 
-/** Loads one candidate domain's favicon; resolves with its width (0 when there is none). */
+/** Loads one host's favicon; resolves with its width (0 when there is none). */
 const probe = (d) => new Promise((resolve) => {
   const url = `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${d}&size=128`;
   const im = new Image();
   im.referrerPolicy = 'no-referrer';
-  const t = setTimeout(() => resolve({ d, w: 0, url }), 5000);
-  im.onload = () => { clearTimeout(t); resolve({ d, w: im.naturalWidth, url }); };
-  im.onerror = () => { clearTimeout(t); resolve({ d, w: 0, url }); };
+  const t = setTimeout(() => resolve({ w: 0, url }), 5000);
+  im.onload = () => { clearTimeout(t); resolve({ w: im.naturalWidth, url }); };
+  im.onerror = () => { clearTimeout(t); resolve({ w: 0, url }); };
   im.src = url;
 });
+/** The typed website as a bare host (scheme, path, query and port dropped), or '' when it does not look like one. */
+function host(value) {
+  const h = String(value || '').trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, '').replace(/[/?#].*$/, '').replace(/:\d+$/, '');
+  return /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(h) ? h : '';
+}
+/** One answer per distinct host, kept for this page. */
+const found = new Map();
 
 /**
- * @param {ParentNode} root  holds #sulogo, #suco, #sulf and #sumiss
- * @param {{ domain?: () => string, toast?: (m: string) => void }} [opts]
+ * @param {ParentNode} root  holds #sulogo, #suco, #suweb, #sulf and #sumiss
+ * @param {{ toast?: (m: string) => void }} [opts]
  */
 function mount(root, opts = {}) {
-  const lb = $('#sulogo', root), co = $('#suco', root), lf = $('#sulf', root), miss = $('#sumiss', root), up = $('#sulu', root);
+  const lb = $('#sulogo', root), co = $('#suco', root), web = $('#suweb', root), lf = $('#sulf', root), miss = $('#sumiss', root), up = $('#sulu', root);
   if (!lb || !co) return;
   const saved = read(COMPANY_KEY, {});
-  const st = { company: '', logo: null, kind: null, key: '', miss: false };
+  const st = { company: '', site: '', logo: null, kind: null, key: '', miss: false };
   if (saved.name) { co.value = saved.name; st.company = saved.name; if (saved.logo) { st.logo = saved.logo; st.kind = saved.kind || 'lib'; st.key = slug(saved.name); } }
+  if (web && saved.site) { web.value = saved.site; st.site = saved.site; }
   let seq = 0, timer = 0;
   const paint = (busy) => {
     const ch = (st.company || '').trim().charAt(0).toUpperCase() || 'B';
@@ -48,34 +57,51 @@ function mount(root, opts = {}) {
     lb.setAttribute('aria-label', st.logo ? 'Change company logo' : 'Add company logo');
     if (miss) miss.hidden = !(st.miss && !st.logo && !busy);
   };
-  const remember = () => write(COMPANY_KEY, { name: st.company, logo: st.kind === 'found' ? null : st.logo, kind: st.kind });
-  const find = async () => {
+  const remember = () => write(COMPANY_KEY, { name: st.company, site: st.site, logo: st.kind === 'found' ? null : st.logo, kind: st.kind });
+  /** The name is only a name: it sets the letter and finds a logo the person uploaded before, nothing more. */
+  const named = () => {
+    st.company = co.value.trim();
     const key = slug(st.company);
-    const mine = ++seq;
-    if (!key) { if (st.kind !== 'upload') { st.logo = null; st.kind = null; } st.miss = false; paint(); return; }
-    if (st.kind === 'upload' && st.key === key) { st.miss = false; paint(); return; }
-    const lib = read(LIB_KEY, {})[key];
-    if (lib) { Object.assign(st, { logo: lib, kind: 'lib', key, miss: false }); paint(); return; }
-    if (!LOGO_LOOKUP) { Object.assign(st, { logo: null, kind: null, key, miss: true }); paint(); return; }
-    paint(true);
-    const dom = ((opts.domain && opts.domain()) || '').split('@')[1] || '';
-    const label = dom.split('.')[0].toLowerCase();
-    const own = label && (label === key || key.includes(label) || label.includes(key)) ? [dom] : [];
-    const cands = [...new Set([...own, `${key}.com`, `${key}.io`, `${key}.co`, `${key}.ai`, `${key}.app`, `${key}.so`])];
-    const res = await Promise.all(cands.map(probe));
-    if (mine !== seq) return;
-    const hit = res.filter((x) => x.w > 16).sort((x, y) => (Number(y.w >= 64) - Number(x.w >= 64)) || cands.indexOf(x.d) - cands.indexOf(y.d))[0];
-    if (hit) Object.assign(st, { logo: hit.url, kind: 'found', key, miss: false });
-    else Object.assign(st, { logo: null, kind: null, key, miss: true });
+    if (st.kind === 'upload' && st.key !== key) { st.logo = null; st.kind = null; }
+    if (st.kind !== 'upload') {
+      const lib = key ? read(LIB_KEY, {})[key] : null;
+      if (lib) Object.assign(st, { logo: lib, kind: 'lib', key, miss: false });
+      else if (st.kind === 'lib') { st.logo = null; st.kind = null; }
+    }
+    remember();
     paint();
   };
-  const changed = () => {
-    st.company = co.value.trim();
-    if (st.kind === 'upload' && st.key !== slug(st.company)) { st.logo = null; st.kind = null; }
-    remember();
-    if (!st.logo || st.kind !== 'upload') { paint(true); clearTimeout(timer); timer = window.setTimeout(find, 420); }
+  /** Looks up the typed website, and only that. */
+  const look = async () => {
+    const h = host(st.site);
+    const mine = ++seq;
+    if (!h) {
+      if (st.kind === 'found') { st.logo = null; st.kind = null; }
+      st.miss = false;
+      paint();
+      return;
+    }
+    if (st.kind === 'upload' || st.kind === 'lib') { st.miss = false; paint(); return; }
+    let hit = found.get(h);
+    if (!hit) {
+      paint(true);
+      hit = await probe(h);
+      found.set(h, hit);
+      if (mine !== seq) return;
+    }
+    if (hit.w > 16) Object.assign(st, { logo: hit.url, kind: 'found', miss: false });
+    else Object.assign(st, { logo: null, kind: null, miss: true });
+    paint();
   };
-  co.addEventListener('input', changed);
+  const sited = () => {
+    st.site = web.value.trim();
+    remember();
+    clearTimeout(timer);
+    if (!host(st.site)) { seq += 1; look(); return; }
+    timer = window.setTimeout(look, 600);
+  };
+  co.addEventListener('input', named);
+  if (web) web.addEventListener('input', sited);
   const pick = () => lf && lf.click();
   lb.onclick = pick;
   if (up) up.onclick = pick;
@@ -84,14 +110,15 @@ function mount(root, opts = {}) {
       const f = lf.files && lf.files[0];
       if (!f) return;
       if (f.size > 4 * 1024 * 1024) { if (opts.toast) opts.toast('Pick an image under 4 MB'); return; }
-      const url = URL.createObjectURL(f);
+      const reader = new FileReader();
+      reader.onerror = () => { if (opts.toast) opts.toast('That file could not be read as an image'); };
+      reader.onload = () => {
       const im = new Image();
       im.onload = () => {
         const n = 192, c = document.createElement('canvas');
         c.width = c.height = n;
         const r = Math.min(im.width, im.height) || 1;
         c.getContext('2d').drawImage(im, (im.width - r) / 2, (im.height - r) / 2, r, r, 0, 0, n, n);
-        URL.revokeObjectURL(url);
         const data = c.toDataURL('image/png');
         Object.assign(st, { logo: data, kind: 'upload', key: slug(st.company), miss: false });
         const key = slug(st.company);
@@ -99,12 +126,14 @@ function mount(root, opts = {}) {
         remember();
         paint();
       };
-      im.onerror = () => { URL.revokeObjectURL(url); if (opts.toast) opts.toast('That file could not be read as an image'); };
-      im.src = url;
+      im.onerror = () => { if (opts.toast) opts.toast('That file could not be read as an image'); };
+      im.src = String(reader.result);
+      };
+      reader.readAsDataURL(f);
     };
   }
   paint();
-  if (st.company && !st.logo) find();
+  if (host(st.site) && !st.logo) look();
 }
 
 window.BROTH_LOGO = { mount, LOGO_LOOKUP };

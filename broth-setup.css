@@ -163,3 +163,7 @@ label.susp:focus-within{background:var(--fill-1);box-shadow:inset 0 0 0 1px var(
 .suhd+.obnav{margin-top:var(--s-4)!important}
 #suf .emlab:not(:first-child){margin-top:14px}
 #suf .hse+.emlab{margin-top:0}
+
+/* Company website: the "https://" prefix sits inside the frame, the typed host after it */
+.emw.suweb .supre{position:absolute;left:12px;top:50%;transform:translateY(-62%);color:var(--mute-3);font-size:var(--fs-md);pointer-events:none}
+.emw.suweb .eminp{padding-left:68px}
