@@ -72,15 +72,16 @@ async function load(reset) {
   if (B.S.route.surface === 'governance' && mine === g.seq) draw();
 }
 function actions(p) {
-  if (!p.can_decide) return '';
+  if (!p.can_decide) return p.status === 'rejected' || p.status === 'revoked' ? '<small class="amute">Closed</small>' : '';
   const mine = p.requested_by === B.S.me.id;
   let h = '';
   if (OPEN.includes(p.status)) {
+    if (mine) h += '<small class="amute">You cannot approve your own request</small>';
     if (!mine) h += `<button type="button" class="btn sm primary" data-act="approve" data-id="${p.id}">Approve</button>`;
     h += `<button type="button" class="btn sm" data-act="reject" data-id="${p.id}">Reject</button>`;
   } else if (p.status === 'approved') {
     h += `<button type="button" class="btn sm" data-act="revoke" data-id="${p.id}">Revoke</button>`;
-  }
+  } else h += '<small class="amute">Closed</small>';
   return h;
 }
 /** A request to make a whole docs repository Public. Nobody approves their own; an approved

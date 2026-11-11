@@ -90,7 +90,7 @@ function readReturn() {
   return undefined;
 }
 
-const SOON = [['Notion', null], ['Slack', null], ['SharePoint', null]];
+const SOON = [['Google Cloud Storage', null], ['Slack', null], ['SharePoint', null], ['Notion', null]];
 const soonIcon = (ic, px) => (ic ? B.srcIcon(ic, px) : ICON('plug', 20));
 /** The Add a source dialog: a Confluence site or a GitHub account to connect, then what is coming. */
 function addSource() {
