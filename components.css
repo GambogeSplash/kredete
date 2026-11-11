@@ -564,3 +564,6 @@ code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:va
  .si-r{display:none!important}
  .emchip .lav,.emchip .avimg{border:1px solid var(--line)!important}
 }
+
+.audf label{min-width:150px}.audf select,.audf .select,.audf .pselect{height:36px}
+@media (max-width:900px){.audf{display:grid;grid-template-columns:1fr 1fr}.audf label:first-child{grid-column:1/-1}.audd{min-width:0;width:100%;box-sizing:border-box}}

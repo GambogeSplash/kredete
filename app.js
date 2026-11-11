@@ -453,7 +453,7 @@ const faq = localStorage.getItem(KEY+'-faq'); if(faq){ D.cards_faq.value=faq; }
 if(S.flags&&S.flags.publicText) D.public_fee.value=S.flags.publicText;
 
 /* ---------- shell ---------- */
-const NAVI={library:'library',inbox:'inbox',insights:'bulb',connectors:'grid'};
+const NAVI={library:'book',inbox:'inbox',insights:'chartbar',connectors:'grid'};
 function navBtn(k,label,cur,badge){ return `<button class="surf" data-s="${k}" ${badge?`data-badge="${badge}"`:''} aria-current="${cur?'page':'false'}">${ICON(NAVI[k],16)}<span>${label}</span></button>`; }
 const CARET='<svg class="car" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.75L5 6.25l2.5-2.5"/></svg>';
 function renderSurfaces(){
