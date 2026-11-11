@@ -325,3 +325,5 @@ html[data-mode=dark] :is(.bm,.cxav){filter:invert(1) hue-rotate(180deg)}
 .lm{display:grid;place-items:center;margin:0 auto var(--s-4)}
 .lm img{width:76px;height:76px;display:block;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 10px 18px rgba(255,92,154,.28))}
 @media (max-width:900px){.lm img{width:64px;height:64px}}
+/* theme is changed in Account settings only */
+.thm,#thm{display:none!important}

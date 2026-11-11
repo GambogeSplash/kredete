@@ -51,7 +51,7 @@ AUTH.signin=()=>{ const au=A(); const DIR=DIRX();
   },650); }; };
 
 /* ---------- first run: four steps ---------- */
-AUTH.welcome=()=>{ const s=S(), u=s.user; if(!AUTH._ob||AUTH._ob.em!==u.email) AUTH._ob={em:u.email,step:1,nick:u.nick||u.name.split(' ')[0],theme:(typeof THEME==='function'?THEME():'light'),pick:0}; obRender(); };
+AUTH.welcome=()=>{ const s=S(), u=s.user; if(!AUTH._ob||AUTH._ob.em!==u.email) AUTH._ob={em:u.email,step:1,nick:u.nick||u.name.split(' ')[0],theme:(typeof THEME==='function'?THEME():'dark'),pick:0}; obRender(); };
 function obRender(){ const s=S(), u=s.user, ob=AUTH._ob; const TOTAL=4; const first=()=>ob.nick||u.name.split(' ')[0];
  const pv=()=>pvHtml({name:u.name,first:first(),team:u.team,level:lvlFor(u.email)});
  const nav=(next,label,extra)=>`<div class="obnav"><button class="btn ob-back" id="obb" type="button" aria-label="Back" ${ob.step===1?'style="display:none"':''}>${ICON('logout',18)}</button><button class="btn primary si-btn obgo" id="obn" type="button">${label||'Continue'}</button></div>${extra||''}`;
@@ -123,9 +123,9 @@ AUTH.after=()=>{ AUTH.mount(); const s=S(), u=s.user;
  };
 
 /* ---------- theme ---------- */
-const THEME=()=>{ try{ return localStorage.getItem('brain-theme')||'light'; }catch(e){ return 'light'; } };
+const THEME=()=>{ try{ return localStorage.getItem('broth-theme')||'dark'; }catch(e){ return 'dark'; } };
 function syncThm(){ const t=document.getElementById('thm'); if(!t) return; const d=document.documentElement.dataset.mode==='dark'; t.innerHTML=ICON(d?'sun':'moon',18); t.setAttribute('aria-label',d?'Switch to light mode':'Switch to dark mode'); t.title=d?'Light mode':'Dark mode'; }
-function applyTheme(m){ try{ localStorage.setItem('brain-theme',m); }catch(e){} const dark=m==='dark'||(m==='system'&&matchMedia('(prefers-color-scheme: dark)').matches); if(dark) document.documentElement.dataset.mode='dark'; else delete document.documentElement.dataset.mode; syncThm(); }
+function applyTheme(m){ try{ localStorage.setItem('broth-theme',m); }catch(e){} const dark=m==='dark'||(m==='system'&&matchMedia('(prefers-color-scheme: dark)').matches); if(dark) document.documentElement.dataset.mode='dark'; else delete document.documentElement.dataset.mode; syncThm(); }
 const isDark=()=>document.documentElement.dataset.mode==='dark';
 /* ---------- footer profile menu: account, admin, platform and the rest ---------- */
 let pm=null;
