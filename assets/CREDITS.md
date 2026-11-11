@@ -20,3 +20,6 @@ Everything in svg/, png/ (except photos), gif/ and video/ was made for this prot
 
 ## Help center placeholders
 assets/help/*.jpg are Cash App help and support screens pulled from Mobbin, used only as placeholders. Replace before any public release.
+
+## assets/crew
+Sixteen characters cut from two ChatGPT image sheets generated from the Broth mascot (2026-11-11): eight Broth reactions (wave, surprised, thinking, cheer, sleepy, confused, shy, proud) and eight animals (fox, frog, chick, bunny, elephant, cat, owl, bear).
