@@ -19,11 +19,13 @@ const S = () => B.S;
 const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- state ---------- */
+/** Whether a conversation shows the sources panel: open on wide screens until it is closed. */
+function panelOn() { const p = askState().panel; return p === null ? innerWidth >= 1200 : !!p; }
 function askState() {
   const s = S();
   if (!s.ask) {
     s.ask = {
-      panel: false,
+      panel: null, // null: the default (open from 1200 px up, like the prototype); true or false once chosen
       homeOpen: false, // the panel on the home view: closed until the Broth avatar opens it
       pt: 'answer',
       focus: null, // the turn whose sources the panel shows (defaults to the last answer)
@@ -146,6 +148,7 @@ async function ask(question) {
     catch (error) { B.toast(B.problem(error)); giveBack(q); return; }
     finally { creating = false; sending(false); }
     conv = S().conv = Object.assign({}, created, { turns: [], loaded: true });
+    askState().panel = null; // a new chat starts with the default panel, as in the prototype
     B.touchChat(created);
   }
   const turn = { id: null, question: q, created_at: new Date().toISOString(), status: 'streaming', text: '', stage: 'searching', searched: 0, answer: null, error: null, feedback: null, reported: false };
@@ -311,7 +314,7 @@ function renderConversation(conv) {
   const draft = takeDraft(conv.id); // the view re-renders when the chat loads or is renamed
   const a = askState();
   $('#app').className = 'cxapp';
-  $('#app').innerHTML = `<div class="cx ${a.panel ? '' : 'closed'}"><section class="cxmain"><div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(B.chatTitle(conv))}</b><button type="button" class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more', 16)}</button><span class="lsp"></span><button type="button" class="lib ctog" id="cxtog" aria-label="Sources" title="Sources" aria-expanded="${a.panel}">${togInner()}</button></div><div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div><div class="cxcomp">${composer(false, 'Ask a follow-up', conv.id)}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
+  $('#app').innerHTML = `<div class="cx ${panelOn() ? '' : 'closed'}"><section class="cxmain"><div class="dchead"><b class="dtitle" id="cxtitle" tabindex="0" role="button" title="Rename chat">${esc(B.chatTitle(conv))}</b><button type="button" class="lib dpen" id="cxmore" aria-label="Chat actions" aria-haspopup="menu" title="Chat actions">${ICON('more', 16)}</button><span class="lsp"></span><button type="button" class="lib ctog" id="cxtog" aria-label="Sources" title="Sources" aria-expanded="${panelOn()}">${togInner()}</button></div><div class="chatscroll" id="chat"><div class="dthread"><div class="thread" id="thread"></div></div></div><div class="cxcomp">${composer(false, 'Ask a follow-up', conv.id)}<p class="cxcap">Broth can be inaccurate. Check the sources.</p></div></section><aside class="cxside" id="rsrc" aria-label="Sources"></aside></div>`;
   const thread = $('#thread');
   if (!conv.loaded) {
     thread.innerHTML = conv.error ? B.errorBlock(conv.error, 'convretry') : `<div class="skwrap" role="status"><span class="sr">Loading the conversation</span>${skeletonTurn()}${skeletonTurn()}</div>`;
@@ -337,7 +340,7 @@ function renderConversation(conv) {
   $('#cxtitle').onclick = rename;
   $('#cxtitle').onkeydown = (e) => { if (e.key === 'Enter' || e.key === 'F2') { e.preventDefault(); rename(); } };
   $('#cxmore').onclick = (e) => { e.stopPropagation(); B.chatMenu($('#cxmore'), conv, { rename }); };
-  $('#cxtog').onclick = () => setPanel(!askState().panel);
+  $('#cxtog').onclick = () => setPanel(!panelOn());
   wireComposer(false);
   putDraft(draft);
   renderPanel();
@@ -381,10 +384,9 @@ function wireComposer(home) {
   };
   $('#cxsrc').onclick = () => {
     askState().pt = 'sources';
-    if (home || innerWidth <= 860) openSourcesDrawer();
+    if (innerWidth <= 860) openSourcesDrawer();
     else setPanel(true);
   };
-  if (home && !matchMedia('(pointer:coarse)').matches) ta.focus({ preventScroll: true });
 }
 
 /* ---------- a turn ---------- */
@@ -575,7 +577,7 @@ function setPanel(open) {
   const a = askState();
   const home = !!$('.lhome');
   if (home) a.homeOpen = !!open; else a.panel = !!open;
-  const on = home ? a.homeOpen : a.panel;
+  const on = home ? a.homeOpen : panelOn();
   const cx = $('.cx');
   if (cx) cx.classList.toggle('closed', !on);
   const tog = $(home ? '#hometog' : '#cxtog');
@@ -701,7 +703,6 @@ function renderPanel() {
   const p = $('#rsrc');
   if (!p) return;
   const a = askState();
-  if ($('.lhome')) { renderHomePanel(p); return; }
   const pt = a.pt === 'sources' ? 'sources' : 'answer';
   const QUOTE = '<svg class="ic-svg" data-i="quote" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 8H7a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2.5v1.5A2.5 2.5 0 0 1 7 19M18.5 8H16a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2.5v1.5A2.5 2.5 0 0 1 16 19"/></svg>';
   const tabIcon = { answer: QUOTE, sources: ICON('stack', 18) };
@@ -731,12 +732,6 @@ function renderPanel() {
 function proHtml() {
   const connected = systems().length > 0;
   return `<button type="button" class="lib cxclose" id="cxclose" aria-label="Close panel">${ICON('x', 16)}</button><div class="cxpro"><div class="cxav"><img src="/assets/brand/mascot-head.png" alt="" draggable="false"></div><b class="cxname">Broth</b><span class="cxst ${connected ? 'on' : ''}"><i></i>${connected ? 'Connected' : 'No sources connected'}</span></div>`;
-}
-/** The panel on the home view: who Broth is, then the sources the next question can read. */
-function renderHomePanel(p) {
-  p.innerHTML = `${proHtml()}<div class="cxbody">${sourcesTab()}</div>`;
-  $('#cxclose', p).onclick = () => setPanel(false);
-  wireSourcesTab(p);
 }
 function openSourcesDrawer(n) {
   const a = askState();
