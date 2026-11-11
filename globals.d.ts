@@ -27,6 +27,7 @@ declare global {
   var DOCUMENTS: any;
   var ADMIN: any;
   var DOCS: Record<string, any>;
+  var HELP: any;
   /** The Support agent's shell, page registry and form helpers (agent.js). */
   var AGENT: any;
   /** The support bot widget, loaded with data-preview for the Experience preview (embed.js). */

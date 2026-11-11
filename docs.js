@@ -307,7 +307,7 @@ function enter() {
   if (calm()) return;
   const nav = $('.dcnav'); const doc = $('.dcdoc'); const im = $('#dcim');
   if (!nav || !doc) return;
-  if (from && from.width && im && im.animate) {
+  if (from && from.width && im && im.animate && im.offsetWidth) {
     const to = im.getBoundingClientRect();
     const dx = from.left - to.left, dy = from.top - to.top, sx = from.width / to.width, sy = from.height / to.height;
     im.style.transformOrigin = 'top left';
