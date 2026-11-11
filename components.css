@@ -774,3 +774,12 @@ html[data-mode=dark] .pvcr img{filter:invert(1) hue-rotate(calc(180deg + var(--h
 @keyframes pvin{from{opacity:0;transform:translateY(14px) scale(.8) rotate(var(--r))}}
 @media (prefers-reduced-motion:reduce){.pvcr{animation:none}}
 @media (max-width:900px){.pvcr{display:none}}
+
+/* sign-in picture side: a deep violet gradient with soft light arcs and a glow behind the dashboard */
+.si-r.pv{background:transparent!important;isolation:isolate}
+.pvbg{position:absolute;inset:0;z-index:-1;overflow:hidden}.pvbg svg{display:block;width:100%;height:100%}
+html[data-mode=dark] .pvbg{filter:invert(1) hue-rotate(180deg)}
+.pvp{position:relative;z-index:1}.pvcap{color:rgba(255,255,255,.7)}
+.pvsh{box-shadow:0 30px 70px -24px rgba(8,4,40,.7)}
+
+.lm.lmleft{place-items:start;margin:0;justify-items:start;opacity:1}.lm.lmleft svg.lmw{color:var(--ink)}.si-brand .lm{min-height:30px;align-content:center}
