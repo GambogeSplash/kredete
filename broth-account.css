@@ -56,3 +56,23 @@
 .lcont .ach2row{margin-top:var(--s-5)}
 .addvi{width:44px;height:44px;border-radius:32%}
 .lcont .acid{min-height:94px}.lcont .acidt{padding-bottom:2px}
+.btn.danger{color:var(--danger);border-color:var(--danger-line);background:var(--danger-soft)}
+.btn.danger-o{color:var(--danger);border-color:var(--danger-line)}
+.btn.danger-o:hover,.btn.danger-o:focus-visible{background:var(--danger-soft)}
+/* inbox, from the prototype */
+.ixpg{max-width:980px}
+.ixchips{display:flex;gap:var(--s-2);flex-wrap:wrap;margin:var(--s-4) 0 var(--s-5)}
+.ixchip{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border:1px solid var(--line);border-radius:var(--r-full);background:none;color:var(--mute);font:500 13px var(--font);cursor:pointer}
+.ixchip em{font-style:normal;color:var(--mute);font-size:12px}.ixchip.on{background:var(--fill-2);color:var(--ink);border-color:transparent}.ixchip:hover{color:var(--ink)}
+.ixlist{display:grid;gap:var(--s-3)}
+.ixrow{display:grid;grid-template-columns:auto 1fr auto;gap:var(--s-4);align-items:start;padding:var(--s-4);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
+.ixic{width:40px;height:40px;border-radius:var(--r-md);display:grid;place-items:center;background:var(--fill-1);color:var(--ink)}
+.ixic.warn{background:#fff3df;color:#a35c00}.ixic.blue{background:#e8efff;color:#2f55c4}
+.ixt{display:flex;gap:var(--s-2);align-items:center;flex-wrap:wrap}.ixt b{font-weight:500;font-size:var(--fs-md)}
+.ixb p{margin:4px 0 8px;color:var(--mute)}
+.ixm{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:var(--fs-sm)}.ixm i{width:3px;height:3px;border-radius:50%;background:var(--mute);opacity:.6}
+.ixa{display:flex;gap:var(--s-2);align-self:center}
+.ixempty{display:grid;place-items:center;gap:6px;padding:72px 0;color:var(--mute);text-align:center}.ixempty b{color:var(--ink);font-weight:500}.ixempty p{margin:0}
+.ixok{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--fill-2);color:var(--ink)}
+.ixok+b{margin-top:6px}
+@media (max-width:900px){.ixrow{grid-template-columns:auto 1fr}.ixa{grid-column:1/-1}}

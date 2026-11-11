@@ -21,6 +21,7 @@ declare global {
   var BROTH_LOGO: { mount: (root: ParentNode, opts?: { domain?: () => string; toast?: (m: string) => void }) => void; LOGO_LOOKUP: boolean } | undefined;
   var BROTH_RAIL: (() => void) | undefined;
   var BOOKMARKS: { has: (turn: any) => boolean; toggle: (turn: any) => boolean } | undefined;
+  var INBOX: { open: () => number; load: () => Promise<void> } | undefined;
   var BROTH_FX: { trashRow: (row: Element | null) => Promise<void>; renamed: (title: string) => void } | undefined;
   var SETUP: any;
   /** The Library (library.js). */
