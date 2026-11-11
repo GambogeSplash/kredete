@@ -823,3 +823,5 @@ html[data-mode=dark] .pvmark{filter:invert(1) hue-rotate(180deg) drop-shadow(0 0
 .provtag{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;font-size:11px;line-height:1;padding:4px 8px;border-radius:var(--r-full);border:1px solid var(--line);color:var(--mute);background:var(--fill-1)}
 
 .pvcr.c9{left:-6px;top:98px;width:54px;--r:-60deg}
+
+.pvcr.c9{left:20px;top:104px}
