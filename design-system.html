@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="components.css">
 <style>
 /* Page chrome only. Everything inside the specimens uses the app's own classes. */
 body{background:var(--surface);color:var(--ink);font:400 var(--fs-md)/var(--lh-base) var(--font);margin:0}
@@ -67,6 +68,10 @@ body{background:var(--surface);color:var(--ink);font:400 var(--fs-md)/var(--lh-b
 
   <h2>Components</h2>
   <p>Built only from tokens. Use these, do not restyle them. A new look is a named variant.</p>
+
+  <h3>Layout and surfaces</h3>
+  <p>One grid and one card. Pages never write their own. <code>.ds-grid</code> with <code>.c2</code>, <code>.c3</code> or <code>.c4</code> steps down to 2 then 1 column. <code>.ds-card</code> is the only bordered surface; <code>.lift</code> makes it openable, <code>.add</code> is the dashed add tile and comes first. <code>.ds-head</code> puts one action on the title line.</p>
+  <div class="ds-grid c3"><button class="ds-card add" type="button"><span class="adsti">+</span><b>Add a domain</b><small>Let people sign in</small></button><div class="ds-card lift"><b>northwind.com</b><br><small>18 members</small></div><div class="ds-card lift"><b>acme.io</b><br><small>10 members</small></div></div>
 
   <h3>Buttons</h3>
   <div class="ds-row"><button class="btn primary">Primary</button><button class="btn">Default</button><button class="btn sm primary">Small primary</button><button class="btn sm">Small</button><button class="btn sm danger-o">Destructive</button></div>
