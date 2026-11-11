@@ -77,3 +77,9 @@ html[data-mode=dark] :is(.fmenu,.drawer){box-shadow:var(--e3)}
 #drawer .ds-empty{padding:32px var(--s-4);margin:var(--s-3) 0}
 .dlh{font-weight:500;margin:var(--s-4) 0 var(--s-2);font-size:var(--fs-md)}
 .modal.lineage .sv-tags{margin-bottom:var(--s-3)}
+
+.srcn{display:inline-grid;place-items:center;border-radius:var(--r-sm);background:var(--fill-2);color:var(--mute);flex:none}
+
+/* the footer keeps both buttons on one row on a phone, as in the prototype */
+.sv-act a.btn{letter-spacing:normal}
+@media (max-width:560px){.sv-act .btn.primary [data-i=ext]{display:none}}
