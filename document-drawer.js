@@ -37,6 +37,9 @@ const domainLabel = (d) => (d.domain ? `<span class="llab" title="${esc(domainPa
 const domainCrumbs = (d) => B.arr(d.domain.path).map((c) => `<a href="/library/${esc(c.slug)}" data-link>${esc(c.name)}</a>`).join('<i aria-hidden="true">/</i>');
 
 /** What the source is called, and its mark; a read without a source says "Source" with a neutral mark. */
+/** One short name per source for the footer button: the product people know, not the connector's own name. */
+const FOOT_NAME = { confluence: 'Confluence', gdrive: 'Google Drive', github_docs: 'GitHub', notion: 'Notion' };
+const openLabel = (d) => (d.system ? `Open in ${FOOT_NAME[d.system] || B.systemName(d.system)}` : 'Open in source');
 const srcName = (d) => (d.system ? B.systemName(d.system) : '') || 'Source';
 const srcMark = (d, px) => (d.system ? B.srcIcon(d.system, px) : `<span class="srcn" style="width:${px}px;height:${px}px">${ICON('stack', Math.round(px * 0.7))}</span>`);
 /** A chip only when it has words. */
@@ -72,7 +75,7 @@ async function openDocument(id, opts) {
   const team = d.domain && d.domain.name ? `<span class="sv-team"><b>${esc(d.domain.name)}</b></span>` : '';
   const tags = team + authorityTag(d) + (scope ? chip(scope[0], scope[1]) : '') + sens;
   const owner = d.owner && d.owner.name
-    ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b>${esc(d.owner.name)}</b><small>${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>`
+    ? `<div class="sv-own">${AVATAR(d.owner.name, 'lav', 40)}<div><b title="${esc(d.owner.name)}">${esc(d.owner.name)}</b><small title="${esc(d.owner.title || 'Owner')}">${esc(d.owner.title || 'Owner')}</small></div>${d.last_verified_at ? `<span class="sv-ver"><small>Verified</small>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</span>` : ''}</div>`
     : '';
   const kv = [
     d.domain && d.domain.path && d.domain.path.length ? `<dt>Domain</dt><dd class="svcrumb">${domainCrumbs(d)}</dd>` : '',
@@ -81,7 +84,7 @@ async function openDocument(id, opts) {
     d.review_due_at ? `<dt>Review due</dt><dd>${B.when(d.review_due_at, B.fmtDate(d.review_due_at, true))}</dd>` : '',
     !(d.owner && d.owner.name) && d.last_verified_at ? `<dt>Verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : '',
   ].join('');
-  drawer.innerHTML = `<div class="sv"><div class="sv-top"><span class="sv-sys">${srcMark(d, 20)}${esc(srcName(d))}</span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div>
+  drawer.innerHTML = `<div class="sv"><div class="sv-top"><span class="sv-sys">${srcMark(d, 20)}<span class="sv-sysn" title="${esc(srcName(d))}">${esc(srcName(d))}</span></span><button type="button" class="xbtn2" data-close-drawer aria-label="Close">${ICON('x', 16)}</button></div>
     <div class="sv-body"><h2>${esc(docTitle(d))}</h2>
       ${tags ? `<div class="sv-tags">${tags}</div>` : ''}
       ${labelProblems(d)}
@@ -89,7 +92,7 @@ async function openDocument(id, opts) {
       ${owner}
       ${kv ? `<dl class="kv svkv">${kv}</dl>` : ''}
     </div>
-    <div class="sv-act">${d.url ? `<a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${srcMark(d, 16)}${d.system ? `Open in ${esc(srcName(d))}` : 'Open in source'}${ICON('ext', 14)}</a>` : `<button type="button" class="btn primary" id="dopen" disabled>${srcMark(d, 16)}${d.system ? `Open in ${esc(srcName(d))}` : 'Open in source'}</button>`}<button type="button" class="btn" id="ddet">Details and lineage</button></div></div>`;
+    <div class="sv-act">${d.url ? `<a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${srcMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span>${ICON('ext', 14)}</a>` : `<button type="button" class="btn primary" id="dopen" disabled>${srcMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span></button>`}<button type="button" class="btn" id="ddet" aria-label="Details and lineage">Details<span class="dl"> and lineage</span></button></div></div>`;
   $('[data-close-drawer]', drawer).onclick = B.closeDrawer;
   const where = $('#dlocation');
   if (where) where.onclick = () => { B.closeDrawer(); window.LIBRARY.showLocation(d.path); };
@@ -134,7 +137,7 @@ async function detailsModal(d) {
     ${tags ? `<div class="sv-tags">${tags}</div>` : ''}
     ${rows ? `<dl class="kv">${rows}</dl>` : ''}
     <h4 class="dlh">Lineage: answers that cited this</h4><div id="lin">${lineage ? B.loadingBlock('Loading lineage', 3, 'actr') : '<p class="amute">Admins and compliance see which answers cited this document.</p>'}</div>
-    <div class="actions">${d.url ? `<a class="btn primary" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${srcMark(d, 16)}${d.system ? `Open in ${esc(srcName(d))}` : 'Open in source'}${ICON('ext', 14)}</a>` : ''}${d.scope && d.scope !== 'public' ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}</div></div></div>`);
+    <div class="actions">${d.url ? `<a class="btn primary" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${srcMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span>${ICON('ext', 14)}</a>` : ''}${d.scope && d.scope !== 'public' ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}</div></div></div>`);
   const share = $('#dshare');
   if (share) share.onclick = () => shareModal(d);
   if (!lineage) return;
