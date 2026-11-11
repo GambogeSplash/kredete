@@ -49,22 +49,35 @@ function inbox() {
   $$('[data-snooze]').forEach((b) => { b.onclick = () => resolve(b.dataset.snooze, 'Snoozed for a week'); });
 }
 
-function insights() {
-  const stats = [['Questions answered', '124', '+18% this week', [4, 6, 5, 8, 7, 9, 12]], ['Answered with sources', '91%', 'up from 86%', [7, 7, 8, 8, 9, 9, 9]], ['Open conflicts', String(ITEMS.filter((i) => i.kind === 'conflict' && !st().done[i.id]).length), 'across 2 documents', [3, 2, 3, 2, 2, 1, 1]], ['Knowledge gaps', '5', '3 new this week', [1, 2, 2, 3, 3, 4, 5]]];
-  const gaps = [['Crypto custody for business accounts', 9], ['Student account eligibility', 7], ['Chargeback time limits', 5], ['Overdraft fee waivers', 4], ['Joint account closure', 3]];
-  const attn = [['Transfer Limits Policy', 'Confluence', 'Stale, 150 days', 'Priya Nair'], ['Cards FAQ (internal)', 'Google Drive', 'Conflicts with Fee Schedule', 'Daniel Reyes'], ['Savings Rate Sheet', 'Google Drive', 'Past review date', 'Tomas Berg']];
-  const max = gaps[0][1];
-  const bars = (a) => `<span class="ixspark">${a.map((v) => `<i style="height:${Math.round(v / Math.max(...a) * 100)}%"></i>`).join('')}</span>`;
+const SAVED0 = [
+  { id: 'v1', q: 'What is the card replacement fee?', a: '$5.00 per Fee Schedule 2026. The Cards FAQ still says $7.50, and the owner has been told.', src: ['Confluence', 'Google Drive'], st: 'current', when: 'Nov 9' },
+  { id: 'v2', q: 'What is the daily transfer limit?', a: '$10,000 for personal accounts and $50,000 for business accounts.', src: ['Confluence'], st: 'current', when: 'Nov 6' },
+  { id: 'v3', q: 'What is the savings interest rate?', a: '3.4% AER at the last review. The Savings Rate Sheet was updated on 9 Nov.', src: ['Google Drive'], st: 'changed', when: 'Nov 2' },
+  { id: 'v4', q: 'How do I request access to a source?', a: 'Open the document in the Library and choose Request access. The owner is told straight away.', src: ['Notion'], st: 'current', when: 'Oct 28' },
+  { id: 'v5', q: 'Who approves public sharing?', a: 'Admins. A request goes to Sharing requests first, then to the owner.', src: ['Confluence'], st: 'changed', when: 'Oct 21' }
+];
+const savedSt = () => { const S = B.S; S.savedAns = S.savedAns || { gone: {}, mine: [] }; return S.savedAns; };
+window.SAVED = {
+  list: () => { const s = savedSt(); return s.mine.concat(SAVED0.filter((x) => !s.gone[x.id])); },
+  add: (q, a, src) => { const s = savedSt(); if (s.mine.some((x) => x.q === q)) return false; s.mine.unshift({ id: 'm' + Date.now(), q, a, src: src || [], st: 'current', when: 'Today' }); B.save(); return true; },
+  has: (q) => savedSt().mine.some((x) => x.q === q),
+  drop: (q) => { const s = savedSt(); s.mine = s.mine.filter((x) => x.q !== q); B.save(); }
+};
+
+function saved() {
+  const s = savedSt(); const L = window.SAVED.list();
+  const rows = L.map((x) => `<div class="ds-tr lift svcols" data-ask="${esc(x.q)}" role="row" tabindex="0"><span class="ltb"><b>${esc(x.q)}</b><small>${esc(x.a)}</small></span><span class="svsrc">${x.src.map((n) => window.SRCICON(n, 18)).join('')}</span><span>${x.st === 'changed' ? '<span class="tag warn">Changed</span>' : '<span class="tag ok">Current</span>'}</span><span class="amute">${esc(x.when)}</span><span class="svx"><button type="button" class="btn sm" data-unsave="${x.id}" aria-label="Remove from Saved">${ICON('x', 14)}</button></span></div>`).join('');
   $('#app').className = '';
-  $('#app').innerHTML = `<div class="pg ixpg"><h1>Insights</h1>
-   <div class="ixstats">${stats.map(([l, v, d, a]) => `<div class="ixstat"><small>${l}</small><b>${v}</b><span>${d}</span>${bars(a)}</div>`).join('')}</div>
-   <section class="ixsec"><h2>Most asked, no good source</h2>${gaps.map(([q, n]) => `<div class="ixgap"><span>${esc(q)}</span><span class="ixbar"><i style="width:${Math.round(n / max * 100)}%"></i></span><em>${n}</em><button type="button" class="btn sm" data-mk="${esc(q)}">Create source</button></div>`).join('')}</section>
-   <section class="ixsec"><h2>Needs attention</h2>${attn.map(([d, sys, why, o]) => `<div class="ixdoc">${window.SRCICON(sys, 22)}<div><b>${esc(d)}</b><small>${esc(why)}</small></div><span class="ixown">${window.AVATAR(o, 'lav', 22)}${esc(o)}</span><button type="button" class="btn sm" data-ver="${esc(d)}">Ask owner</button></div>`).join('')}</section>
-   <section class="ixsec"><h2>Answer quality</h2><div class="ixq"><div><b>87%</b><small>marked helpful</small></div><span class="ixbar big"><i style="width:87%"></i></span><div class="ixr"><span>Wrong or outdated <em>8</em></span><span>Missing detail <em>5</em></span><span>Hard to read <em>2</em></span></div></div></section></div>`;
-  $$('[data-mk]').forEach((b) => { b.onclick = () => { b.disabled = true; b.textContent = 'Task created'; B.toast('Task created for the owner'); }; });
-  $$('[data-ver]').forEach((b) => { b.onclick = () => { b.disabled = true; b.textContent = 'Owner asked'; B.toast('Owner notified'); }; });
+  $('#app').innerHTML = `<div class="pg ixpg"><h1>Saved</h1>${L.length ? `<div class="ds-table libt" role="table"><div class="ds-tr ds-th svcols" role="row"><span>Answer</span><span>Sources</span><span>Status</span><span>Saved</span><span></span></div>${rows}</div>` : `<div class="ixempty"><span class="ixok">${ICON('bookmark', 22)}</span><b>Nothing saved yet</b><p>Save an answer in chat and it is kept here. Broth tells you if it changes.</p></div>`}</div>`;
+  $$('[data-ask]').forEach((r) => {
+    const go = () => { B.S.surface = 'app'; B.S.thread = []; B.save(); B.route(); setTimeout(() => B.ask && B.ask(r.dataset.ask), 350); };
+    r.onclick = (e) => { if (e.target.closest('[data-unsave]')) return; go(); };
+    r.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+  });
+  $$('[data-unsave]').forEach((b) => { b.onclick = () => { const id = b.dataset.unsave; if (id[0] === 'm') s.mine = s.mine.filter((x) => x.id !== id); else s.gone[id] = true; B.save(); saved(); B.toast('Removed from Saved'); }; });
 }
 
 window.SURFACES.inbox = inbox;
-window.SURFACES.insights = insights;
+window.SURFACES.saved = saved;
+window.SURFACES.insights = saved;
 })();

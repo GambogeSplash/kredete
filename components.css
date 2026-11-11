@@ -660,3 +660,10 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 .cxside .cxclose{width:32px!important;min-width:0!important;height:32px!important;left:auto!important;right:var(--s-3)!important}
 
 .cxstats b{line-height:26px}.cxstats small{display:block;margin-top:2px;line-height:16px;white-space:nowrap}
+
+/* saved answers table */
+.svcols{grid-template-columns:minmax(0,1fr) 100px 100px 80px 40px}
+.svcols .ltb{min-width:0;display:grid}.svcols .ltb b{font-weight:500;font-size:var(--fs-md);line-height:20px}.svcols .ltb small{font-size:var(--fs-xs);line-height:16px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svsrc{display:inline-flex;gap:6px;align-items:center}.svx{justify-self:end}.svx .btn{width:28px;height:28px;padding:0;display:grid;place-items:center}
+.ds-tr[data-ask]{cursor:pointer}
+@media (max-width:900px){.svcols{grid-template-columns:minmax(0,1fr) 40px}.svcols>:nth-child(n+2):not(:last-child){display:none}}
