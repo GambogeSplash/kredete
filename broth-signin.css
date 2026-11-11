@@ -68,3 +68,25 @@ a.prov:hover{background:var(--fill-1);border-color:var(--line-strong)}
 .si-alt .link:hover{color:var(--brand-strong)}
 .si-alt .link:focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:var(--r-sm)}
 @media (max-width:900px){.si-r.pict{display:none}}
+.si-in h1.si-h1{margin-bottom:var(--s-6)}
+/* the company row: the logo square sits beside the field, same height and corner */
+.colog{display:flex;align-items:flex-start;gap:var(--s-2)}
+.colog .eminp{flex:1;min-width:0}
+button.adlogo{position:relative;overflow:hidden;flex:none;display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--fill-1);color:var(--ink);font:600 17px var(--font);cursor:pointer;box-sizing:border-box}
+button.adlogo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+button.adlogo.found img{inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:contain;border-radius:8px}
+button.adlogo .adlogoe{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,10,20,.5);color:#fff;opacity:0;transition:opacity var(--dur-fast);font-style:normal}
+button.adlogo:hover .adlogoe,button.adlogo:focus-visible .adlogoe{opacity:1}
+button.adlogo:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+button.adlogo.busy{animation:logopulse 1s ease-in-out infinite}
+@keyframes logopulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){button.adlogo.busy{animation:none}}
+.logomiss{margin:var(--s-2) 0 0;display:flex;align-items:center;gap:var(--s-2);font-size:var(--fs-xs);color:var(--mute)}
+.logomiss[hidden]{display:none}
+.logomiss .link{color:var(--ink);text-decoration:none;cursor:pointer}
+.logomiss .link::after{content:" \2192"}
+.logomiss .link:hover{color:var(--brand-strong)}
+/* the wizard's picture side: the checklist card inside the same violet frame */
+.pvsup{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:var(--s-6);overflow:auto}
+.pvsup .pvp{position:static;container-type:normal;display:block;height:auto;width:100%;max-width:420px}
+#suf .emlab:not(:first-child){display:block;margin-top:var(--s-3)}

@@ -67,7 +67,7 @@ function checklist(current) {
 }
 function render(step, left) {
   const leave = B.S.phase === 'app' && step !== 'done' && step !== 'sync' ? `<button type="button" class="link suleave" id="suleave">Leave setup for now</button>` : '';
-  A().shell(`${left}${leave}`, checklist(step), step === 'done' ? null : [index(step) + 1, STEPS.length]);
+  A().shell(`${left}${leave}`, A().frame(checklist(step)), step === 'done' ? null : [index(step) + 1, STEPS.length]);
   const l = $('#suleave');
   if (l) l.onclick = () => B.go('/');
 }
@@ -105,11 +105,14 @@ function wireCopies() {
 }
 
 /* ---------- steps ---------- */
+/** Company and its logo square. Kept in this browser only (logo.js); the API never sees it. */
+const companyRow = () => `<label class="emlab" for="suco">Company</label><div class="colog"><button type="button" class="adlogo sm" id="sulogo" aria-label="Add company logo"></button><input id="suco" class="eminp" autocomplete="organization" placeholder="Acme Bank"><input type="file" id="sulf" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden></div><p class="logomiss" id="sumiss" hidden><span>No logo found.</span> <button type="button" class="link" id="sulu">Upload yours</button><span class="hint" tabindex="0" data-tip="Your logo stays in this browser." aria-label="Your logo stays in this browser.">i</span></p>`;
 function claimStep() {
   render('claim', `<h1>Set up Broth</h1><p class="sub">You are the first person here, so you become its admin. Enter the setup code from the server, and the Google account you will sign in with.</p>
-    <form id="suf" novalidate>${field('sucode', 'Setup code', 'autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX" class="eminp mono"')}${field('suemail', 'Your Google account', 'type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"')}${errorSlot}${primary('sugo', 'Continue')}</form>
+    <form id="suf" novalidate>${field('sucode', 'Setup code', 'autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX" class="eminp mono"')}${field('suemail', 'Your Google account', 'type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"')}${companyRow()}${errorSlot}${primary('sugo', 'Continue')}</form>
     <p class="disc">Lost the code, or it expired? Run <code>make sandbox-setup-code</code> on the server for a new one.</p>`);
   $('#sucode').focus();
+  if (window.BROTH_LOGO) window.BROTH_LOGO.mount($('#suf'), { domain: () => $('#suemail').value, toast: B.toast });
   $('#suf').onsubmit = (e) => {
     e.preventDefault();
     const code = $('#sucode').value.trim(), email = $('#suemail').value.trim();

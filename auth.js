@@ -28,6 +28,8 @@ const FALLBACK_ERROR = ['Sign-in did not work', 'Try again. If it keeps happenin
 AUTH.signInError = (reason) => (reason ? SIGNIN_ERRORS[reason] || FALLBACK_ERROR : null);
 
 /* ---------- the split shell: form on the left, a preview of the workspace on the right ---------- */
+/** The wizard's picture side: the violet frame with the setup checklist card in it. */
+AUTH.frame = (inner) => `<div class="pvbg" aria-hidden="true"><div class="pvbgi"></div></div><div class="pvsup">${inner}</div>`;
 const brand = '<div class="si-brand"><div class="lm lmleft" role="img" aria-label="Broth"></div></div>';
 const CLEARANCE_COL = { public: '#26a269', internal: '#3b82f6', confidential: '#e2a600', restricted: '#e5484d' };
 function preview(person) {
@@ -83,15 +85,14 @@ window.SURFACES.signin = () => {
   const refused = failure ? new URLSearchParams(location.hash.slice(1)).get('email') : null;
   const needsSetup = !!(B.S.setup && B.S.setup.needs_setup);
   const blocked = needsSetup || !!(B.S.setup && !B.S.setup.google_configured);
-  shell(`${brand}<h1>Welcome back</h1><p class="sub">Sign in to ask what your company knows.</p>
+  shell(`${brand}<h1 class="si-h1">Welcome back</h1>
     ${failure ? `<div class="banner bad" role="alert" id="aerr"><b>${esc(failure[0])}.</b> ${esc(failure[1])}${refused ? `<span class="refused-as">Google account: ${esc(refused)}</span>` : ''}</div>` : ''}
     ${needsSetup ? `<div class="banner info" role="status">This workspace is not set up yet. Ask your administrator to finish setup.</div>` : blocked ? `<div class="banner info" role="status"><b>Sign-in is not configured yet.</b> Your Broth admin finishes setup first.</div>` : ''}
     <div class="provs"><a class="prov si-btn" id="gsignin" href="${B.api.signInUrl}" ${blocked ? 'aria-disabled="true" tabindex="-1"' : ''}><span class="spin" aria-hidden="true"></span><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h6.2a5.3 5.3 0 0 1-2.3 3.5v2.9h3.7c2.2-2 3.4-5 3.4-8.4z"/><path fill="#34A853" d="M12 23c3.1 0 5.7-1 7.6-2.8l-3.7-2.9c-1 .7-2.3 1.1-3.9 1.1-3 0-5.5-2-6.4-4.8H1.8v3A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.6 13.6a6.6 6.6 0 0 1 0-4.2v-3H1.8a11 11 0 0 0 0 10.2l3.8-3z"/><path fill="#EA4335" d="M12 5.4c1.7 0 3.2.6 4.4 1.7l3.3-3.3A11 11 0 0 0 1.8 6.4l3.8 3C6.5 6.5 9 5.4 12 5.4z"/></svg><span>Continue with Google</span></a>
     <button type="button" class="prov soon" disabled aria-disabled="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="9" r="3.5"/><path d="M11 11.5 20 20.5M16 16.5l2-2M18.5 19l1.5-1.5"/></svg><span>Continue with passkey</span><em class="provtag">Coming soon</em></button></div>
     <div class="orline"><span>or use your work email</span></div>
     <form id="emf" novalidate><div class="emw"><span class="emi">${ICON('user', 16)}</span><input id="em" class="eminp" type="email" inputmode="email" autocomplete="username" placeholder="name@company.com" aria-label="Work email" value=""></div><div class="emerr" id="emerr" role="alert" hidden></div><button class="btn primary si-btn" id="sso" type="submit"><span class="spin" aria-hidden="true"></span><span>Continue</span></button></form>
-    <p class="si-alt">New to Broth? <a class="link" href="/setup" data-link>Create a workspace</a></p>
-    <p class="disc">Broth answers from the documents you can already open.</p>`, picture());
+    <p class="si-alt">New to Broth? <a class="link" href="/setup" data-link>Create a workspace</a></p>`, picture());
   const button = $('#gsignin');
   button.onclick = (e) => {
     if (button.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }

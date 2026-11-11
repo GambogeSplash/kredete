@@ -17,3 +17,8 @@ Source pattern: https://unsplash.com/photos/<id>
 
 The people shown are stock models, not Kredete staff. The names in the prototype are invented.
 Everything in svg/, png/ (except photos), gif/ and video/ was made for this prototype.
+
+## Broth sign-in and help centre
+assets/crew/holder2.png is Broth holding a board, cut from a ChatGPT image sheet generated from the Broth mascot.
+assets/auth/lines.svg is the faint curved lines on the sign-in picture, made for Broth.
+assets/help/*.jpg are Cash App help and support screens pulled from Mobbin, used only as placeholders on the Docs cards. Replace before any public release.
