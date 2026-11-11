@@ -24,6 +24,7 @@ declare global {
   var INBOX: { open: () => number; load: () => Promise<void> } | undefined;
   var BROTH_FX: { trashRow: (row: Element | null) => Promise<void>; renamed: (title: string) => void } | undefined;
   var SETUP: any;
+  var SOURCES: any;
   /** The Library (library.js). */
   var LIBRARY: any;
   /** The document drawer, and how a document reads in lists (document-drawer.js). */
