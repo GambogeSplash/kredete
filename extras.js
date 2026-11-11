@@ -221,7 +221,7 @@ async function sessions() {
   if (all) {
     all.onclick = () => B.armPress(all, 'Confirm sign out of all', () => B.busy(all, async () => {
       for (const s of others) await B.api.del(`/me/sessions/${s.id}`);
-      await Promise.all($('.ds-tr[data-id]', el).filter((r) => !r.querySelector('.tag')).map(fade));
+      await Promise.all([...el.querySelectorAll('.ds-tr[data-id]')].filter((r) => !r.querySelector('.tag')).map(fade));
       B.toast('Signed out everywhere else');
       sessions();
     }));

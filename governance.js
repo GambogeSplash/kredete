@@ -167,7 +167,7 @@ function draw() {
  * sees the details only. `onDone(updated)` runs after a decision. */
 const REVIEW_SCOPE = (p) => SCOPE[p.to_scope] || p.to_scope;
 function reviewPopup(request, anchor, onDone) {
-  const repo = request.container_path !== undefined && request.document_id === undefined;
+  const repo = request.container_id !== undefined && request.document_id === undefined;
   const g = state();
   const names = B.S.cache.names || {};
   const tag = STATUS_TAG[request.status] || [request.status, ''];
