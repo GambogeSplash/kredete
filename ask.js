@@ -647,6 +647,9 @@ function wireAnswerTab(root) {
     row.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
   });
 }
+/** Where the panel's tab highlight last sat, so a tab change slides it from there. */
+/** @type {{ pt: string, l: number, w: number } | null} */
+let pillAt = null;
 function renderPanel() {
   const p = $('#rsrc');
   if (!p) return;
@@ -663,13 +666,13 @@ function renderPanel() {
     const tr = tabs.getBoundingClientRect(), r = on.getBoundingClientRect();
     const l = r.left - tr.left, w = r.width;
     pill.style.cssText = `left:${l}px;width:${w}px;height:${r.height}px;top:${r.top - tr.top}px`;
-    const prev = window._cxPrev;
-    window._cxPrev = { pt, l, w };
-    const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prev = pillAt;
+    pillAt = { pt, l, w };
+    const still = calm();
     if (prev && prev.pt !== pt && pill.animate) {
       const ease = 'cubic-bezier(.2,.8,.2,1)', body = $('.cxbody', p), dir = pt === 'sources' ? 1 : -1;
-      pill.animate([{ transform: `translateX(${prev.l - l}px) scaleX(${prev.w / w})` }, { transform: 'none' }], { duration: calm ? 1 : 260, easing: ease });
-      if (body) body.animate(calm ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: `translateX(${dir * 14}px)` }, { opacity: 1, transform: 'none' }], { duration: calm ? 160 : 240, easing: ease });
+      pill.animate([{ transform: `translateX(${prev.l - l}px) scaleX(${prev.w / w})` }, { transform: 'none' }], { duration: still ? 1 : 260, easing: ease });
+      if (body) body.animate(still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: `translateX(${dir * 14}px)` }, { opacity: 1, transform: 'none' }], { duration: still ? 160 : 240, easing: ease });
     }
   }
   if (pt === 'answer') wireAnswerTab(p); else wireSourcesTab(p);
