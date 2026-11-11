@@ -33,6 +33,7 @@
     account_question: "I can't see your account, so I can't answer questions about it. Our support team can help.",
     advice_boundary: "I can explain how our products work, but I can't advise on what's right for you.",
     personal_data: "Please don't share card or account numbers here. I've hidden what you typed.",
+    account_note: 'For anything about your own account, our support team can help.',
     unavailable: 'This assistant is unavailable right now.',
     error: 'Something went wrong.',
     offline: "You're offline. I'll try again when you're back online.",
@@ -317,6 +318,8 @@
         });
         parts.push(`<ol class="sources" aria-label="${esc(COPY.sources)}">${items.join('')}</ol>`);
       }
+      // A rule asked about one's own account: answered, then pointed to support for the rest.
+      if (reply.account_note) parts.push(`<p class="note">${esc(COPY.account_note)}</p>`, contactLink(settings));
     } else {
       parts.push(`<p>${esc(REPLY_TEXT[reply.kind] || COPY.no_answer)}</p>`, contactLink(settings));
     }
@@ -450,6 +453,7 @@ header h2{flex:1;margin:0;font-size:15px;line-height:1.3;font-weight:600}
 .reasons{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--mute);align-items:center}
 .reasons span{width:100%}
 .thanks{font-size:12px;color:var(--mute)}
+.note{font-size:13px;color:var(--ink-2)}
 .composer{display:flex;gap:8px;align-items:flex-end;padding:12px;border-top:1px solid var(--line)}
 textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:var(--r-md);padding:8px 10px;font:inherit;line-height:1.4;color:var(--ink);background:var(--surface);max-height:120px}
 textarea::placeholder{color:var(--mute)}

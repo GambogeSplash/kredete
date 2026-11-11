@@ -163,6 +163,13 @@ describe('the views', () => {
     });
   }
 
+  it('render a rule asked about oneself with the support note under the answer', () => {
+    const html = messageView({ role: 'bot', reply: { ...ANSWERED, account_note: true } }, SETTINGS, 0);
+    assert.ok(html.indexOf('$5,000') < html.indexOf('For anything about your own account'));
+    assert.match(html, /class="contact" href="https:\/\/kredete.com\/support"/);
+    assert.doesNotMatch(messageView({ role: 'bot', reply: ANSWERED }, SETTINGS, 0), /own account/);
+  });
+
   it('render the personal data warning above the reply', () => {
     const html = messageView({ role: 'bot', reply: { ...ANSWERED, personal_data_warning: true } }, SETTINGS, 0);
     assert.ok(html.indexOf('class="warn"') < html.indexOf('$5,000'));
