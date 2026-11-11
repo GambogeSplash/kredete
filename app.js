@@ -245,7 +245,7 @@ function renderPanel(){ const p=$('#rsrc'); if(!p) return;
   if(pt==='activity'){ const n0=new Date(); const sod=new Date(n0.getFullYear(),n0.getMonth(),n0.getDate()).getTime();
     const mine=S.history.map((q,i)=>[q,i,(S.saved&&S.saved[q]&&S.saved[q][0]&&S.saved[q][0].ts)||0]).filter(r=>r[2]>=sod).sort((x,y)=>y[2]-x[2]);
     const sys=[['check','','Synced Confluence','13 pages checked, 2 changed','8:02'],['check','','Synced Google Drive','10 files checked, 1 changed','8:03'],['shield','warn','Found a conflict','Card replacement fee: $5.00 or $7.50','8:41'],['clock','warn','Flagged a stale policy','Transfer Limits Policy, 150 days since review','9:05']];
-    body=`<div class="cxstats"><div><b>${mine.length}</b><small>asked today</small></div><div><b>2</b><small>conflicts found</small></div><div><b>1</b><small>fixed</small></div></div>`+
+    body=`<div class="cxstats"><div><b>${mine.length}</b><small>asked today</small></div><div><b>2</b><small>conflicts</small></div><div><b>1</b><small>fixed</small></div></div>`+
       (S.apOpen===false?'':`<div class="cxh">Waiting for you</div><div class="cxap"><b>Tell Daniel Reyes about the fee conflict?</b><small>Cards FAQ says $7.50, Fee Schedule 2026 says $5.00.</small><div><button type="button" class="btn sm primary" data-ap="1">Approve</button><button type="button" class="btn sm" data-ap="0">Skip</button></div></div>`)+
       `<div class="cxh">Today</div>`+mine.map(r=>evRow('chat','','Answered: '+titleOf(r[0]),'Read the sources and cited them',tm(r[2]),r[1])).join('')+sys.map(s=>evRow(s[0],s[1],s[2],s[3],s[4])).join(''); }
   if(pt==='memory'){ const u=S.user||{}; S.mem=S.mem||{gone:{}}; const topics=S.history.slice(0,3).map(titleOf).join(' · ')||'Nothing yet';
