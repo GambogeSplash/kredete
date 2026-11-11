@@ -65,10 +65,12 @@ Status words: done = present and measured against the prototype; browser-only = 
 | 56 | Sort control | (none) | n/a | the prototype has none; the API orders results | n/a |
 | 57 | Reduced motion | styles.css | yes | entrance and shell transition off | done |
 | 58 | Dark and light | components.css | yes | checked in both | done |
+| 59 | Empty, error and not-found states in a frame (`.ds-empty`), full content width, icon tile, title, line, action | user requirement | no | framed cards for no documents, empty folder, no search results, folder not found, load failure (list and folders), and inside the document shell | done |
+| 60 | (i) hint after the page title, the folder name and each group heading | user requirement | no | hints with one short sentence each; keyboard focus and hover; tips stay on screen on phones | done |
 
 ## Counts
 
-Rows: 58. Done: 50 (rows 10, 30 adapted to real data). Browser-only: 1. Needs-backend: 4 (rows 20, 29, 44, 46). Not applicable: 3.
+Rows: 60. Done: 52 (rows 10, 30 adapted to real data). Browser-only: 1. Needs-backend: 4 (rows 20, 29, 44, 46). Not applicable: 3.
 
 ## Needs-backend list
 

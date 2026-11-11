@@ -67,3 +67,21 @@
 html[data-mode=dark] :is(.fmenu,.drawer){box-shadow:var(--e3)}
 @media (min-width:901px){html[data-mode=dark] #drawer.shell{box-shadow:var(--e3)}}
 .libt .skrow-t .ltb{flex:1}
+
+/* empty states sit in a frame where the list would be (the shared .ds-empty spec) */
+.ds-empty{display:grid;justify-items:center;gap:var(--s-2);text-align:center;padding:48px var(--s-6);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--fill-1);color:var(--mute);margin:var(--s-4) 0}
+.ds-empty .ds-empty-ic{width:44px;height:44px;border-radius:var(--r-md);background:var(--fill-2);color:var(--ink-2);display:grid;place-items:center;margin-bottom:var(--s-2)}
+.ds-empty b{color:var(--ink);font-weight:500;font-size:var(--fs-md)}
+.ds-empty p{margin:0;font-size:var(--fs-sm)}
+.ds-empty .btn,.ds-empty a.btn{margin-top:var(--s-2)}
+#drawer .ds-empty{padding:32px var(--s-4);margin:var(--s-3) 0}
+/* the "i" beside a heading */
+.pg>h1 .hint,.fh-t h2 .hint,.libt .ds-cap .hint,.lgrp .hint{vertical-align:middle;flex:none}
+.pg>h1 .hint{margin-left:var(--s-3)}
+.libt .ds-cap .hint,.lgrp .hint{margin-left:var(--s-2)}
+/* phones: a heading's tip spans its own row, so it never runs off the screen */
+@media (max-width:900px){
+ .libt .ds-cap,.lgrp,.fhead{position:relative}
+ .libt .ds-cap .hint,.lgrp .hint,.fh-t h2 .hint{position:static}
+ .libt .ds-cap .hint:hover::after,.libt .ds-cap .hint:focus::after,.lgrp .hint:hover::after,.lgrp .hint:focus::after,.fh-t h2 .hint:hover::after,.fh-t h2 .hint:focus::after{left:var(--s-4);right:var(--s-4);width:auto;top:calc(100% + 4px)}
+}

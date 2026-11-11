@@ -51,7 +51,7 @@ test('folders open all the way down, and the breadcrumb goes back up', async ({ 
   await expect(back(page)).toHaveAttribute('aria-label', 'Back to Payments');
   expect(await folderNames(page)).toEqual(['Cross-border']);
   await expect(docRows(page)).toHaveCount(0);
-  await expect(page.locator('#libbody .empty')).toHaveCount(0); // its folder is its content
+  await expect(page.locator('#libbody .ds-empty')).toHaveCount(0); // its folder is its content
 
   await folders(page).filter({ hasText: 'Cross-border' }).click();
   await expect(title(page)).toHaveText('Cross-border');
@@ -88,7 +88,7 @@ test('a link opens its folder, and back and forward step through folders from th
 
 test('a folder that does not exist, or holds nothing you can open, says so', async ({ open, check }) => {
   const page = await open('employee', '/library/collections'); // only a page Eve cannot open
-  await expect(page.getByRole('heading', { name: 'Folder not found' })).toBeVisible();
+  await expect(page.getByText('Folder not found', { exact: true })).toBeVisible();
   await expect(heading(page)).toHaveText('Library');
   await check(page, 'library-folder-missing');
   await page.getByRole('link', { name: 'Go to the Library' }).click();
@@ -96,7 +96,7 @@ test('a folder that does not exist, or holds nothing you can open, says so', asy
   await expect(folders(page)).toHaveCount(2);
 
   await page.evaluate(() => window.BRAIN.go('/library/no-such-folder'));
-  await expect(page.getByRole('heading', { name: 'Folder not found' })).toBeVisible();
+  await expect(page.getByText('Folder not found', { exact: true })).toBeVisible();
 });
 
 test('the grid view shows folders as cards before the pages', async ({ open, check }) => {

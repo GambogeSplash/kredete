@@ -35,6 +35,13 @@ const domainLabel = (d) => (d.domain ? `<span class="llab" title="${esc(domainPa
 /** A document's domain as a breadcrumb of folder links. */
 const domainCrumbs = (d) => d.domain.path.map((c) => `<a href="/library/${esc(c.slug)}" data-link>${esc(c.name)}</a>`).join('<i aria-hidden="true">/</i>');
 
+/** An empty state sits in a frame where the list would be (the shared .ds-empty spec). */
+const emptyFrame = (icon, title, text, action) => `<div class="ds-empty">${icon ? `<span class="ds-empty-ic">${ICON(icon, 20)}</span>` : ''}<b>${esc(title)}</b>${text ? `<p>${text}</p>` : ''}${action || ''}</div>`;
+/** A failed read, framed, with the retry under it. */
+const errorFrame = (error, retryId) => `<div class="ds-empty errstate" role="alert"><span class="ds-empty-ic">${ICON('refresh', 20)}</span><b>${esc(B.problem(error))}</b><p>${error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.'}</p>${retryId ? `<button type="button" class="btn sm" id="${retryId}">Try again</button>` : ''}</div>`;
+/** The "i" beside a heading: its text shows on hover and on focus. */
+const hint = (t) => `<span class="hint" tabindex="0" data-tip="${esc(t)}" aria-label="${esc(t)}">i</span>`;
+
 /* ---------- the document drawer ---------- */
 async function openDocument(id, opts) {
   const o = opts || {};
@@ -45,7 +52,7 @@ async function openDocument(id, opts) {
     d = await B.api.get('/documents/' + id);
   } catch (error) {
     const body = $('#svbody');
-    if (body) body.innerHTML = error.status === 404 ? B.emptyBlock('Not available', 'This document is not available to you. It may have moved, or its access changed.') : B.errorBlock(error, 'docretry');
+    if (body) body.innerHTML = error.status === 404 ? emptyFrame('lock', 'Not available', 'This document is not available to you. It may have moved, or its access changed.') : errorFrame(error, 'docretry');
     const r = $('#docretry');
     if (r) r.onclick = () => openDocument(id, o);
     return;
@@ -108,12 +115,12 @@ async function lineageModal(d) {
     if (!box) return;
     box.innerHTML = page.items.length
       ? `<div class="actl">${page.items.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' · ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' · ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
-      : '<p class="actn">Nothing yet. Answers that cite this document appear here.</p>';
+      : emptyFrame('chat', 'Nothing yet', 'Answers that cite this document appear here.');
   } catch (error) {
     const box = $('#lin');
-    if (box) box.innerHTML = B.errorBlock(error);
+    if (box) box.innerHTML = errorFrame(error);
   }
 }
 
-window.DOCUMENTS = { openDocument, authorityTag, domainLabel, domainCol, kindName, KIND_ICON };
+window.DOCUMENTS = { openDocument, authorityTag, domainLabel, domainCol, kindName, KIND_ICON, emptyFrame, errorFrame, hint };
 })();
