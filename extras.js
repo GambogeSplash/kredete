@@ -199,11 +199,11 @@ function profileMenu(a){ if(pm){ closePM(true); return; } const s=S(), u=s.user;
 /* ---------- account settings page ---------- */
 window.SURFACES.account=()=>{ const s=S(), u=s.user; if(!u){ s.surface='app'; B.route(); return; }
  const isAdm=(u.roles||[]).some(r=>r==='admin'||r==='compliance');
- const NAV=[['',[['Profile','Profile'],['Sessions','Sessions'],['Data','Data']]]].concat(isAdm?[['Workspace admin',[['Workspace','Workspace'],['People','People and access'],['Sources','Sources'],['Policies','Policies'],['Domains','Domains'],['Audit','Audit log']]]]:[]);
+ const NAV=[['Account settings',[['Profile','Profile'],['Sessions','Sessions'],['Data','Data']]]].concat(isAdm?[['Workspace settings',[['Workspace','Workspace'],['People','People and access'],['Sources','Sources'],['Policies','Policies'],['Domains','Domains'],['Audit','Audit log']]]]:[]);
  const ids=NAV.flatMap(g=>g[1].map(x=>x[0])); const tab=ids.includes(s.acctTab)?s.acctTab:'Profile';
  const hint=t=>`<span class="hint" tabindex="0" data-tip="${t}" aria-label="${t}">i</span>`;
  $('#app').className='';
- $('#app').innerHTML=`<div class="lset"><nav class="lrail" aria-label="Account">${NAV.map(([g,ts],gi)=>`${gi?`<div class="lrail-sep" role="separator"></div><div class="lrail-h">${g}</div>`:''}${ts.map(([k,l])=>`<button class="tab" data-at="${k}" aria-current="${k===tab?'page':'false'}">${l}</button>`).join('')}`).join('')}<div class="lrail-f"><button class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><h1 class="lcont-t">${(NAV.flatMap(g=>g[1]).find(x=>x[0]===tab)||[0,tab])[1]}</h1><div id="acpane"></div></div></div>`;
+ $('#app').innerHTML=`<div class="lset"><nav class="lrail" aria-label="Account">${NAV.map(([g,ts],gi)=>`${gi?'<div class="lrail-sep" role="separator"></div>':''}${g?`<div class="lrail-h">${g}</div>`:''}${ts.map(([k,l])=>`<button class="tab" data-at="${k}" aria-current="${k===tab?'page':'false'}">${l}</button>`).join('')}`).join('')}<div class="lrail-f"><button class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><h1 class="lcont-t">${(NAV.flatMap(g=>g[1]).find(x=>x[0]===tab)||[0,tab])[1]}</h1><div id="acpane"></div></div></div>`;
  $$('[data-at]').forEach(b=>b.onclick=()=>{ s.acctTab=b.dataset.at; s.acctEdit=null; B.save(); window.SURFACES.account(); });
  $('#aout').onclick=()=>{ s.user=null; A().expired=false; B.save(); B.route(); };
  const el=$('#acpane'); const myL=B.myLevel(); const locked=B.lockedFor(); const seen=Object.values(B.D).filter(d=>B.canSee(d)&&d.level!=null).length;
