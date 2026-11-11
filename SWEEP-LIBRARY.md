@@ -47,7 +47,6 @@ Before this sweep, dark 1440 was: equal 577, different 87, missing 68. Behaviour
 5. Folder icon in rows carries the prototype's `lfi` class.
 6. Loading: while the pages load, three skeleton rows (or cards) are held under the folders, so the table does not jump when they arrive. Skeleton text lines now render.
 7. Empty, error and not-found states are framed `.ds-empty` cards, full content width, with an icon tile, title, line and the retry or link under them.
-8. A hint (i) sits after every page title and section heading, keyboard focusable, with a tooltip that stays on screen on phones.
 
 Earlier in the project (kept for the record): table list view with caption rows per source, folder banner and back button, rich folder cards, grid group bars, document shell, remembered view, `fpop` entrance on folder open with the search box and banner left still, drawer blocks.
 
@@ -86,10 +85,10 @@ Earlier in the project (kept for the record): table list view with caption rows 
 | Loading with folders known | three skeleton rows held under the folders; the table top is at the same y before and after (151 px at 1440, 124 px at 390) and rows are 56 px in both |
 | Document not available, document read failed, no lineage yet | framed cards inside the shell (same helper; not rendered in the browser) |
 
-## Headings that now have an (i)
+## Headings
 
-Page title "Library": "Everything you can open from your connected sources, in folders." Folder banner name: "Pages filed in NAME, and the folders inside it." Group heading "Folders": "Pages are filed in folders by topic. Open one to see its pages." Each source heading (Confluence, Google Drive and others): "Pages from SOURCE that you can open." Tooltips show on hover and on keyboard focus; on phones a heading's tip spans its own row so it never clips. The page title's (i) is not reachable on phones, where the page title is the top bar (the heading is visually hidden there).
+The (i) hints added earlier were removed on request. The Library has plain titles and no subtitles, as in the prototype, which has no hints on these screens.
 
 ## Totals for this sweep
 
-Rows checked: 143 distinct rules, 8 states, 4 viewport and theme runs. Behaviours: 31. Hard states: 10, of which 5 were rendered in the browser at both sizes (error, no documents, search with no results, folder not found, loading) and 5 share the same helper. Fixed: 8. Explained: 10 groups above. Open: 0.
+Rows checked: 143 distinct rules, 8 states, 4 viewport and theme runs. Behaviours: 31. Hard states: 10, of which 5 were rendered in the browser at both sizes (error, no documents, search with no results, folder not found, loading) and 5 share the same helper. Fixed: 7. Explained: 10 groups above. Open: 0.

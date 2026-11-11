@@ -39,8 +39,6 @@ const domainCrumbs = (d) => d.domain.path.map((c) => `<a href="/library/${esc(c.
 const emptyFrame = (icon, title, text, action) => `<div class="ds-empty">${icon ? `<span class="ds-empty-ic">${ICON(icon, 20)}</span>` : ''}<b>${esc(title)}</b>${text ? `<p>${text}</p>` : ''}${action || ''}</div>`;
 /** A failed read, framed, with the retry under it. */
 const errorFrame = (error, retryId) => `<div class="ds-empty errstate" role="alert"><span class="ds-empty-ic">${ICON('refresh', 20)}</span><b>${esc(B.problem(error))}</b><p>${error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.'}</p>${retryId ? `<button type="button" class="btn sm" id="${retryId}">Try again</button>` : ''}</div>`;
-/** The "i" beside a heading: its text shows on hover and on focus. */
-const hint = (t) => `<span class="hint" tabindex="0" data-tip="${esc(t)}" aria-label="${esc(t)}">i</span>`;
 
 /* ---------- the document drawer ---------- */
 async function openDocument(id, opts) {
@@ -122,5 +120,5 @@ async function lineageModal(d) {
   }
 }
 
-window.DOCUMENTS = { openDocument, authorityTag, domainLabel, domainCol, kindName, KIND_ICON, emptyFrame, errorFrame, hint };
+window.DOCUMENTS = { openDocument, authorityTag, domainLabel, domainCol, kindName, KIND_ICON, emptyFrame, errorFrame };
 })();

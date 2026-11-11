@@ -75,13 +75,3 @@ html[data-mode=dark] :is(.fmenu,.drawer){box-shadow:var(--e3)}
 .ds-empty p{margin:0;font-size:var(--fs-sm)}
 .ds-empty .btn,.ds-empty a.btn{margin-top:var(--s-2)}
 #drawer .ds-empty{padding:32px var(--s-4);margin:var(--s-3) 0}
-/* the "i" beside a heading */
-.pg>h1 .hint,.fh-t h2 .hint,.libt .ds-cap .hint,.lgrp .hint{vertical-align:middle;flex:none}
-.pg>h1 .hint{margin-left:var(--s-3)}
-.libt .ds-cap .hint,.lgrp .hint{margin-left:var(--s-2)}
-/* phones: a heading's tip spans its own row, so it never runs off the screen */
-@media (max-width:900px){
- .libt .ds-cap,.lgrp,.fhead{position:relative}
- .libt .ds-cap .hint,.lgrp .hint,.fh-t h2 .hint{position:static}
- .libt .ds-cap .hint:hover::after,.libt .ds-cap .hint:focus::after,.lgrp .hint:hover::after,.lgrp .hint:focus::after,.fh-t h2 .hint:hover::after,.fh-t h2 .hint:focus::after{left:var(--s-4);right:var(--s-4);width:auto;top:calc(100% + 4px)}
-}

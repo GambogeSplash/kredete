@@ -34,7 +34,7 @@ function state() {
   if (!s.lib) s.lib = { folder: '', q: '', system: '', path: '', source: '', sourceName: '', problems: '', view: savedView(), items: [], next: null, loaded: false, loading: false, error: null, seq: 0, facets: { loading: false, error: null }, facetsRoute: null };
   return s.lib;
 }
-const { authorityTag, domainCol, domainLabel, kindName, KIND_ICON, emptyFrame, errorFrame, hint } = window.DOCUMENTS;
+const { authorityTag, domainCol, domainLabel, kindName, KIND_ICON, emptyFrame, errorFrame } = window.DOCUMENTS;
 const openDocument = (id) => window.DOCUMENTS.openDocument(id);
 /** Where the document sits in its source (readable names), else the source and domain. */
 const subline = (d) => esc(d.path || [B.systemName(d.system), d.domain && d.domain.name].filter(Boolean).join(' · '));
@@ -45,10 +45,8 @@ const pages = (n) => `${n} ${n === 1 ? 'page' : 'pages'}`;
 const THEAD = '<div class="ds-tr ds-th libcols" role="row"><span role="columnheader">Name</span><span role="columnheader">Domain</span><span role="columnheader">Type</span><span role="columnheader">Owner</span><span role="columnheader">Updated</span><span aria-hidden="true"></span></div>';
 const table = (inner, cap) => `<div class="ds-table libt" role="table" aria-label="Library">${cap || ''}${THEAD}${inner}</div>`;
 /** A source's (or the folders') heading: a caption row over its table, a bar over its cards. */
-const HINT_FOLDERS = 'Pages are filed in folders by topic. Open one to see its pages.';
-const hintSource = (name) => `Pages from ${name} that you can open.`;
-const capRow = (icon, name, n, tip) => `<div class="ds-tr ds-cap" role="row"><span class="dmn" role="cell">${icon}<b>${esc(name)}</b>${tip ? hint(tip) : ''}<span class="lcount">${n}</span></span></div>`;
-const grp = (icon, name, n, key, tip) => `<div class="lgrp lgapp" data-app="${esc(key)}"><span class="lst">${icon}</span><b>${esc(name)}</b>${tip ? hint(tip) : ''}<span class="lcount">${n}</span></div>`;
+const capRow = (icon, name, n) => `<div class="ds-tr ds-cap" role="row"><span class="dmn" role="cell">${icon}<b>${esc(name)}</b><span class="lcount">${n}</span></span></div>`;
+const grp = (icon, name, n, key) => `<div class="lgrp lgapp" data-app="${esc(key)}"><span class="lst">${icon}</span><b>${esc(name)}</b><span class="lcount">${n}</span></div>`;
 /** The pages by source, in the order the facets list the sources, then as they come. */
 function bySystem(items) {
   const order = ((S().facets && S().facets.systems) || []).map((x) => x.value);
@@ -110,11 +108,11 @@ function page(params) {
   if (moved) { L.folder = folder; L.loaded = false; L.items = []; L.next = null; }
   // Moving into a folder keeps the search and the filters where they are: no second entrance for them.
   const still = L.pop ? ' data-lf="1"' : '';
-  $('#app').innerHTML = `<div class="pg"><h1 id="libh1">Library${hint("Everything you can open from your connected sources, in folders.")}</h1>
+  $('#app').innerHTML = `<div class="pg"><h1 id="libh1">Library</h1>
     <div class="libbar"><div class="libs"${still}><span class="libs-i">${ICON('search', 15)}</span><input id="libq" type="search" autocomplete="off" value="${esc(L.q)}"></div>
       <div class="fwrap"><button type="button" class="fbtn ${L.system || L.problems ? 'on' : ''}" id="lfbtn" aria-label="Filter" aria-haspopup="true" aria-expanded="false">${ICON('filter', 15)}<span>${L.system ? esc(B.systemName(L.system)) : 'Filter'}</span></button><div class="fmenu" id="lfmenu" hidden></div></div>
       <div class="seg" role="group" aria-label="View"><button type="button" class="segb ${L.view === 'list' ? 'on' : ''}" data-v="list" aria-label="List view" aria-pressed="${L.view === 'list'}">${ICON('rows', 15)}</button><button type="button" class="segb ${L.view === 'grid' ? 'on' : ''}" data-v="grid" aria-label="Grid view" aria-pressed="${L.view === 'grid'}">${ICON('grid', 15)}</button></div></div>
-    <div class="libchips" id="libchips"${still}></div>${L.folder ? `<div class="fhead" id="libhead"${still}><a class="fbk" id="libback" href="/library" data-link title="Back">${ICON('chevl', 18)}</a><span class="fh-i" id="libfi"></span><div class="fh-t"><h2><span id="libfolder"></span><span id="libhint"></span></h2><small id="libcount"></small></div></div>` : ''}
+    <div class="libchips" id="libchips"${still}></div>${L.folder ? `<div class="fhead" id="libhead"${still}><a class="fbk" id="libback" href="/library" data-link title="Back">${ICON('chevl', 18)}</a><span class="fh-i" id="libfi"></span><div class="fh-t"><h2 id="libfolder"></h2><small id="libcount"></small></div></div>` : ''}
     <div class="lbody ${L.view === 'grid' ? 'isgrid' : ''}${L.pop ? ' fin' : ''}" id="libbody"></div><div class="chmore" id="libmore"></div></div>`;
   let timer = 0;
   $('#libq').oninput = (e) => { clearTimeout(timer); timer = setTimeout(() => { L.q = e.target.value.trim(); load(true); }, 220); };
@@ -159,7 +157,6 @@ function head() {
     $('#libfi').innerHTML = fsvg(col, 44);
     $('#libfolder').innerHTML = here ? esc(here.name) : pending ? '<i class="pvsk libhsk"></i><span class="sr">Loading the folder</span>' : '';
     $('#libcount').textContent = here ? pages(here.total) : '';
-    $('#libhint').innerHTML = here ? hint(`Pages filed in ${here.name}, and the folders inside it.`) : '';
   }
   S().route.title = here ? here.name : '';
   B.mbTitle();
@@ -283,17 +280,17 @@ function draw() {
   const pendingRows = pending ? (grid ? Array.from({ length: 3 }, () => '<span class="gcard skcard" aria-hidden="true"><span class="gc-p"></span><i class="pvsk" style="width:70%"></i><i class="pvsk" style="width:45%"></i></span>').join('') : skeletonTr(3)) : '';
   let main;
   if (pending && !here && !L.folder) {
-    main = grid ? grp(ICON('folder', 16), 'Folders', folders.length, 'folders', HINT_FOLDERS) + `<div class="ggrid">${folderHtml}</div><div class="ggrid">${pendingRows}</div>` : table(folderHtml, capRow(ICON('folder', 20), 'Folders', folders.length, HINT_FOLDERS)) + `<div role="status"><span class="sr">Loading the library</span>${table(pendingRows)}</div>`;
+    main = grid ? grp(ICON('folder', 16), 'Folders', folders.length, 'folders') + `<div class="ggrid">${folderHtml}</div><div class="ggrid">${pendingRows}</div>` : table(folderHtml, capRow(ICON('folder', 20), 'Folders', folders.length)) + `<div role="status"><span class="sr">Loading the library</span>${table(pendingRows)}</div>`;
   } else if (pending) {
     main = grid ? `<div class="ggrid">${folderHtml}${pendingRows}</div>` : table(folderHtml + pendingRows);
   } else if (grouped) {
     const parts = [];
     if (lead) parts.push(table(lead));
-    if (folders.length) parts.push(grid ? grp(ICON('folder', 16), 'Folders', folders.length, 'folders', HINT_FOLDERS) + `<div class="ggrid">${folderHtml}</div>` : table(folderHtml, capRow(ICON('folder', 20), 'Folders', folders.length, HINT_FOLDERS)));
+    if (folders.length) parts.push(grid ? grp(ICON('folder', 16), 'Folders', folders.length, 'folders') + `<div class="ggrid">${folderHtml}</div>` : table(folderHtml, capRow(ICON('folder', 20), 'Folders', folders.length)));
     bySystem(L.items).forEach(([sys, items]) => {
       const icon = B.srcIcon(sys, grid ? 16 : 20);
       const name = B.systemName(sys);
-      parts.push(grid ? grp(icon, name, items.length, sys, hintSource(name)) + `<div class="ggrid">${items.map(card).join('')}</div>` : table(items.map(row).join(''), capRow(icon, name, items.length, hintSource(name))));
+      parts.push(grid ? grp(icon, name, items.length, sys) + `<div class="ggrid">${items.map(card).join('')}</div>` : table(items.map(row).join(''), capRow(icon, name, items.length)));
     });
     main = parts.join('');
   } else {
