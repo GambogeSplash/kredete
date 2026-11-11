@@ -118,7 +118,6 @@ svg[data-i=send],.dsend:hover svg,.exs:hover svg,.exi button:hover svg{animation
 .errstate .btn{margin-top:var(--s-3);display:inline-flex}
 .surf.finish .sdot{width:7px;height:7px;border-radius:50%;background:var(--brand);margin-left:auto;flex:none}
 .pvfsk{display:inline-block;vertical-align:middle}
-.obnote{margin:var(--s-3) 0 0}
 .avchg.static{cursor:default}
 .chmore{display:flex;justify-content:center;margin:var(--s-4) 0}
 /* A link that looks like a button reads like one, wherever it is. No specificity, so a

@@ -94,12 +94,8 @@ test('the first-run welcome', async ({ open, check, seed }) => {
   await expect(page.getByText(seed.people.compliance.email)).toBeVisible();
   await check(page, 'welcome-1');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { name: 'How should it look?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ask your first question' })).toBeVisible();
   await check(page, 'welcome-2');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { name: 'What Broth can read for you' })).toBeVisible();
-  await expect(page.getByText('Confluence')).toBeVisible();
-  await check(page, 'welcome-3');
   await page.getByRole('button', { name: 'Start asking' }).click();
   await expect(page.getByRole('textbox', { name: 'Ask a question' })).toBeVisible();
   await page.reload();

@@ -44,3 +44,8 @@
  /* the rail menu replaces the old floating expand button */
  #sbopen,.sbopen{display:none!important}
 }
+@media (min-width:901px){
+ .rail .rl-grp{gap:8px}
+ .rl-acct .acct{width:42px!important;min-width:0!important;height:auto;padding:4px 8px;margin:0!important;gap:0!important}
+}
+@media (min-width:901px){.rl-acct .acct .avimg,.rl-acct .acct .lav,.rl-acct .acct>span:first-child{width:36px!important;height:36px!important;border-radius:32%!important}}

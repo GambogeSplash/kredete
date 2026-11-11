@@ -1159,9 +1159,6 @@ html[data-mode=dark] :is(.fc-art,.fsvg,.fh-i){filter:invert(1) hue-rotate(180deg
 .obopts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-3)}
 .obopt{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:var(--s-3);display:grid;gap:var(--s-2);text-align:center;font-size:var(--fs-sm);transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
 .obopt.on{border-color:var(--brand);box-shadow:var(--ring)}.obopt b{font-weight:500}
-.obsw{height:58px;border-radius:var(--r-md);display:block;border:1px solid var(--line)}
-.obsw.light{background:linear-gradient(90deg,var(--wash) 28%,var(--surface) 28%)}.obsw.dark{background:linear-gradient(90deg,#26262a 28%,#121214 28%)}.obsw.system{background:linear-gradient(90deg,var(--wash) 28%,var(--surface) 28% 52%,#121214 52%)}
-.obapps{display:grid;gap:var(--s-2);margin-bottom:var(--s-4)}.obapp{display:flex;align-items:center;gap:var(--s-3);border:1px solid var(--line);border-radius:var(--r-lg);padding:10px var(--s-3);background:var(--surface)}.obapp b{flex:1;font-weight:500}
 .obcards{display:grid;gap:var(--s-2)}.obcard{display:flex;gap:var(--s-3);align-items:center;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:var(--s-3) 14px;text-align:left;font-size:var(--fs-md);transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
 .obcard.on{border-color:var(--brand);background:var(--brand-wash);box-shadow:var(--ring)}.obcard svg{color:var(--mute-2);flex:none}
 /* live preview */
@@ -1205,8 +1202,8 @@ html[data-mode=dark] :is(.fc-art,.fsvg,.fh-i){filter:invert(1) hue-rotate(180deg
 .lhome .dform{box-shadow:0 1px 2px rgba(0,0,0,.04),0 18px 44px -16px rgba(94,106,210,.35)}
 .lh-sug svg{transition:color var(--dur-fast)}.lh-sug:hover svg{color:var(--brand)}
 /* buttons with a little depth */
-.btn.primary,.btn.blue,.dsend{background:linear-gradient(180deg,#5f6bd4,#4f5bc4);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(60,70,160,.35)}
-.btn.primary:hover,.btn.blue:hover,.dsend:hover{background:linear-gradient(180deg,#5f6bd4,#5662cb);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 16px -6px rgba(94,106,210,.6)}
+.btn.primary,.btn.blue,.dsend{background:linear-gradient(180deg,#6b77dd,#5662cb);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(60,70,160,.35)}
+.btn.primary:hover,.btn.blue:hover,.dsend:hover{background:linear-gradient(180deg,#7580e3,var(--brand));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 16px -6px rgba(94,106,210,.6)}
 /* Library: each app group wears its own tint */
 /* Connectors: connected cards glow in their app colour */
 /* Activity: the next step and the unread dot have presence */

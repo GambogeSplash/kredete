@@ -21,6 +21,7 @@ declare global {
   var BROTH_LOGO: { mount: (root: ParentNode, opts?: { domain?: () => string; toast?: (m: string) => void }) => void; LOGO_LOOKUP: boolean } | undefined;
   var BROTH_RAIL: (() => void) | undefined;
   var SETUP: any;
+  var SOURCES: any;
   /** The Library (library.js). */
   var LIBRARY: any;
   /** The document drawer, and how a document reads in lists (document-drawer.js). */

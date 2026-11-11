@@ -191,12 +191,11 @@ function addSource() {
   if (gl) gl.oninput = () => flag('gh', '');
   if ($('#cnadd')) $('#cnadd').onsubmit = (e) => {
     e.preventDefault();
-    const site = $('#cnsite').value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(site)) { flag('cn', 'Enter the site address, like yourteam.atlassian.net'); return; }
+    // SOURCES checks the address, creates the connection and sends the admin to Atlassian.
     B.busy($('#cnaddgo'), async () => {
-      const created = await B.api.post('/admin/connections', { system: 'confluence', site });
-      await authorize(created.id);
-    }, (error) => { flag('cn', B.problem(error)); refresh(); });
+      const id = await window.SOURCES.createConnection($('#cnsite').value);
+      await window.SOURCES.authorize(id);
+    }, (error) => { flag('cn', B.problem(error)); if (error && error.status) refresh(); });
   };
   if ($('#ghadd')) $('#ghadd').onsubmit = (e) => {
     e.preventDefault();
@@ -212,6 +211,7 @@ function addSource() {
 async function render(el) {
   if (readReturn() === 'moved') return;
   riseDone = false;
+  stopReads();
   window.ADMIN.actions('');
   el.innerHTML = `${banner ? `<div class="banner bad" role="alert">${esc(banner)}</div>` : ''}<div id="cnbody">${B.loadingBlock('Loading connectors', 3, 'cnsec skcapp')}</div>`;
   try { data = await fetchAll(); }
@@ -239,9 +239,9 @@ function draw() {
   const cards = `<div class="ds-grid c3 cnover"><button type="button" class="ds-card add" id="cnaddcard"><span class="ds-ic adsti">${ICON('plus', 18)}</span><b>Add a source</b><small>Confluence, Docs repositories</small></button>${SOURCES.map((src) => sourceCard(src)).join('')}</div>`;
   // Nothing connected yet (an admin right after setup): one clear way in, and the per-source sections wait.
   const none = conns.length === 0;
-  const first = none ? `<div class="ds-empty cnfirst"><span class="ds-empty-ic">${ICON('plug', 20)}</span><b>Connect your first source</b><p>Broth reads Confluence and your docs repositories, with each person's own access.</p><button type="button" class="btn primary" id="cnfirst">Connect your first source</button></div>` : '';
+  const first = none ? window.SOURCES.emptyHtml().replace('class="ds-empty suempty"', 'class="ds-empty suempty cnfirst"') : '';
   body.classList.toggle('cnnone', none);
-  body.innerHTML = first + cards + `<section class="cnsec" id="cnconf"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence${window.ADMIN.hint("Broth reads the spaces you include, with each person's Confluence access.")}</h2></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
+  body.innerHTML = first + cards + '<div id="cnpick"></div>' + `<section class="cnsec" id="cnconf"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence${window.ADMIN.hint("Broth reads the spaces you include, with each person's Confluence access.")}</h2></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && conf && !conf.configured ? `<div class="notice low"><span>Add the Confluence app below before connecting a site.</span></div>` : ''}
       ${confluence.map(connectionHtml).join('') || `<div class="ds-empty"><b>No Confluence site is connected</b><p>Use Add a source to connect one.</p></div>`}
 </section>
@@ -255,8 +255,10 @@ function draw() {
 </section>
     ${B.sandbox() ? `<section class="cnsec"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials${window.ADMIN.hint('The apps Broth uses in this sandbox. Secrets are stored encrypted and never shown again.')}</h2></div></div><div class="fgroup cncreds">${data.credentials.map(credentialRow).join('')}</div></section>` : ''}`;
   $('#cnaddcard').onclick = addSource;
-  const fb = $('#cnfirst');
-  if (fb) fb.onclick = addSource;
+  // Connect your first source: the first step still missing (the Atlassian app, then the site).
+  const fb = $('#susrc');
+  if (fb) fb.onclick = () => { if (B.sandbox() && conf && !conf.configured) credentialForm('confluence_oauth'); else addSource(); };
+  pickSpaces(body, conf);
   if (!riseDone) { riseDone = true; window.ADMIN.life($('.cnover', body)); }
   $$('[data-src]', body).forEach((b) => { b.onclick = () => sourcePop(b, SOURCES.find((x) => x.key === b.dataset.src)); });
   paint();
@@ -307,7 +309,7 @@ function wire() {
       if (act === 'sync') { syncNow(b, id); return; }
       if (act === 'disconnect' && !b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Confirm disconnect'; b.classList.add('danger'); return; }
       B.busy(b, async () => {
-        if (act === 'authorize') { await authorize(id); return; }
+        if (act === 'authorize') { await window.SOURCES.authorize(id); return; }
         if (act === 'install') { await install(id); return; }
         if (act === 'verify') {
           const r = await B.api.post(`/admin/connections/${id}/verify`);
@@ -320,7 +322,7 @@ function wire() {
       });
     };
   });
-  $$('[data-space]', body).forEach((row) => {
+  $$('.dt-r[data-space]', body).forEach((row) => {
     const id = row.dataset.space;
     const include = $('[data-include]', row), owner = $('[data-owner]', row);
     include.onchange = () => {
@@ -346,10 +348,54 @@ function wire() {
     if (space) failedDrawer(space, link.dataset.failed);
   };
 }
-/** Sends the admin to Atlassian to authorize the site; Atlassian returns to this page. */
-async function authorize(connectionId) {
-  const started = await B.api.post(`/admin/connections/${connectionId}/oauth/start`);
-  location.assign(started.authorization_url);
+/* A Confluence site that is authorised but reads no space yet: the picker; while the first reads
+   run: their progress. Both come from SOURCES, the same code the wizard used. */
+let stopReads = () => {};
+function pickSpaces(body, conf) {
+  stopReads();
+  const c = data.connections.find((x) => x.system === 'confluence' && x.status !== 'disconnected' && x.authorized);
+  const slot = $('#cnpick', body);
+  if (!c || !slot) return;
+  const S = window.SOURCES;
+  const mine = () => data.containers.filter((x) => x.connection_id === c.id);
+  const failing = S.failingHtml(mine());
+  if (S.included(mine()).length) {
+    // Reads running or done: progress while they run, and the unreadable pages notice after.
+    const running = S.reads(mine()).some((r) => r && r.status === 'running');
+    if (running) {
+      slot.innerHTML = '<div class="ds-card susync" role="status"></div>';
+      const box = $('.susync', slot);
+      let shown = '';
+      const state = { connection: c, containers: mine() };
+      shown = S.paintReads(box, S.readsHtml(state.containers), shown);
+      stopReads = S.watchReads(state, () => {
+        shown = S.paintReads(box, S.readsHtml(state.containers), shown);
+        if (!S.reads(state.containers).some((r) => r && r.status === 'running')) { stopReads(); refresh(); }
+      });
+    } else if (failing) slot.innerHTML = `<div class="notice low" role="status"><span>${failing}</span></div>`;
+    return;
+  }
+  const containers = mine();
+  slot.innerHTML = `<div class="ds-card cnpick"><h2>Pick the spaces Broth reads${window.ADMIN.hint('People still only see the pages they can open in Confluence.')}</h2><div id="supick"></div><div class="hse ds-msg bad" id="sue" role="alert"></div><div class="actions"><button type="button" class="btn" id="surefresh">Look again</button><span class="lsp"></span><button type="button" class="btn primary" id="sugo" disabled><span>Pick at least one space</span></button></div></div>`;
+  const list = $('#supick', slot), go = $('#sugo', slot), err = $('#sue', slot);
+  const ticked = new Map();
+  const label = () => { const n = S.countPicked(slot); go.disabled = !n; $('span', go).textContent = n ? `Include ${n} ${n === 1 ? 'space' : 'spaces'}` : 'Pick at least one space'; };
+  const draw = (items) => {
+    $$('[data-space]', slot).forEach((x) => ticked.set(x.dataset.space, x.checked));
+    list.innerHTML = items.length ? S.spacesTableHtml(items, ticked) : `<div class="ds-empty"><b>No spaces found</b><p>Broth found no spaces it can read on ${esc(c.site)}.</p></div>`;
+    $$('[data-space]', slot).forEach((x) => { x.onchange = label; });
+    label();
+  };
+  draw(containers);
+  let known = containers;
+  $('#surefresh', slot).onclick = () => B.busy($('#surefresh', slot), async () => {
+    err.textContent = '';
+    try { known = await S.refreshSpaces(c); }
+    catch (error) { err.textContent = `Couldn't check Confluence for new spaces: ${(error && error.detail) || B.problem(error)}`; }
+    draw(known);
+  });
+  $('.cnpick', slot).onsubmit = null;
+  go.onclick = () => B.busy(go, async () => { await S.includeSpaces(S.pickedSpaces(slot)); await refresh(); }, (error) => { err.textContent = B.problem(error); });
 }
 /** Sends the admin to GitHub to install the app; GitHub returns to this page. */
 async function install(id) {
@@ -651,7 +697,8 @@ function credentialForm(name) {
     const client_id = $('#credid').value.trim(), client_secret = $('#credsecret').value.trim();
     if (!client_id || !client_secret) { $('#crede').textContent = 'Enter the client ID and the client secret'; return; }
     B.busy($('#credgo'), async () => {
-      await B.api.put(`/admin/credentials/${name}`, { client_id, client_secret });
+      if (name === 'confluence_oauth') await window.SOURCES.saveConfluenceCredentials(client_id, client_secret);
+      else await B.api.put(`/admin/credentials/${name}`, { client_id, client_secret });
       B.closeModal();
       B.toast('Saved');
       await refresh();
