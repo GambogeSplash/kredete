@@ -39,11 +39,13 @@ test.describe('surfaces follow roles', () => {
     const page = await open('compliance', '/admin/people');
     await expect(page).toHaveURL(/\/admin\/audit$/);
     const rail = page.getByRole('navigation', { name: 'Admin' });
-    await expect(rail.getByRole('button')).toHaveText(['Audit']);
+    await expect(rail.getByRole('button')).toHaveText(['Profile', 'Sessions', 'Sharing requests', 'Audit log', 'Sign out']);
+    await page.getByRole('button', { name: 'Filter' }).click();
     await page.getByRole('button', { name: 'Action' }).click();
     await page.getByRole('option', { name: 'Sharing requested' }).click();
+    await page.getByRole('button', { name: 'Show results' }).click();
     // The pending request, and the two the seed made for the Help centre bot's Public pages.
-    await expect(page.locator('#audt .dt-r:not(.dt-h)')).toHaveCount(3);
+    await expect(page.locator('#audt .aud-r:not(.aud-h)')).toHaveCount(3);
     await expect(page.locator('#audt .audact')).toHaveText(Array(3).fill('Sharing requested'));
     await check(page, 'audit-compliance');
     const menu = await profileMenu(page);
@@ -70,8 +72,8 @@ test.describe('surfaces follow roles', () => {
 
   test('an admin has every admin screen', async ({ open }) => {
     const page = await open('admin', '/admin');
-    await expect(page).toHaveURL(/\/admin\/connectors$/);
-    await expect(page.getByRole('navigation', { name: 'Admin' }).getByRole('button')).toHaveText(['Connectors', 'People', 'Domains', 'Audit']);
+    await expect(page).toHaveURL(/\/admin\/workspace$/);
+    await expect(page.getByRole('navigation', { name: 'Admin' }).getByRole('button')).toHaveText(['Profile', 'Sessions', 'Workspace', 'People and access', 'Sources', 'Sharing requests', 'Domains', 'Audit log', 'Sign out']);
   });
 
   test('compliance cannot open Domains by its address', async ({ open }) => {
@@ -146,14 +148,14 @@ test.describe('domains', () => {
 
   test('the Parent picker shows the tree and never the domain itself or anything inside it', async ({ open }) => {
     const page = await open('admin', '/admin/domains');
-    await row(page, 'Payouts').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Payouts').click();
     const options = page.locator('#dmparent option');
     await expect(options).toHaveText(['None (top level)', 'Cards', 'Engineering', 'Payments', 'Collections']);
     await expect(page.locator('#dmparent')).toHaveValue(await idOf(page, 'Payments'));
     await expect(page.getByRole('dialog').locator('.ssel-btn')).toHaveText('Payments');
     await page.locator('[data-close-modal]').first().click();
 
-    await row(page, 'Cross-border').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Cross-border').click();
     await expect(page.getByRole('dialog').locator('.ssel-btn')).toHaveText('Payments / Payouts'); // the full path, once chosen
     await page.getByRole('dialog').locator('.ssel-btn').click();
     await expect(page.locator('.ssel-menu .ssel-o')).toHaveText(['None (top level)', 'Cards', 'Engineering', 'Payments', 'Collections', 'Payouts']);
@@ -166,7 +168,7 @@ test.describe('domains', () => {
     const moves = await captured(page, `${DOMAINS}/*`, 'PATCH', (route, bodies) => (bodies.length === 1
       ? problem('domains can be nested up to 6 levels')
       : { json: domainOut({ id: route.request().url().split('/').pop(), slug: 'payouts', name: 'Payouts', parent_id: cards }) }));
-    await row(page, 'Payouts').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Payouts').click();
     const dialog = page.getByRole('dialog', { name: 'Edit Payouts' });
     await dialog.locator('#dmparent').selectOption(cards);
     await dialog.getByRole('button', { name: 'Save' }).click();
@@ -180,7 +182,7 @@ test.describe('domains', () => {
     const page = await open('admin', '/admin/domains');
     const roles = await captured(page, '**/v1/admin/users/*/roles', 'PUT', () => ({ json: {} }));
     const renamed = await captured(page, `${DOMAINS}/*`, 'PATCH', (route) => ({ json: domainOut({ id: route.request().url().split('/').pop(), slug: 'cross-border', name: 'Cross-border payouts' }) }));
-    await row(page, 'Cross-border').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Cross-border').click();
     const dialog = page.getByRole('dialog', { name: 'Edit Cross-border' });
     const dami = dialog.getByRole('checkbox', { name: /Dami Bello/ });
     await expect(dami).toBeChecked();
@@ -199,7 +201,7 @@ test.describe('domains', () => {
       json: domainOut({ id: route.request().url().split('/').pop(), slug: 'payments', name: 'Payments and Transfers' }),
     }));
     const roles = await captured(page, '**/v1/admin/users/*/roles', 'PUT', () => ({ json: {} }));
-    await row(page, 'Payments').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Payments').click();
     const dialog = page.getByRole('dialog', { name: 'Edit Payments' });
     await expect(dialog.getByRole('checkbox', { name: 'Dami Bello' })).toBeChecked();
     await check(page, 'domains-edit');
@@ -231,7 +233,7 @@ test.describe('domains', () => {
     });
     const payments = await idOf(page, 'Payments');
     await captured(page, `${DOMAINS}/*`, 'PATCH', (route) => ({ json: domainOut({ id: route.request().url().split('/').pop(), slug: 'cross-border', name: 'Cross-border', parent_id: payments }) }));
-    await row(page, 'Cross-border').getByRole('button', { name: 'Edit' }).click();
+    await row(page, 'Cross-border').click();
     await page.getByRole('dialog').locator('#dmparent').selectOption(payments);
     moved = true;
     const reread = page.waitForResponse('**/v1/facets');
@@ -640,7 +642,7 @@ test.describe('people', () => {
     await dialog.getByRole('button', { name: 'Invite' }).click();
     await expect(page.locator('#toast')).toContainText('Invited grace.obi@kredete.com');
     await expect(page.getByRole('tab', { name: 'Invitations' })).toHaveAttribute('aria-selected', 'true');
-    const row = page.locator('#invlist .dt-r').filter({ hasText: 'grace.obi@kredete.com' });
+    const row = page.locator('#invlist .adrow').filter({ hasText: 'grace.obi@kredete.com' });
     await expect(row).toContainText('Waiting to sign in');
     await check(page, 'invitations');
     await row.getByRole('button', { name: 'Revoke' }).click();
@@ -670,10 +672,10 @@ test.describe('people', () => {
 
 test('the audit log filters by action', async ({ open, check }) => {
   const page = await open('admin', '/admin/audit');
-  await expect(page.locator('#audt .dt-r:not(.dt-h)').first()).toBeVisible();
+  await expect(page.locator('#audt .aud-r:not(.aud-h)').first()).toBeVisible();
   await page.getByRole('button', { name: 'Action' }).click();
   await page.getByRole('option', { name: 'Connection created' }).click();
-  await expect(page.locator('#audt .dt-r:not(.dt-h)')).toHaveCount(1);
+  await expect(page.locator('#audt .aud-r:not(.aud-h)')).toHaveCount(1);
   await expect(page.locator('#audt .audact')).toHaveText('Connection created');
   await check(page, 'audit');
 });

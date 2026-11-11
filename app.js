@@ -74,7 +74,7 @@ const isAbort = (error) => error && error.name === 'AbortError';
 
 const SYSTEMS = { confluence: 'Confluence', gdrive: 'Google Drive', github_docs: 'Docs repositories' };
 const systemName = (s) => SYSTEMS[s] || s || '';
-const srcIcon = (system, px) => window.SRCICON(systemName(system), px);
+const srcIcon = (system, px) => (window.SRCLOGO && window.SRCLOGO.has(system) ? window.SRCLOGO(system, px) : window.SRCICON(systemName(system), px));
 /* Confluence names a personal space after its owner, with a key like "~712020cc...". The server
    keeps the key in the stored name (the audit feed matches on it); people see "personal space". */
 const PERSONAL_SPACE = /^(.*) \(~[^()]+\)$/;
@@ -188,7 +188,7 @@ const ROUTES = [
   { re: /^\/library(?:\/([a-z0-9-]+))?$/, surface: 'library', keys: ['domain'] },
   { re: /^\/governance$/, surface: 'governance' },
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
-  { re: /^\/admin(?:\/(connectors|people|domains|audit))?$/, surface: 'admin', keys: ['tab'], allow: () => hasRole('admin', 'compliance') },
+  { re: /^\/admin(?:\/(workspace|connectors|people|domains|audit))?$/, surface: 'admin', keys: ['tab'], allow: () => hasRole('admin', 'compliance') },
   { re: /^\/agent(?:\/([0-9a-f-]{36})(?:\/(overview|knowledge|experience|products))?)?$/i, surface: 'bot', keys: ['bot', 'page'], allow: () => hasRole('admin') },
   { re: /^\/docs(?:\/([a-z0-9-]+))?$/, surface: 'docs', keys: ['slug'] },
   { re: /^\/setup$/, surface: 'setup' },

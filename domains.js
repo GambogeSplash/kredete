@@ -41,9 +41,15 @@ function forgetCaches() {
 }
 
 function render(el) {
-  el.innerHTML = `<p class="sub dmintro">A domain groups pages by subject, such as Payments or Cards. Give a page its domain with the label shown next to each one, or set a space's default domain in Connectors. ${window.DOCS.link('domains')}</p><div class="pphead"><span class="lsp"></span><button type="button" class="btn primary sm" id="dmnew">New domain</button></div><div class="dt dmdt" style="--cols:minmax(0,1.3fr) minmax(0,1.5fr) minmax(0,1.3fr) 88px 76px" id="dmlist"></div>`;
-  $('#dmnew').onclick = () => createModal();
+  window.ADMIN.closePop();
   const s = state();
+  s.rise = true;
+  const view = s.view || 'list';
+  const toggle = (k, icon, label) => `<button type="button" class="segb ${view === k ? 'on' : ''}" data-view="${k}" aria-pressed="${view === k}" aria-label="${label}">${ICON(icon, 15)}</button>`;
+  window.ADMIN.actions(`${window.DOCS.link('domains')}<div class="seg" role="group" aria-label="View">${toggle('list', 'rows', 'List view')}${toggle('grid', 'grid', 'Grid view')}</div><button type="button" class="btn sm primary" id="dmnew" aria-haspopup="dialog">New domain</button>`);
+  el.innerHTML = '<div id="dmlist"></div>';
+  $('#dmnew').onclick = () => createModal();
+  $$('[data-view]').forEach((b) => { b.onclick = () => { s.view = b.dataset.view; render(el); }; });
   if (!s.loaded || s.error) load(); else draw();
 }
 async function load() {
@@ -57,34 +63,44 @@ async function load() {
   finally { s.loading = false; }
   draw();
 }
+const sub = (d, tree) => T.path(tree, d.id).slice(0, -1).map((x) => x.name).join(' / ');
+const tile = (d) => `<span class="ds-ic adsti adfav" data-l="${esc((d.name[0] || '?').toUpperCase())}"></span>`;
+const countText = (d) => `${d.document_count} ${d.document_count === 1 ? 'page' : 'pages'}`;
 function draw() {
   const s = state();
   const list = $('#dmlist');
   if (!list) return;
-  const head = '<div class="dt-r dt-h"><span>Domain</span><span>Label</span><span>Owners</span><span>Pages</span><span></span></div>';
+  const view = s.view || 'list';
   if (!s.loaded) {
-    list.innerHTML = head + (s.error ? `<div class="dt-r dterr">${B.errorBlock(s.error, 'dmretry')}</div>` : B.skeletonRows(4, 'dt-r'));
-    const r = $('#dmretry');
-    if (r) r.onclick = load;
+    if (s.error) { list.innerHTML = `<div class="ds-empty">${B.errorBlock(s.error, 'dmretry')}</div>`; const r = $('#dmretry'); if (r) r.onclick = load; return; }
+    list.innerHTML = view === 'grid'
+      ? `<div class="ds-grid c3" role="status" aria-label="Loading domains">${[0, 1, 2].map(() => '<div class="ds-card dmsk" aria-hidden="true"><i class="pvsk" style="width:46%"></i><i class="pvsk sksub" style="width:30%"></i></div>').join('')}</div>`
+      : `<div class="ds-table" role="status" aria-label="Loading domains">${B.skeletonRows(4, 'ds-tr')}</div>`;
     return;
   }
   if (!s.items.length) {
-    list.innerHTML = `<div class="dt-r dtempty">${B.emptyBlock('No domains yet', 'Create one for each subject your pages cover, such as Payments, Cards or Compliance. Each domain can have owners who keep its pages current.')}</div>`;
+    list.innerHTML = `<div class="ds-empty"><span class="ds-empty-ic">${ICON('folder', 20)}</span><b>No domains yet</b><p>Create one for each subject your pages cover, such as Payments or Cards.</p><button type="button" class="btn primary" id="dmadd">New domain</button></div>`;
+    $('#dmadd').onclick = () => createModal();
     return;
   }
   // The tree: each domain under its parent, siblings by name, indented by depth.
-  list.innerHTML = head + T.options(T.tree(s.items)).map(({ item: d, depth }) => `<div class="dt-r" data-domain="${d.id}" data-depth="${depth}"><span class="dtp dmname" style="--depth:${depth}"><b style="font-weight:500">${esc(d.name)}</b></span><span class="dmlabel"><code>${esc(labelOf(d))}</code><button type="button" class="lib dmcopy" data-copy="${esc(labelOf(d))}" aria-label="Copy the label ${esc(labelOf(d))}">${ICON('copy', 14)}</button></span><span class="dtm acchips">${owners(d)}</span><span class="dtm dmpages">${pages(d)}</span><span><button type="button" class="btn sm" data-dedit="${d.id}">Edit</button></span></div>`).join('');
-  $$('[data-copy]', list).forEach((b) => {
-    b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); } catch (e) { /* clipboard blocked */ } B.toast('Label copied'); };
-  });
-  $$('[data-dedit]', list).forEach((b) => { b.onclick = () => editModal(s.items.find((d) => d.id === b.dataset.dedit)); });
+  const tree = T.tree(s.items);
+  const rows = /** @type {{ item: any, depth: number }[]} */ (T.options(tree));
+  if (view === 'grid') {
+    list.innerHTML = `<div class="ds-grid c3"><button type="button" class="ds-card add" id="dmadd"><span class="ds-ic adsti">${ICON('plus', 18)}</span><b>Add a domain</b><small>Group pages by subject</small></button>${rows.map(({ item: d }) => `<button type="button" class="ds-card lift addom" data-domain="${d.id}" aria-label="${esc(d.name)}, ${countText(d)}"><div class="addh">${tile(d)}<div><b>${esc(d.name)}</b><small>${esc(sub(d, tree) ? sub(d, tree) + ' · ' : '')}${countText(d)}</small></div>${d.owners.length || d.inherited_owners.length ? '' : '<span class="tag warn">No owner</span>'}</div></button>`).join('')}</div>`;
+  } else {
+    list.innerHTML = `<div class="ds-table" role="table" aria-label="Domains"><div class="ds-tr ds-th dmcols dmc4" role="row"><span role="columnheader">Domain</span><span role="columnheader">Label</span><span role="columnheader">Owners</span><span role="columnheader">Pages</span></div><button type="button" class="ds-tr ds-add dmcols dmc4" id="dmadd"><span class="dmn"><span class="ds-ic adsti">${ICON('plus', 16)}</span><b>Add a domain</b></span></button>${rows.map(({ item: d, depth }) => `<button type="button" class="ds-tr lift dmcols dmc4" role="row" data-domain="${d.id}" data-depth="${depth}" aria-label="${esc(d.name)}"><span class="dmn dmname" style="--depth:${depth}">${tile(d)}<b>${esc(d.name)}</b></span><span class="dmlabel"><code>${esc(labelOf(d))}</code></span><span class="acchips">${owners(d)}</span><span class="amute dmpages">${pages(d)}</span></button>`).join('')}</div>`;
+  }
+  $('#dmadd', list).onclick = () => createModal();
+  if (s.rise) { s.rise = false; window.ADMIN.life(list); }
+  $$('[data-domain]', list).forEach((b) => { b.onclick = () => editModal(s.items.find((d) => d.id === b.dataset.domain)); });
 }
 
 /** Its own owners, then, muted, those it inherits from the domains above it. */
 function owners(d) {
   const own = d.owners.map((o) => `<span class="tag">${esc(o.name)}</span>`);
   const inherited = d.inherited_owners.map((o) => `<span class="tag dminh" title="Owns ${esc(o.from_domain.name)}">${esc(o.name)}<span class="sr">, owns ${esc(o.from_domain.name)}</span></span>`);
-  return own.length || inherited.length ? own.concat(inherited).join('') : '<span class="amute">No owner</span>';
+  return own.length || inherited.length ? own.concat(inherited).join('') : '<span class="tag warn">No owner</span>';
 }
 /** Pages filed directly in the domain, and, when its sub-domains hold more, the total. */
 function pages(d) {
@@ -94,25 +110,29 @@ function pages(d) {
 /** The Parent select: the top level, then the tree; never the domain itself or anything under it. */
 function parentSelect(domain) {
   return `<label class="hsl" for="dmparent">Parent</label><select id="dmparent" class="eminp" aria-describedby="dmparenthint"><option value="">None (top level)</option>${T.optionTags(T.tree(state().items), { selected: domain ? domain.parent_id : null, exclude: domain ? domain.id : null })}</select>
-    <p class="suhint" id="dmparenthint">Its pages show inside the parent's folder in the Library, and the parent's owners own it too.</p>`;
+    <p class="${domain ? 'suhint' : 'ds-msg'}" id="dmparenthint">Its pages show inside the parent's folder in the Library, and the parent's owners own it too.</p>`;
 }
 
+/** A centred dialog, as the prototype's Add a domain: a title bar, a body, Close. */
+function dialog(label, html) {
+  B.openModal(`<div class="modal bt" style="max-width:460px" role="dialog" aria-label="${esc(label)}"><div class="bar"><span class="dmttl">${esc(label)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">${html}</div></div>`);
+}
 function createModal() {
-  B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="New domain"><div class="bar"><span>New domain</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
-    <form id="dmf" novalidate><label class="hsl" for="dmname">Name</label><input id="dmname" class="eminp" autocomplete="off" maxlength="120" placeholder="Payments">
-    <label class="hsl" for="dmslug">Label</label><div class="dmslug"><span class="dmpre">broth-domain-</span><input id="dmslug" class="eminp" autocomplete="off" maxlength="41" spellcheck="false" placeholder="payments" aria-describedby="dmslughint"></div>
-    <p class="suhint" id="dmslughint">Lowercase letters, digits and dashes. Pages use it in their label, so it cannot be changed later.</p>
-    ${parentSelect(null)}
-    <div class="hse" id="dme" role="alert"></div><div class="actions"><button type="submit" class="btn primary" id="dmgo">Create</button><button type="button" class="btn" data-close-modal>Cancel</button></div></form></div></div>`);
-  const name = $('#dmname'), slug = $('#dmslug');
+  dialog('New domain', `<form id="dmf" class="dmbody" novalidate><div><label class="dmlab" for="dmname">Name</label><input id="dmname" class="eminp" autocomplete="off" maxlength="120" placeholder="Payments"></div>
+    <div><label class="dmlab" for="dmslug">Label</label><div class="dmslug"><span class="dmpre">broth-domain-</span><input id="dmslug" class="eminp" autocomplete="off" maxlength="41" spellcheck="false" placeholder="payments" aria-describedby="dmslughint"></div>
+    <p class="ds-msg" id="dmslughint">Lowercase letters, digits and dashes. Pages use it in their label, so it cannot be changed later.</p></div>
+    <div>${parentSelect(null)}</div>
+    <div class="hse ds-msg bad" id="dme" role="alert"></div><div class="actions"><button type="button" class="btn" data-close-modal>Cancel</button><span class="lsp"></span><button type="submit" class="btn primary" id="dmgo">Create</button></div></form>`);
+  const name = $('#dmname'), slug = $('#dmslug'), err = $('#dme');
   let typed = false;
-  name.focus();
+  setTimeout(() => name.focus(), 80);
+  const bad = (text, field) => { err.textContent = text; [name, slug].forEach((f) => f.removeAttribute('aria-invalid')); if (text && field) { field.setAttribute('aria-invalid', 'true'); field.focus(); } };
   name.oninput = () => { if (!typed) slug.value = slugify(name.value); };
   slug.oninput = () => { typed = slug.value !== ''; };
   $('#dmf').onsubmit = (e) => {
     e.preventDefault();
-    if (!name.value.trim()) { $('#dme').textContent = 'Give the domain a name'; return; }
-    if (!slug.value.trim()) { $('#dme').textContent = 'Give the domain a label'; return; }
+    if (!name.value.trim()) { bad('Give the domain a name', name); return; }
+    if (!slug.value.trim()) { bad('Give the domain a label', slug); return; }
     B.busy($('#dmgo'), async () => {
       const created = await B.api.post('/admin/domains', { name: name.value.trim(), slug: slug.value.trim(), parent_id: $('#dmparent').value || null });
       const s = state();
@@ -121,7 +141,7 @@ function createModal() {
       B.closeModal();
       B.toast(`Created. Pages join it with ${labelOf(created)}`);
       draw();
-    }, (error) => { $('#dme').textContent = message(error); });
+    }, (error) => { bad(message(error)); });
   };
 }
 
@@ -136,10 +156,11 @@ async function editModal(domain) {
     : `<label class="ppck"><input type="checkbox" data-owner="${u.id}" ${owns(u) ? 'checked' : ''}><span>${esc(u.name)}</span></label>`);
   B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="Edit ${esc(domain.name)}"><div class="bar"><span>${esc(domain.name)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
     <label class="hsl" for="dmname">Name</label><input id="dmname" class="eminp" autocomplete="off" maxlength="120" value="${esc(domain.name)}">
-    <p class="hsl">Label</p><p class="dmfixed"><code>${esc(labelOf(domain))}</code><span class="suhint">Pages use this label, so it stays as it is.</span></p>
+    <p class="hsl">Label</p><p class="dmfixed"><span class="dmlabel"><code>${esc(labelOf(domain))}</code><button type="button" class="lib dmcopy" data-copy="${esc(labelOf(domain))}" aria-label="Copy the label ${esc(labelOf(domain))}">${ICON('copy', 14)}</button></span><span class="suhint">Pages use this label, so it stays as it is.</span></p>
     ${parentSelect(domain)}
     <fieldset class="ppfs"><legend class="hsl">Owners</legend>${users.length ? users.map(owner).join('') : '<p class="amute">Nobody has signed in yet.</p>'}<p class="suhint ppnote">Owners keep this domain's pages, and those of the domains inside it, current and see their label problems.</p></fieldset>
     <div class="hse" id="dme" role="alert"></div><div class="actions"><button type="button" class="btn primary" id="dmsave">Save</button><button type="button" class="btn" data-close-modal>Cancel</button></div></div></div>`);
+  $$('#modal [data-copy]').forEach((b) => { b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); } catch (e) { /* clipboard blocked */ } B.toast('Label copied'); }; });
   $('#dmsave').onclick = () => B.busy($('#dmsave'), async () => {
     let updated = domain;
     const name = $('#dmname').value.trim();
