@@ -300,6 +300,26 @@ describe('problems', () => {
     assert.equal(error.reached, true);
   });
 
+  it('keeps the fields a 422 names, so a form can show each message under its field', async () => {
+    const { fetch } = stubFetch({
+      'PATCH /v1/admin/products/p1': () =>
+        problem(422, 'Validation error', { code: 'validation_error', errors: [
+          { loc: ['body', 'allowed_origins', 1], msg: 'Value error, a site must use https', type: 'value_error' },
+          { loc: ['body', 'name'], msg: 'String should have at most 60 characters', type: 'string_too_long' },
+          'not an error',
+        ] }),
+      'PATCH /v1/admin/products/p2': () => problem(409, 'Conflict'),
+    });
+    const api = createApi({ fetch });
+    api.setToken('t1');
+    const error = await api.patch('/admin/products/p1', {}).catch((e) => e);
+    assert.deepEqual(error.errors, [
+      { loc: ['body', 'allowed_origins', 1], msg: 'Value error, a site must use https' },
+      { loc: ['body', 'name'], msg: 'String should have at most 60 characters' },
+    ]);
+    const other = await api.patch('/admin/products/p2', {}).catch((e) => e);
+    assert.deepEqual(other.errors, []);
+  });
   it('says whether Broth itself answered: not for a network failure or a page from something in between', async () => {
     const { fetch } = stubFetch({
       'GET /v1/me': () => new Response('<html>Bad gateway</html>', { status: 502, headers: { 'content-type': 'text/html' } }),
