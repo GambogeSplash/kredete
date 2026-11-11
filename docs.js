@@ -83,7 +83,7 @@ function remember(value) {
 function frame(inner) {
   if (!standalone()) return inner;
   const back = B.S.phase === 'setup' ? ['/setup', 'Back to setup'] : ['/signin', 'Back to sign in'];
-  return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/docs" data-docs-link><span class="pvk" aria-hidden="true">K</span><b>Kredete Broth</b><span>Docs</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-docs-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
+  return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/docs" data-docs-link><span class="pvk" aria-hidden="true">K</span><b>Broth</b><span>Docs</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-docs-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
 }
 function paint(inner) {
   const app = $('#app');
@@ -95,7 +95,7 @@ function setTitle(title) {
   if (cur) cur.textContent = title;
   const mb = $('#mbtitle');
   if (mb) mb.textContent = title;
-  document.title = title === 'Docs' ? 'Docs - Kredete Broth' : `${title} - Kredete Broth docs`;
+  document.title = title === 'Docs' ? 'Docs - Broth' : `${title} - Broth docs`;
 }
 
 /* ---------- contents ---------- */

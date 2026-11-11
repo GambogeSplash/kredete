@@ -16,7 +16,7 @@ const esc = B.esc;
 
 const STATUSES = [['', 'All'], ['pending', 'Pending'], ['needs_review', 'Needs review'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['revoked', 'Revoked']];
 const STATUS_TAG = { pending: ['Pending', 'blue'], needs_review: ['Needs review', 'warn'], approved: ['Approved', 'ok'], rejected: ['Rejected', ''], revoked: ['Revoked', ''] };
-const SCOPE = { internal: 'Everyone at Kredete', public: 'Public' };
+const SCOPE = { internal: 'Everyone at Broth', public: 'Public' };
 const OPEN = ['pending', 'needs_review'];
 
 function state() {

@@ -1,4 +1,4 @@
-/* embed.js: the Kredete Broth support bot widget (support bot spec 7).
+/* embed.js: the Broth support bot widget (support bot spec 7).
  *
  * Paste one script tag on a site the bot's product allows:
  *   <script src="https://<client>/embed.js" data-key="bk_live_..." data-api="https://<bot API>" async></script>
@@ -692,7 +692,7 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
     const key = script.dataset.key || '';
     const api = script.dataset.api || '';
     if (!/^bk_live_[A-Za-z0-9]{32}$/.test(key) || !/^https?:\/\//.test(api)) {
-      win.console.warn('Kredete help: the embed snippet needs data-key and data-api.');
+      win.console.warn('Broth help: the embed snippet needs data-key and data-api.');
       return;
     }
     const client = createBotClient({ fetch: win.fetch.bind(win), api, key });
@@ -700,7 +700,7 @@ footer a{color:inherit;display:inline-block;min-height:24px;line-height:24px}
     try {
       settings = await client.settings();
     } catch (_) {
-      win.console.warn('Kredete help is unavailable on this page.');
+      win.console.warn('Broth help is unavailable on this page.');
       return;
     }
     /** @type {Storage | undefined} */

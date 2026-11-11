@@ -235,7 +235,7 @@ function route() {
     window.AUTH && window.AUTH.mountAccount();
   }
   const render = window.SURFACES[found.surface];
-  document.title = 'Kredete Broth'; // the docs name their article; every other screen keeps this
+  document.title = 'Broth'; // the docs name their article; every other screen keeps this
   $('#app').className = '';
   if (render) render(found.params);
   setCrumb();
@@ -254,7 +254,7 @@ function route() {
 function renderBoot() {
   document.body.classList.add('noauth');
   $('#app').className = 'siapp';
-  $('#app').innerHTML = `<div class="bootsplash" role="status"><span class="pvk big" aria-hidden="true">K</span><span class="sr">Loading Kredete Broth</span></div>`;
+  $('#app').innerHTML = `<div class="bootsplash" role="status"><span class="pvk big" aria-hidden="true">K</span><span class="sr">Loading Broth</span></div>`;
 }
 function renderBootError() {
   window.AUTH.bootError(S.bootError, boot);
