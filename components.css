@@ -669,3 +669,5 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 @media (max-width:900px){.svcols{grid-template-columns:minmax(0,1fr) 40px}.svcols>:nth-child(n+2):not(:last-child){display:none}}
 
 .trashfx{position:fixed;z-index:80;width:36px;height:36px;display:grid;place-items:center;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--line);color:var(--mute);box-shadow:0 6px 18px -8px rgba(0,0,0,.5);pointer-events:none}
+
+.fbk{flex:none;width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:var(--r-md);background:none;color:var(--mute);cursor:pointer}.fbk:hover{background:var(--fill-1);color:var(--ink)}

@@ -28,6 +28,7 @@ const P={
  search:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/>',
  globe:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c3 3.2 3 13.8 0 17M12 3.5c-3 3.2-3 13.8 0 17"/>',
  chevd:'<path d="M6 9.5l6 6 6-6"/>',
+ chevl:'<path d="M14.5 6l-6 6 6 6"/>',
  chevr:'<path d="M9.5 6l6 6-6 6"/>',
  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
  copy:'<rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6A2.5 2.5 0 0 0 13 3.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/>',
