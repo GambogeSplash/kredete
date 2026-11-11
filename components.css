@@ -551,3 +551,6 @@ time{white-space:nowrap}
 .dcprose .dchit{border-radius:var(--r-sm);animation:dchit 2.4s var(--ease-out) both}
 @keyframes dchit{0%,35%{background:var(--brand-wash);box-shadow:0 0 0 6px var(--brand-wash)}100%{background:transparent;box-shadow:0 0 0 6px transparent}}
 @media (prefers-reduced-motion:reduce){.dcprose .dchit{animation:none;background:var(--brand-wash);box-shadow:0 0 0 6px var(--brand-wash)}}
+
+/* Broth wordmark: a mask so it follows the text colour in light and dark */
+.si-wm{display:block;width:104px;height:26px;background:currentColor;-webkit-mask:url(/assets/brand/broth-wordmark.svg) left center/contain no-repeat;mask:url(/assets/brand/broth-wordmark.svg) left center/contain no-repeat}

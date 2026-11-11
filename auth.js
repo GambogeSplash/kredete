@@ -28,7 +28,7 @@ const FALLBACK_ERROR = ['Sign-in did not work', 'Try again. If it keeps happenin
 AUTH.signInError = (reason) => (reason ? SIGNIN_ERRORS[reason] || FALLBACK_ERROR : null);
 
 /* ---------- the split shell: form on the left, a preview of the workspace on the right ---------- */
-const brand = '<div class="si-brand"><span class="pvk big" aria-hidden="true">K</span><b>Kredete</b></div>';
+const brand = '<div class="si-brand"><span class="si-wm" role="img" aria-label="Broth"></span></div>';
 const CLEARANCE_COL = { public: '#26a269', internal: '#3b82f6', confidential: '#e2a600', restricted: '#e5484d' };
 function preview(person) {
   const sk = (w) => `<i class="pvsk" style="width:${w}px"></i>`;
