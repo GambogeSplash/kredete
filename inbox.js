@@ -46,7 +46,7 @@ function page() {
   const retry = $('#ixretry');
   if (retry) retry.onclick = load;
   /** @type {any[]} */ ([...document.querySelectorAll('[data-f]')]).forEach((b) => { b.onclick = () => { st.filter = b.dataset.f; page(); }; });
-  /** @type {any[]} */ ([...document.querySelectorAll('[data-do]')]).forEach((b) => { b.onclick = () => review(st.items.find((x) => x.id === b.dataset.do), b); });
+  /** @type {any[]} */ ([...document.querySelectorAll('[data-do]')]).forEach((b) => { b.onclick = () => review(st.items.find((x) => x.id === b.dataset.do)); });
   /** @type {any[]} */ ([...document.querySelectorAll('[data-snooze]')]).forEach((b) => {
     b.onclick = () => {
       const row = b.closest('.ixrow');
@@ -62,70 +62,38 @@ function page() {
 const SCOPE = { public: 'Public', internal: 'Everyone at the company', granular: 'Specific people' };
 const STATUS = { pending: 'Pending', needs_review: 'Needs review', approved: 'Approved', rejected: 'Rejected', revoked: 'Revoked' };
 const OPENS = ['pending', 'needs_review'];
-function review(p, opener) {
+function review(p) {
   if (!p) return;
-  const back = document.createElement('div');
-  back.className = 'rv-back';
   const mine = p.requested_by === B.S.me.id;
-  const open = OPENS.includes(p.status);
-  const canDecide = p.can_decide && open;
-  back.innerHTML = `<div class="ds-pop rv-pop" role="dialog" aria-modal="true" aria-labelledby="rvt" tabindex="-1">
-    <div class="rv-top"><h2 id="rvt">Review request</h2><button type="button" class="rv-x" aria-label="Close">${ICON('x', 16)}</button></div>
+  const canDecide = p.can_decide && OPENS.includes(p.status);
+  B.openModal(`<div class="modal" style="max-width:480px" role="dialog" aria-label="Review request"><div class="bar"><span>Review request</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body rvbody">
     <div class="rv-who">${AVATAR(p.who, 'avimg', 36)}<span><b>${esc(p.who)}</b><small>${B.when(p.created_at, B.ago(p.created_at))}</small></span><span class="tag ${p.status === 'needs_review' ? 'warn' : 'blue'}">${esc(STATUS[p.status] || p.status)}</span></div>
-    <div class="rv-doc" id="rvdoc"><span class="rv-dl"></span><span class="rv-dt"><b>${esc(p.document_title || 'A document')}</b><small id="rvpath"></small></span><button type="button" class="link" id="rvopen">Open document</button></div>
+    <div class="rv-doc"><span class="rv-dl"></span><span class="rv-dt"><b>${esc(p.document_title || 'A document')}</b><small id="rvpath"></small></span><button type="button" class="link" id="rvopen">Open document</button></div>
     <div class="rv-acc"><span class="amute">Access</span><span class="tag" id="rvfrom">...</span><span class="rv-ar" aria-hidden="true">${ICON('arrow', 14)}</span><span class="tag blue">${esc(SCOPE[p.to_scope] || p.to_scope)}</span></div>
     ${p.reason ? `<p class="rv-note">${esc(p.reason)}</p>` : ''}
     <div class="hse" id="rverr" role="alert"></div>
-    <div class="rv-act">${canDecide ? `${mine ? '' : '<button type="button" class="btn primary" id="rvyes">Approve</button>'}<button type="button" class="btn" id="rvno">Decline</button>` : ''}<span class="lsp"></span><button type="button" class="btn" id="rvclose">Close</button></div></div>`;
-  document.body.appendChild(back);
-  const pop = /** @type {any} */ (back.firstElementChild);
-  const bg = [...document.querySelectorAll('.top,.mainpanel,#rail')];
-  bg.forEach((x) => x.setAttribute('inert', ''));
-  const M = window.Motion;
-  if (M && M.animate && !calm()) { M.animate(back, { opacity: [0, 1] }, { duration: 0.16 }); M.animate(pop, { opacity: [0, 1], y: [14, 0], scale: [0.97, 1] }, { type: 'spring', stiffness: 420, damping: 30 }); }
-  let done = false;
-  const close = (restore = true) => {
-    if (done) return;
-    done = true;
-    document.removeEventListener('keydown', key, true);
-    const fin = () => { back.remove(); bg.forEach((x) => x.removeAttribute('inert')); if (restore && opener && opener.isConnected) opener.focus(); };
-    if (M && M.animate && !calm()) { M.animate(pop, { opacity: [1, 0], y: [0, 8], scale: [1, 0.98] }, { duration: 0.14 }); M.animate(back, { opacity: [1, 0] }, { duration: 0.14 }).finished.then(fin, fin); } else fin();
-  };
-  const FOC = 'button:not([disabled]),[href],input,[tabindex]:not([tabindex="-1"])';
-  const key = (e) => {
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); return; }
-    if (e.key !== 'Tab') return;
-    const f = [...pop.querySelectorAll(FOC)].filter((x) => x.offsetParent !== null);
-    if (!f.length) return;
-    const first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && (document.activeElement === first || document.activeElement === pop)) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  };
-  document.addEventListener('keydown', key, true);
-  back.addEventListener('pointerdown', (e) => { if (e.target === back) close(); });
-  pop.querySelector('.rv-x').onclick = () => close();
-  pop.querySelector('#rvclose').onclick = () => close();
-  setTimeout(() => /** @type {any} */ (pop.querySelector('#rvyes') || pop.querySelector('#rvno') || pop.querySelector('#rvclose')).focus(), 30);
+    <div class="actions">${canDecide ? `${mine ? '' : '<button type="button" class="btn primary" id="rvyes">Approve</button>'}<button type="button" class="btn" id="rvno">Decline</button>` : ''}</div></div></div>`);
+  const m = $('#modal');
   B.api.get('/documents/' + p.document_id).then((d) => {
-    if (done) return;
-    pop.querySelector('.rv-dl').innerHTML = B.srcIcon(d.system, 24);
-    pop.querySelector('#rvpath').textContent = d.path ? B.containerName(d.path) : B.systemName(d.system);
-    pop.querySelector('#rvfrom').textContent = SCOPE[d.scope] || d.scope;
-  }, () => { if (!done) { pop.querySelector('#rvfrom').textContent = 'Current access'; } });
-  pop.querySelector('#rvopen').onclick = () => { close(false); if (window.DOCUMENTS) window.DOCUMENTS.openDocument(p.document_id); };
+    if (!m.querySelector('#rvpath')) return;
+    m.querySelector('.rv-dl').innerHTML = B.srcIcon(d.system, 24);
+    m.querySelector('#rvpath').textContent = d.path ? B.containerName(d.path) : B.systemName(d.system);
+    m.querySelector('#rvfrom').textContent = SCOPE[d.scope] || d.scope;
+  }, () => { const f = m.querySelector('#rvfrom'); if (f) f.textContent = 'Current access'; });
+  m.querySelector('#rvopen').onclick = () => { B.closeModal(); if (window.DOCUMENTS) window.DOCUMENTS.openDocument(p.document_id); };
   const decide = (btn, act) => {
     if (act === 'reject' && !btn.dataset.arm) { btn.dataset.arm = '1'; btn.textContent = 'Confirm decline'; btn.classList.add('danger'); return; }
     B.busy(btn, async () => {
       await B.api.post(`/promotions/${p.id}/${act}`, {});
       B.toast(act === 'approve' ? 'Approved. It is shared more widely now.' : 'Declined');
-      close(false);
+      B.closeModal();
       const row = document.querySelector(`.ixrow[data-id="${p.id}"]`);
       const fin = () => { st.items = st.items.filter((x) => x.id !== p.id); B.renderSurfaces(); page(); };
       if (row && row.animate && !calm()) row.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(24px)' }], { duration: 220, easing: 'ease-in' }).finished.then(fin, fin); else fin();
-    }, (error) => { pop.querySelector('#rverr').textContent = B.problem(error); });
+    }, (error) => { m.querySelector('#rverr').textContent = B.problem(error); });
   };
-  const yes = pop.querySelector('#rvyes'); if (yes) yes.onclick = () => decide(yes, 'approve');
-  const no = pop.querySelector('#rvno'); if (no) no.onclick = () => decide(no, 'reject');
+  const yes = m.querySelector('#rvyes'); if (yes) yes.onclick = () => decide(yes, 'approve');
+  const no = m.querySelector('#rvno'); if (no) no.onclick = () => decide(no, 'reject');
 }
 window.SURFACES.inbox = () => { page(); load(); };
 /* The rail badge follows the count: read once the app is up, then every few minutes. */

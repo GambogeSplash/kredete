@@ -92,18 +92,11 @@ html[data-mode=dark] :is(.cmenu,.modal){box-shadow:0 16px 40px -8px rgba(255,255
 @media (max-width:900px){.lcont-t{margin-bottom:16px}#surfaces .sgl{color:var(--mute-2)!important}}
 /* sessions: the button sits right above the table */
 .ach2row.sesbar{justify-content:flex-end;margin:0 0 var(--s-3)}
-/* review popup */
-.rv-back{position:fixed;inset:0;z-index:70;background:rgba(22,22,15,.35);display:grid;place-items:center;padding:16px}
-.ds-pop.rv-pop{position:relative;z-index:1;width:min(480px,100%);max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:var(--s-4);border-radius:var(--r-lg);animation:none;outline:none}
-.rv-top{display:flex;align-items:center;justify-content:space-between}.rv-top h2{margin:0;font-size:var(--fs-lg,18px);font-weight:600}
-.rv-x{width:32px;height:32px;display:grid;place-items:center;border:1px solid transparent;border-radius:var(--r-md);background:none;color:var(--mute);cursor:pointer;transition:background var(--dur-fast),color var(--dur-fast)}
-.rv-x:hover{background:var(--fill-2);color:var(--ink)}.rv-x:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+/* review dialog content (the dialog itself is the shared .modal) */
+.rvbody{display:grid;gap:var(--s-4)}
 .rv-who{display:flex;align-items:center;gap:var(--s-3)}.rv-who>span:nth-child(2){display:grid;flex:1;min-width:0}.rv-who b{font-weight:500}.rv-who small{color:var(--mute);font-size:var(--fs-xs)}
 .rv-doc{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-3);border:1px solid var(--line);border-radius:var(--r-md);background:var(--fill-1)}
 .rv-dt{display:grid;flex:1;min-width:0}.rv-dt b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rv-dt small{color:var(--mute);font-size:var(--fs-xs);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rv-dl{display:grid;place-items:center;width:24px;height:24px;flex:none}
 .rv-acc{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap}.rv-ar{color:var(--mute);display:inline-flex}
 .rv-note{margin:0;padding:var(--s-3);border-radius:var(--r-md);background:var(--fill-1);color:var(--ink-2);font-size:var(--fs-sm)}
-.rv-act{display:flex;gap:var(--s-2);align-items:center}.rv-act .lsp{flex:1}
-@media (max-width:640px){.rv-back{align-items:end;padding:0}.ds-pop.rv-pop{width:100%;border-radius:var(--r-lg) var(--r-lg) 0 0;max-height:90vh}}
-html[data-mode=dark] .rv-back{background:rgba(255,255,255,.55)}
