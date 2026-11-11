@@ -141,3 +141,7 @@ a.prov[aria-disabled=true]{pointer-events:none}
 
 /* "Is this you?" card: the email line is quiet, the name carries the weight */
 .obidt span:not(.obrole){color:var(--mute);font-size:var(--fs-sm)}
+
+/* after a picture-to-picture swap the new page keeps its entrance off for good (removing a class would restart it and blink the picture) */
+.si.v2[data-nofade]:has(.si-r.pict){animation:none}
+.si[data-nofade] .si-in.in{animation:none}

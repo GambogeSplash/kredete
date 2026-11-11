@@ -13,7 +13,7 @@
  .rl:active{transform:scale(.92)}
  .rl[aria-current=page]{background:#ececef;color:var(--ink)}
  html[data-mode=dark] .rl[aria-current=page]{background:#e6e6e6}
- .rl:focus-visible{outline:0;box-shadow:0 0 0 3px var(--brand-line)}
+ .rl:focus-visible{outline:0;box-shadow:0 0 0 3px #d9dcf7}
  .rl.finish{color:var(--brand-strong)}
  .rl-menu{align-self:start}
  .rl-dot{position:absolute;top:1px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--brand);color:#fff;font:600 10px/16px var(--font);text-align:center;font-style:normal;box-shadow:0 0 0 2px var(--shell)}

@@ -120,7 +120,10 @@ A.leave = (commit) => {
     const hold = html.classList;
     const swap = () => {
       hold.add('keepframe');
+      guard(1400);
       still(commit);
+      const si = $('.si');
+      if (si) si.setAttribute('data-nofade', '');
       const l = $('.si-l');
       if (l) { l.style.opacity = '0'; tween(l, { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0px)'] }, 360).finished.then(() => clear(l, 'opacity', 'transform')); }
       setTimeout(() => hold.remove('keepframe'), 800);
