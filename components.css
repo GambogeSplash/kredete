@@ -576,7 +576,8 @@ code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:va
    .ds-card               the one bordered surface (radius lg, surface fill, padding s-4)
      .lift                hover lift for cards that can be opened
      .add                 dashed "add another" tile, the first cell of a grid
-   .ds-head               page title row with an action on the right */
+   .ds-head               page title row; .ds-act holds its right-hand controls (view toggle, one primary action)
+   .ds-table .ds-tr .ds-th the list view of any grid: header row, one clickable row per item (pair with the .seg toggle) */
 .ds-grid{display:grid;gap:var(--s-3);grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));align-items:start}
 .ds-grid.c2{--cols:2}.ds-grid.c3{--cols:3}.ds-grid.c4{--cols:4}
 @media (max-width:1180px){.ds-grid.c3,.ds-grid.c4{--cols:2}}
@@ -591,3 +592,31 @@ code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:va
 .ds-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3)}
 
 .addom{text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%}
+
+/* design system: field message (inline, under a field or a record). .bad is the error tone. */
+.ds-msg{margin:6px 0 0;min-height:0;font-size:var(--fs-xs);color:var(--mute);line-height:1.4}.ds-msg:empty{display:none}.ds-msg.bad{color:#d4543d}
+.eminp[aria-invalid=true]{border-color:#d4543d}
+/* design system: modal body rhythm */
+.dmbody{display:grid;gap:var(--s-4)}.dmbody>p{margin:0}.dmbody .actions{margin-top:var(--s-1)}
+
+.ds-act{display:flex;align-items:center;gap:var(--s-3)}
+
+.dmttl{display:inline-flex;align-items:center;gap:var(--s-2)}.dmttl .adsti{width:26px;height:26px;margin:0;font-size:13px}.dmttl .adfav img{width:18px;height:18px}
+
+/* design system: title + sub pair. One size, one gap, everywhere a card or row has a name and a line under it. */
+.addh>div,.addvh>div,.adsch>div,.adpt{min-width:0}
+.addh b,.addvh b,.adsch b,.adpt b,.ds-card.add b{display:block;font-size:var(--fs-md);line-height:20px;font-weight:500}
+.addh small,.addvh small,.adsch small,.adpt small,.ds-card.add small{display:block;margin:2px 0 0;font-size:var(--fs-xs);line-height:16px;color:var(--mute)}
+.ds-card.add{row-gap:0}
+.dmlead{font-size:var(--fs-sm);line-height:20px}
+
+/* design system: table (the list view). Columns come from the page, e.g. .dmcols. */
+.ds-table{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);overflow:hidden}
+.ds-tr{display:grid;align-items:center;gap:var(--s-4);width:100%;box-sizing:border-box;padding:0 var(--s-4);min-height:56px;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;font-size:var(--fs-sm)}
+.ds-tr:first-child{border-top:0}
+.ds-th{min-height:40px;color:var(--mute);font-size:var(--fs-xs);background:var(--fill-1)}
+button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:hover{background:var(--fill-1)}
+.ds-tr.ds-add{color:var(--mute)}.ds-tr.ds-add b{color:var(--ink);font-weight:500}
+.dmcols{grid-template-columns:minmax(0,2fr) 150px 100px minmax(0,1fr)}
+.dmn{display:flex;align-items:center;gap:var(--s-3);min-width:0}.dmn b{font-weight:500;font-size:var(--fs-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dmn .adsti{margin:0;width:30px;height:30px}.dmn .adfav img{width:20px;height:20px}
+@media (max-width:720px){.dmcols{grid-template-columns:minmax(0,1fr) auto}.dmcols>:nth-child(n+3){display:none}}
