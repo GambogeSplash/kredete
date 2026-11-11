@@ -23,8 +23,6 @@ const esc = B.esc;
 /** A framed empty or failure state (the shared .ds-empty spec). */
 const framed = (icon, title, line, action, alert) => `<div class="ds-empty${alert ? ' errstate' : ''}"${alert ? ' role="alert"' : ''}><span class="ds-empty-ic">${ICON(icon, 20)}</span><b>${esc(title)}</b>${line ? `<p>${esc(line)}</p>` : ''}${action || ''}</div>`;
 const failed = (error, retryId) => framed('refresh', B.problem(error), error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.', `<button type="button" class="btn sm" id="${retryId}">Try again</button>`, true);
-/** The (i) hint that carries the explanation a subtitle used to. */
-const hint = (text) => `<span class="hint" tabindex="0" data-tip="${esc(text)}" aria-label="${esc(text)}">i</span>`;
 
 const DOCS = {
   labelProblems: 'labelling-pages#label-problems',
@@ -105,7 +103,7 @@ async function contents() {
   setTitle('Help center');
   const ask = !standalone() && window.ASK ? '<button type="button" class="btn primary" id="dcask">Ask Broth</button>' : '';
   const mail = SUPPORT_EMAIL ? `<a class="btn" href="mailto:${esc(SUPPORT_EMAIL)}">Email support</a>` : '';
-  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Help center${hint('How to ask Broth, describe pages with labels, and set Broth up for your team.')}</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the help center" aria-label="Search the help center" value="${esc(query)}" autocomplete="off"></div></div><div class="dcbody" id="dcgrid"></div>${ask || mail ? `<div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth${mail ? ', or write to a person' : ''}.</p></div><div class="dcbtns">${ask}${mail}</div></div>` : ''}</div>`);
+  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Help center</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the help center" aria-label="Search the help center" value="${esc(query)}" autocomplete="off"></div></div><div class="dcbody" id="dcgrid"></div>${ask || mail ? `<div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth${mail ? ', or write to a person' : ''}.</p></div><div class="dcbtns">${ask}${mail}</div></div>` : ''}</div>`);
   $('#dcq').oninput = (e) => { query = e.target.value; drawCards(); };
   const askBtn = $('#dcask');
   if (askBtn) askBtn.onclick = () => { B.go('/'); setTimeout(() => window.ASK.askFresh('How do I connect a source?'), 350); };
@@ -186,7 +184,7 @@ function navHtml(a) {
   const t = topicFor(a);
   if (!idx || !t) return '<nav class="dcnav" aria-label="Articles"></nav>';
   const list = idx.filter((x) => inTopic(x, t));
-  return `<nav class="dcnav" aria-label="Articles"><span class="dcimg"><img src="/assets/help/${t.id}.jpg" alt="" draggable="false"></span><h2 class="dct">${esc(t.title)}${hint(t.blurb)}</h2><div class="dcarts">${list.map((x) => `<a class="dcai${x.slug === a.slug ? ' on' : ''}" href="/docs/${esc(x.slug)}" data-link ${x.slug === a.slug ? 'aria-current="page"' : ''}>${esc(x.title)}</a>`).join('')}</div></nav>`;
+  return `<nav class="dcnav" aria-label="Articles"><span class="dcimg"><img src="/assets/help/${t.id}.jpg" alt="" draggable="false"></span><h2 class="dct">${esc(t.title)}</h2><div class="dcarts">${list.map((x) => `<a class="dcai${x.slug === a.slug ? ' on' : ''}" href="/docs/${esc(x.slug)}" data-link ${x.slug === a.slug ? 'aria-current="page"' : ''}>${esc(x.title)}</a>`).join('')}</div></nav>`;
 }
 function sectionList(a, cls) {
   return `<ul class="${cls}">${a.sections.map((x) => `<li class="l${x.level}"><a href="#${esc(x.anchor)}" data-sec="${esc(x.anchor)}">${esc(x.title)}</a></li>`).join('')}</ul>`;
@@ -195,7 +193,7 @@ function drawArticle(a) {
   setTitle(a.title);
   const tags = a.audiences.map((x) => `<span class="tag">${esc(AUDIENCE_NAME[x] || x)}</span>`).join('');
   const has = a.sections.length > 0;
-  paint(`<div class="pg dc dcart">${backLink()}<div class="dclay">${navHtml(a)}<article class="dcdoc"><h1>${esc(a.title)}${hint(a.summary)}</h1><div class="dctags">${tags}</div>${has ? `<details class="dcsecm"><summary>Sections</summary>${sectionList(a, 'dctocl')}</details>` : ''}<div class="dcprose">${a.html}</div></article>${has ? `<aside class="dctoc" aria-label="On this page"><div class="dctoch">On this page</div>${sectionList(a, 'dctocl')}</aside>` : ''}</div></div>`);
+  paint(`<div class="pg dc dcart">${backLink()}<div class="dclay">${navHtml(a)}<article class="dcdoc"><h1>${esc(a.title)}</h1><div class="dctags">${tags}</div>${has ? `<details class="dcsecm"><summary>Sections</summary>${sectionList(a, 'dctocl')}</details>` : ''}<div class="dcprose">${a.html}</div></article>${has ? `<aside class="dctoc" aria-label="On this page"><div class="dctoch">On this page</div>${sectionList(a, 'dctocl')}</aside>` : ''}</div></div>`);
   const prose = $('.dcprose');
   // Links between articles navigate in the app; external ones already open a new tab.
   $$('a[href^="/docs"]', prose).forEach((link) => {

@@ -59,7 +59,5 @@
 .ds-empty p{margin:0;font-size:var(--fs-sm)}
 .ds-empty .btn{margin-top:var(--s-2)}
 #cmdk .ds-empty.kempty{margin:var(--s-3);padding:var(--s-7) var(--s-6)}
-/* an (i) hint beside a page title */
-h1 .hint,h2 .hint{vertical-align:middle;font-weight:400}
 /* the breadcrumb row is gone on desktop everywhere (the prototype has none); phones already hide it in mobile.css */
 @media (min-width:901px){#crumb{display:none!important}}
