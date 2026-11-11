@@ -33,6 +33,7 @@ window.BROTH_RAIL = () => {
     b.type = 'button'; b.className = 'rl' + (s.classList.contains('finish') ? ' finish' : '');
     b.setAttribute('aria-label', label); b.dataset.tip = label; if (/search/i.test(label)) b.dataset.key = '\u2318K'; b.setAttribute('aria-current', s.getAttribute('aria-current') || 'false');
     const ic = $('svg', s); if (ic) { const c = ic.cloneNode(true); c.setAttribute('width', 22); c.setAttribute('height', 22); b.appendChild(c); }
+    if (s.dataset.badge && s.dataset.badge !== '0') { const d = document.createElement('i'); d.className = 'rl-dot'; d.textContent = s.dataset.badge; b.appendChild(d); }
     b.onclick = () => s.click();
     grp.appendChild(b);
   });

@@ -1,6 +1,10 @@
 // Inline SVG icon set (24px grid, 1.7 stroke). Used across the three reference-exact screens.
 (() => {
 const P={
+ inbox:'<path d="M4 13l2.6-7h10.8L20 13v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 13h4.6l1 2h4.8l1-2H20"/>',
+ bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.2 1.1 2.2h5c0-1 .5-1.7 1.1-2.2A6 6 0 0 0 12 3z"/>',
+ clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/>',
+ memory:'<path d="M5 11a7 7 0 0 1 14 0M8.5 11a3.5 3.5 0 0 1 7 0M12 11v4c0 2-1 3.4-2.4 4.5M15.5 12c0 3-.8 5-2.3 7M8.5 12c0 2 .3 4-.9 6"/>',
  lock:'<rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
  grid:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
  library:'<path d="M4.5 4v16"/><path d="M9 7v13"/><path d="M13.5 5.5v14.5"/><path d="m17 6.5 3.4 13"/>',

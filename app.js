@@ -439,8 +439,8 @@ const faq = localStorage.getItem(KEY+'-faq'); if(faq){ D.cards_faq.value=faq; }
 if(S.flags&&S.flags.publicText) D.public_fee.value=S.flags.publicText;
 
 /* ---------- shell ---------- */
-const NAVI={library:'library',connectors:'plug'};
-function navBtn(k,label,cur){ return `<button class="surf" data-s="${k}" aria-current="${cur?'page':'false'}">${ICON(NAVI[k],16)}<span>${label}</span></button>`; }
+const NAVI={library:'library',inbox:'inbox',insights:'bulb',connectors:'grid'};
+function navBtn(k,label,cur,badge){ return `<button class="surf" data-s="${k}" ${badge?`data-badge="${badge}"`:''} aria-current="${cur?'page':'false'}">${ICON(NAVI[k],16)}<span>${label}</span></button>`; }
 const CARET='<svg class="car" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.75L5 6.25l2.5-2.5"/></svg>';
 function renderSurfaces(){
   if(!Array.isArray(S.thread)) S.thread=[];
@@ -451,7 +451,7 @@ function renderSurfaces(){
     let h='';
   h+=nb('data-home="1"',ICON('compose',16),'New chat',inAsk&&!S.thread.length&&!S.ask.stack,'','newchat-nav');
   h+=nb('data-search="1"',ICON('search',16),'Search',false,'<kbd class="skbd">⌘K</kbd>','');
-  h+=navBtn('library','Library',sf==='library')+navBtn('connectors','Connectors',sf==='connectors');
+  h+=navBtn('library','Library',sf==='library')+navBtn('inbox','Inbox',sf==='inbox',(window.INBOX&&window.INBOX.open())||0)+navBtn('insights','Insights',sf==='insights')+navBtn('connectors','Connectors',sf==='connectors');
   { const tsOf=q=>(S.saved&&S.saved[q]&&S.saved[q][0]&&S.saved[q][0].ts)||0; const now=new Date(); const sod=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(); const cur=S.thread[0]&&S.thread[0].cid;
     const grp=q=>{ if(S.pins&&S.pins[q]) return 'Pinned'; const t=tsOf(q); if(!t) return 'Earlier'; if(t>=sod) return 'Today'; if(t>=sod-864e5) return 'Yesterday'; if(t>=sod-6*864e5) return 'Previous 7 days'; return 'Earlier'; };
     const order=['Pinned','Today','Yesterday','Previous 7 days','Earlier']; const by={}; S.history.forEach((q,i)=>{ (by[grp(q)]=by[grp(q)]||[]).push([q,i]); });
@@ -468,11 +468,11 @@ function renderSurfaces(){
   document.querySelectorAll('[data-ren]').forEach(p=>{ const go=e=>{ e.stopPropagation(); e.preventDefault(); const row=p.closest('.surf'); const q=S.history[+p.dataset.ren]; chatMenu(p,q,{rename:()=>{ const n=row.querySelector('.chn'); row.dataset.editing='1'; editTitle(n,q,()=>{ renderSurfaces(); if(S.thread[0]) renderAsk(); }); }}); }; p.onclick=go; p.onkeydown=e=>{ if(e.key==='Enter'||e.key===' ') go(e); }; });
   document.querySelectorAll('[data-chat]').forEach(b=>b.onclick=(e)=>{ if(e.target.closest('.ttin,.chedit')||b.dataset.editing) return; openChat(S.history[+b.dataset.chat]); });
 }
-const CRUMB={article:['Workspace','Help'],chats:['Workspace','Chats'],library:['Workspace','Library'],connectors:['Workspace','Connectors'],account:['Account',''],app:['Workspace','New chat'],bot:['Workspace','Support agent']};
+const CRUMB={article:['Workspace','Help'],chats:['Workspace','Chats'],library:['Workspace','Library'],connectors:['Workspace','Connectors'],inbox:['Workspace','Inbox'],insights:['Workspace','Insights'],account:['Account',''],app:['Workspace','New chat'],bot:['Workspace','Support agent']};
 function setCrumb(){ const sf=S.surface||'app'; let c=CRUMB[sf]||['Workspace',''];
   $('#crumb').innerHTML=`<span>${c[0]}</span><i>›</i><span class="cur">${c[1]}</span><span class="lsp"></span><button class="lib" id="ccopy" aria-label="Copy link">${ICON('link',16)}</button>`; const cb=$('#ccopy'); if(cb) cb.onclick=()=>{ try{navigator.clipboard.writeText(location.href).catch(()=>{});}catch(e){} toast('Link copied'); }; }
 function signin(){ if(window.AUTH) window.AUTH.signin(); }
-function mbTitle(){ const t=document.getElementById('mbtitle'); if(!t) return; const sf=S.surface||'app'; const M={library:'Library',connectors:'Connectors',account:'Account',chats:'Chats',bot:'Support agent',article:'Help'}; t.textContent=M[sf]||(S.thread.length?titleOf(S.thread[0].q):'New chat'); }
+function mbTitle(){ const t=document.getElementById('mbtitle'); if(!t) return; const sf=S.surface||'app'; const M={library:'Library',inbox:'Inbox',insights:'Insights',connectors:'Connectors',account:'Account',chats:'Chats',bot:'Support agent',article:'Help'}; t.textContent=M[sf]||(S.thread.length?titleOf(S.thread[0].q):'New chat'); }
 function setTheme(){ mbTitle(); document.body.classList.remove('navopen'); const nt=$('#navtog'); if(nt) nt.setAttribute('aria-expanded','false'); document.body.dataset.theme='lin'; document.body.dataset.sf=S.surface||'app'; setCrumb(); }
 let _rk=null;
 function route(){
