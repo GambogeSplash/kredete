@@ -246,7 +246,12 @@ function drawCards() {
     const pool = LOCAL.map((a) => ({ slug: a.slug, title: a.title })).concat((s.index || []).filter((a) => !LOCAL_BY_SLUG[a.slug]));
     const hits = pool.filter((a) => haystack(a).includes(q));
     grid.innerHTML = hits.length
-      ? `<div class="dclist">${hits.map((a) => { const t = topicOf(topicIdOf(a.slug)); return `<a class="dcrow" href="/help/${esc(a.slug)}" data-link>${esc(a.title)}<small>${esc(t ? t.title : '')}</small><span>${ICON('chevr', 14)}</span></a>`; }).join('')}</div>`
+      ? `<p class="dcresn" role="status">${hits.length} ${hits.length === 1 ? 'result' : 'results'}</p><div class="dclist">${hits.map((a) => {
+        const t = topicOf(topicIdOf(a.slug));
+        const sum = (LOCAL_BY_SLUG[a.slug] && LOCAL_BY_SLUG[a.slug].sum) || (/** @type {any} */ (a)).summary || (s.articles[a.slug] && s.articles[a.slug].summary) || '';
+        // the topic's picture, or the first topic's as the neutral tile: never a broken image
+        return `<a class="dcrow" href="/help/${esc(a.slug)}" data-link><span class="dcth"><img src="/assets/help/${t ? t.id : 'start'}.jpg" alt="" aria-hidden="true" width="56" height="40" loading="lazy" draggable="false"></span><span class="dcrt"><b>${esc(a.title)}</b><small>${esc([t ? t.title : '', sum].filter(Boolean).join(' · '))}</small></span><span class="dcch">${ICON('chevr', 14)}</span></a>`;
+      }).join('')}</div>`
       : framed('search', 'No articles match', 'Try fewer words.');
     return;
   }
@@ -432,13 +437,23 @@ function markCurrent() {
   });
 }
 let ticking = false;
+/** The Help center header (title and search) fades its shadow in once the page has scrolled. */
+const heroScrolled = () => {
+  const hero = $('.dchero');
+  if (!hero) return;
+  // wide screens scroll the main panel, phones scroll the body: whichever has moved counts
+  const moved = Math.max($('#app').scrollTop, document.body.scrollTop, document.documentElement.scrollTop, window.scrollY);
+  hero.classList.toggle('stuck', moved > 2);
+};
 const onScroll = () => {
+  heroScrolled();
   if (ticking || B.S.route.surface !== 'docs') return;
   ticking = true;
   requestAnimationFrame(() => { ticking = false; markCurrent(); });
 };
 $('#app').addEventListener('scroll', onScroll, { passive: true });
 window.addEventListener('scroll', onScroll, { passive: true });
+document.body.addEventListener('scroll', onScroll, { passive: true });
 
 /* "Help center" back link: the cards come back one after the other. */
 document.addEventListener('click', (e) => { const b = e.target instanceof Element ? e.target.closest('a[data-back]') : null; if (b) fromRect = 'back'; });
