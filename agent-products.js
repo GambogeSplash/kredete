@@ -29,13 +29,12 @@ A.pages.products = (el, ctx) => {
     const products = F.byStatus(/** @type {any[]} */ (bot.products));
     const current = products.find((p) => p.id === shown.get(bot.id)) || products[0] || null;
     if (current) shown.set(bot.id, current.id);
-    el.innerHTML = `<p class="sub agintro">Each site the bot runs on is a product, with its own key and the sites it may load on. ${window.DOCS.link('botSnippet')}</p>
-      <div class="pgrid agpgrid">${products.map((p) => `<button type="button" class="pcard${p.status === 'live' ? '' : ' off'}${current && p.id === current.id ? ' on' : ''}" data-pid="${p.id}" aria-pressed="${current && p.id === current.id}"><span class="pico agpico" style="--c:${esc(p.accent)}" aria-hidden="true">${window.ICON('chat', 18)}</span><span class="pcn"><b>${esc(p.name)}</b><small>${esc(p.allowed_origins[0] || '')}${p.allowed_origins.length > 1 ? ` +${p.allowed_origins.length - 1} more` : ''}</small></span>${p.status === 'live' ? '<span class="tag ok">Live</span>' : '<span class="tag">Revoked</span>'}</button>`).join('')}<button type="button" class="pcard padd" id="agpadd"><span class="pico plus" aria-hidden="true">+</span><span class="pcn"><b>Add a product</b><small>A key for another site</small></span></button></div>
+    el.innerHTML = `<div class="pgrid agpgrid">${products.map((p) => `<button type="button" class="pcard${p.status === 'live' ? '' : ' off'}${current && p.id === current.id ? ' on' : ''}" data-pid="${p.id}" aria-pressed="${current && p.id === current.id}"><span class="pico agpico" style="--c:${esc(p.accent)}" aria-hidden="true">${window.ICON('chat', 18)}</span><span class="pcn"><b>${esc(p.name)}</b><small>${esc(p.allowed_origins[0] || '')}${p.allowed_origins.length > 1 ? ` +${p.allowed_origins.length - 1} more` : ''}</small></span>${p.status === 'live' ? '<span class="tag ok">Live</span>' : '<span class="tag">Revoked</span>'}</button>`).join('')}<button type="button" class="pcard padd" id="agpadd"><span class="pico plus" aria-hidden="true">+</span><span class="pcn"><b>Add a product</b><small>A key for another site</small></span></button></div>
       <div id="agpdetail"></div>`;
     $$('[data-pid]', el).forEach((b) => { b.onclick = () => leave(() => { shown.set(bot.id, b.dataset.pid); draw(); }); });
     $('#agpadd', el).onclick = () => leave(addProduct);
     if (!current) {
-      $('#agpdetail', el).innerHTML = `<div class="acard agpempty">${B.emptyBlock('No products yet', 'Add one for each site the bot should run on. Each gets its own snippet to paste there.')}</div>`;
+      $('#agpdetail', el).innerHTML = A.empty('No products yet', 'Add one for each site the bot should run on. Each gets its own snippet to paste there.', '', 'stack');
       B.guardLeaving(() => false);
       return;
     }
@@ -56,8 +55,8 @@ A.pages.products = (el, ctx) => {
   function revoked(p) {
     dirty = () => false;
     B.guardLeaving(() => false);
-    $('#agpdetail', el).innerHTML = `<section class="acard agpd" aria-labelledby="agpdh"><div class="agcard-h"><h2 id="agpdh">${esc(p.name)}</h2><span class="tag">Revoked</span></div>
-      <p class="sub agpd-sub">Revoked ${B.fmtDate(p.revoked_at)}. Its key no longer works, and it can't be restored. Add a new product to put the bot back on these sites.</p>
+    $('#agpdetail', el).innerHTML = `<section class="ds-card agpd" aria-labelledby="agpdh"><div class="agcard-h"><h2 id="agpdh">${esc(p.name)}</h2><span class="tag">Revoked</span></div>
+      <p class="agpd-sub">Revoked ${B.fmtDate(p.revoked_at)}. Its key no longer works, and it can't be restored. Add a new product to put the bot back on these sites.</p>
       <dl class="agkvs">${row('Sites', p.allowed_origins.map(esc).join('<br>'))}${row('Key', `<code class="agkey-v">${esc(F.maskKey(p.key))}</code>`)}</dl></section>`;
   }
   const row = (label, value) => `<div class="agkv"><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
@@ -69,24 +68,27 @@ A.pages.products = (el, ctx) => {
     const origins = F.snippetOrigins(p.snippet);
     const demo = origins && p.allowed_origins.includes(location.origin)
       ? `/embed-demo.html?key=${encodeURIComponent(p.key)}&api=${encodeURIComponent(origins.api)}` : null;
-    $('#agpdetail', el).innerHTML = `<section class="acard agpd" aria-labelledby="agpdh"><div class="agcard-h"><h2 id="agpdh">${esc(p.name)}</h2><span class="tag ok">Live</span></div>
-      <h3 class="agpd-t">Snippet</h3>
+    $('#agpdetail', el).innerHTML = `<div class="agpds"><section class="ds-card agpd" aria-labelledby="agpdh"><div class="agcard-h"><h2 id="agpdh">Snippet</h2><span class="tag ok">Live</span></div>
       ${p.snippet
-        ? `<p class="sub agpd-sub">Paste it into every page of these sites, just before <code>&lt;/body&gt;</code>.</p><div class="agsnip"><pre class="code" id="agsnip" tabindex="0" aria-label="Snippet">${esc(p.snippet)}</pre><button type="button" class="btn sm" id="agcopy">${window.ICON('copy', 14)}<span>Copy</span></button></div>`
+        ? `<p class="agpd-sub">Paste it into every page of these sites, just before <code>&lt;/body&gt;</code>.</p><div class="agsnip"><pre class="code" id="agsnip" tabindex="0" aria-label="Snippet">${esc(p.snippet)}</pre><button type="button" class="btn primary" id="agcopy">${window.ICON('copy', 14)}<span>Copy</span></button></div>`
         : '<p class="agwarn">The bot API address isn\'t configured yet, so there is no snippet to paste. Set BROTH_BOT_API_URL on the server.</p>'}
       ${origins ? `<p class="agpd-csp">If your site sets a Content Security Policy, allow <code>${esc(origins.client)}</code> in <code>script-src</code> and <code>${esc(origins.api)}</code> in <code>connect-src</code>.</p>` : ''}
       ${demo ? `<p class="agpd-demo"><a class="btn sm" href="${esc(demo)}" target="_blank" rel="noopener">${window.ICON('ext', 14)}<span>Open the demo page</span></a></p>` : ''}
-      <h3 class="agpd-t">Settings</h3>
+    </section>
+    <section class="ds-card agpd" aria-labelledby="agpsh">
+      <div class="agcard-h"><h2 id="agpsh">Settings</h2></div>
       <form id="agpf" class="agpf" novalidate>
         ${A.field('name', 'Name', { prefix: 'pd', value: form.name, max: F.LENGTHS.product_name[1] })}
         <div class="agfield" data-field="allowed_origins"><div class="aglab"><span class="hsl" id="pdsites-l">Sites it runs on</span></div><p class="suhint agst-h">Only the site: scheme, host and port, like https://help.kredete.com. Up to ${F.MAX_SITES}.</p><div class="agsites" id="pdsites" role="group" aria-labelledby="pdsites-l"></div><p class="agerr" role="alert"></p></div>
         <div class="agfield" data-field="accent"><span class="hsl" id="pdacc-l">Colour</span><div class="agacc" role="group" aria-labelledby="pdacc-l">${SWATCHES.map(([hex, label]) => `<button type="button" class="agsw" data-hex="${hex}" style="--c:${hex}" aria-label="${label}" aria-pressed="false"></button>`).join('')}<input id="pdaccent" class="eminp mono agaccx" aria-label="Colour as a hex value" maxlength="7" spellcheck="false"></div><p class="suhint" id="pdacc-h"></p><p class="agerr" role="alert"></p></div>
         <div class="agfield"><span class="hsl" id="pdside-l">Button side</span><div class="seg agside" role="group" aria-labelledby="pdside-l"><button type="button" data-side="left" aria-pressed="false">Left</button><button type="button" data-side="right" aria-pressed="false">Right</button></div></div>
       </form>
-      <h3 class="agpd-t">Key</h3>
+    </section>
+    <section class="ds-card agpd" aria-labelledby="agpkh">
+      <div class="agcard-h"><h2 id="agpkh">Key</h2></div>
       <div class="agkey"><code class="agkey-v">${esc(F.maskKey(p.key))}</code><span class="lsp"></span><button type="button" class="btn sm" id="agreplace">Replace key</button><button type="button" class="btn sm danger-o" id="agrevoke">Revoke</button></div>
       <p class="suhint agkey-h">The key is in the page source, so it is not a secret. ${window.DOCS.link('botKeys', 'When to replace it')}</p>
-    </section>`;
+    </section></div>`;
     const pf = $('#agpf', el);
     A.counters(pf);
 
@@ -183,8 +185,8 @@ A.pages.products = (el, ctx) => {
 
   /* ---- adding a product (spec 7.4) ---- */
   function addProduct() {
-    B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="Add a product"><div class="bar"><span>Add a product</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
-      <form id="apf" novalidate>
+    B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="Add a product"><div class="bar"><span>Add a product</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body dmbody">
+      <form id="apf" class="dmbody" novalidate>
         ${A.field('name', 'Name', { prefix: 'ap', placeholder: 'Help centre', max: F.LENGTHS.product_name[1] })}
         ${A.field('allowed_origins.0', 'Site it runs on', { prefix: 'ap', placeholder: 'https://help.kredete.com', hint: 'Only the site. Add more sites after creating it.' })}
         <div class="agfield"><span class="hsl" id="apacc-l">Colour</span><div class="agacc" role="group" aria-labelledby="apacc-l">${SWATCHES.map(([hex, label], i) => `<button type="button" class="agsw" data-hex="${hex}" style="--c:${hex}" aria-label="${label}" aria-pressed="${i === 0}"></button>`).join('')}</div></div>

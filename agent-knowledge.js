@@ -29,9 +29,9 @@ A.pages.knowledge = (el, ctx) => {
   let picked = new Set(bot.sources);
   const same = () => picked.size === bot.sources.length && bot.sources.every((id) => picked.has(id));
 
-  const intro = `<p class="sub agintro">The bot answers only from Public pages in the sources you choose. Docs site pages are Public because they are published; any other page becomes Public when someone approves a Public promotion. ${window.DOCS.link('botSources')}</p>`;
+  const intro = '';
   if (!listed(bot.sources).length) {
-    el.innerHTML = `${intro}<div class="dt"><div class="dt-r dtempty">${B.emptyBlock('No sources to choose from', 'Connect Confluence, Google Drive or a docs repository, and include the spaces the bot should answer from.', '<a class="btn sm" href="/admin/connectors" data-link>Open Connectors</a>')}</div></div>`;
+    el.innerHTML = A.empty('No sources to choose from', 'Connect Confluence, Google Drive or a docs repository, and include the spaces the bot should answer from.', '<a class="btn sm" href="/admin/connectors" data-link>Open Connectors</a>', 'stack');
     return;
   }
 
@@ -45,13 +45,13 @@ A.pages.knowledge = (el, ctx) => {
       : c.public_documents
         ? `<span class="agksn">${A.count(c.public_documents, 'Public page')}</span>`
         : '<span class="tag warn">No Public pages</span>';
-    return `<div class="dt-r agks${used ? '' : ' off'}"><label class="agksl" for="${id}"><input type="checkbox" id="${id}" data-source="${c.id}" ${picked.has(c.id) ? 'checked' : ''}><span class="agksp">${B.srcIcon(conn.system, 18)}<span>${esc(name)}</span></span></label><span class="agksc">${note}</span><span class="agkso">${used ? `<button type="button" class="btn sm" data-open="${c.id}" aria-label="Open ${esc(name)} in the Library">Open in Library</button>` : ''}</span></div>`;
+    return `<div class="ds-tr agks${used ? '' : ' off'}"><label class="agksl" for="${id}"><input type="checkbox" id="${id}" data-source="${c.id}" ${picked.has(c.id) ? 'checked' : ''}><span class="agksp">${B.srcIcon(conn.system, 18)}<span>${esc(name)}</span></span></label><span class="agksc">${note}</span><span class="agkso">${used ? `<button type="button" class="btn sm" data-open="${c.id}" aria-label="Open ${esc(name)} in the Library">Open in Library</button>` : ''}</span></div>`;
   }
 
   function draw() {
     const shown = listed(bot.sources);
     const groups = [...new Set(shown.map((c) => c.connection_id))].map((id) => [connections.get(id), shown.filter((c) => c.connection_id === id)]);
-    el.innerHTML = `${intro}<div class="agksg">${groups.map(([conn, list]) => `<section class="dt agksd" style="--cols:minmax(0,1fr) 170px 150px" aria-label="${esc(label(conn))}"><div class="dt-r dt-h"><span>${esc(label(conn))}</span><span>For the bot</span><span></span></div>${list.map(row).join('')}</section>`).join('')}</div><p class="agtotal" id="kstotal" role="status"></p>`;
+    el.innerHTML = `${intro}<div class="agksg">${groups.map(([conn, list]) => `<section class="ds-table agksd" style="--cols:minmax(0,1fr) 170px 150px" aria-label="${esc(label(conn))}"><div class="ds-tr ds-th"><span>${esc(label(conn))}</span><span>For the bot</span><span></span></div>${list.map(row).join('')}</section>`).join('')}</div><p class="agtotal" id="kstotal" role="status"></p>`;
     $$('[data-source]', el).forEach((box) => {
       box.onchange = () => { if (box.checked) picked.add(box.dataset.source); else picked.delete(box.dataset.source); totals(); bar.update(); };
     });
