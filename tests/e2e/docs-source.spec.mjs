@@ -197,7 +197,7 @@ test.describe('governance of docs repositories', () => {
     const decided = [];
     const page = await open('admin', '/governance', {
       before: async (p) => {
-        await p.route('**/v1/public-declarations', (route) => route.fulfill({
+        await p.route(/\/v1\/public-declarations(\?.*)?$/, (route) => route.fulfill({
           json: { items: [{ id: DECLARATION, container_id: REPO, container_path: 'kredete/docs', status: 'pending', requested_by: REPO, approved_by: null, reason: 'Published at docs.kredete.com', created_at: AT, decided_at: null, can_decide: true }], next_cursor: null },
         }));
         await p.route(`**/v1/public-declarations/${DECLARATION}/approve`, (route) => {
@@ -213,7 +213,9 @@ test.describe('governance of docs repositories', () => {
     await check(page, 'governance-repository');
     await row.getByRole('button', { name: 'Approve' }).click();
     await expect(page.locator('#toast')).toContainText("Approved. The repository's published pages are Public now.");
-    await expect(page.locator('.govrepo')).toHaveCount(0);
+    // Approved, it stays listed, so it can be revoked where it was approved.
+    await expect(row.locator('.tag')).toHaveText('Approved');
+    await expect(row.getByRole('button', { name: 'Revoke' })).toBeVisible();
     expect(decided).toEqual(['approve']);
   });
 });

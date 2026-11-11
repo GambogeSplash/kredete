@@ -1093,7 +1093,7 @@ export interface paths {
         };
         /**
          * List Declarations
-         * @description Pending declarations the reader may decide, oldest first.
+         * @description Declarations the reader may decide, newest first: all of them, or those with one status. Approving still needs someone other than the requester.
          */
         get: operations["list_declarations_v1_public_declarations_get"];
         put?: never;
@@ -4858,7 +4858,7 @@ export interface operations {
     list_declarations_v1_public_declarations_get: {
         parameters: {
             query?: {
-                status?: "pending";
+                status?: components["schemas"]["DeclarationStatus"] | null;
             };
             header?: never;
             path?: never;

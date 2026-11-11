@@ -45,10 +45,11 @@ async function load(reset) {
   if (reset) { g.items = []; g.next = null; g.loaded = false; }
   draw();
   try {
-    const pendingOnly = !g.status || g.status === 'pending';
+    // Repository requests have every status a promotion has, except Needs review.
+    const repoStatus = g.status === 'needs_review' ? undefined : g.status || null;
     const [result, repos] = await Promise.all([
       B.api.get('/promotions', { status: g.status || null, limit: 30, cursor: reset ? null : g.next }),
-      reset && pendingOnly ? B.api.get('/public-declarations') : Promise.resolve(null),
+      reset && repoStatus !== undefined ? B.api.get('/public-declarations', { status: repoStatus }) : Promise.resolve(null),
       people(),
     ]);
     if (mine !== g.seq) return;
@@ -76,12 +77,20 @@ function actions(p) {
   }
   return h;
 }
-/** A pending request to make a whole docs repository Public; nobody approves their own. */
+/** A request to make a whole docs repository Public. Nobody approves their own; an approved
+ * one stays listed so it can be revoked here. */
+function repoActions(d) {
+  if (!d.can_decide) return '';
+  if (d.status === 'pending') {
+    const approve = d.requested_by === B.S.me.id ? '' : `<button type="button" class="btn sm primary" data-ract="approve" data-id="${d.id}">Approve</button>`;
+    return `${approve}<button type="button" class="btn sm" data-ract="reject" data-id="${d.id}">Reject</button>`;
+  }
+  return d.status === 'approved' ? `<button type="button" class="btn sm" data-ract="revoke" data-id="${d.id}">Revoke</button>` : '';
+}
 function repoRow(d) {
   const names = B.S.cache.names || {};
-  const mine = d.requested_by === B.S.me.id;
-  const decide = d.can_decide ? `${mine ? '' : `<button type="button" class="btn sm primary" data-ract="approve" data-id="${d.id}">Approve</button>`}<button type="button" class="btn sm" data-ract="reject" data-id="${d.id}">Reject</button>` : '';
-  return `<div class="actr govr govrepo"><span class="actic">${B.srcIcon('github_docs', 16)}</span><span class="actt"><b>${esc(B.containerName(d.container_path || 'A docs repository'))}</b><small>Whole repository · Public · requested by ${esc(who(d.requested_by, names))} · ${B.when(d.created_at, B.ago(d.created_at))}</small>${d.reason ? `<span class="govreason">${esc(d.reason)}</span>` : ''}</span><span class="actb"><span class="tag blue">Pending</span>${decide}</span></div>`;
+  const tag = STATUS_TAG[d.status] || [d.status, ''];
+  return `<div class="actr govr govrepo"><span class="actic">${B.srcIcon('github_docs', 16)}</span><span class="actt"><b>${esc(B.containerName(d.container_path || 'A docs repository'))}</b><small>Whole repository · Public · requested by ${esc(who(d.requested_by, names))} · ${B.when(d.created_at, B.ago(d.created_at))}</small>${d.reason ? `<span class="govreason">${esc(d.reason)}</span>` : ''}</span><span class="actb"><span class="tag ${tag[1]}">${tag[0]}</span>${repoActions(d)}</span></div>`;
 }
 function draw() {
   const g = state();
@@ -106,11 +115,14 @@ function draw() {
   $$('[data-ract]', list).forEach((b) => {
     b.onclick = () => {
       const act = b.dataset.ract;
-      if (act === 'reject' && !b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Confirm reject'; b.classList.add('danger'); return; }
+      if (act !== 'approve' && !b.dataset.arm) { b.dataset.arm = '1'; b.textContent = act === 'reject' ? 'Confirm reject' : 'Confirm revoke'; b.classList.add('danger'); return; }
       B.busy(b, async () => {
-        await B.api.post(`/public-declarations/${b.dataset.id}/${act}`, {});
-        g.repos = g.repos.filter((d) => d.id !== b.dataset.id);
-        B.toast(act === 'approve' ? 'Approved. The repository\'s published pages are Public now.' : 'Rejected');
+        const updated = await B.api.post(`/public-declarations/${b.dataset.id}/${act}`, {});
+        // A decision response carries no path: keep the listed one.
+        g.repos = g.repos
+          .map((d) => (d.id === updated.id ? Object.assign({}, d, { status: updated.status, approved_by: updated.approved_by, decided_at: updated.decided_at, can_decide: updated.can_decide }) : d))
+          .filter((d) => !g.status || d.status === g.status);
+        B.toast({ approve: 'Approved. The repository\'s published pages are Public now.', reject: 'Rejected', revoke: 'Revoked. The repository\'s pages are Internal again.' }[act]);
         draw();
       });
     };
