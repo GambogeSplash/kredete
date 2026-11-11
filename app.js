@@ -434,9 +434,9 @@ function openSource(id){
     </div>
     <div class="sv-act"><button class="btn primary" id="dopen">${SRCICON(d.system,16)}Open in ${esc(d.system)}</button><button class="btn" id="ddet">Details and lineage</button></div></div>`;
   $('#dclose').onclick=closeDrawer; $('#dopen').onclick=()=>{ closeDrawer(); sourceEditor(id, false); }; $('#ddet').onclick=()=>{ closeDrawer(); window.DOCDETAIL&&window.DOCDETAIL(id); };
-  $('#drawer').classList.add('on'); $('#scrim').classList.add('on'); $('#drawer').setAttribute('aria-hidden','false');
+  $('#drawer').classList.add('shell'); $('#drawer').classList.add('on'); $('#scrim').classList.add('on'); $('#drawer').setAttribute('aria-hidden','false'); document.body.classList.add('dsopen');
 }
-function closeDrawer(){ $('#drawer').classList.remove('on'); $('#drawer').classList.remove('wide'); $('#scrim').classList.remove('on'); }
+function closeDrawer(){ $('#drawer').classList.remove('on'); $('#drawer').classList.remove('wide'); $('#scrim').classList.remove('on'); document.body.classList.remove('dsopen'); setTimeout(()=>{ if(!$('#drawer').classList.contains('on')) $('#drawer').classList.remove('shell'); },320); }
 $('#scrim').onclick = closeDrawer;
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeDrawer(); closeModal(); } });
 

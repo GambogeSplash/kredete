@@ -674,3 +674,12 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 
 .lm svg.lmw{display:block;height:auto;color:var(--brand);overflow:visible}
 
+
+/* a document opens as its own shell on the right, beside the page, like the agent card. On a phone it stays a sheet. */
+@media (min-width:901px){
+ #drawer.shell{top:8px;right:8px;bottom:8px;width:min(400px,calc(100vw - 80px));padding:var(--s-5);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:0 12px 32px -8px rgba(0,0,0,.35);transform:translateX(calc(100% + 16px));transition:transform .34s cubic-bezier(.2,.8,.2,1);z-index:30}
+ #drawer.shell.on{transform:none}
+ #drawer.shell~#scrim,body.dsopen #scrim{opacity:0!important;pointer-events:none!important}
+ body:not(.noauth) .mainpanel{transition:margin-right .34s cubic-bezier(.2,.8,.2,1)}
+ body.dsopen:not(.noauth) .mainpanel{margin-right:calc(8px + 400px + 8px)}
+}
