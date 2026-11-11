@@ -52,3 +52,39 @@
 .dccard>p{margin-bottom:var(--s-2)}
 .dccard{letter-spacing:normal;text-align:left}
 .dccard>b{letter-spacing:-.012em}
+
+/* a how-to article (help-content.js): summary, explained steps, tip, fix, one action, related articles, helpful */
+.dcdoc.dchow{max-width:660px}
+.dcdoc.dchow>h1{margin:0 0 var(--s-3)}
+.dcdoc.dchow .dcsum{margin:0 0 var(--s-5);font-size:var(--fs-lg);line-height:1.5;color:var(--ink-2,var(--ink))}
+.dcsteps{list-style:none;counter-reset:s;padding:0;margin:0 0 var(--s-5);display:grid;gap:var(--s-4)}
+.dcsteps li{counter-increment:s;position:relative;padding-left:40px;display:grid;gap:2px;font-size:var(--fs-md);line-height:1.5}
+.dcsteps li::before{content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--fill-2);color:var(--ink);display:grid;place-items:center;font-size:var(--fs-xs);font-weight:600}
+.dcsteps li b{font-weight:600}
+.dcsteps li span{color:var(--mute);font-size:var(--fs-sm);line-height:1.55}
+.dctip{display:flex;gap:var(--s-3);padding:var(--s-3) var(--s-4);margin:0 0 var(--s-5);border-radius:var(--r-lg);background:var(--fill-1);border:1px solid var(--line)}
+.dctip i{flex:none;margin-top:1px;color:var(--brand-strong,var(--brand));display:grid}
+.dctip b{font-weight:600;font-size:var(--fs-sm)}
+.dctip p{margin:2px 0 0;color:var(--mute);font-size:var(--fs-sm);line-height:1.55}
+.dcfix{margin:0 0 var(--s-5)}
+.dcfix h3,.dch3{margin:0 0 var(--s-2);font-size:var(--fs-md);font-weight:600}
+.dcfix p{margin:0;color:var(--mute);font-size:var(--fs-sm);line-height:1.55}
+.dcgo{margin:0 0 var(--s-5);text-decoration:none}
+.dch3{margin-top:var(--s-4)}
+.dcrel{display:grid;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;margin-bottom:var(--s-4)}
+.dcrl{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);width:100%;padding:12px var(--s-4);border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:var(--fs-sm);text-decoration:none;box-sizing:border-box}
+.dcrl:first-child{border-top:0}
+.dcrl:hover{background:var(--fill-1)}
+.dcrl span{color:var(--mute);display:grid}
+.dchelp{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-4) 0;margin-top:var(--s-4);border-top:1px solid var(--line);color:var(--mute)}
+.dchelp small{color:var(--mute);font-size:var(--fs-xs)}
+.dchelp .lsp{flex:1}
+.dcnav .dcimg{margin-bottom:var(--s-2)}
+.dcnav .dcbl{margin:0 0 var(--s-3)}
+@media (max-width:900px){.dcnav .dcimg{display:none}}
+/* phones: the topic's article list stays, above the article, as the prototype does */
+@media (max-width:900px){
+  .dclay .dcnav{display:grid;position:static;margin-bottom:var(--s-5)}
+  .dclay .dcnav:empty{display:none}
+  .dcnav .dcbl{margin-bottom:var(--s-2)}
+}
