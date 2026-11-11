@@ -66,7 +66,7 @@ const st = () => { const S = B.S; S.doc = S.doc || { q: '', open: null }; return
 const artHtml = (a, t) => {
   const rel = (a.rel || []).map((id) => ARTICLES.find((x) => x.id === id)).filter(Boolean);
   const go = a.go ? `<button type="button" class="btn primary dcgo" data-go="${esc(a.go[1])}" data-tab="${esc(a.go[2] || '')}">${esc(a.go[0])}</button>` : '';
-  return `<div class="dcmeta">${esc(t.title)}</div><h1>${esc(a.title)}</h1><p class="dcsum">${esc(a.sum)}</p>
+  return `<h1>${esc(a.title)}</h1><p class="dcsum">${esc(a.sum)}</p>
   <ol class="dcsteps">${a.steps.map((x) => `<li><b>${esc(x[0])}</b><span>${esc(x[1])}</span></li>`).join('')}</ol>
   ${a.tip ? `<div class="dctip"><i>${ICON('bulb', 16)}</i><div><b>Tip</b><p>${esc(a.tip)}</p></div></div>` : ''}
   ${a.fix ? `<div class="dcfix"><h3>If this does not work</h3><p>${esc(a.fix)}</p></div>` : ''}
