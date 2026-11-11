@@ -135,7 +135,7 @@ window.SURFACES.signin = () => {
 /** /setup opened while the workspace is already claimed: no wizard, a calm line and a way to sign in. */
 AUTH.alreadySetup = () => {
   document.title = 'Broth';
-  shell(`${brand}<h1>This workspace is already set up</h1><p class="sub">Sign in to continue.</p><a class="btn primary si-btn" href="/signin" data-link><span>Sign in</span></a>`, picture());
+  shell(`${brand}<h1 class="si-h1">This workspace is already set up</h1><a class="btn primary si-btn" href="/signin" data-link><span>Sign in to continue</span></a>`, picture());
 };
 
 /* ---------- boot error ---------- */
