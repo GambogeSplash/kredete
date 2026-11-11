@@ -15,10 +15,6 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 
 const INVITABLE = [['admin', 'Admin'], ['compliance', 'Compliance'], ['developer', 'Developer']];
-/* The role filter narrows the people loaded so far; search asks the server. */
-const ROLE_FILTERS = [['', 'All'], ['admin', 'Admin'], ['compliance', 'Compliance'], ['developer', 'Developer'], ['domain_owner', 'Domain owner'], ['suspended', 'Suspended']];
-const INVITE_STATUS = { open: ['Waiting to sign in', 'blue'], accepted: ['Signed in', 'ok'], revoked: ['Revoked', ''] };
-
 function state() {
   const c = B.S.cache;
   if (!c.people) {
@@ -44,32 +40,53 @@ const roleTags = (roles, domains) => (roles.length ? roles.map((r) => roleTag(r,
 /* One row of chips: role filters for the people list, then Invitations and, in a sandbox,
    Confluence accounts. The search and Invite sit on the same line. */
 const LEVEL = { public: 0, internal: 1, confidential: 2, restricted: 3 };
-const CHIPS = [['', 'Everyone'], ['admin', 'Admins'], ['domain_owner', 'Owners'], ['compliance', 'Compliance']];
+const CHIPS = [['', 'Everyone'], ['admin', 'Admins'], ['domain_owner', 'Owners'], ['compliance', 'Compliance'], ['pending', 'Pending']];
+/** The one filter's options: Everyone, the roles, Pending invitations and, in a sandbox, Confluence accounts. */
+const OPTIONS = () => CHIPS.concat(B.sandbox() ? [['@links', 'Confluence accounts']] : []);
 function render(el) {
   window.ADMIN.closePop();
   const p = state();
   p.rise = true;
   const u = p.users;
-  const chips = CHIPS.map(([k, l]) => [k, l, p.tab === 'people' && (u.role || '') === k]);
-  chips.push(['@invitations', 'Invitations', p.tab === 'invitations']);
-  if (B.sandbox()) chips.push(['@links', 'Confluence accounts', p.tab === 'links']);
-  el.innerHTML = `<div class="adbar2">${p.tab === 'people' ? `<div class="adsearch"><span>${ICON('search', 16)}</span><input id="ppq" type="search" placeholder="Search people" aria-label="Search people" value="${esc(u.q)}" autocomplete="off"></div>` : ''}<div class="ixchips" role="tablist" aria-label="People">${chips.map(([k, l, on]) => `<button type="button" class="ixchip ${on ? 'on' : ''}" role="tab" aria-selected="${on}" data-pt="${k}">${l}</button>`).join('')}</div>${B.sandbox() ? '<button type="button" class="btn sm primary" id="ppinvite" aria-haspopup="dialog">Invite people</button>' : ''}</div><div id="pppane"></div>`;
-  $$('[data-pt]', el).forEach((b) => {
-    b.onclick = () => {
-      const k = b.dataset.pt;
-      if (k === '@invitations') p.tab = 'invitations';
-      else if (k === '@links') p.tab = 'links';
-      else { p.tab = 'people'; u.role = k; }
-      render(el);
+  if (p.tab === 'invitations') p.tab = 'people';
+  const current = p.tab === 'links' ? '@links' : (u.role || '');
+  const currentLabel = (OPTIONS().find(([k]) => k === current) || ['', 'Everyone'])[1];
+  el.innerHTML = `<div class="adbar2">${p.tab === 'people' ? `<div class="adsearch"><span>${ICON('search', 16)}</span><input id="ppq" type="search" placeholder="Search people" aria-label="Search people" value="${esc(u.q)}" autocomplete="off"></div>` : ''}<button type="button" class="fbtn ${current ? 'on' : ''}" id="ppfilter" aria-haspopup="listbox" aria-expanded="false" aria-label="Filter people, ${esc(currentLabel)}">${ICON('filter', 15)}<span>${current ? esc(currentLabel) : 'Filter'}</span></button>${B.sandbox() ? '<button type="button" class="btn sm primary" id="ppinvite" aria-haspopup="dialog">Invite people</button>' : ''}</div><div id="pppane"></div>`;
+  const choose = (k) => {
+    if (k === '@links') p.tab = 'links';
+    else { p.tab = 'people'; u.role = k; }
+    window.ADMIN.closePop();
+    render(el);
+  };
+  /* Counts where the data has them: the people loaded so far (only when that is all of them) and the open invitations. */
+  const pending = () => state().invites.items.filter((x) => x.status === 'open');
+  const countOf = (k) => {
+    if (k === '@links' || !u.loaded || u.next || u.q || !state().invites.loaded) return null;
+    if (k === 'pending') return pending().length;
+    return k ? u.items.filter((x) => x.roles.some((r) => r.role === k)).length : u.items.length + pending().length;
+  };
+  const filterBtn = $('#ppfilter');
+  filterBtn.onclick = () => {
+    if (filterBtn.getAttribute('aria-expanded') === 'true') { window.ADMIN.closePop(); return; }
+    const menu = window.ADMIN.pop(filterBtn, `<div class="fmenu-list" role="listbox" aria-label="Filter people">${OPTIONS().map(([k, l]) => { const n = countOf(k); return `<button type="button" class="fopt ${k === current ? 'on' : ''}" role="option" aria-selected="${k === current}" data-pt="${k}"><span>${l}</span>${n === null ? '' : `<em>${n}</em>`}<i class="fchk" aria-hidden="true">${k === current ? ICON('check', 14) : ''}</i></button>`; }).join('')}</div>`, 'Filter people', { menu: true });
+    const opts = $$('.fopt', menu);
+    (opts.find((o) => o.classList.contains('on')) || opts[0]).focus({ preventScroll: true });
+    opts.forEach((o) => { o.onclick = () => choose(o.dataset.pt); });
+    menu.onkeydown = (e) => {
+      const i = opts.indexOf(document.activeElement);
+      const go = (n) => { e.preventDefault(); opts[(n + opts.length) % opts.length].focus(); };
+      if (e.key === 'ArrowDown') go(i + 1);
+      else if (e.key === 'ArrowUp') go(i - 1);
+      else if (e.key === 'Home') go(0);
+      else if (e.key === 'End') go(opts.length - 1);
     };
-  });
+  };
   const inv = $('#ppinvite');
   if (inv) inv.onclick = inviteModal;
   // Role tags name their domain: draw the people again once the domains arrive, whichever
   // comes back first.
   if (!p.domains) domains().then(() => { if (p.tab === 'people' && p.users.loaded) drawUsers(); });
-  if (p.tab === 'invitations') invitations();
-  else if (p.tab === 'links') links();
+  if (p.tab === 'links') links();
   else people();
 }
 async function domains() {
@@ -108,10 +125,11 @@ async function loadUsers(reset) {
   if (mine === u.seq) drawUsers();
 }
 const levelBars = (c) => `<span class="adseg">${[0, 1, 2, 3].map((i) => `<i class="${i <= (LEVEL[c] || 0) ? 'on' : ''}"></i>`).join('')}</span>`;
-/** Pending invitations as rows: the email, a Pending tag, and Cancel. */
-function pendingRows(v) {
-  return v.items.filter((x) => x.status === 'open').map((x) => `<div class="adrow pend" role="row" data-invite="${x.id}"><span class="adav adgh">${ICON('inbox', 18)}</span><div class="adwho"><b>${esc(x.email)}</b><small>Invited ${B.when(x.created_at, B.ago(x.created_at))}</small></div><div class="adroles">${x.roles.length ? x.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('') : ''}<span class="tag warn">Pending</span></div><div class="adlv">${levelBars(x.clearance)}<em>${esc(B.clearanceName(x.clearance))}</em></div><small class="adact"></small><div class="adrowa on"><button type="button" class="btn sm" data-revoke="${x.id}">Cancel</button></div></div>`).join('');
+/** Pending invitations as rows of the one table: the email, the roles invited, clearance, a Pending tag, and Cancel. */
+function pendingRows(list) {
+  return list.map((x) => `<div class="adrow pend" role="row" data-invite="${x.id}"><span class="adav adgh">${ICON('inbox', 18)}</span><div class="adwho"><b>${esc(x.email)}</b><small>Invited ${B.when(x.created_at, B.ago(x.created_at))}</small></div><div class="adroles">${x.roles.length ? x.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('') : '<span class="amute">Employee</span>'}</div><div class="adlv" title="${esc(B.clearanceName(x.clearance))}">${levelBars(x.clearance)}<em>${esc(B.clearanceName(x.clearance))}</em></div><small class="adact"><span class="tag warn">Pending</span></small><div class="adrowa on"><button type="button" class="btn sm" data-revoke="${x.id}">Cancel</button></div></div>`).join('');
 }
+const peopleHead = '<div class="adrow adth" role="row"><span></span><span role="columnheader">Name</span><span role="columnheader">Roles</span><span role="columnheader">Clearance</span><span role="columnheader">Status</span><span role="columnheader"><span class="sr">Actions</span></span></div>';
 function wireRevoke(scope, after) {
   const v = state().invites;
   $$('[data-revoke]', scope).forEach((b) => {
@@ -134,19 +152,24 @@ function drawUsers() {
   const v0 = state().invites;
   const rise = u.loaded && (v0.loaded || v0.error) && state().rise;
   if (!u.loaded) {
-    list.innerHTML = u.error ? `<div class="ds-empty">${B.errorBlock(u.error, 'ppretry')}</div>` : B.skeletonRows(5, 'adrow');
+    // An error is one framed card in place of the table; loading keeps the table's shape.
+    list.classList.toggle('isempty', !!u.error);
+    list.innerHTML = u.error ? `<div class="ds-empty">${B.errorBlock(u.error, 'ppretry')}</div>` : peopleHead + B.skeletonRows(5, 'adrow');
     const r = $('#ppretry');
     if (r) r.onclick = () => loadUsers(true);
     more.innerHTML = '';
     return;
   }
   const doms = state().domains;
-  const shown = u.items.filter((x) => !u.role || x.roles.some((r) => r.role === u.role));
-  const pend = !u.role && !u.q ? pendingRows(state().invites) : '';
-  list.innerHTML = (shown.length || pend
-    ? shown.map((x) => `<div class="adrow" role="row" data-user="${x.id}"><span class="adav">${AVATAR(x.name, 'lav', 40)}</span><div class="adwho"><b>${esc(x.name)}</b><small>${esc(x.email)}</small></div><div class="adroles">${x.roles.length ? x.roles.map((r) => roleTag(r, doms)).join('') : '<span class="amute">Employee</span>'}</div><div class="adlv" title="${esc(B.clearanceName(x.clearance))}">${levelBars(x.clearance)}<em>${esc(B.clearanceName(x.clearance))}</em></div><small class="adact">${x.status === 'suspended' ? '<span class="tag bad">Suspended</span>' : ''}</small><div class="adrowa"><button type="button" class="btn sm" data-edit="${x.id}" aria-label="Edit ${esc(x.name)}">Edit</button></div></div>`).join('') + pend
-    : `<div class="ds-empty"><b>${u.q || u.role ? 'No one matches' : 'No one has signed in yet'}</b>${u.q || u.role ? '<p>Try a different search or filter.</p>' : ''}</div>`);
-  list.classList.toggle('isempty', !shown.length && !pend);
+  const onlyPending = u.role === 'pending';
+  const shown = onlyPending ? [] : u.items.filter((x) => !u.role || x.roles.some((r) => r.role === u.role));
+  const q = (u.q || '').toLowerCase();
+  const pendList = !u.role || onlyPending ? v0.items.filter((x) => x.status === 'open' && (!q || x.email.toLowerCase().includes(q))) : [];
+  const rows = shown.length || pendList.length;
+  list.classList.toggle('isempty', !rows);
+  list.innerHTML = rows
+    ? peopleHead + shown.map((x) => `<div class="adrow" role="row" data-user="${x.id}"><span class="adav">${AVATAR(x.name, 'lav', 40)}</span><div class="adwho"><b>${esc(x.name)}</b><small>${esc(x.email)}</small></div><div class="adroles">${x.roles.length ? x.roles.map((r) => roleTag(r, doms)).join('') : '<span class="amute">Employee</span>'}</div><div class="adlv" title="${esc(B.clearanceName(x.clearance))}">${levelBars(x.clearance)}<em>${esc(B.clearanceName(x.clearance))}</em></div><small class="adact"><span class="tag ${x.status === 'suspended' ? 'bad' : 'ok'}">${x.status === 'suspended' ? 'Suspended' : 'Active'}</span></small><div class="adrowa"><button type="button" class="btn sm" data-edit="${x.id}" aria-label="Edit ${esc(x.name)}">Edit</button></div></div>`).join('') + pendingRows(pendList)
+    : `<div class="ds-empty"><b>${u.q || u.role ? 'No one matches' : 'No one has signed in yet'}</b>${u.q || u.role ? '<p>Try a different search or filter.</p>' : ''}</div>`;
   more.innerHTML = u.next ? `<button type="button" class="btn sm" id="ppload" ${u.loading ? 'disabled' : ''}>${u.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#ppload');
   if (m) m.onclick = () => loadUsers(false);
@@ -220,19 +243,13 @@ function replaceUser(updated) {
   drawUsers();
 }
 
-/* ---------- invitations ---------- */
-function invitations() {
-  $('#pppane').innerHTML = `<div class="adppl" id="invlist" role="table" aria-label="Invitations"></div><div class="chmore" id="invmore"></div>`;
-  const v = state().invites;
-  if (!v.loaded || v.error) loadInvites(true); else drawInvites();
-}
+/* ---------- invitations: the open ones are rows of the People table ---------- */
 async function loadInvites(reset) {
   const v = state().invites;
   if (!reset && (v.loading || !v.next)) return;
   const mine = ++v.seq;
   v.loading = true; v.error = null;
   if (reset) { v.items = []; v.next = null; v.loaded = false; }
-  if (state().tab === 'invitations') drawInvites();
   try {
     const page = await B.api.get('/admin/invitations', { limit: 50, cursor: reset ? null : v.next });
     if (mine !== v.seq) return;
@@ -242,30 +259,7 @@ async function loadInvites(reset) {
   } catch (error) { if (mine === v.seq) v.error = error; }
   finally { if (mine === v.seq) v.loading = false; }
   if (mine !== v.seq) return;
-  if (state().tab === 'invitations') drawInvites();
-  else if (state().tab === 'people' && state().users.loaded) drawUsers();
-}
-function drawInvites() {
-  const v = state().invites;
-  const list = $('#invlist'), more = $('#invmore');
-  if (!list) return;
-  if (!v.loaded) {
-    list.innerHTML = v.error ? `<div class="ds-empty">${B.errorBlock(v.error, 'invretry')}</div>` : B.skeletonRows(4, 'adrow');
-    const r = $('#invretry');
-    if (r) r.onclick = () => loadInvites(true);
-    more.innerHTML = '';
-    return;
-  }
-  const rise = state().rise;
-  list.innerHTML = v.items.length
-    ? v.items.map((x) => { const st = INVITE_STATUS[x.status] || [x.status, '']; return `<div class="adrow pend" role="row"><span class="adav adgh">${ICON('inbox', 18)}</span><div class="adwho"><b>${esc(x.email)}</b><small>Invited ${B.when(x.created_at, B.ago(x.created_at))}</small></div><div class="adroles">${x.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('')}<span class="tag ${st[1]}">${st[0]}</span></div><div class="adlv">${levelBars(x.clearance)}<em>${esc(B.clearanceName(x.clearance))}</em></div><small class="adact"></small><div class="adrowa on">${x.status === 'open' ? `<button type="button" class="btn sm" data-revoke="${x.id}">Revoke</button>` : ''}</div></div>`; }).join('')
-    : '<div class="ds-empty"><b>No invitations yet</b><p>Invite the people who should use Broth.</p></div>';
-  list.classList.toggle('isempty', !v.items.length);
-  more.innerHTML = v.next ? `<button type="button" class="btn sm" id="invload" ${v.loading ? 'disabled' : ''}>${v.loading ? 'Loading' : 'Show more'}</button>` : '';
-  const m = $('#invload');
-  if (m) m.onclick = () => loadInvites(false);
-  wireRevoke(list, drawInvites);
-  if (rise) { state().rise = false; window.ADMIN.life(list); }
+  if (state().tab === 'people' && state().users.loaded) drawUsers();
 }
 function inviteModal() {
   const origin = location.origin;
@@ -291,7 +285,8 @@ function inviteModal() {
       v.items = [created, ...v.items];
       window.ADMIN.closePop();
       B.toast(`Invited ${created.email}`);
-      state().tab = 'invitations';
+      state().tab = 'people';
+      state().users.role = '';
       B.route();
     }, (error) => { bad(B.problem(error)); });
   };
@@ -323,8 +318,8 @@ function drawLinks() {
   if (!box) return;
   const users = (B.S.cache.allUsers || []).filter((u) => u.status === 'active');
   const options = users.map((u) => `<option value="${u.id}">${esc(u.name)} (${esc(u.email)})</option>`).join('');
-  box.innerHTML = `<h3 class="ach">Not linked</h3>${p.links.unlinked.length ? `<div class="actl">${p.links.unlinked.map((a) => `<div class="actr lnrow" data-acc="${esc(a.account_id)}"><span class="actic">${B.srcIcon('confluence', 16)}</span><span class="actt"><b>${esc(a.display_name || 'Unnamed account')}</b><small>Seen ${B.when(a.last_seen_at, B.ago(a.last_seen_at))}</small></span><span class="actb"><select data-pick aria-label="Person for ${esc(a.display_name || 'this account')}"><option value="">Choose a person</option>${options}</select><button type="button" class="btn sm primary" data-link disabled>Link</button></span></div>`).join('')}</div>` : '<p class="actn lnnone">Every account Broth has seen is linked.</p>'}
-    <h3 class="ach">Linked</h3>${p.links.linked.length ? `<div class="actl">${p.links.linked.map((a) => `<div class="actr lnrow" data-acc="${esc(a.account_id)}"><span class="actic">${B.srcIcon('confluence', 16)}</span><span class="actt"><b>${esc(a.display_name || 'Unnamed account')}</b><small>Linked to ${esc(a.user_name)} · ${esc(a.user_email)}</small></span><span class="actb"><button type="button" class="btn sm" data-unlink>Unlink</button></span></div>`).join('')}</div>` : '<p class="actn lnnone">No accounts are linked yet.</p>'}`;
+  box.innerHTML = `<h3 class="ach">Not linked</h3>${p.links.unlinked.length ? `<div class="actl"><div class="actr actth"><span class="actic"></span><span class="actt">Account</span><span class="actb">Person</span></div>${p.links.unlinked.map((a) => `<div class="actr lnrow" data-acc="${esc(a.account_id)}"><span class="actic">${B.srcIcon('confluence', 16)}</span><span class="actt"><b>${esc(a.display_name || 'Unnamed account')}</b><small>Seen ${B.when(a.last_seen_at, B.ago(a.last_seen_at))}</small></span><span class="actb"><select data-pick aria-label="Person for ${esc(a.display_name || 'this account')}"><option value="">Choose a person</option>${options}</select><button type="button" class="btn sm primary" data-link disabled>Link</button></span></div>`).join('')}</div>` : '<p class="actn lnnone">Every account Broth has seen is linked.</p>'}
+    <h3 class="ach">Linked</h3>${p.links.linked.length ? `<div class="actl"><div class="actr actth"><span class="actic"></span><span class="actt">Account</span><span class="actb">Linked person</span></div>${p.links.linked.map((a) => `<div class="actr lnrow" data-acc="${esc(a.account_id)}"><span class="actic">${B.srcIcon('confluence', 16)}</span><span class="actt"><b>${esc(a.display_name || 'Unnamed account')}</b><small>Linked to ${esc(a.user_name)} · ${esc(a.user_email)}</small></span><span class="actb"><button type="button" class="btn sm" data-unlink>Unlink</button></span></div>`).join('')}</div>` : '<p class="actn lnnone">No accounts are linked yet.</p>'}`;
   $$('[data-link]', box).forEach((b) => {
     const row = b.closest('[data-acc]');
     const pick = $('[data-pick]', row);

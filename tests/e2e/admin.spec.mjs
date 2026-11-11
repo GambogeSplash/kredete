@@ -641,18 +641,18 @@ test.describe('people', () => {
     await check(page, 'invite');
     await dialog.getByRole('button', { name: 'Invite' }).click();
     await expect(page.locator('#toast')).toContainText('Invited grace.obi@kredete.com');
-    await expect(page.getByRole('tab', { name: 'Invitations' })).toHaveAttribute('aria-selected', 'true');
-    const row = page.locator('#invlist .adrow').filter({ hasText: 'grace.obi@kredete.com' });
-    await expect(row).toContainText('Waiting to sign in');
+    const row = page.locator('.adrow.pend').filter({ hasText: 'grace.obi@kredete.com' });
+    await expect(row).toContainText('Pending');
     await check(page, 'invitations');
-    await row.getByRole('button', { name: 'Revoke' }).click();
+    await row.getByRole('button', { name: 'Cancel' }).click();
     await row.getByRole('button', { name: 'Confirm' }).click();
-    await expect(row).toContainText('Revoked');
+    await expect(row).toHaveCount(0);
   });
 
   test('a Confluence account is linked to a person, then unlinked', async ({ open, check }) => {
     const page = await open('admin', '/admin/people');
-    await page.getByRole('tab', { name: 'Confluence accounts' }).click();
+    await page.getByRole('button', { name: /Filter people/ }).click();
+    await page.getByRole('option', { name: 'Confluence accounts' }).click();
     const sam = page.locator('.lnrow').filter({ hasText: 'Sam Rivera' });
     await expect(sam).toBeVisible();
     await check(page, 'confluence-accounts');

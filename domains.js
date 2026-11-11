@@ -46,7 +46,7 @@ function render(el) {
   s.rise = true;
   const view = s.view || 'list';
   const toggle = (k, icon, label) => `<button type="button" class="segb ${view === k ? 'on' : ''}" data-view="${k}" aria-pressed="${view === k}" aria-label="${label}">${ICON(icon, 15)}</button>`;
-  window.ADMIN.actions(`${window.DOCS.link('domains')}<div class="seg" role="group" aria-label="View">${toggle('list', 'rows', 'List view')}${toggle('grid', 'grid', 'Grid view')}</div><button type="button" class="btn sm primary" id="dmnew" aria-haspopup="dialog">New domain</button>`);
+  window.ADMIN.actions(`${window.DOCS.link('domains').replace('class="dclink"', 'class="dclink btn sm"')}<div class="seg" role="group" aria-label="View">${toggle('list', 'rows', 'List view')}${toggle('grid', 'grid', 'Grid view')}</div><button type="button" class="btn sm primary" id="dmnew" aria-haspopup="dialog">New domain</button>`);
   el.innerHTML = '<div id="dmlist"></div>';
   $('#dmnew').onclick = () => createModal();
   $$('[data-view]').forEach((b) => { b.onclick = () => { s.view = b.dataset.view; render(el); }; });
@@ -64,7 +64,7 @@ async function load() {
   draw();
 }
 const sub = (d, tree) => T.path(tree, d.id).slice(0, -1).map((x) => x.name).join(' / ');
-const tile = (d) => `<span class="ds-ic adsti adfav" data-l="${esc((d.name[0] || '?').toUpperCase())}"></span>`;
+const tile = (d) => window.ADMIN.domainTile(d.name);
 const countText = (d) => `${d.document_count} ${d.document_count === 1 ? 'page' : 'pages'}`;
 function draw() {
   const s = state();
@@ -91,6 +91,7 @@ function draw() {
   } else {
     list.innerHTML = `<div class="ds-table" role="table" aria-label="Domains"><div class="ds-tr ds-th dmcols dmc4" role="row"><span role="columnheader">Domain</span><span role="columnheader">Label</span><span role="columnheader">Owners</span><span role="columnheader">Pages</span></div><button type="button" class="ds-tr ds-add dmcols dmc4" id="dmadd"><span class="dmn"><span class="ds-ic adsti">${ICON('plus', 16)}</span><b>Add a domain</b></span></button>${rows.map(({ item: d, depth }) => `<button type="button" class="ds-tr lift dmcols dmc4" role="row" data-domain="${d.id}" data-depth="${depth}" aria-label="${esc(d.name)}"><span class="dmn dmname" style="--depth:${depth}">${tile(d)}<b>${esc(d.name)}</b></span><span class="dmlabel"><code>${esc(labelOf(d))}</code></span><span class="acchips">${owners(d)}</span><span class="amute dmpages">${pages(d)}</span></button>`).join('')}</div>`;
   }
+  window.ADMIN.hydrateTiles(list);
   $('#dmadd', list).onclick = () => createModal();
   if (s.rise) { s.rise = false; window.ADMIN.life(list); }
   $$('[data-domain]', list).forEach((b) => { b.onclick = () => editModal(s.items.find((d) => d.id === b.dataset.domain)); });
