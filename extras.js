@@ -219,12 +219,12 @@ async function sessions() {
   $('#acact').innerHTML = others.length ? '<button type="button" class="btn sm" id="soall">Sign out of all other devices</button>' : '';
   const all = $('#soall');
   if (all) {
-    all.onclick = () => B.busy(all, async () => {
+    all.onclick = () => B.armPress(all, 'Confirm sign out of all', () => B.busy(all, async () => {
       for (const s of others) await B.api.del(`/me/sessions/${s.id}`);
-      await Promise.all($$('.ds-tr[data-id]', el).filter((r) => !r.querySelector('.tag')).map(fade));
+      await Promise.all($('.ds-tr[data-id]', el).filter((r) => !r.querySelector('.tag')).map(fade));
       B.toast('Signed out everywhere else');
       sessions();
-    });
+    }));
   }
 }
 

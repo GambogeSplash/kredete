@@ -129,7 +129,7 @@ window.HELP = {
       tip: "You do not need to find the owner. Broth routes it to the right person.",
       fix: "If nothing happens, check the Inbox tab on your side. The report appears as a Conflict item.",
       rel: ["work-through-your-inbox", "keep-documents-verified"], go: ["Open Inbox", null, ""] },
-    { slug: "work-through-your-inbox", topic: "owners", title: "Work through your Inbox", sum: "The Inbox holds what needs a person: conflicts, gaps, stale documents and requests.",
+    { slug: "work-through-your-inbox", hidden: true, topic: "owners", title: "Work through your Inbox", sum: "The Inbox holds what needs a person: conflicts, gaps, stale documents and requests.",
       steps: [["Open Inbox", "The badge on the rail icon counts what is open."],
         ["Filter by type", "Requests, Conflicts, Gaps, Stale or Feedback."],
         ["Take the main action", "Each card has one primary action, like Mark fixed or Verify now."],

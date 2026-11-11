@@ -51,7 +51,8 @@ const AUDIENCE_NAME = { askers: 'Asking', authors: 'Writing pages', admins: 'Adm
    (GET /v1/docs) are listed after them in the topic they belong to. */
 const HELP = window.HELP || { topics: [], articles: [] };
 const TOPICS = HELP.topics;
-const LOCAL = HELP.articles;
+/** An article marked `hidden` stays in help-content.js but is not listed, searched, counted or linked (its screen is gone). */
+const LOCAL = HELP.articles.filter((a) => !a.hidden);
 const LOCAL_BY_SLUG = Object.fromEntries(LOCAL.map((a) => [a.slug, a]));
 /** Where each article the service serves is listed; one it does not know goes to the first topic that shares its audience. */
 const TOPIC_OF = {
