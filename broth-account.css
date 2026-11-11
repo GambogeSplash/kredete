@@ -1,0 +1,30 @@
+/* Broth account and chats: the Devices table, the account groups, and chat motion.
+   Corners: 12px on buttons and fields, 18px on cards. */
+.adh3{font-size:var(--fs-md);font-weight:600;margin:0}
+.ach2row{max-width:860px;display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);margin-bottom:var(--s-4)}
+.lcont .fgroup,.lcont .ds-table{border-radius:18px}
+.lcont .btn,.lcont .btn.sm,.lcont .eminp,.lcont .ssel-btn,.pg .btn,.pg .btn.sm{border-radius:12px!important}
+.lcont .fgroup{overflow:hidden}
+.ds-table.sesdt{max-width:860px}
+.dvcols{grid-template-columns:minmax(0,1fr) 110px 120px 110px;padding-top:var(--s-2);padding-bottom:var(--s-2)}
+.dvcols .ltb{min-width:0;display:grid}
+.dvcols .ltb b{font-weight:500;font-size:var(--fs-md);line-height:20px;display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap}
+.dvcols .dvme{margin:0}
+.dvcols .dmn{gap:var(--s-3)}
+.addvi{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:12px;background:var(--fill-1);color:var(--ink)}
+.dvact{display:flex;gap:var(--s-2);justify-content:flex-end}
+.adok{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--green,#1f8f4e)}
+.adok i{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:adpulse 1.8s ease-in-out infinite}
+@keyframes adpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+.ds-tr.dvcols:hover{background:var(--fill-1)}
+.lcont .btn:focus-visible,.lcont .ssel-btn:focus-visible,.lcont .eminp:focus-visible{outline:2px solid var(--ring,var(--brand));outline-offset:2px}
+@media (max-width:900px){
+  .dvcols{grid-template-columns:minmax(0,1fr) auto}
+  .dvcols .dvm{display:none}
+  .ach2row{flex-wrap:wrap}
+}
+/* chat motion */
+.trashfx{position:fixed;z-index:80;width:36px;height:36px;display:grid;place-items:center;border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--mute);box-shadow:0 6px 18px -8px rgba(0,0,0,.5);pointer-events:none}
+.rnline{position:absolute;left:0;right:0;bottom:-2px;height:1.5px;border-radius:1px;background:var(--brand,#5e6ad2);transform-origin:left center;pointer-events:none}
+.pg .chl .chr:focus-visible{outline:2px solid var(--ring,var(--brand));outline-offset:-2px}
+@media (prefers-reduced-motion:reduce){.adok i{animation:none}}

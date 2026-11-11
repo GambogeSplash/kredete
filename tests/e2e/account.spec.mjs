@@ -5,7 +5,7 @@ import { expect, test } from './fixtures.mjs';
 test.describe.configure({ mode: 'serial' });
 
 /** This browser's device name depends on the machine the suite runs on. */
-const THIS_DEVICE = '.sesdt .dt-r:has(.tag.ok) .dtp b';
+const THIS_DEVICE = '.sesdt .ds-tr:has(.tag.blue) .ltb b';
 
 test('the profile, and a preferred name that sticks', async ({ open, check }) => {
   const page = await open('owner', '/account');
@@ -31,20 +31,20 @@ test('the profile, and a preferred name that sticks', async ({ open, check }) =>
 test('sessions list every signed-in device', async ({ open, check, seed }) => {
   const page = await open('owner', '/account/sessions');
   const total = seed.people.owner.refresh_tokens.length;
-  await expect(page.getByRole('heading', { name: `Signed in on ${total} devices` })).toBeVisible();
-  await expect(page.locator('.sesdt .dt-r:not(.dt-h)')).toHaveCount(total);
-  await expect(page.locator('.sesdt .tag.ok')).toHaveText('This device');
+  await expect(page.getByRole('heading', { name: 'Devices' })).toBeVisible();
+  await expect(page.locator('.sesdt .ds-tr:not(.ds-th)')).toHaveCount(total);
+  await expect(page.locator('.sesdt .tag.blue')).toHaveText('This device');
   await check(page, 'sessions', { mask: [THIS_DEVICE] });
 
-  await page.locator('.sesdt .dt-r:not(.dt-h)').filter({ hasNot: page.locator('.tag.ok') }).first().getByRole('button', { name: 'Sign out' }).click();
+  await page.locator('.sesdt .ds-tr:not(.ds-th)').filter({ hasNot: page.locator('.tag.blue') }).first().getByRole('button', { name: 'Sign out' }).click();
   await expect(page.locator('#toast')).toContainText('Device signed out');
-  await expect(page.getByRole('heading', { name: `Signed in on ${total - 1} devices` })).toBeVisible();
+  await expect(page.locator('.sesdt .ds-tr:not(.ds-th)')).toHaveCount(total - 1);
 });
 
 test('sign out of every other device, then of this one', async ({ open, check }) => {
   const page = await open('owner', '/account/sessions');
   await page.getByRole('button', { name: 'Sign out of all other devices' }).click();
-  await expect(page.getByRole('heading', { name: 'Signed in on 1 device' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('.sesdt .ds-tr:not(.ds-th)')).toHaveCount(1, { timeout: 30_000 });
   await expect(page.getByRole('button', { name: 'Sign out of all other devices' })).toHaveCount(0);
   await check(page, 'sessions-one-device', { mask: [THIS_DEVICE] });
 

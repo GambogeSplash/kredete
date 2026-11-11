@@ -109,7 +109,8 @@ function profile(me, editing) {
    <div class="fgroup">${frow('Preferred name', editing ? `<input id="enick" class="eminp" value="${esc(nick)}" maxlength="60" aria-label="Preferred name" style="margin:0;max-width:260px"><div class="hse" id="enke" role="alert"></div>` : esc(nick), editing ? '<button type="button" class="btn sm primary" id="enks">Save</button><button type="button" class="btn sm" id="enkc">Cancel</button>' : '<button type="button" class="btn sm" id="enk">Edit</button>')}
    ${frow('Appearance', `<select id="etheme" aria-label="Appearance">${[['light', 'Light'], ['dark', 'Dark'], ['system', 'Match my device']].map(([k, l]) => `<option value="${k}" ${window.AUTH.THEME() === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`)}
    ${frow('Welcome tour', '<span class="amute">The first-run introduction.</span>', '<button type="button" class="btn sm" id="atour">Replay</button>')}</div>
-   <h3 class="ach">${from} ${hint('Your admin manages these.')}</h3><div class="fgroup">${me.team ? frow('Team', esc(me.team)) : ''}${me.location ? frow('Location', esc(me.location)) : ''}${frow('Roles', `<span class="acchips">${roles}</span>`)}${frow('Clearance', esc(B.clearanceName(me.clearance)))}</div>`;
+   <h3 class="ach">${from} ${hint('Your admin manages these.')}</h3><div class="fgroup">${me.team ? frow('Team', esc(me.team)) : ''}${me.location ? frow('Location', esc(me.location)) : ''}${frow('Roles', `<span class="acchips">${roles}</span>`)}${frow('Clearance', esc(B.clearanceName(me.clearance)))}</div>
+   <h3 class="ach">Sign-in</h3><div class="fgroup">${frow('Sign-in', 'Google', '<span class="tag ok">Single sign-on</span>')}</div>`;
   const edit = $('#enk');
   if (edit) edit.onclick = () => { profile(me, true); $('#enick').focus(); };
   const cancel = $('#enkc');
@@ -130,6 +131,11 @@ function profile(me, editing) {
   $('#atour').onclick = () => window.AUTH.replayWelcome();
 }
 
+const fade = (row) => {
+  if (!row || !row.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
+  const done = () => {};
+  return row.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 200, easing: 'ease-out', fill: 'forwards' }).finished.then(done, done);
+};
 async function sessions() {
   const el = $('#acpane');
   el.innerHTML = B.loadingBlock('Loading sessions', 3, 'dt-r');
@@ -142,12 +148,13 @@ async function sessions() {
     return;
   }
   const others = list.filter((s) => !s.current);
-  el.innerHTML = `<div class="fgroup">${frow('Sign-in', 'Google', '<span class="tag ok">Single sign-on</span>')}</div>
-   <h3 class="ach">Signed in on ${list.length} ${list.length === 1 ? 'device' : 'devices'}</h3><div class="dt sesdt" style="--cols:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) 110px"><div class="dt-r dt-h"><span>Device</span><span>Signed in</span><span>Last active</span><span></span></div>${list.map((s) => `<div class="dt-r"><span class="dtp"><i class="devic" aria-hidden="true">${deviceIcon(s.user_agent)}</i><b style="font-weight:500">${esc(device(s.user_agent))}</b>${s.current ? '<span class="tag ok">This device</span>' : ''}</span><span class="dtm">${B.when(s.created_at, B.fmtDate(s.created_at))}</span><span class="dtm">${B.when(s.last_used_at, B.ago(s.last_used_at))}</span><span>${s.current ? '' : `<button type="button" class="btn sm" data-so="${s.id}">Sign out</button>`}</span></div>`).join('')}</div>
-   ${others.length ? '<div class="actions" style="margin-top:14px"><button type="button" class="btn" id="soall">Sign out of all other devices</button></div>' : ''}`;
+  const row = (s) => `<div class="ds-tr dvcols" data-id="${s.id}" role="row"><span class="dmn"><span class="addvi dvic">${deviceIcon(s.user_agent)}</span><span class="ltb"><b>${esc(device(s.user_agent))}${s.current ? '<span class="tag blue dvme">This device</span>' : ''}</b></span></span><span class="amute dvm">${B.when(s.created_at, B.fmtDate(s.created_at))}</span><span class="amute dvm">${s.current ? '<span class="adok"><i></i>Now</span>' : B.when(s.last_used_at, B.ago(s.last_used_at))}</span><span class="dvact">${s.current ? '' : `<button type="button" class="btn sm" data-so="${s.id}">Sign out</button>`}</span></div>`;
+  el.innerHTML = `<div class="ach2row"><h2 class="adh3" id="devh">Devices</h2>${others.length ? '<button type="button" class="btn sm" id="soall">Sign out of all other devices</button>' : ''}</div>
+   <div class="ds-table sesdt" role="table" aria-labelledby="devh"><div class="ds-tr ds-th dvcols" role="row"><span>Device</span><span class="dvm">First seen</span><span class="dvm">Last active</span><span></span></div>${list.map(row).join('')}</div>`;
   $$('[data-so]', el).forEach((b) => {
     b.onclick = () => B.busy(b, async () => {
       await B.api.del(`/me/sessions/${b.dataset.so}`);
+      await fade(b.closest('.ds-tr'));
       B.toast('Device signed out');
       sessions();
     });
@@ -156,6 +163,7 @@ async function sessions() {
   if (all) {
     all.onclick = () => B.busy(all, async () => {
       for (const s of others) await B.api.del(`/me/sessions/${s.id}`);
+      await Promise.all($$('.ds-tr[data-id]', el).filter((r) => !r.querySelector('.tag')).map(fade));
       B.toast('Signed out everywhere else');
       sessions();
     });
