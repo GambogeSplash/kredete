@@ -451,7 +451,7 @@ html.embed .lin{height:calc(100vh - 0px)}
 /* =====================================================================
    ONE STYLE: Linear. Everything below overrides earlier rules, so every
    screen shares the same shell, type, density and components.
-   Neutrals sampled from the Linear reference. Accent stays Kredete purple.
+   Neutrals sampled from the Linear reference. Accent stays Broth purple.
    ===================================================================== */
 html,body{background:var(--wash)}
 body{font:400 13px/1.5 var(--font);color:var(--ink);letter-spacing:-.003em}

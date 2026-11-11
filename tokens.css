@@ -1,4 +1,4 @@
-/* Kredete Broth design tokens. One source of truth.
+/* Broth design tokens. One source of truth.
    Everything visual (color, radius, space, type, shadow, motion, layout) comes from here.
    Rule: components never hard-code these values. Add a token first, then use it. */
 

@@ -16,15 +16,15 @@ const AUTH = {};
 
 /** One message per SignInFailure reason, plus a fallback for anything new. */
 const SIGNIN_ERRORS = {
-  not_provisioned: ['You do not have access yet', 'Ask your Kredete admin to invite the Google account you used.'],
-  suspended: ['Your access is paused', 'Ask your Kredete admin to restore it.'],
-  wrong_domain: ['That is not a Kredete account', 'Sign in with your Kredete Google account.'],
+  not_provisioned: ['You do not have access yet', 'Ask your Broth admin to invite the Google account you used.'],
+  suspended: ['Your access is paused', 'Ask your Broth admin to restore it.'],
+  wrong_domain: ['That is not a Broth account', 'Sign in with your Broth Google account.'],
   email_not_verified: ['Google has not verified that email address', 'Verify it in your Google account, then try again.'],
   invalid_state: ['That sign-in expired', 'It took too long or started in another browser. Try again.'],
   invalid_token: ['Google could not confirm who you are', 'Try again in a moment.'],
   provider_error: ['Google did not finish the sign-in', 'Try again. If you cancelled, nothing changed.'],
 };
-const FALLBACK_ERROR = ['Sign-in did not work', 'Try again. If it keeps happening, ask your Kredete admin.'];
+const FALLBACK_ERROR = ['Sign-in did not work', 'Try again. If it keeps happening, ask your Broth admin.'];
 AUTH.signInError = (reason) => (reason ? SIGNIN_ERRORS[reason] || FALLBACK_ERROR : null);
 
 /* ---------- the split shell: form on the left, a preview of the workspace on the right ---------- */
@@ -36,7 +36,7 @@ function preview(person) {
   const feed = systems.length
     ? `${systems.map((s) => B.srcIcon(s, 14)).join('')}<span>Reading from ${systems.length} connected ${systems.length === 1 ? 'app' : 'apps'}</span>`
     : `<span class="pvfsk">${sk(110)}</span>`;
-  return `<div class="pvp" aria-hidden="true"><div class="pvw"><div class="pvs"><div class="pvws"><span class="pvk">K</span><b>Kredete</b></div>${[['compose', 'New chat'], ['library', 'Library'], ['shield', 'Governance']].map(([i, l]) => `<div class="pvi">${ICON(i, 13)}<span>${l}</span></div>`).join('')}<div class="pvu">${person ? AVATAR(person.name, 'lav', 22) + `<span><b>${esc(person.name)}</b><small>${esc(person.team || '')}</small></span>` : `<i class="pvav"></i><span>${sk(70)}${sk(44)}</span>`}</div></div>
+  return `<div class="pvp" aria-hidden="true"><div class="pvw"><div class="pvs"><div class="pvws"><span class="pvk">K</span><b>Broth</b></div>${[['compose', 'New chat'], ['library', 'Library'], ['shield', 'Governance']].map(([i, l]) => `<div class="pvi">${ICON(i, 13)}<span>${l}</span></div>`).join('')}<div class="pvu">${person ? AVATAR(person.name, 'lav', 22) + `<span><b>${esc(person.name)}</b><small>${esc(person.team || '')}</small></span>` : `<i class="pvav"></i><span>${sk(70)}${sk(44)}</span>`}</div></div>
   <div class="pvm"><div class="pvg">${person ? `Hello, ${esc(person.first)}` : sk(120)}</div><div class="pvc"><span>Ask a question</span><i></i></div><div class="pvf">${feed}</div>${person ? `<div class="pvl"><i style="background:${CLEARANCE_COL[person.clearance] || CLEARANCE_COL.internal}"></i>${esc(B.clearanceName(person.clearance))} clearance</div>` : ''}</div></div><div class="pvcap">${person ? 'Your workspace' : 'Your workspace appears here'}</div></div>`;
 }
 AUTH.preview = preview;
@@ -70,11 +70,11 @@ window.SURFACES.signin = () => {
   const refused = failure ? new URLSearchParams(location.hash.slice(1)).get('email') : null;
   const unconfigured = B.S.setup && !B.S.setup.google_configured;
   const sub = B.sandbox()
-    ? 'Continue with the Google account your Kredete admin invited.'
-    : 'Continue with your Kredete Google account.';
-  shell(`${brand}<h1>Sign in to Kredete</h1><p class="sub">${sub}</p>
+    ? 'Continue with the Google account your Broth admin invited.'
+    : 'Continue with your Broth Google account.';
+  shell(`${brand}<h1>Sign in to Broth</h1><p class="sub">${sub}</p>
     ${failure ? `<div class="banner bad" role="alert" id="aerr"><b>${esc(failure[0])}.</b> ${esc(failure[1])}${refused ? `<span class="refused-as">Google account: ${esc(refused)}</span>` : ''}</div>` : ''}
-    ${unconfigured ? `<div class="banner info" role="status"><b>Sign-in is not configured yet.</b> Your Kredete admin finishes setup first.</div>` : ''}
+    ${unconfigured ? `<div class="banner info" role="status"><b>Sign-in is not configured yet.</b> Your Broth admin finishes setup first.</div>` : ''}
     <a class="btn primary si-btn" id="gsignin" href="${B.api.signInUrl}" ${unconfigured ? 'aria-disabled="true" tabindex="-1"' : ''}><span class="spin" aria-hidden="true"></span><span>Continue with Google</span></a>
     <p class="disc">Broth answers from the documents you can already open.</p>`, preview(null));
   const button = $('#gsignin');
@@ -89,7 +89,7 @@ window.SURFACES.signin = () => {
 AUTH.bootError = (error, retry) => {
   // Broth's own problem says what went wrong; without one, say what to do rather than repeat the heading.
   const head = error && error.reached ? 'Broth could not start' : 'Broth could not be reached';
-  const body = error && error.reached ? B.problem(error) : 'Check your connection and try again. If it keeps happening, tell your Kredete admin.';
+  const body = error && error.reached ? B.problem(error) : 'Check your connection and try again. If it keeps happening, tell your Broth admin.';
   shell(`${brand}<h1>${head}</h1><p class="sub">${esc(body)}</p><button type="button" class="btn primary si-btn" id="bootretry"><span class="spin" aria-hidden="true"></span><span>Try again</span></button>`, preview(null));
   $('#bootretry').onclick = () => { $('#bootretry').classList.add('busy'); retry(); };
 };

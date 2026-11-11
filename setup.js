@@ -63,7 +63,7 @@ async function progress() {
 /* ---------- the shell around every step ---------- */
 function checklist(current) {
   const at = current === 'done' ? STEPS.length : index(current);
-  return `<div class="pvp sup" aria-hidden="true"><div class="pvw sucard"><div class="suh">${ICON('check', 14)}<b>Set up Kredete Broth</b></div><ol class="sul">${STEPS.map(([k, title, sub], i) => `<li class="${i < at ? 'done' : i === at ? 'on' : ''}"><i>${i < at ? ICON('check', 12) : i + 1}</i><span><b>${esc(title)}</b><small>${esc(sub)}</small></span></li>`).join('')}</ol></div><div class="pvcap">${current === 'done' ? 'All set' : `Step ${at + 1} of ${STEPS.length}`}</div></div>`;
+  return `<div class="pvp sup" aria-hidden="true"><div class="pvw sucard"><div class="suh">${ICON('check', 14)}<b>Set up Broth</b></div><ol class="sul">${STEPS.map(([k, title, sub], i) => `<li class="${i < at ? 'done' : i === at ? 'on' : ''}"><i>${i < at ? ICON('check', 12) : i + 1}</i><span><b>${esc(title)}</b><small>${esc(sub)}</small></span></li>`).join('')}</ol></div><div class="pvcap">${current === 'done' ? 'All set' : `Step ${at + 1} of ${STEPS.length}`}</div></div>`;
 }
 function render(step, left) {
   const leave = B.S.phase === 'app' && step !== 'done' && step !== 'sync' ? `<button type="button" class="link suleave" id="suleave">Leave setup for now</button>` : '';
@@ -106,7 +106,7 @@ function wireCopies() {
 
 /* ---------- steps ---------- */
 function claimStep() {
-  render('claim', `<h1>Set up Kredete Broth</h1><p class="sub">You are the first person here, so you become its admin. Enter the setup code from the server, and the Google account you will sign in with.</p>
+  render('claim', `<h1>Set up Broth</h1><p class="sub">You are the first person here, so you become its admin. Enter the setup code from the server, and the Google account you will sign in with.</p>
     <form id="suf" novalidate>${field('sucode', 'Setup code', 'autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX" class="eminp mono"')}${field('suemail', 'Your Google account', 'type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"')}${errorSlot}${primary('sugo', 'Continue')}</form>
     <p class="disc">Lost the code, or it expired? Run <code>make sandbox-setup-code</code> on the server for a new one.</p>`);
   $('#sucode').focus();

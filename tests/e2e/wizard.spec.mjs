@@ -38,7 +38,7 @@ const reading = (page) => page.getByRole('status').filter({ has: page.getByRole(
 /** The sync step's row for a space. */
 const row = (page, name) => page.getByRole('listitem').filter({ hasText: name });
 const STEPS = [
-  { state: 'claim', heading: 'Set up Kredete Broth', as: 'visitor' },
+  { state: 'claim', heading: 'Set up Broth', as: 'visitor' },
   { state: 'google', heading: 'Connect Google sign-in', as: 'claimer' },
   { state: 'signin', heading: 'Sign in as the first admin', as: 'claimer' },
   { state: 'confluence', heading: 'Add the Confluence app', as: 'admin' },

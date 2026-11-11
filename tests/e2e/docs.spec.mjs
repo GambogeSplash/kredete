@@ -37,7 +37,7 @@ test('an article, its sections, and links between articles', async ({ open, chec
   await expect(page).toHaveURL(/\/docs\/labelling-pages$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Labelling pages' })).toBeVisible();
   await expect(page.locator('.dcprose table')).toBeVisible();
-  await expect(page).toHaveTitle('Labelling pages - Kredete Broth docs');
+  await expect(page).toHaveTitle('Labelling pages - Broth docs');
   const mobile = (page.viewportSize() || { width: 1440 }).width < 900;
   if (mobile) {
     await expect(toc(page)).toBeHidden();
@@ -92,7 +92,7 @@ test('signed out, the docs open on their own with a way back', async ({ open, ch
   await expect(page.getByRole('heading', { level: 1, name: 'Setting up spaces' })).toBeVisible();
   await check(page, 'docs-signed-out-article');
   await page.getByRole('link', { name: 'Back to sign in' }).click();
-  await expect(page.getByRole('heading', { name: 'Sign in to Kredete' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in to Broth' })).toBeVisible();
 });
 
 test('every section a screen links to exists', async ({ open }) => {

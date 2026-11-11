@@ -21,7 +21,7 @@ const KIND_NAME = { confluence_page: 'Page', page: 'Page', blogpost: 'Post', gdo
 const kindName = (k) => KIND_NAME[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ') : 'Document');
 const DOMAIN_COL = ['#5e6ad2', '#16a34a', '#f97316', '#0ea5a4', '#d946a8', '#3b82f6', '#e2a600'];
 const domainCol = (slug) => DOMAIN_COL[[...String(slug)].reduce((a, c) => a + c.charCodeAt(0), 0) % DOMAIN_COL.length];
-const SCOPE = { public: ['Public', 'ok'], internal: ['Everyone at Kredete', 'blue'], granular: ['Limited access', ''] };
+const SCOPE = { public: ['Public', 'ok'], internal: ['Everyone at Broth', 'blue'], granular: ['Limited access', ''] };
 function authorityTag(d) {
   if (d.authority === 'approved') {
     return d.review_due_at && new Date(d.review_due_at) < new Date() ? '<span class="tag warn">Past review date</span>' : '';
@@ -82,7 +82,7 @@ function labelProblems(d) {
 
 function shareModal(d) {
   const options = [];
-  if (d.scope === 'granular') options.push(['internal', 'Everyone at Kredete', 'Every employee can find it and get answers from it.']);
+  if (d.scope === 'granular') options.push(['internal', 'Everyone at Broth', 'Every employee can find it and get answers from it.']);
   options.push(['public', 'Public', 'Customers can see it through the support agent. Only for content that is safe to publish.']);
   B.openModal(`<div class="modal" role="dialog" aria-label="Share more widely"><div class="bar"><span>Share more widely</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(d.title)}</h2><p class="sub">An owner or admin approves the request. Until then, nothing changes.</p>
     <div class="obopts promopts" role="radiogroup" aria-label="Who can see it">${options.map(([k, l, t], i) => `<button type="button" class="obopt ${i ? '' : 'on'}" role="radio" aria-checked="${!i}" data-scope="${k}"><b>${l}</b><small>${t}</small></button>`).join('')}</div>
