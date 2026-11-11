@@ -55,7 +55,8 @@ A.pages.products = (el, ctx) => {
   function revoked(p) {
     dirty = () => false;
     B.guardLeaving(() => false);
-    $('#agpdetail', el).innerHTML = `<section class="ds-card agpd" aria-labelledby="agpdh"><div class="agcard-h"><h2 id="agpdh">${esc(p.name)}${A.hint(`Revoked ${B.fmtDate(p.revoked_at)}. Its key no longer works, and it can't be restored. Add a new product to put the bot back on these sites.`)}</h2><span class="tag">Revoked</span></div>
+    $('#agpdetail', el).innerHTML = `<section class="ds-card agpd" aria-labelledby="agpdh"><div class="agcard-h"><h2 id="agpdh">${esc(p.name)}</h2><span class="tag">Revoked</span></div>
+      <p class="agpd-sub">Revoked ${B.fmtDate(p.revoked_at)}. Its key no longer works, and it can't be restored. Add a new product to put the bot back on these sites.</p>
       <dl class="agkvs">${row('Sites', p.allowed_origins.map(esc).join('<br>'))}${row('Key', `<code class="agkey-v">${esc(F.maskKey(p.key))}</code>`)}</dl></section>`;
   }
   const row = (label, value) => `<div class="agkv"><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
@@ -67,15 +68,15 @@ A.pages.products = (el, ctx) => {
     const origins = F.snippetOrigins(p.snippet);
     const demo = origins && p.allowed_origins.includes(location.origin)
       ? `/embed-demo.html?key=${encodeURIComponent(p.key)}&api=${encodeURIComponent(origins.api)}` : null;
-    $('#agpdetail', el).innerHTML = `<div class="agpds"><section class="ds-card agpd" aria-labelledby="agpdh"><div class="agcard-h"><h2 id="agpdh">Snippet${A.hint('Paste it into every page of these sites, just before the closing body tag.')}</h2><span class="tag ok">Live</span></div>
+    $('#agpdetail', el).innerHTML = `<div class="agpds"><section class="ds-card agpd" aria-labelledby="agpdh"><div class="agcard-h"><h2 id="agpdh">Snippet</h2><span class="tag ok">Live</span></div>
       ${p.snippet
-        ? `<div class="agsnip"><pre class="code" id="agsnip" tabindex="0" aria-label="Snippet">${esc(p.snippet)}</pre><button type="button" class="btn primary" id="agcopy">${window.ICON('copy', 14)}<span>Copy</span></button></div>`
+        ? `<p class="agpd-sub">Paste it into every page of these sites, just before <code>&lt;/body&gt;</code>.</p><div class="agsnip"><pre class="code" id="agsnip" tabindex="0" aria-label="Snippet">${esc(p.snippet)}</pre><button type="button" class="btn primary" id="agcopy">${window.ICON('copy', 14)}<span>Copy</span></button></div>`
         : '<p class="agwarn">The bot API address isn\'t configured yet, so there is no snippet to paste. Set BROTH_BOT_API_URL on the server.</p>'}
       ${origins ? `<p class="agpd-csp">If your site sets a Content Security Policy, allow <code>${esc(origins.client)}</code> in <code>script-src</code> and <code>${esc(origins.api)}</code> in <code>connect-src</code>.</p>` : ''}
       ${demo ? `<p class="agpd-demo"><a class="btn sm" href="${esc(demo)}" target="_blank" rel="noopener">${window.ICON('ext', 14)}<span>Open the demo page</span></a></p>` : ''}
     </section>
     <section class="ds-card agpd" aria-labelledby="agpsh">
-      <div class="agcard-h"><h2 id="agpsh">Settings${A.hint('The name, the sites it may load on, and how the chat button looks.')}</h2></div>
+      <div class="agcard-h"><h2 id="agpsh">Settings</h2></div>
       <form id="agpf" class="agpf" novalidate>
         ${A.field('name', 'Name', { prefix: 'pd', value: form.name, max: F.LENGTHS.product_name[1] })}
         <div class="agfield" data-field="allowed_origins"><div class="aglab"><span class="hsl" id="pdsites-l">Sites it runs on</span></div><p class="suhint agst-h">Only the site: scheme, host and port, like https://help.kredete.com. Up to ${F.MAX_SITES}.</p><div class="agsites" id="pdsites" role="group" aria-labelledby="pdsites-l"></div><p class="agerr" role="alert"></p></div>
@@ -84,7 +85,7 @@ A.pages.products = (el, ctx) => {
       </form>
     </section>
     <section class="ds-card agpd" aria-labelledby="agpkh">
-      <div class="agcard-h"><h2 id="agpkh">Key${A.hint('Each product has its own key. Replace it if it has been copied somewhere it should not be.')}</h2></div>
+      <div class="agcard-h"><h2 id="agpkh">Key</h2></div>
       <div class="agkey"><code class="agkey-v">${esc(F.maskKey(p.key))}</code><span class="lsp"></span><button type="button" class="btn sm" id="agreplace">Replace key</button><button type="button" class="btn sm danger-o" id="agrevoke">Revoke</button></div>
       <p class="suhint agkey-h">The key is in the page source, so it is not a secret. ${window.DOCS.link('botKeys', 'When to replace it')}</p>
     </section></div>`;

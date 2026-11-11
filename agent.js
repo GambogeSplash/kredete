@@ -20,22 +20,14 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 
 const LABELS = { overview: 'Overview', knowledge: 'Knowledge', experience: 'Experience', products: 'Products' };
-/** The (i) hint beside each page title, and the docs section a page links to. */
-const HINTS = {
-  list: "A support bot answers customers on Broth's websites from pages approved for them, and offers your contact route when it can't.",
-  overview: 'Whether the bot is live, and what it still needs.',
-  knowledge: 'The bot answers only from Public pages in the sources you choose. Docs site pages are Public because they are published; any other page becomes Public when someone approves a Public promotion.',
-  experience: 'What visitors see and read in the chat, checked as you type.',
-  products: 'Each site the bot runs on is a product, with its own key and the sites it may load on.',
-};
+/** The docs section a page links to. */
 const DOCS = { list: 'botSources', knowledge: 'botSources', products: 'botSnippet' };
-const hint = (text) => `<span class="hint" tabindex="0" role="note" data-tip="${esc(text)}" aria-label="${esc(text)}">i</span>`;
 /** A framed empty state: icon tile, title, one line, optional action. */
 const empty = (title, text, action = '', icon = 'inbox') => `<div class="ds-empty" role="status"><span class="ds-empty-ic" aria-hidden="true">${window.ICON(icon, 20)}</span><b>${esc(title)}</b>${text ? `<p>${text}</p>` : ''}${action}</div>`;
 /** A framed error with retry. */
 const failed = (error, retryId) => empty(B.problem(error), error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.', `<button type="button" class="btn sm" id="${retryId}">Try again</button>`, 'refresh').replace('role="status"', 'role="alert"');
 /** The page title row: title, (i) hint, then the page's own controls. */
-const head = (title, key, actions = '') => `<div class="ds-head aghd"><h1 class="lcont-t">${esc(title)}</h1>${hint(HINTS[key])}<span class="lsp"></span><div class="ds-act">${actions}${DOCS[key] ? window.DOCS.link(DOCS[key]) : ''}</div></div>`;
+const head = (title, key, actions = '') => `<div class="ds-head aghd"><h1 class="lcont-t">${esc(title)}</h1><span class="lsp"></span><div class="ds-act">${actions}${DOCS[key] ? window.DOCS.link(DOCS[key]) : ''}</div></div>`;
 /** @type {Record<string, (el: HTMLElement, ctx: any) => void>} */
 const pages = {};
 
@@ -309,5 +301,5 @@ function confirmAction(o) {
   });
 }
 
-window.AGENT = { hint, empty, pages, field, showError, counters, serverErrors, saveBar, confirmAction, count };
+window.AGENT = { empty, pages, field, showError, counters, serverErrors, saveBar, confirmAction, count };
 })();
