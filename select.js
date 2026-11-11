@@ -11,7 +11,12 @@ const label=s=>{ const o=s.options[s.selectedIndex]; return o?(o.dataset.label||
 const esc=t=>String(t).replace(/[&<>"']/g,c=>`&#${c.charCodeAt(0)};`);
 function closeMenu(refocus){ if(!menu) return; const m=menu, f=openFor; menu=null; openFor=null; m.remove(); if(f){ f.btn.setAttribute('aria-expanded','false'); if(refocus) f.btn.focus({preventScroll:true}); } document.removeEventListener('pointerdown',outside,true); window.removeEventListener('resize',onWin); document.removeEventListener('scroll',onWin,true); }
 const outside=e=>{ if(menu&&!menu.contains(e.target)&&!(openFor&&openFor.btn.contains(e.target))) closeMenu(false); };
-const onWin=e=>{ if(menu&&e&&menu.contains(e.target)) return; closeMenu(false); };
+/* A resize, or a scroll that moves the trigger, would leave the list misplaced, so it closes.
+   A scroll that leaves the trigger where it was (a late event from a scroll before the list
+   opened, or one in an unrelated panel) does not. */
+const onWin=e=>{ if(menu&&e&&menu.contains(e.target)) return;
+  if(e&&e.type==='scroll'&&openFor&&openFor.at){ const r=openFor.btn.getBoundingClientRect(); if(Math.abs(r.top-openFor.at.top)<1&&Math.abs(r.left-openFor.at.left)<1) return; }
+  closeMenu(false); };
 function choose(f,i){ const s=f.sel; if(s.options[i].disabled) return; const changed=s.selectedIndex!==i; s.selectedIndex=i; sync(f); closeMenu(true); if(changed){ s.dispatchEvent(new Event('input',{bubbles:true})); s.dispatchEvent(new Event('change',{bubbles:true})); } }
 function openMenu(f){ if(openFor===f){ closeMenu(true); return; } closeMenu(false); const s=f.sel; if(s.disabled) return;
   const m=document.createElement('div'); m.className='ssel-menu'; m.setAttribute('role','listbox'); m.tabIndex=-1; if(s.getAttribute('aria-label')) m.setAttribute('aria-label',s.getAttribute('aria-label'));
@@ -19,7 +24,7 @@ function openMenu(f){ if(openFor===f){ closeMenu(true); return; } closeMenu(fals
   /* data-depth indents an option under its parent, as a nested domain sits under its own. */
   function item(s,o){ const i=[...s.options].indexOf(o); const d=+o.dataset.depth||0; return `<button type="button" class="ssel-o" role="option" data-i="${i}" aria-selected="${s.selectedIndex===i}" ${o.disabled?'aria-disabled="true"':''}${d?` style="--depth:${d}"`:''}><span>${esc(o.textContent)}</span>${s.selectedIndex===i?CHECK:''}</button>`; }
   document.body.appendChild(m); menu=m; openFor=f; f.btn.setAttribute('aria-expanded','true');
-  const r=f.btn.getBoundingClientRect(); m.style.minWidth=Math.max(r.width,160)+'px'; m.style.maxWidth=Math.min(360,innerWidth-16)+'px';
+  const r=f.btn.getBoundingClientRect(); f.at=r; m.style.minWidth=Math.max(r.width,160)+'px'; m.style.maxWidth=Math.min(360,innerWidth-16)+'px';
   const mh=Math.min(m.scrollHeight,300); const below=innerHeight-r.bottom; const up=below<mh+12&&r.top>below;
   m.style.maxHeight=Math.max(120,Math.min(300,(up?r.top:below)-12))+'px'; m.style.left=Math.max(8,Math.min(innerWidth-m.offsetWidth-8,r.left))+'px'; m.style.top=up?Math.max(8,r.top-m.offsetHeight-4)+'px':(r.bottom+4)+'px';
   const opts=[...m.querySelectorAll('.ssel-o')]; let cur=Math.max(0,opts.findIndex(o=>o.getAttribute('aria-selected')==='true'));
