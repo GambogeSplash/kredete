@@ -697,8 +697,8 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 .dccard h3,.dccard p,.dccard .dccount{display:block;margin-left:var(--s-3);margin-right:var(--s-3)}
 .dccard h3{margin-top:var(--s-3);margin-bottom:0;font-size:var(--fs-lg);font-weight:600}.dccard p{margin-top:2px;margin-bottom:var(--s-2)}
 .dccount{color:var(--mute);font-size:var(--fs-xs)}
-.dcimg{display:block;aspect-ratio:16/8;overflow:hidden;border-radius:calc(var(--r-lg) - 6px);background:var(--fill-1)}
-.dcimg img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 7%;transition:transform .5s var(--ease-out)}
+.dcimg{display:block;aspect-ratio:4/3;background:#fff;overflow:hidden;border-radius:calc(var(--r-lg) - 6px);background:var(--fill-1)}
+.dcimg img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 50%;transition:transform .5s var(--ease-out)}
 .dccard:hover .dcimg img{transform:scale(1.04)}
 .dcimg.sm{width:120px;aspect-ratio:16/10;flex:none}
 .dctopic{display:flex;align-items:center;gap:var(--s-4);margin:var(--s-3) 0 var(--s-5)}.dctopic h1{margin:0 0 4px}.dctopic p{margin:0}

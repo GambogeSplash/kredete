@@ -1,7 +1,7 @@
 /* Support agent: the customer-facing bot as a product. Four pages, one Publish. */
 (() => {
 const B=window.BRAIN; const $=(s,r=document)=>r.querySelector(s); const $$=(s,r=document)=>[...r.querySelectorAll(s)]; const esc=B.esc;
-const NAV=[['Agent',['Overview']],['Build',['Knowledge','Experience']]];
+const NAV=[['Support agent',['Overview']],['Build',['Knowledge','Experience']]];
 const bot=()=>{ const b=B.S.bot; b.products=b.products||[{id:'p1',name:'Broth Business app',origin:'app.kredete.example',accent:'#5e6ad2',key:'bk_live_7f3a91c2',live:true},{id:'p2',name:'Broth Help site',origin:'help.kredete.example',accent:'#26a269',key:'bk_live_c40be8d1',live:true}]; b.fixes=b.fixes||[]; b.version=b.version||1; b.tab=NAV.flatMap(g=>g[1]).includes(b.tab)?b.tab:'Overview'; return b; };
 const live=d=>d.id==='fee_schedule'||d.id==='public_fee'||B.S.ext[d.id]===true;
 const norm=t=>String(t).toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
@@ -9,7 +9,7 @@ const drafts=()=>bot().fixes.filter(f=>f.status==='draft').length;
 
 function shell(){ const b=bot(); if(!['Overview','Knowledge','Experience'].includes(b.tab)) b.tab='Overview'; const d=drafts();
   $('#app').className='';
-  $('#app').innerHTML=`<div class="lset"><nav class="lrail" aria-label="Support agent">${NAV.map(([g,ts])=>`${ts.map(t=>`<button class="tab" data-at="${t}" aria-current="${b.tab===t?'page':'false'}">${t}</button>`).join('')}`).join('')}</nav>
+  $('#app').innerHTML=`<div class="lset"><nav class="lrail" aria-label="Support agent">${NAV.map(([g,ts],gi)=>`${gi?'<div class="lrail-sep" role="separator"></div>':''}<div class="lrail-h">${g}</div>${ts.map(t=>`<button class="tab" data-at="${t}" aria-current="${b.tab===t?'page':'false'}">${t}</button>`).join('')}`).join('')}</nav>
    <div class="lcont"><div class="aghd"><h1 class="lcont-t">${b.tab}</h1><span class="lsp"></span>${d?`<span class="tag warn">${d} unpublished</span><button class="btn primary" id="agpub">Publish version ${b.version+1}</button>`:b.tab==='Overview'?`<span class="tag ok">Live · version ${b.version}</span>`:''}</div><div id="abpane"></div></div></div>`;
   $$('[data-at]').forEach(x=>x.onclick=()=>{ b.tab=x.dataset.at; B.save(); shell(); window.scrollTo(0,0); });
   const pb=$('#agpub'); if(pb) pb.onclick=()=>{ const n=bot().fixes.filter(f=>f.status==='draft'); n.forEach(f=>f.status='live'); b.version++; B.save(); B.toast('Version '+b.version+' is live on '+b.products.filter(p=>p.live).length+' products'); shell(); };
