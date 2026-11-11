@@ -199,7 +199,7 @@ function profileMenu(a){ if(pm){ closePM(true); return; } const s=S(), u=s.user;
 /* ---------- account settings page ---------- */
 window.SURFACES.account=()=>{ const s=S(), u=s.user; if(!u){ s.surface='app'; B.route(); return; }
  const isAdm=(u.roles||[]).some(r=>r==='admin'||r==='compliance');
- const NAV=[['Account settings',[['Profile','Profile'],['Sessions','Sessions'],['Data','Data']]]].concat(isAdm?[['Workspace settings',[['Workspace','Workspace'],['People','People and access'],['Sources','Sources'],['Policies','Policies'],['Domains','Domains'],['Audit','Audit log']]]]:[]);
+ const NAV=[['Account settings',[['Profile','Profile'],['Sessions','Sessions'],['Data','Data']]]].concat(isAdm?[['Administrator settings',[['Workspace','Workspace'],['People','People and access'],['Sources','Sources'],['Policies','Policies'],['Domains','Domains'],['Audit','Audit log']]]]:[]);
  const ids=NAV.flatMap(g=>g[1].map(x=>x[0])); const tab=ids.includes(s.acctTab)?s.acctTab:'Profile';
  const hint=t=>`<span class="hint" tabindex="0" data-tip="${t}" aria-label="${t}">i</span>`;
  $('#app').className='';
