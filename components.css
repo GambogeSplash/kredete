@@ -451,3 +451,16 @@ html[data-mode=dark] .umsg.editing{filter:none}
  .rl[aria-current=page]{background:#ececef}
  html[data-mode=dark] .rl[aria-current=page]{background:#e6e6e6}
 }
+
+/* audit log and domains */
+.audbar{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s-4);margin-bottom:var(--s-4);flex-wrap:wrap}
+.audf{display:flex;gap:var(--s-3);flex-wrap:wrap}.audf label{display:grid;gap:4px}.audf label span{color:var(--mute);font-size:var(--fs-xs)}
+.audd{height:36px;margin:0!important;padding:0 10px;min-width:150px}
+.audt{border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--surface)}
+.aud-r{display:grid;grid-template-columns:140px 1.1fr 1fr 1.1fr 120px;gap:var(--s-3);align-items:center;padding:12px var(--s-4);border-bottom:1px solid var(--line);font-size:var(--fs-sm)}
+.aud-r:last-child{border-bottom:0}.aud-h{color:var(--mute);font-size:var(--fs-xs);background:var(--fill-1)}.aud-r b{font-weight:500}.aud-e{grid-template-columns:1fr;text-align:center;padding:32px}
+.aud-r .lav,.aud-r .avimg{vertical-align:middle}
+.audmore{display:flex;align-items:center;gap:var(--s-3);margin-top:var(--s-4)}
+.domadd{display:flex;gap:var(--s-2);margin-top:var(--s-4);max-width:480px}.domadd .eminp{margin:0;flex:1}
+code{font-family:var(--mono,ui-monospace,monospace);font-size:12px;background:var(--fill-1);padding:1px 6px;border-radius:6px}
+@media (max-width:900px){.aud-r{grid-template-columns:1fr 1fr}.aud-h{display:none}}
