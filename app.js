@@ -171,7 +171,7 @@ function renderAsk(){
   <div class="cx ${panelOn()?'':'closed'}"><section class="cxmain"><div class="lhome">
     <div class="dchead"><b>New chat</b></div>
     <div class="lh-in">
-      <div class="bm" id="bm"></div>
+      <div class="lm" id="lm"><img src="assets/brand/logomark.png" alt="Broth" draggable="false"></div>
       <h1 class="lh-t">${greeting()}</h1>
       ${composer(true,n,'Ask a question')}
       <div class="lh-sugs">${chips.slice(0,chips.length>=4?4:2).map((c,i)=>{ const ap=appsOn(); const ic=/access/i.test(c)?ICON('lock',16):/tour/i.test(c)?ICON('book',16):SRCICON(ap[i%Math.max(1,ap.length)]||'Confluence',18); return `<button class="lh-sug" style="--i:${i}" data-q="${esc(c)}"><span class="lh-si">${ic}</span><span class="lh-sq">${esc(c)}</span><span class="lh-go">${ICON('arrow',14)}</span></button>`; }).join('')}</div>

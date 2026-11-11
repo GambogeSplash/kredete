@@ -45,4 +45,13 @@ window.BROTH_MASCOT = { mount, svg: () => svg('head') };
 const scan = () => document.querySelectorAll('.bm:not([data-bm])').forEach((h) => mount(h));
 new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
 scan();
+/* the logomark on the new chat page: lands softly, then floats */
+const lmScan = () => document.querySelectorAll('.lm:not([data-lm])').forEach((h) => {
+  h.dataset.lm = '1';
+  const img = h.querySelector('img'); if (!img || !M || RM()) return;
+  M.animate(img, { y: [-24, 0], scale: [.9, 1], opacity: [0, 1] }, { type: 'spring', stiffness: 260, damping: 14 });
+  M.animate(img, { y: [0, -4] }, { duration: 2.4, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut', delay: .8 });
+});
+new MutationObserver(lmScan).observe(document.documentElement, { childList: true, subtree: true });
+lmScan();
 })();

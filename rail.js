@@ -3,17 +3,20 @@
 const $ = (s, r = document) => r.querySelector(s);
 const MENU = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5 9h14M5 15h14"/></svg>';
 const wide = matchMedia('(min-width:901px)');
+let TR = null; /* the account block: kept by reference so a redraw of the rail never throws it away */
 function placeAccount() {
-  const tr = $('.top-right'); const slot = $('#rlacct');
-  if (!tr || !slot) return;
-  if (wide.matches) { if (tr.parentElement !== slot) slot.appendChild(tr); }
-  else if (tr.parentElement !== $('.top')) $('.top').appendChild(tr);
+  if (!TR || !TR.isConnected) TR = $('.top-right') || TR;
+  const slot = $('#rlacct');
+  if (!TR) return;
+  if (wide.matches && slot) { if (TR.parentElement !== slot) slot.appendChild(TR); }
+  else if (TR.parentElement !== $('.top')) $('.top').appendChild(TR);
 }
 wide.addEventListener('change', placeAccount);
 window.BROTH_RAIL = () => {
   const src = [...document.querySelectorAll('#surfaces .snav .surf')];
   let rail = $('#rail');
   if (!rail) { rail = document.createElement('nav'); rail.id = 'rail'; rail.className = 'rail'; rail.setAttribute('aria-label', 'Main'); document.body.insertBefore(rail, $('.top')); }
+  if (TR) $('.top').appendChild(TR);
   rail.innerHTML = '<button type="button" class="rl rl-menu" id="rlmenu" aria-label="Show or hide chats" title="Show or hide chats">' + MENU + '</button><div class="rl-grp"></div><div class="rl-acct" id="rlacct"></div>';
   placeAccount();
   if (!$('#sbsearch')) {
