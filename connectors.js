@@ -51,6 +51,8 @@ const SETTINGS_HELP = {
   review: 'How long a verified page stays current before it is due for review.',
 };
 let banner = null;
+/** The cards rise once per visit to the page, not on every repaint. */
+let riseDone = false;
 /** The connection a return from Atlassian or GitHub just connected, toasted once loaded. */
 let connected = null;
 /** Stops following the page's runs; replaced each time the page is drawn. */
@@ -80,7 +82,6 @@ function readReturn() {
   if (q.has('connected')) {
     banner = null;
     history.replaceState({}, '', '/admin/connectors');
-    if (B.setupPending()) { B.toast('Confluence is connected'); B.go('/setup', { replace: true }); return 'moved'; }
     connected = q.get('connected');
   } else {
     banner = OAUTH_ERRORS[q.get('error')] || 'The Confluence authorization did not finish. Authorize again.';
@@ -89,32 +90,37 @@ function readReturn() {
   return undefined;
 }
 
-/** The Add a source popover: a Confluence site or a GitHub account to connect. */
+const SOON = [['Notion', null], ['Slack', null], ['SharePoint', null]];
+const soonIcon = (ic, px) => (ic ? B.srcIcon(ic, px) : ICON('plug', 20));
+/** The Add a source dialog: a Confluence site or a GitHub account to connect, then what is coming. */
 function addSource() {
-  const anchor = $('#cnadds');
-  if (anchor.getAttribute('aria-expanded') === 'true') { window.ADMIN.closePop(); return; }
   const confluence = data ? data.connections.some((c) => c.system === 'confluence' && c.status !== 'disconnected') : false;
   const docs = data ? data.connections.some((c) => c.system === 'github_docs' && c.status !== 'disconnected') : false;
-  const p = window.ADMIN.pop(anchor, `<div class="dmbody cnpop"><form id="cnadd" novalidate><label class="dmlab" for="cnsite">${confluence ? 'Connect another Confluence site' : 'Confluence site'}</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse ds-msg bad" id="cnadde" role="alert"></div></form>
-    <form id="ghadd" novalidate><label class="dmlab" for="ghlogin">${docs ? 'Connect another GitHub account' : 'GitHub docs'}</label><div class="cnaddrow"><input id="ghlogin" class="eminp" placeholder="Organization or user, like kredete" autocomplete="off" spellcheck="false"><button type="submit" class="btn primary" id="ghaddgo">Connect</button></div><div class="hse ds-msg bad" id="ghadde" role="alert"></div></form>
-    <div class="cnsoon"><span class="cnsec-i">${B.srcIcon('gdrive', 18)}</span><span><b>Google Drive</b><small>${B.sandbox() ? 'Needs Google Workspace' : 'Set up under Google Drive below'}</small></span><span class="tag">${B.sandbox() ? 'Coming soon' : 'Below'}</span></div></div>`, 'Add a source');
-  const flag = (id, msg) => { const f = $(id === 'cn' ? '#cnsite' : '#ghlogin', p); $(`#${id}adde`, p).textContent = msg; if (msg) f.setAttribute('aria-invalid', 'true'); else f.removeAttribute('aria-invalid'); };
-  $('#cnsite', p).oninput = () => flag('cn', '');
-  $('#ghlogin', p).oninput = () => flag('gh', '');
-  $('#cnadd', p).onsubmit = (e) => {
+  const missing = (name) => B.sandbox() && data && data.credentials.some((c) => c.name === name && !c.configured);
+  const needApp = (name, what, label) => `<div class="cnneed"><span class="ltb"><b>${what}</b><small>Add the app first, then connect.</small></span><button type="button" class="btn sm primary" data-cneed="${name}">${label}</button></div>`;
+  B.openModal(`<div class="modal bt" style="max-width:480px" role="dialog" aria-label="Add a source"><div class="bar"><span>Add a source</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><div class="dmbody cnpop">${missing('confluence_oauth') ? needApp('confluence_oauth', 'Confluence', 'Add the Confluence app') : `<form id="cnadd" novalidate><label class="dmlab" for="cnsite">${confluence ? 'Connect another Confluence site' : 'Confluence site'}</label><div class="cnaddrow"><input id="cnsite" class="eminp" placeholder="yourteam.atlassian.net" autocomplete="off" spellcheck="false" inputmode="url"><button type="submit" class="btn primary" id="cnaddgo">Connect</button></div><div class="hse ds-msg bad" id="cnadde" role="alert"></div></form>`}
+    ${missing('github_app') ? needApp('github_app', 'GitHub docs', 'Add the GitHub App') : `<form id="ghadd" novalidate><label class="dmlab" for="ghlogin">${docs ? 'Connect another GitHub account' : 'GitHub docs'}</label><div class="cnaddrow"><input id="ghlogin" class="eminp" placeholder="Organization or user, like kredete" autocomplete="off" spellcheck="false"><button type="submit" class="btn primary" id="ghaddgo">Connect</button></div><div class="hse ds-msg bad" id="ghadde" role="alert"></div></form>`}
+    <div class="slist"><div class="srow"><span class="adsl">${B.srcIcon('gdrive', 28)}</span><span class="ltb"><b>Google Drive</b><small>${B.sandbox() ? 'Needs Google Workspace.' : 'Set up under Google Drive below.'}</small></span>${B.sandbox() ? '<span class="tag">Unavailable</span>' : ''}</div>${SOON.map(([n, ic]) => `<div class="srow"><span class="adsl">${soonIcon(ic, 28)}</span><span class="ltb"><b>${n}</b><small>Coming soon.</small></span><span class="tag">Soon</span></div>`).join('')}</div></div></div></div>`);
+  $$('[data-cneed]').forEach((b) => { b.onclick = () => { B.closeModal(); credentialForm(b.dataset.cneed); }; });
+  const flag = (id, msg) => { const f = $(id === 'cn' ? '#cnsite' : '#ghlogin'); $(`#${id}adde`).textContent = msg; if (msg) f.setAttribute('aria-invalid', 'true'); else f.removeAttribute('aria-invalid'); };
+  if ($('#cnsite')) setTimeout(() => $('#cnsite').focus(), 80);
+  const cs = $('#cnsite'), gl = $('#ghlogin');
+  if (cs) cs.oninput = () => flag('cn', '');
+  if (gl) gl.oninput = () => flag('gh', '');
+  if ($('#cnadd')) $('#cnadd').onsubmit = (e) => {
     e.preventDefault();
-    const site = $('#cnsite', p).value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const site = $('#cnsite').value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(site)) { flag('cn', 'Enter the site address, like yourteam.atlassian.net'); return; }
-    B.busy($('#cnaddgo', p), async () => {
+    B.busy($('#cnaddgo'), async () => {
       const created = await B.api.post('/admin/connections', { system: 'confluence', site });
-      await window.SETUP.authorize(created.id);
+      await authorize(created.id);
     }, (error) => { flag('cn', B.problem(error)); refresh(); });
   };
-  $('#ghadd', p).onsubmit = (e) => {
+  if ($('#ghadd')) $('#ghadd').onsubmit = (e) => {
     e.preventDefault();
-    const login = $('#ghlogin', p).value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/.*$/, '');
+    const login = $('#ghlogin').value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/.*$/, '');
     if (!GITHUB_LOGIN.test(login)) { flag('gh', 'Enter the GitHub organization or user name, like kredete'); return; }
-    B.busy($('#ghaddgo', p), async () => {
+    B.busy($('#ghaddgo'), async () => {
       const created = await B.api.post('/admin/connections', { system: 'github_docs', site: login });
       await install(created.id);
     }, (error) => { flag('gh', B.problem(error)); refresh(); });
@@ -123,8 +129,8 @@ function addSource() {
 
 async function render(el) {
   if (readReturn() === 'moved') return;
-  window.ADMIN.actions('<button type="button" class="btn primary sm" id="cnadds" aria-haspopup="dialog">Add a source</button>');
-  $('#cnadds').onclick = addSource;
+  riseDone = false;
+  window.ADMIN.actions('');
   el.innerHTML = `${banner ? `<div class="banner bad" role="alert">${esc(banner)}</div>` : ''}<div id="cnbody">${B.loadingBlock('Loading connectors', 3, 'cnsec skcapp')}</div>`;
   try { data = await fetchAll(); }
   catch (error) {
@@ -147,7 +153,13 @@ function draw() {
   const conf = data.credentials.find((c) => c.name === 'confluence_oauth');
   const docs = data.connections.filter((c) => c.system === 'github_docs' && c.status !== 'disconnected');
   const app = data.credentials.find((c) => c.name === 'github_app');
-  body.innerHTML = `<section class="cnsec"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2><p class="amute">Broth reads the spaces you include, with each person's Confluence access.</p></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
+  const conns = data.connections.filter((c) => c.status !== 'disconnected' && ['confluence', 'gdrive', 'github_docs'].includes(c.system));
+  const cards = `<div class="ds-grid c3 cnover"><button type="button" class="ds-card add" id="cnaddcard"><span class="ds-ic adsti">${ICON('plus', 18)}</span><b>Add a source</b><small>Confluence, Docs repositories</small></button>${conns.map((c) => { const st = STATUS[c.status] || [c.status, '']; return `<article class="ds-card lift adsc" data-card="${c.id}"><div class="adsch"><span class="adsl">${B.srcIcon(c.system, 28)}</span><div><b>${esc(B.systemName(c.system))}</b><small>${esc(c.site)}</small></div><span class="tag ${st[1]}">${st[0]}</span></div><div class="adscf"><small></small><div>${c.system !== 'gdrive' || c.authorized ? `<button type="button" class="btn sm" data-sync-card="${c.id}">Sync now</button>` : ''}<button type="button" class="btn sm" data-manage="${c.id}">Manage</button></div></div></article>`; }).join('')}${SOON.map(([n, ic]) => `<article class="ds-card adsc soonc"><div class="adsch"><span class="adsl">${soonIcon(ic, 28)}</span><div><b>${n}</b><small>Coming soon.</small></div><span class="tag">Soon</span></div></article>`).join('')}</div>`;
+  // Nothing connected yet (an admin right after setup): one clear way in, and the per-source sections wait.
+  const none = conns.length === 0;
+  const first = none ? `<div class="ds-card cnfirst"><div class="empty"><h2>Connect your first source</h2><p>Broth reads Confluence and your docs repositories, with each person's own access.</p><button type="button" class="btn primary" id="cnfirst">Connect your first source</button></div></div>` : '';
+  body.classList.toggle('cnnone', none);
+  body.innerHTML = first + cards + `<section class="cnsec" id="cnconf"><div class="cnsec-h">${B.srcIcon('confluence', 32)}<div><h2>Confluence</h2><p class="amute">Broth reads the spaces you include, with each person's Confluence access.</p></div>${confluence.length ? '<span class="tag ok">Connected</span>' : '<span class="tag">Not connected</span>'}</div>
       ${B.sandbox() && conf && !conf.configured ? `<div class="notice low"><span>Add the Confluence app below before connecting a site.</span></div>` : ''}
       ${confluence.map(connectionHtml).join('') || `<div class="cnempty"><p class="amute">No Confluence site is connected.</p></div>`}
 </section>
@@ -160,6 +172,13 @@ function draw() {
       ${docs.map(connectionHtml).join('') || `<div class="cnempty"><p class="amute">No GitHub account is connected.</p></div>`}
 </section>
     ${B.sandbox() ? `<section class="cnsec"><div class="cnsec-h"><span class="cnsec-i">${ICON('lock', 18)}</span><div><h2>App credentials</h2><p class="amute">The apps Broth uses in this sandbox. Secrets are stored encrypted and never shown again.</p></div></div><div class="fgroup cncreds">${data.credentials.map(credentialRow).join('')}</div></section>` : ''}`;
+  $('#cnaddcard').onclick = addSource;
+  const fb = $('#cnfirst');
+  if (fb) fb.onclick = addSource;
+  if (!riseDone) { riseDone = true; window.ADMIN.life($('.cnover', body)); }
+  // Sync now on a card runs the connection's own Sync now, so there is one sync path.
+  $$('[data-sync-card]', body).forEach((b) => { b.onclick = () => { const own = $(`[data-conn="${b.dataset.syncCard}"] [data-cact=sync]`); if (own) own.click(); else B.toast('Authorize this connection first'); }; });
+  $$('[data-manage]', body).forEach((b) => { b.onclick = () => { const t = $(`[data-conn="${b.dataset.manage}"]`); if (t) { t.scrollIntoView({ block: 'start', behavior: 'auto' }); const f = $('button', t); if (f) f.focus({ preventScroll: true }); } }; });
   paint();
   wire();
   watch();
@@ -208,7 +227,7 @@ function wire() {
       if (act === 'sync') { syncNow(b, id); return; }
       if (act === 'disconnect' && !b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Confirm disconnect'; b.classList.add('danger'); return; }
       B.busy(b, async () => {
-        if (act === 'authorize') { await window.SETUP.authorize(id); return; }
+        if (act === 'authorize') { await authorize(id); return; }
         if (act === 'install') { await install(id); return; }
         if (act === 'verify') {
           const r = await B.api.post(`/admin/connections/${id}/verify`);
@@ -246,6 +265,11 @@ function wire() {
     const space = link && data.containers.find((x) => x.id === link.closest('[data-space]').dataset.space);
     if (space) failedDrawer(space, link.dataset.failed);
   };
+}
+/** Sends the admin to Atlassian to authorize the site; Atlassian returns to this page. */
+async function authorize(connectionId) {
+  const started = await B.api.post(`/admin/connections/${connectionId}/oauth/start`);
+  location.assign(started.authorization_url);
 }
 /** Sends the admin to GitHub to install the app; GitHub returns to this page. */
 async function install(id) {
@@ -558,5 +582,5 @@ async function refresh() {
   try { data = await fetchAll(); draw(); } catch (error) { B.toast(B.problem(error)); }
 }
 
-window.ADMIN.tabs.connectors = { label: 'Connectors', hint: 'Where Broth reads from. People still only see what they can already open.', roles: ['admin'], render };
+window.ADMIN.tabs.connectors = { label: 'Sources', hint: 'Where Broth reads from. People still only see what they can already open.', roles: ['admin'], render };
 })();

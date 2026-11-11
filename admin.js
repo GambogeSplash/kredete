@@ -15,7 +15,7 @@ const esc = B.esc;
 
 /** @type {Record<string, { label: string, hint?: string, roles: string[], render: (el: HTMLElement) => void }>} */
 const tabs = {};
-const ORDER = ['connectors', 'people', 'domains', 'audit'];
+const ORDER = ['workspace', 'people', 'connectors', 'domains', 'audit'];
 const allowed = () => ORDER.filter((k) => tabs[k] && B.hasRole(...tabs[k].roles));
 
 window.SURFACES.admin = (params) => {
@@ -23,13 +23,21 @@ window.SURFACES.admin = (params) => {
   const tab = params.tab;
   if (!tab || !mine.includes(tab)) { B.go('/admin/' + (mine[0] || ''), { replace: true }); return; }
   closePop();
-  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Admin"></nav><div class="lcont"><div class="ds-head"><h1 class="lcont-t">${tabs[tab].label}${tabs[tab].hint ? hint(tabs[tab].hint) : ''}</h1><div class="ds-act" id="adact"></div></div><div id="adpane"></div></div></div>`;
-  rail(tab);
+  $('#app').innerHTML = `<div class="lset">${railHtml(tab)}<div class="lcont"><div class="ds-head"><h1 class="lcont-t">${tabs[tab].label}${tabs[tab].hint ? hint(tabs[tab].hint) : ''}</h1><div class="ds-act" id="adact"></div></div><div id="adpane"></div></div></div>`;
+  wireRail($('.lrail'));
   tabs[tab].render($('#adpane'));
 };
 
 /** The (i) hint: a short sentence on hover or focus, in place of a subtitle. */
 const hint = (text) => `<span class="hint" tabindex="0" data-tip="${esc(text)}" aria-label="${esc(text)}">i</span>`;
+/* The prototype's adLife entrance: cards and rows rise 10px and fade in, 360 ms, 34 ms apart (the
+   first twelve), and the clearance bars grow from 20 percent, 420 ms, 28 ms apart. */
+function life(root) {
+  if (!root || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const ease = 'cubic-bezier(.22,1,.36,1)';
+  $$('.adseg i.on', root).forEach((i, k) => { if (i.animate) i.animate([{ transform: 'scaleY(.2)', opacity: 0.3 }, { transform: 'none', opacity: 1 }], { duration: 420, delay: k * 28, easing: ease, fill: 'backwards' }); });
+  $$('.adst,.adsc,.adrow,.addom,.adhero,.adrq', root).forEach((c, k) => { if (c.animate) c.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: Math.min(k, 12) * 34, easing: ease, fill: 'backwards' }); });
+}
 /** Fills the page title row's right-hand controls. */
 const actions = (html) => { const a = $('#adact'); if (a) a.innerHTML = html; return a; };
 
@@ -89,8 +97,28 @@ function pop(anchor, html, label) {
 function rail(tab) {
   const nav = $('.lrail');
   if (!nav) return;
-  nav.innerHTML = `${allowed().map((k) => `<button type="button" class="tab" data-at="${k}" aria-current="${k === tab ? 'page' : 'false'}">${tabs[k].label}</button>`).join('')}`;
-  $$('[data-at]', nav).forEach((b) => { b.onclick = () => B.go('/admin/' + b.dataset.at); });
+  nav.outerHTML = railHtml(tab);
+  wireRail($('.lrail'));
+}
+/**
+ * The left menu, as in the prototype: Account settings, then Administrator settings, and Sign out
+ * at the foot. Sharing requests is the Governance screen; it sits in the same group.
+ * @param {string} current a tab key, or 'governance'
+ */
+function railHtml(current) {
+  const item = (href, label, on) => `<button type="button" class="tab" data-go="${href}" aria-current="${on ? 'page' : 'false'}">${label}</button>`;
+  const admin = allowed().filter((k) => k !== 'audit' && k !== 'domains').map((k) => item('/admin/' + k, tabs[k].label, k === current));
+  const after = ['domains', 'audit'].filter((k) => allowed().includes(k)).map((k) => item('/admin/' + k, tabs[k].label, k === current));
+  const sharing = item('/governance', 'Sharing requests', current === 'governance');
+  // Workspace, People, Sources, then Sharing requests, Domains and Audit log, in the prototype's order.
+  return `<nav class="lrail" aria-label="Admin"><div class="lrail-h">Account settings</div>${item('/account', 'Profile', false)}${item('/account/sessions', 'Sessions', false)}<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administrator settings</div>${admin.join('')}${sharing}${after.join('')}<div class="lrail-f"><button type="button" class="tab out" data-out>Sign out</button></div></nav>`;
+}
+/** @param {HTMLElement | null} nav */
+function wireRail(nav) {
+  if (!nav) return;
+  $$('[data-go]', nav).forEach((b) => { b.onclick = () => B.go(b.dataset.go); });
+  const out = $('[data-out]', nav);
+  if (out) out.onclick = () => B.signOut();
 }
 // Setup can finish while an Admin tab is open (a space's first read ends): the rail follows.
 document.addEventListener('brain:setupchange', () => {
@@ -133,8 +161,9 @@ function auditState() {
 function audit(el) {
   const a = auditState();
   const count = (a.action ? 1 : 0) + (a.from ? 1 : 0) + (a.to ? 1 : 0);
-  const btn = actions(`<button type="button" class="btn sm" id="audfb" aria-haspopup="dialog">Filter${count ? `<em class="fcount">${count}</em>` : ''}</button>`).firstElementChild;
-  el.innerHTML = `<div class="ds-table bt auddt" id="audt" role="table" aria-label="Audit log" style="--cols:minmax(120px,.9fr) minmax(0,1.4fr) minmax(0,1.1fr) minmax(0,1fr) 120px"></div><div class="chmore" id="audmore"></div>`;
+  const btn = actions(`<button type="button" class="btn sm" id="audfb" aria-haspopup="dialog">Filter${count ? `<em class="fcount">${count}</em>` : ''}</button><button type="button" class="btn sm" id="audexp">Export CSV</button>`).firstElementChild;
+  $('#audexp').onclick = exportCsv;
+  el.innerHTML = `<div class="audt" id="audt" role="table" aria-label="Audit log"></div><div id="audmore"></div>`;
   btn.onclick = () => {
     if (btn.getAttribute('aria-expanded') === 'true') { closePop(); return; }
     const p = pop(btn, `<form class="dmbody" id="audff" novalidate><div><p class="dmlab">Action</p><select id="audact" aria-label="Action"><option value="">Any action</option>${ACTIONS.map(([k, l]) => `<option value="${k}" ${a.action === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="audf2"><div><p class="dmlab">From</p><input type="date" id="audfrom" class="eminp" aria-label="From" value="${esc(a.from)}"></div><div><p class="dmlab">To</p><input type="date" id="audto" class="eminp" aria-label="To" value="${esc(a.to)}"></div></div><div class="actions"><button type="button" class="btn" id="audclr">Clear</button><span class="lsp"></span><button type="submit" class="btn primary">Show results</button></div></form>`, 'Filter the audit log');
@@ -171,6 +200,22 @@ async function load(reset) {
   }
   if (mine === a.seq) draw();
 }
+/** Saves the events loaded so far as a CSV, in the browser (there is no export endpoint). */
+function exportCsv() {
+  const a = auditState();
+  if (!a.items.length) { B.toast('No events to export'); return; }
+  const cell = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const names = B.S.cache.names || {};
+  const lines = [['Timestamp', 'Event', 'Actor', 'Resource', 'Outcome'].map(cell).join(',')].concat(a.items.map((e) => [e.ts, actionName(e.action), e.actor ? names[e.actor] || e.actor : 'System', e.action === 'answer.served' ? `${e.sources.length} sources` : String(e.target_type || '').replace(/_/g, ' '), String(e.outcome).replace(/_/g, ' ')].map(cell).join(',')));
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], { type: 'text/csv' }));
+  link.download = 'audit-log.csv';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  B.toast(`Exported ${a.items.length} ${a.items.length === 1 ? 'event' : 'events'}`);
+}
 function actor(id) {
   if (!id) return '<span class="amute">System</span>';
   const n = (B.S.cache.names || {})[id];
@@ -181,27 +226,29 @@ function target(e) {
   if (e.target_type) return esc(e.target_type.replace(/_/g, ' '));
   return '';
 }
+const ICONS = { answer: 'chat', promotion: 'globe', role: 'user', clearance: 'user', invitation: 'user', user: 'lock', account: 'link', connection: 'plug', container: 'folder', credential: 'lock', setup: 'settings', session: 'lock', alias: 'hash', domain: 'hash' };
+const actionIcon = (a) => ICONS[String(a).split('.')[0]] || 'doc';
 const outcomeTone = (o) => (o === 'ok' || o === 'answered' ? 'ok' : /denied|refused|failed|error|blocked|rejected/.test(String(o)) ? 'bad' : '');
 function draw() {
   const a = auditState();
   const t = $('#audt'), more = $('#audmore');
   if (!t) return;
-  const head = '<div class="ds-tr ds-th" role="row"><span role="columnheader">Timestamp</span><span role="columnheader">Event</span><span role="columnheader">Actor</span><span role="columnheader">Resource</span><span role="columnheader">Outcome</span></div>';
+  const head = '<div class="aud-r aud-h" role="row"><span role="columnheader">Timestamp</span><span role="columnheader">Event</span><span role="columnheader">Actor</span><span role="columnheader">Resource</span><span role="columnheader">Outcome</span></div>';
   if (!a.loaded) {
-    t.innerHTML = head + (a.error ? `<div class="ds-tr dterr">${B.errorBlock(a.error, 'audretry')}</div>` : B.skeletonRows(6, 'ds-tr'));
+    t.innerHTML = head + (a.error ? `<div class="aud-r aud-e">${B.errorBlock(a.error, 'audretry')}</div>` : B.skeletonRows(6, 'aud-r'));
     const r = $('#audretry');
     if (r) r.onclick = () => load(true);
     more.innerHTML = '';
     return;
   }
   t.innerHTML = head + (a.items.length
-    ? a.items.map((e) => `<div class="ds-tr" role="row"><span class="dtm amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="dtp m-main"><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="dtm audwho">${actor(e.actor)}</span><span class="dtm">${target(e)}</span><span class="m-end"><span class="tag ${outcomeTone(e.outcome)}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('')
-    : '<div class="ds-tr dtempty"><span class="amute">No events match.</span></div>');
-  more.innerHTML = a.next ? `<button type="button" class="btn sm" id="audload" ${a.loading ? 'disabled' : ''}>${a.loading ? 'Loading' : 'Show more'}</button>` : '';
+    ? a.items.map((e) => `<div class="aud-r" role="row"><span class="amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="audw"><i class="audi">${ICON(actionIcon(e.action), 14)}</i><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="audwho">${actor(e.actor)}</span><span>${target(e)}</span><span><span class="tag ${outcomeTone(e.outcome)}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('')
+    : '<div class="aud-r aud-e"><span class="amute">No events match.</span></div>');
+  more.innerHTML = a.next ? `<div class="audmore"><button type="button" class="btn sm" id="audload" ${a.loading ? 'disabled' : ''}>${a.loading ? 'Loading' : 'Show more'}</button></div>` : '';
   const m = $('#audload');
   if (m) m.onclick = () => load(false);
 }
-tabs.audit = { label: 'Audit', hint: 'Every sign-in, answer and change, newest first.', roles: ['admin', 'compliance'], render: audit };
+tabs.audit = { label: 'Audit log', hint: 'Every sign-in, answer and change, newest first.', roles: ['admin', 'compliance'], render: audit };
 
-window.ADMIN = { tabs, names, hint, actions, pop, closePop };
+window.ADMIN = { tabs, names, hint, actions, pop, closePop, life, railHtml, wireRail };
 })();

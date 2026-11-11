@@ -288,7 +288,7 @@ test('pages that could not be read are named on the done screen, with a link to 
   }
   await page.getByRole('link', { name: 'see Connectors' }).click();
   await expect(page).toHaveURL(/\/admin\/connectors$/);
-  await expect(page.getByRole('heading', { name: 'Connectors' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sources' })).toBeVisible();
 });
 
 // The same through the worker: the fake source fails two pages on every fetch, and the worker

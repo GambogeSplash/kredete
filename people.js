@@ -41,13 +41,28 @@ const roleTag = (r, domains) => (r.role === 'domain_owner'
   : `<span class="tag">${esc(B.ROLE_NAMES[r.role] || r.role)}</span>`);
 const roleTags = (roles, domains) => (roles.length ? roles.map((r) => roleTag(r, domains)).join('') : '<span class="tag">Employee</span>');
 
+/* One row of chips: role filters for the people list, then Invitations and, in a sandbox,
+   Confluence accounts. The search and Invite sit on the same line. */
+const LEVEL = { public: 0, internal: 1, confidential: 2, restricted: 3 };
+const CHIPS = [['', 'Everyone'], ['admin', 'Admins'], ['domain_owner', 'Owners'], ['compliance', 'Compliance']];
 function render(el) {
+  window.ADMIN.closePop();
   const p = state();
-  const tabs = [['people', 'People'], ['invitations', 'Invitations']];
-  if (B.sandbox()) tabs.push(['links', 'Confluence accounts']);
-  window.ADMIN.actions(B.sandbox() ? '<button type="button" class="btn primary sm" id="ppinvite" aria-haspopup="dialog">Invite people</button>' : '');
-  el.innerHTML = `<div class="pphead"><div class="libchips govtabs" role="tablist" aria-label="People">${tabs.map(([k, l]) => `<button type="button" class="lchip ${p.tab === k ? 'on' : ''}" role="tab" aria-selected="${p.tab === k}" data-pt="${k}">${l}</button>`).join('')}</div></div><div id="pppane"></div>`;
-  $$('[data-pt]', el).forEach((b) => { b.onclick = () => { p.tab = b.dataset.pt; render(el); }; });
+  p.rise = true;
+  const u = p.users;
+  const chips = CHIPS.map(([k, l]) => [k, l, p.tab === 'people' && (u.role || '') === k]);
+  chips.push(['@invitations', 'Invitations', p.tab === 'invitations']);
+  if (B.sandbox()) chips.push(['@links', 'Confluence accounts', p.tab === 'links']);
+  el.innerHTML = `<div class="adbar2">${p.tab === 'people' ? `<div class="adsearch"><span>${ICON('search', 16)}</span><input id="ppq" type="search" placeholder="Search people" aria-label="Search people" value="${esc(u.q)}" autocomplete="off"></div>` : ''}<div class="ixchips" role="tablist" aria-label="People">${chips.map(([k, l, on]) => `<button type="button" class="ixchip ${on ? 'on' : ''}" role="tab" aria-selected="${on}" data-pt="${k}">${l}</button>`).join('')}</div>${B.sandbox() ? '<button type="button" class="btn sm primary" id="ppinvite" aria-haspopup="dialog">Invite people</button>' : ''}</div><div id="pppane"></div>`;
+  $$('[data-pt]', el).forEach((b) => {
+    b.onclick = () => {
+      const k = b.dataset.pt;
+      if (k === '@invitations') p.tab = 'invitations';
+      else if (k === '@links') p.tab = 'links';
+      else { p.tab = 'people'; u.role = k; }
+      render(el);
+    };
+  });
   const inv = $('#ppinvite');
   if (inv) inv.onclick = inviteModal;
   // Role tags name their domain: draw the people again once the domains arrive, whichever
@@ -67,17 +82,13 @@ async function domains() {
 /* ---------- people ---------- */
 function people() {
   const u = state().users;
-  $('#pppane').innerHTML = `<div class="bt-bar"><div class="libs ppsearch"><span class="libs-i">${ICON('search', 15)}</span><input id="ppq" type="search" placeholder="Search people" aria-label="Search people" value="${esc(u.q)}" autocomplete="off"></div><div class="bt-chips" role="group" aria-label="Filter by role">${ROLE_FILTERS.map(([k, l]) => `<button type="button" class="lchip ${(u.role || '') === k ? 'on' : ''}" aria-pressed="${(u.role || '') === k}" data-rf="${k}">${l}</button>`).join('')}</div></div><div class="ds-table bt ppdt" role="table" aria-label="People" style="--cols:minmax(0,1.6fr) minmax(0,1.6fr) minmax(0,.9fr) 100px" id="pplist"></div><div class="chmore" id="ppmore"></div>`;
-  $$('[data-rf]').forEach((b) => {
-    b.onclick = () => {
-      u.role = b.dataset.rf;
-      $$('[data-rf]').forEach((o) => { o.classList.toggle('on', o === b); o.setAttribute('aria-pressed', String(o === b)); });
-      drawUsers();
-    };
-  });
+  $('#pppane').innerHTML = `<div class="adppl" id="pplist" role="table" aria-label="People"></div><div class="chmore" id="ppmore"></div>`;
   let timer = 0;
-  $('#ppq').oninput = (e) => { clearTimeout(timer); timer = setTimeout(() => { u.q = e.target.value.trim(); loadUsers(true); }, 220); };
+  $('#ppq').oninput = (e) => { clearTimeout(timer); timer = setTimeout(() => { u.q = e.target.value.trim(); state().rise = true; loadUsers(true); }, 220); };
   if (!u.loaded || u.error) loadUsers(true); else drawUsers();
+  // Pending invitations show as rows under the people; read them once.
+  const v = state().invites;
+  if (!v.loaded && !v.loading && !v.error) loadInvites(true);
 }
 async function loadUsers(reset) {
   const u = state().users;
@@ -96,27 +107,51 @@ async function loadUsers(reset) {
   finally { if (mine === u.seq) u.loading = false; }
   if (mine === u.seq) drawUsers();
 }
+const levelBars = (c) => `<span class="adseg">${[0, 1, 2, 3].map((i) => `<i class="${i <= (LEVEL[c] || 0) ? 'on' : ''}"></i>`).join('')}</span>`;
+/** Pending invitations as rows: the email, a Pending tag, and Cancel. */
+function pendingRows(v) {
+  return v.items.filter((x) => x.status === 'open').map((x) => `<div class="adrow pend" role="row" data-invite="${x.id}"><span class="adav adgh">${ICON('inbox', 18)}</span><div class="adwho"><b>${esc(x.email)}</b><small>Invited ${B.when(x.created_at, B.ago(x.created_at))}</small></div><div class="adroles">${x.roles.length ? x.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('') : ''}<span class="tag warn">Pending</span></div><div class="adlv">${levelBars(x.clearance)}<em>${esc(B.clearanceName(x.clearance))}</em></div><small class="adact"></small><div class="adrowa on"><button type="button" class="btn sm" data-revoke="${x.id}">Cancel</button></div></div>`).join('');
+}
+function wireRevoke(scope, after) {
+  const v = state().invites;
+  $$('[data-revoke]', scope).forEach((b) => {
+    b.onclick = () => {
+      if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Confirm'; b.classList.add('danger'); return; }
+      B.busy(b, async () => {
+        await B.api.del(`/admin/invitations/${b.dataset.revoke}`);
+        const i = v.items.findIndex((x) => x.id === b.dataset.revoke);
+        if (i >= 0) v.items[i] = Object.assign({}, v.items[i], { status: 'revoked' });
+        B.toast('Invitation revoked');
+        after();
+      });
+    };
+  });
+}
 function drawUsers() {
   const u = state().users;
   const list = $('#pplist'), more = $('#ppmore');
   if (!list) return;
-  const head = '<div class="ds-tr ds-th" role="row"><span role="columnheader">Person</span><span role="columnheader">Roles</span><span role="columnheader">Clearance</span><span role="columnheader"><span class="sr">Actions</span></span></div>';
+  const v0 = state().invites;
+  const rise = u.loaded && (v0.loaded || v0.error) && state().rise;
   if (!u.loaded) {
-    list.innerHTML = head + (u.error ? `<div class="ds-tr dterr">${B.errorBlock(u.error, 'ppretry')}</div>` : B.skeletonRows(5, 'ds-tr'));
+    list.innerHTML = u.error ? `<div class="aud-r aud-e">${B.errorBlock(u.error, 'ppretry')}</div>` : B.skeletonRows(5, 'adrow');
     const r = $('#ppretry');
     if (r) r.onclick = () => loadUsers(true);
     more.innerHTML = '';
     return;
   }
   const doms = state().domains;
-  const shown = u.items.filter((x) => !u.role || (u.role === 'suspended' ? x.status === 'suspended' : x.roles.some((r) => r.role === u.role)));
-  list.innerHTML = head + (shown.length
-    ? shown.map((x) => `<div class="ds-tr" role="row" data-user="${x.id}"><span class="dtp ppwho m-main">${AVATAR(x.name, 'lav', 28)}<span><b>${esc(x.name)}</b><small>${esc(x.email)}</small></span>${x.status === 'suspended' ? '<span class="tag bad">Suspended</span>' : ''}</span><span class="dtm acchips">${roleTags(x.roles, doms)}</span><span class="dtm">${esc(B.clearanceName(x.clearance))}</span><span class="m-end"><button type="button" class="btn sm rowa" data-edit="${x.id}" aria-label="Edit ${esc(x.name)}">Edit</button></span></div>`).join('')
-    : `<div class="ds-tr dtempty"><span class="amute">${u.q || u.role ? 'Nobody matches.' : 'Nobody has signed in yet.'}</span></div>`);
+  const shown = u.items.filter((x) => !u.role || x.roles.some((r) => r.role === u.role));
+  const pend = !u.role && !u.q ? pendingRows(state().invites) : '';
+  list.innerHTML = (shown.length || pend
+    ? shown.map((x) => `<div class="adrow" role="row" data-user="${x.id}"><span class="adav">${AVATAR(x.name, 'lav', 40)}</span><div class="adwho"><b>${esc(x.name)}</b><small>${esc(x.email)}</small></div><div class="adroles">${x.roles.length ? x.roles.map((r) => roleTag(r, doms)).join('') : '<span class="amute">Employee</span>'}</div><div class="adlv" title="${esc(B.clearanceName(x.clearance))}">${levelBars(x.clearance)}<em>${esc(B.clearanceName(x.clearance))}</em></div><small class="adact">${x.status === 'suspended' ? '<span class="tag bad">Suspended</span>' : ''}</small><div class="adrowa"><button type="button" class="btn sm" data-edit="${x.id}" aria-label="Edit ${esc(x.name)}">Edit</button></div></div>`).join('') + pend
+    : `<div class="ixempty"><b>${u.q || u.role ? 'No one matches' : 'No one has signed in yet'}</b>${u.q || u.role ? '<p>Try a different search or filter.</p>' : ''}</div>`);
   more.innerHTML = u.next ? `<button type="button" class="btn sm" id="ppload" ${u.loading ? 'disabled' : ''}>${u.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#ppload');
   if (m) m.onclick = () => loadUsers(false);
   $$('[data-edit]', list).forEach((b) => { b.onclick = () => editModal(u.items.find((x) => x.id === b.dataset.edit)); });
+  wireRevoke(list, drawUsers);
+  if (rise) { state().rise = false; window.ADMIN.life(list); }
 }
 async function editModal(user) {
   const doms = await domains();
@@ -126,7 +161,7 @@ async function editModal(user) {
   // already there is kept, not silently dropped.
   const tree = T.tree(doms);
   const granted = new Set(user.roles.filter((r) => r.role === 'domain_owner').map((r) => r.domain_id));
-  B.openModal(`<div class="modal ppmodal" role="dialog" aria-label="Edit ${esc(user.name)}"><div class="bar"><span>${esc(user.name)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
+  B.openModal(`<div class="modal bt ppmodal" role="dialog" aria-label="Edit ${esc(user.name)}"><div class="bar"><span>${esc(user.name)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
     <div class="ppwho pphero">${AVATAR(user.name, 'lav', 40)}<span><b>${esc(user.name)}</b><small>${esc(user.email)}</small></span></div>
     <fieldset class="ppfs"><legend class="hsl">Roles</legend>${INVITABLE.map(([k, l]) => `<label class="ppck"><input type="checkbox" data-role="${k}" ${has(k) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</fieldset>
     <fieldset class="ppfs ppdoms"><legend class="hsl">Domain owner of</legend>${doms.length ? T.options(tree).map(({ item: d, depth }) => `<label class="ppck ppdom" style="--depth:${depth}"><input type="checkbox" data-domain="${d.id}"><span>${esc(d.name)}<small class="ppthru" hidden></small></span></label>`).join('') : '<p class="amute">No domains yet.</p>'}</fieldset>
@@ -186,7 +221,7 @@ function replaceUser(updated) {
 
 /* ---------- invitations ---------- */
 function invitations() {
-  $('#pppane').innerHTML = `<div class="ds-table bt ppdt" role="table" aria-label="Invitations" style="--cols:minmax(0,1.6fr) minmax(0,1.4fr) minmax(0,1fr) 100px" id="invlist"></div><div class="chmore" id="invmore"></div>`;
+  $('#pppane').innerHTML = `<div class="adppl" id="invlist" role="table" aria-label="Invitations"></div><div class="chmore" id="invmore"></div>`;
   const v = state().invites;
   if (!v.loaded || v.error) loadInvites(true); else drawInvites();
 }
@@ -196,7 +231,7 @@ async function loadInvites(reset) {
   const mine = ++v.seq;
   v.loading = true; v.error = null;
   if (reset) { v.items = []; v.next = null; v.loaded = false; }
-  drawInvites();
+  if (state().tab === 'invitations') drawInvites();
   try {
     const page = await B.api.get('/admin/invitations', { limit: 50, cursor: reset ? null : v.next });
     if (mine !== v.seq) return;
@@ -205,38 +240,30 @@ async function loadInvites(reset) {
     v.loaded = true;
   } catch (error) { if (mine === v.seq) v.error = error; }
   finally { if (mine === v.seq) v.loading = false; }
-  if (mine === v.seq) drawInvites();
+  if (mine !== v.seq) return;
+  if (state().tab === 'invitations') drawInvites();
+  else if (state().tab === 'people' && state().users.loaded) drawUsers();
 }
 function drawInvites() {
   const v = state().invites;
   const list = $('#invlist'), more = $('#invmore');
   if (!list) return;
-  const head = '<div class="ds-tr ds-th" role="row"><span role="columnheader">Email</span><span role="columnheader">Roles and clearance</span><span role="columnheader">Status</span><span role="columnheader"><span class="sr">Actions</span></span></div>';
   if (!v.loaded) {
-    list.innerHTML = head + (v.error ? `<div class="ds-tr dterr">${B.errorBlock(v.error, 'invretry')}</div>` : B.skeletonRows(4, 'ds-tr'));
+    list.innerHTML = v.error ? `<div class="aud-r aud-e">${B.errorBlock(v.error, 'invretry')}</div>` : B.skeletonRows(4, 'adrow');
     const r = $('#invretry');
     if (r) r.onclick = () => loadInvites(true);
     more.innerHTML = '';
     return;
   }
-  list.innerHTML = head + (v.items.length
-    ? v.items.map((x) => { const st = INVITE_STATUS[x.status] || [x.status, '']; return `<div class="ds-tr" role="row"><span class="dtp m-main"><b style="font-weight:500">${esc(x.email)}</b><small class="amute ppago"> · ${B.when(x.created_at, B.ago(x.created_at))}</small></span><span class="dtm acchips">${x.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('')}<span class="tag">${esc(B.clearanceName(x.clearance))}</span></span><span class="dtm"><span class="tag ${st[1]}">${st[0]}</span></span><span class="m-end">${x.status === 'open' ? `<button type="button" class="btn sm rowa" data-revoke="${x.id}">Revoke</button>` : ''}</span></div>`; }).join('')
-    : '<div class="ds-tr dtempty"><span class="amute">No invitations yet. Invite the people who should use Broth.</span></div>');
+  const rise = state().rise;
+  list.innerHTML = v.items.length
+    ? v.items.map((x) => { const st = INVITE_STATUS[x.status] || [x.status, '']; return `<div class="adrow pend" role="row"><span class="adav adgh">${ICON('inbox', 18)}</span><div class="adwho"><b>${esc(x.email)}</b><small>Invited ${B.when(x.created_at, B.ago(x.created_at))}</small></div><div class="adroles">${x.roles.map((r) => `<span class="tag">${esc(B.ROLE_NAMES[r] || r)}</span>`).join('')}<span class="tag ${st[1]}">${st[0]}</span></div><div class="adlv">${levelBars(x.clearance)}<em>${esc(B.clearanceName(x.clearance))}</em></div><small class="adact"></small><div class="adrowa on">${x.status === 'open' ? `<button type="button" class="btn sm" data-revoke="${x.id}">Revoke</button>` : ''}</div></div>`; }).join('')
+    : '<div class="ixempty"><b>No invitations yet</b><p>Invite the people who should use Broth.</p></div>';
   more.innerHTML = v.next ? `<button type="button" class="btn sm" id="invload" ${v.loading ? 'disabled' : ''}>${v.loading ? 'Loading' : 'Show more'}</button>` : '';
   const m = $('#invload');
   if (m) m.onclick = () => loadInvites(false);
-  $$('[data-revoke]', list).forEach((b) => {
-    b.onclick = () => {
-      if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Confirm'; b.classList.add('danger'); return; }
-      B.busy(b, async () => {
-        await B.api.del(`/admin/invitations/${b.dataset.revoke}`);
-        const i = v.items.findIndex((x) => x.id === b.dataset.revoke);
-        if (i >= 0) v.items[i] = Object.assign({}, v.items[i], { status: 'revoked' });
-        B.toast('Invitation revoked');
-        drawInvites();
-      });
-    };
-  });
+  wireRevoke(list, drawInvites);
+  if (rise) { state().rise = false; window.ADMIN.life(list); }
 }
 function inviteModal() {
   const origin = location.origin;
@@ -321,5 +348,5 @@ function drawLinks() {
   });
 }
 
-window.ADMIN.tabs.people = { label: 'People', hint: 'Who can use Broth, and what each person can do.', roles: ['admin'], render };
+window.ADMIN.tabs.people = { label: 'People and access', hint: 'Who can use Broth, and what each person can do.', roles: ['admin'], render };
 })();
