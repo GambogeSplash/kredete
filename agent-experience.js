@@ -67,6 +67,8 @@ A.pages.experience = (el, ctx) => {
 
   const root = $('#exform', el);
   A.counters(root);
+  // An archived bot's settings show, and nothing in them can change.
+  if (ctx.readOnly) $$('.agfs', root).forEach((fs) => { fs.disabled = true; });
 
   /* ---- starters: a row each, with add and remove ---- */
   function drawStarters() {
@@ -156,6 +158,7 @@ A.pages.experience = (el, ctx) => {
       reset();
       B.toast('Saved. Sites show the change within 5 minutes.');
     }, (error) => {
+      if (ctx.conflict(error)) return;
       if (!A.serverErrors(el, error, null)) bar.error(B.problem(error));
       else bar.error('Check the fields marked above.');
     });

@@ -8,6 +8,10 @@
  *
  * The bots, containers and connections load once each time someone arrives at the Support
  * agent, so Public page counts are current after promoting pages in the Library.
+ *
+ * A bot is live, paused or archived (bot pause and archive spec 4). Pause, Resume and Archive
+ * sit in every page's header; a paused or archived bot shows a banner above its page, and an
+ * archived one is read only. Archived bots leave the list, behind its Archived toggle.
  */
 (() => {
 'use strict';
@@ -33,7 +37,7 @@ const pages = {};
 
 function state() {
   const c = B.S.cache;
-  if (!c.agent) c.agent = { bots: [], containers: [], connections: [], loaded: false, error: null };
+  if (!c.agent) c.agent = { bots: [], containers: [], connections: [], loaded: false, error: null, archived: false };
   return c.agent;
 }
 
@@ -79,10 +83,70 @@ function render(params) {
   if (!params.page) { B.go(`/support-agent/${bot.id}/overview`, { replace: true }); return; }
   B.S.route.title = bot.name;
   B.setCrumb(); B.mbTitle();
-  app.innerHTML = `<div class="lset"><nav class="lrail agtabs" aria-label="Support agent"></nav><div class="lcont agwide">${head(LABELS[params.page], params.page)}<div id="agpane"></div></div></div>`;
+  app.innerHTML = `<div class="lset"><nav class="lrail agtabs" aria-label="Support agent"></nav><div class="lcont agwide">${head(LABELS[params.page], params.page, lifecycleActions(bot))}${banner(bot)}<div id="agpane"></div></div></div>`;
   rail(bot, params.page);
+  lifecycle(bot, params);
   const page = pages[params.page];
   if (page) page($('#agpane'), context(bot, params));
+}
+
+/* ---- pause, resume and archive (bot pause and archive spec 4.3) ---- */
+
+/** The header's lifecycle controls: none once archived. */
+function lifecycleActions(bot) {
+  if (bot.status === 'archived') return '';
+  const more = `<button type="button" class="btn sm agmore" id="agmore" aria-label="More actions for ${esc(bot.name)}" aria-haspopup="menu" aria-expanded="false">${window.ICON('more', 16)}</button>`;
+  return `${bot.status === 'paused' ? '<button type="button" class="btn sm primary" id="agresume">Resume</button>' : '<button type="button" class="btn sm" id="agpause">Pause</button>'}${more}`;
+}
+
+/** What a paused or archived bot's pages say first. */
+function banner(bot) {
+  if (bot.status === 'paused') return `<p class="banner warn agstate" role="status"><b>Paused ${esc(B.fmtDate(bot.paused_at))}.</b> It's off on every site. Its keys still work once you resume.</p>`;
+  if (bot.status === 'archived') return `<p class="banner agstate" role="status"><b>Archived ${esc(B.fmtDate(bot.archived_at))}.</b> Read only. Its keys were revoked.</p>`;
+  return '';
+}
+
+function lifecycle(bot, params) {
+  const act = (button, path, toast) => B.busy(button, async () => {
+    replaced(await B.api.post(`/admin/bots/${bot.id}/${path}`), params);
+    B.toast(toast);
+  }, (error) => conflict(error, bot.id, params) || B.toast(B.problem(error)));
+  const pause = $('#agpause');
+  if (pause) pause.onclick = async () => {
+    if (!await confirmAction({ title: `Pause ${bot.name}?`, text: 'It disappears from every site until you resume it. Its keys and settings are kept.', action: 'Pause', tone: 'primary' })) return;
+    act($('#agpause'), 'pause', `${bot.name} is paused.`);
+  };
+  const resume = $('#agresume');
+  if (resume) resume.onclick = () => act(resume, 'resume', `${bot.name} is live again.`);
+  const more = $('#agmore');
+  if (more) more.onclick = (e) => {
+    e.stopPropagation();
+    B.popMenu(more, [{ a: 'archive', icon: 'inbox', label: 'Archive bot…', danger: true }], {
+      pick: async () => {
+        if (!await confirmAction({ title: `Archive ${bot.name}?`, text: "Every product's key is revoked and the bot becomes read only. This can't be undone.", action: 'Archive' })) return;
+        act($('#agmore'), 'archive', `${bot.name} is archived.`);
+      },
+    });
+  };
+}
+
+/** The server's bot replaces the cached one, and the page draws again from it. */
+function replaced(next, params) {
+  const s = state();
+  s.bots = s.bots.map((b) => (b.id === next.id ? B.bot(next) : b));
+  if (B.S.route.surface === 'bot' && B.S.route.params === params) render(params);
+}
+
+/**
+ * A 409 means the bot changed under this tab (another admin paused or archived it): read it
+ * again, draw the page from it, and say what happened. Returns whether it handled `error`.
+ */
+function conflict(error, botId, params) {
+  if (!error || error.status !== 409) return false;
+  B.closeModal();
+  B.toast(B.problem(error));
+  B.api.get(`/admin/bots/${botId}`).then((next) => replaced(next, params), () => {});
+  return true;
 }
 
 /** What a page gets from the shell. */
@@ -92,6 +156,10 @@ function context(bot, params) {
     bot,
     containers: s.containers,
     connections: s.connections,
+    /** An archived bot's pages show its setup and change nothing. */
+    readOnly: bot.status === 'archived',
+    /** For a page's own save errors: handles a 409 as the header's actions do. */
+    conflict: (error) => conflict(error, bot.id, params),
     /** After a save: the server's bot replaces the cached one, and the rail and crumb follow it. */
     saved(next) {
       s.bots = s.bots.map((b) => (b.id === next.id ? next : b));
@@ -131,23 +199,47 @@ function slidePill(nav) {
   }
 }
 
-/* ---- the bot list (spec 4.2) ---- */
+/* ---- the bot list (bot admin spec 4.2, bot pause and archive spec 4.2) ---- */
+
+/** The status tag every screen shows for a bot (one reading, `F.botState`). */
+function statusTag(bot) {
+  switch (F.botState(bot)) {
+    case 'archived': return `<span class="tag">Archived ${esc(B.fmtDate(bot.archived_at))}</span>`;
+    case 'paused': return '<span class="tag warn">Paused</span>';
+    case 'live': return `<span class="tag ok">Live on ${count(F.liveSites(bot), 'site')}</span>`;
+    default: return '<span class="tag warn">Needs setup</span>';
+  }
+}
+
 function list(app) {
   const s = state();
   B.S.route.title = '';
-  const rows = s.bots.map((bot) => {
+  const archived = s.bots.filter((b) => b.status === 'archived');
+  const active = s.bots.filter((b) => b.status !== 'archived');
+  const showArchived = s.archived && archived.length > 0;
+  const shown = showArchived ? archived : active;
+  const rows = shown.map((bot) => {
     const live = bot.products.filter((p) => p.status === 'live').length;
-    const sites = F.liveSites(bot);
-    return `<a class="ds-tr agrow" href="/support-agent/${bot.id}/overview" data-link><span class="dmn"><span class="ds-ic" aria-hidden="true">${window.ICON('chat', 16)}</span><b>${esc(bot.name)}</b></span><span class="dtm">${count(bot.sources.length, 'source')}</span><span class="dtm">${live} of ${bot.products.length} live</span><span>${sites ? `<span class="tag ok">Live on ${count(sites, 'site')}</span>` : '<span class="tag warn">Needs setup</span>'}</span></a>`;
+    return `<a class="ds-tr agrow" href="/support-agent/${bot.id}/overview" data-link><span class="dmn"><span class="ds-ic" aria-hidden="true">${window.ICON('chat', 16)}</span><b>${esc(bot.name)}</b></span><span class="dtm">${count(bot.sources.length, 'source')}</span><span class="dtm">${live} of ${bot.products.length} live</span><span>${statusTag(bot)}</span></a>`;
   }).join('');
+  const toggle = archived.length
+    ? `<button type="button" class="btn sm" id="agarch" aria-pressed="${showArchived}">${showArchived ? `Active bots (${active.length})` : `Archived (${archived.length})`}</button>`
+    : '';
+  const create = showArchived ? '' : '<button type="button" class="btn primary sm" id="agnew">New bot</button>';
+  const none = !s.bots.length
+    ? empty('No bots yet', 'Create one, choose the sources it answers from, then put it on a site.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>', 'chat')
+    : empty('No active bots', 'Archived bots are under Archived, above.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>', 'chat');
   // The list has no sub-menu: the rail's Support agent item is its way in (spec 2026-11-12).
-  app.innerHTML = `<div class="lcont agwide">${head('Support agent', 'list', '<button type="button" class="btn primary sm" id="agnew">New bot</button>')}
-    ${s.bots.length
-      ? `<div class="ds-table agbots" style="--cols:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 150px"><div class="ds-tr ds-th"><span>Bot</span><span>Sources</span><span>Products</span><span>Status</span></div>${rows}</div>`
-      : empty('No bots yet', 'Create one, choose the sources it answers from, then put it on a site.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>', 'chat')}
+  app.innerHTML = `<div class="lcont agwide">${head('Support agent', 'list', `${toggle}${create}`)}
+    ${shown.length
+      ? `<div class="ds-table agbots" style="--cols:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 170px" aria-label="${showArchived ? 'Archived bots' : 'Bots'}"><div class="ds-tr ds-th"><span>Bot</span><span>Sources</span><span>Products</span><span>Status</span></div>${rows}</div>`
+      : none}
   </div>`;
   pillAt = null;
-  $('#agnew').onclick = newBot;
+  const arch = $('#agarch');
+  if (arch) arch.onclick = () => { s.archived = !showArchived; list(app); $('#agarch').focus(); };
+  const create1 = $('#agnew');
+  if (create1) create1.onclick = newBot;
   const again = $('#agnew2');
   if (again) again.onclick = newBot;
 }
@@ -284,13 +376,14 @@ function saveBar(host, o) {
 }
 
 /**
- * A confirmation for an action that cannot be undone; resolves true when confirmed.
- * @param {{ title: string, text: string, action: string }} o
+ * A confirmation before an action; resolves true when confirmed. Danger by default, for one
+ * that cannot be undone.
+ * @param {{ title: string, text: string, action: string, tone?: 'danger' | 'primary' }} o
  * @returns {Promise<boolean>}
  */
 function confirmAction(o) {
   return new Promise((resolve) => {
-    B.openModal(`<div class="modal ppmodal" role="alertdialog" aria-modal="true" aria-labelledby="cft" aria-describedby="cfd"><div class="body"><h2 id="cft">${esc(o.title)}</h2><p class="sub" id="cfd">${esc(o.text)}</p><div class="actions"><button type="button" class="btn danger" id="cfgo">${esc(o.action)}</button><button type="button" class="btn" id="cfno">Cancel</button></div></div></div>`);
+    B.openModal(`<div class="modal ppmodal" role="alertdialog" aria-modal="true" aria-labelledby="cft" aria-describedby="cfd"><div class="body"><h2 id="cft">${esc(o.title)}</h2><p class="sub" id="cfd">${esc(o.text)}</p><div class="actions"><button type="button" class="btn ${o.tone || 'danger'}" id="cfgo">${esc(o.action)}</button><button type="button" class="btn" id="cfno">Cancel</button></div></div></div>`);
     const modal = $('#modal');
     let done = false;
     const watch = new MutationObserver(() => { if (!modal.classList.contains('on')) finish(false); });
@@ -302,5 +395,5 @@ function confirmAction(o) {
   });
 }
 
-window.AGENT = { empty, pages, field, showError, counters, serverErrors, saveBar, confirmAction, count };
+window.AGENT = { empty, pages, field, showError, counters, serverErrors, saveBar, confirmAction, count, statusTag };
 })();
