@@ -13,6 +13,9 @@ const REASONS = {
   something_new: 'Sign-in did not work',
 };
 
+/** The refusal banner; the email form's error region is an alert too, empty until it has one. */
+const refusal = (page) => page.getByRole('alert').filter({ hasText: /\S/ });
+
 test('the sign-in screen', async ({ open, check }) => {
   const page = await open(null, '/signin');
   await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
@@ -23,7 +26,7 @@ test('the sign-in screen', async ({ open, check }) => {
 test('every sign-in refusal has its own message', async ({ open, check }) => {
   for (const [reason, message] of Object.entries(REASONS)) {
     const page = await open(null, `/signin?error=${reason}`);
-    await expect(page.getByRole('alert')).toContainText(message);
+    await expect(refusal(page)).toContainText(message);
     await expect(page).toHaveURL(/\/signin$/); // the message stays, the query goes
     if (reason === 'not_provisioned') await check(page, 'signin-refused');
     if (reason === 'something_new') await check(page, 'signin-unknown-reason');
@@ -34,19 +37,19 @@ test('every sign-in refusal has its own message', async ({ open, check }) => {
 test('a refusal names the Google account it refused', async ({ open, check }) => {
   // The server puts the address in the fragment, which never reaches a server or a log.
   const page = await open(null, '/signin?error=not_provisioned#email=zoe.smith%2Bbrain%40kredete.com');
-  await expect(page.getByRole('alert')).toContainText('You do not have access yet');
-  await expect(page.getByRole('alert')).toContainText('Google account: zoe.smith+brain@kredete.com');
+  await expect(refusal(page)).toContainText('You do not have access yet');
+  await expect(refusal(page)).toContainText('Google account: zoe.smith+brain@kredete.com');
   await expect(page).toHaveURL(/\/signin$/); // query and fragment both go
   await check(page, 'signin-refused-account');
   await page.close();
 
   const marked = await open(null, '/signin?error=suspended#email=%3Cb%3Eeve%3C%2Fb%3E%40example.test');
-  await expect(marked.getByRole('alert')).toContainText('Google account: <b>eve</b>@example.test');
+  await expect(refusal(marked)).toContainText('Google account: <b>eve</b>@example.test');
   await expect(marked.locator('#aerr b')).toHaveCount(1); // only the heading is bold: the address is text
   await marked.close();
 
   const plain = await open(null, '/signin?error=not_provisioned');
-  await expect(plain.getByRole('alert')).not.toContainText('Google account:');
+  await expect(refusal(plain)).not.toContainText('Google account:');
 });
 
 test('any other page sends a signed-out visitor to sign in', async ({ open }) => {

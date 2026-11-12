@@ -42,7 +42,7 @@ async function withDocs(page, { connection = docsConnection(), repos = [repo(REP
     return route.fulfill({ response, json: { ...body, items: [...body.items, ...repos] } });
   });
 }
-/** The Docs repositories card opens its section in a dialog (the section sits in a hidden holder until then). */
+/** The Docs repositories card opens the source's own page, its section laid out as the page body. */
 const docsSection = (page) => page.locator('[data-sec="docs"]');
 const docsCard = (page) => page.locator('[data-src="github"]');
 const openDocs = async (page) => { await docsCard(page).click(); return docsSection(page); };
@@ -61,8 +61,9 @@ test.describe('docs repositories', () => {
       },
     });
     const section = await openDocs(page);
-    await expect(page.getByRole('dialog', { name: 'Docs repositories' })).toBeVisible();
-    await expect(section.getByRole('heading', { name: 'Docs repositories' })).toBeVisible();
+    // A connected source opens as its own page, titled with its name.
+    await expect(page).toHaveURL(/\/admin\/sources\/docs-repositories$/);
+    await expect(page.getByRole('heading', { level: 1, name: /Docs repositories/ })).toBeVisible();
     await expect(section.locator('.cnstate')).toContainText('Not installed');
     await expect(section.getByRole('button', { name: 'Find repositories' })).toHaveCount(0);
     await section.scrollIntoViewIfNeeded();
@@ -106,7 +107,7 @@ test.describe('docs repositories', () => {
   test('a returned install says so, and a refused one says why', async ({ open }) => {
     const page = await open('admin', `/admin/connectors?connected=${CONNECTION}`, { before: (p) => withDocs(p) });
     await expect(page.locator('#toast')).toContainText('The GitHub App is installed. Find the repositories next.');
-    await expect(page).toHaveURL(/\/admin\/sources$/);
+    await expect(page).toHaveURL(/\/admin\/sources\/docs-repositories$/); // the connected source's own page
     await page.goto('/admin/connectors?error=wrong_account');
     await expect(page.getByRole('alert').first()).toHaveText('The app was installed on a different GitHub account than the one you connected. Install it on that account.');
   });
@@ -138,7 +139,7 @@ test.describe('docs repositories', () => {
     await expect(dialog.locator('a')).toHaveAttribute('href', '/help/connecting-docs-repositories#public-declaration');
     await dialog.getByLabel('Why').fill('Published at docs.kredete.com');
     await dialog.getByRole('button', { name: 'Request' }).click();
-    await expect(page.locator('#toast')).toContainText('Requested. Another admin or a domain owner approves it in Governance.');
+    await expect(page.locator('#toast')).toContainText('Requested. An admin or a domain owner approves it in Governance.');
     await expect(rows.nth(0).locator('.cndecl')).toHaveText('Requested');
     expect(requested).toEqual([{ reason: 'Published at docs.kredete.com' }]);
   });
@@ -154,7 +155,8 @@ test.describe('docs repositories', () => {
     const page = await open('admin', '/admin/connectors', { before: (p) => withDocs(p) });
     await (await openDocs(page)).getByRole('button', { name: 'Settings for kredete/docs' }).click();
     const drawer = page.getByRole('dialog', { name: 'Repository settings, kredete/docs' });
-    await expect(drawer.getByRole('heading', { name: 'Repository settings' })).toBeVisible();
+    await expect(drawer.getByRole('heading', { name: 'kredete/docs' })).toBeVisible();
+    await expect(drawer.getByText(/^Repository settings\./)).toBeVisible();
     await expect(drawer.getByRole('button', { name: 'Default authority' })).toHaveCount(0);
     await expect(drawer.getByRole('button', { name: 'Default sensitivity' })).toHaveCount(0);
     await expect(drawer.getByText('Published docs are approved.')).toBeVisible();

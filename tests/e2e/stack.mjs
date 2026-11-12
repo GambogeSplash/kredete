@@ -12,7 +12,7 @@ export const BASE = process.env.BROTH_E2E_URL || 'http://localhost:8766';
 export const STATE = resolve(ROOT, 'tests/e2e/.state');
 export const SEED_FILE = resolve(STATE, 'seed.json');
 /** Refresh tokens per person per project; split between the workers. */
-export const SESSIONS = 80;
+export const SESSIONS = 100;
 export const WORKERS = 4;
 
 /** Seeds the e2e database at a setup state (or `ready`) and returns the seed JSON. */

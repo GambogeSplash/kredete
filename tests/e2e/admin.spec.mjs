@@ -74,18 +74,18 @@ test.describe('surfaces follow roles', () => {
     await expect(page).not.toHaveURL(/\/support-agent/);
   });
 
-  test('a developer has neither Admin nor the Support agent', async ({ open }) => {
+  test('a developer has Sources and the Support agent, and no other admin screen', async ({ open }) => {
+    // Developer role spec 3.5; developer.spec.mjs walks through each screen.
     const page = await open('developer', '/');
-    const surfaces = await nav(page);
-    await expect(surfaces.getByRole('button', { name: 'Admin' })).toHaveCount(0);
-    if (phone(page)) await page.getByRole('button', { name: 'Close menu' }).click();
     const menu = await profileMenu(page);
-    await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
+    await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(1);
     await page.keyboard.press('Escape');
-    for (const path of ['/admin', '/support-agent']) {
+    for (const path of ['/admin', '/admin/people', '/admin/domains', '/admin/audit']) {
       await page.evaluate((p) => window.BRAIN.go(p), path);
-      await expect(page).toHaveURL(/\/$/);
+      await expect(page).toHaveURL(/\/admin\/sources$/);
     }
+    await page.evaluate(() => window.BRAIN.go('/support-agent'));
+    await expect(page).toHaveURL(/\/support-agent$/);
   });
 
   test('an admin has every admin screen, under one Settings with one rail', async ({ open }) => {
@@ -282,14 +282,15 @@ test.describe('domains', () => {
 });
 
 test.describe('connectors', () => {
-  // Each source is a card; its connection, spaces and credentials open in a dialog (they sit in a hidden holder until then).
+  // Each source is a card: a connected one opens its own page, the others a dialog (their sections sit in a hidden holder until then).
   const openSource = async (page, key = 'confluence') => { await page.locator(`[data-src="${key}"]`).click(); return page; };
   test('the Confluence connection, its spaces, Google Drive and the app credentials', async ({ open, check }) => {
     const page = await open('admin', '/admin/sources');
     await openSource(page);
     await expect(page.getByRole('heading', { name: 'Confluence' })).toBeVisible();
     await expect(page.locator('.dt-r[data-space]')).toHaveCount(3);
-    await expect(page.locator('.cnc .tag.ok')).toHaveCount(2); // both OAuth clients configured
+    // Both OAuth clients are configured; the GitHub App is not, in the seed.
+    for (const name of ['confluence_oauth', 'google_oauth']) await expect(page.locator(`.cnc[data-cred="${name}"] .frv`)).toHaveText(/^Configured · /);
     // The seed synced the connection as the schedule does, which starts no run (sync runs
     // spec 2): the card says only when it synced, with no run status, bar or failed pages.
     const connection = page.locator('.cnconn').first();
@@ -300,12 +301,13 @@ test.describe('connectors', () => {
     await expect(connection.locator('.cnsrun')).toHaveText(['', '', '']); // no space has a read of its own
     await expect(connection.getByRole('button', { name: 'Sync now' })).toBeEnabled();
     await check(page, 'connectors');
-    await page.keyboard.press('Escape');
+    // A connected source is its own page; back on Sources, the others open in a dialog.
+    await page.evaluate(() => window.BRAIN.go('/admin/sources'));
     await openSource(page, 'gdrive');
-    await expect(page.getByText('Needs Google Workspace')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Google Drive' })).toContainText('Google Drive needs a Google Workspace account');
     await page.keyboard.press('Escape');
     await openSource(page, 'creds');
-    await expect(page.getByRole('heading', { name: 'App credentials' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'App credentials' })).toBeVisible();
     await check(page, 'connectors-credentials');
   });
 
@@ -586,7 +588,7 @@ test.describe('connectors', () => {
   test('a finished Confluence authorization is confirmed', async ({ open, seed }) => {
     const page = await open('admin', `/admin/connectors?connected=${seed.connection_id}`);
     await expect(page.locator('#toast')).toContainText('Confluence is connected');
-    await expect(page).toHaveURL(/\/admin\/sources$/);
+    await expect(page).toHaveURL(/\/admin\/sources\/confluence$/); // the connected source's own page
   });
 });
 

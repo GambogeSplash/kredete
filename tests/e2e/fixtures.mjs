@@ -65,9 +65,21 @@ async function serveFonts(context) {
   }));
 }
 
+/** A kept-alive connection the server closed just as it was reused: a browser sends the GET again. */
+const reset = (error) => /ECONNRESET|socket hang up/i.test(String(error && error.message));
+/** Fetches a static file for a route, once more if the connection was reset under it. */
+async function fetchStatic(route) {
+  try {
+    return await route.fetch();
+  } catch (error) {
+    if (!reset(error)) throw error;
+    return route.fetch();
+  }
+}
+
 async function withVercelHeaders(context) {
   await context.route((url) => url.origin === ORIGIN && !url.pathname.startsWith('/v1/'), handle(async (route) => {
-    const response = await route.fetch();
+    const response = await fetchStatic(route);
     const page = PAGE_HEADERS[new URL(route.request().url()).pathname] || {};
     await route.fulfill({ response, headers: { ...response.headers(), ...HEADERS, ...page } });
   }));
