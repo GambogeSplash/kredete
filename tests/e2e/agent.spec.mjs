@@ -279,7 +279,8 @@ test.describe('Products', () => {
     await dialog.getByLabel('Site it runs on').fill(`${new URL(page.url()).origin}/docs`);
     await dialog.getByRole('button', { name: 'Create key' }).click();
     await expect(dialog.getByText('Use only the site, like https://help.kredete.com.')).toBeVisible();
-    await check(page, 'agent-add-product', { mask: ['.agname'] });
+    // The site is this stack's own address, which differs between stacks.
+    await check(page, 'agent-add-product', { mask: ['.agname', '#apallowed_origins0'] });
     await dialog.getByLabel('Site it runs on').fill(new URL(page.url()).origin);
     await dialog.getByRole('button', { name: 'Create key' }).click();
     const product = page.locator('#agpdetail');
