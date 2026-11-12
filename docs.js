@@ -223,7 +223,8 @@ async function contents() {
     if (e.key === 'Enter') { const first = $('#dcgrid .dcrow'); if (first) B.go(first.getAttribute('href')); }
   };
   const askBtn = $('#dcask');
-  if (askBtn) askBtn.onclick = () => { B.go('/'); setTimeout(() => window.ASK.askFresh('How do I connect a source?'), 350); };
+  // A new, empty chat, the same as the sidebar's New chat: the question is the person's own to type.
+  if (askBtn) askBtn.onclick = () => B.newChat();
   if (fromRect === 'back' && !calm()) $$('#dcgrid .dccard').forEach((c, i) => c.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: i * 45, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
   fromRect = null;
   drawCards();
