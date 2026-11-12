@@ -13,7 +13,7 @@
 // database would show other scenarios (a run's outcome stays on the card).
 import { expect, test } from './fixtures.mjs';
 import { VIEWS } from '../../playwright.config.mjs';
-import { restartApi, saveSeed, seed } from './stack.mjs';
+import { loadSeed, restartApi, saveSeed, seed } from './stack.mjs';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -218,4 +218,27 @@ test('Sync now lists the pages it could not read, until a later sync reads them'
   await syncNow(page).click();
   await expect(toast(page)).toHaveText(`${SITE} synced. 1 page updated.`, { timeout: 60_000 });
   await expect(card(page).getByText('Show failed pages')).toHaveCount(0);
+});
+
+// A developer reads every source's runs, but names only the pages they can open (developer role
+// spec 3.3): Kofi can open the Release checklist, not Ada's incident runbook.
+test("a developer sees a run's failed pages they can open, and how many they can't", async ({ open, check }) => {
+  test.setTimeout(300_000);
+  const s = await fresh();
+  const developer = [...loadSeed().people.developer.refresh_tokens];
+  const page = await openSource(await open('admin', PATH, { view: VIEWS[0], token: s.token() }));
+  await fake(page, s, 'configure', { delay_ms: 0, fail: ['eng-release', 'eng-runbook'] });
+  for (const id of ['eng-release', 'eng-runbook']) await fake(page, s, 'edit', { external_id: id });
+  await syncNow(page).click();
+  await expect(toast(page)).toHaveText(`${SITE} synced. 2 pages couldn't be read.`, { timeout: 120_000 });
+  await page.close();
+  for (const view of VIEWS) {
+    const dev = await open('developer', '/admin/sources/confluence', { view, token: developer.shift() });
+    await expect(card(dev).getByRole('button', { name: 'Sync now' })).toHaveCount(0);
+    await card(dev).getByText('Show failed pages').click();
+    await expect(card(dev).locator('.cnflist li')).toHaveText(['Release checklistThe source returned an error for this page']);
+    await expect(card(dev).locator('.cnfhid')).toHaveText("1 page you can't open");
+    await check(dev, `connectors-developer-hidden-${view.name}`);
+    await dev.close();
+  }
 });
