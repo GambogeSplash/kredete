@@ -122,7 +122,7 @@ html[data-mode=dark] :is(.fmenu,.drawer){box-shadow:var(--e3)}
 .lcthome{display:flex;align-items:center;gap:var(--s-3);min-width:0;border:0;padding:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:background var(--dur-fast)}
 .lcthome b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lcthome .lhchev{display:inline-flex;margin-left:auto;padding-left:var(--s-2);color:var(--mute)}
-.libt .ds-cap .lcthome{flex:1;align-self:stretch}
+.libt .ds-cap .lcthome{flex:1;align-self:stretch;min-height:48px}
 .libt .ds-cap:has(.lcthome):hover{background:var(--fill-2)}
 .libt .ds-cap .lcthome:focus-visible{outline:none}
 .libt .ds-cap:has(.lcthome:focus-visible){outline:2px solid var(--brand);outline-offset:-2px}
@@ -130,3 +130,5 @@ html[data-mode=dark] :is(.fmenu,.drawer){box-shadow:var(--e3)}
 .lgrp.lcthome:hover{filter:brightness(.97)}
 .lgrp.lcthome:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 html[data-mode=dark] .lgrp.lcthome:hover{filter:brightness(1.12)}
+/* a source's logo beside its name in the filter menu is decoration: the name says it */
+.fopt .fopt-i{flex:none;display:inline-flex}

@@ -183,7 +183,7 @@ function wireFilterMenu() {
   const outside = (e) => { if (!e.target.closest('.fwrap')) close(); };
   const open = () => {
     const f = S().facets || { systems: [] };
-    const opt = (key, value, label, n, icon) => `<button type="button" class="fopt ${L[key] === value ? 'on' : ''}" data-fk="${key}" data-fv="${esc(value)}">${icon || ''}<span>${esc(label)}</span>${n != null ? `<em>${n}</em>` : ''}</button>`;
+    const opt = (key, value, label, n, icon) => `<button type="button" class="fopt ${L[key] === value ? 'on' : ''}" data-fk="${key}" data-fv="${esc(value)}">${icon ? `<span class="fopt-i" aria-hidden="true">${icon}</span>` : ''}<span>${esc(label)}</span>${n != null ? `<em>${n}</em>` : ''}</button>`;
     const total = f.systems.reduce((n, s) => n + s.count, 0);
     menu.innerHTML = `<div class="fgh">Source</div>${opt('system', '', 'All sources', total)}${f.systems.map((s) => opt('system', s.value, B.systemName(s.value), s.count, B.srcIcon(s.value, 16))).join('')}${typeof f.label_problems === 'number' ? `<div class="fgh">Labels</div>${opt('problems', '', 'Any labels', null)}${opt('problems', '1', 'Label problems', f.label_problems)}` : ''}`;
     menu.hidden = false;

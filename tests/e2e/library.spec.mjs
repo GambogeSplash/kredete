@@ -1,11 +1,19 @@
-// The Library (sandbox spec 6.2; nested domains spec 4 and plan C3 and C4). As Eve, who can open
-// seven of the corpus pages. Folders are domains: Cards holds two pages; Payments holds two and
-// the folder Payouts, which holds only the folder Cross-border, which holds one; Engineering's
-// handbook and release checklist have no domain, so they sit at the root. Collections and
-// Engineering hold only pages Eve cannot open, so she sees neither.
+// The Library (sandbox spec 6.2; nested domains spec 4 and plan C3 and C4; library containers
+// spec 2). As Eve, who can open seven of the corpus pages. Folders are domains: Cards holds two
+// pages; Payments holds two and the folder Payouts, which holds only the folder Cross-border,
+// which holds one; Engineering's handbook and release checklist have no domain, so they sit at
+// the root. Collections and Engineering hold only pages Eve cannot open, so she sees neither.
+// At every level the pages sit under their space's heading, and each space's home page is its
+// heading, not a row: Engineering's handbook at the root, Card replacement fees in Cards, and
+// Transfer limits policy in Cross-border, where it is the only page.
 import { expect, test } from './fixtures.mjs';
 
-const docRows = (page) => page.locator('#libbody [data-open]');
+const docRows = (page) => page.locator('#libbody [data-open]:not(.lcthome)');
+/** Container headings that open their home page. */
+const homes = (page) => page.locator('#libbody .lcthome');
+const homeOf = (page, space) => page.getByRole('button', { name: `Open ${space} home page` });
+/** The group headings in order: Folders, then each container's name. */
+const groupNames = (page) => page.locator('#libbody :is(.ds-cap, .lgrp) b').allTextContents();
 const folders = (page) => page.locator('#libbody [data-folder]');
 const titles = (page) => docRows(page).locator('.ltb b, .gc-t').allTextContents();
 const folderNames = (page) => folders(page).locator('.ltb b, .gc-t').allTextContents();
@@ -27,7 +35,9 @@ test('the Library opens on its top-level folders, then the pages with no domain'
   await expect(folders(page)).toHaveCount(2);
   expect(await folderNames(page)).toEqual(['Cards', 'Payments']);
   await expect(folders(page)).toContainText(['2 pages', '3 pages']);
-  expect(await titles(page)).toEqual(['Engineering handbook', 'Release checklist']);
+  expect(await titles(page)).toEqual(['Release checklist']);
+  expect(await groupNames(page)).toEqual(['Folders', 'Engineering (ENG)']);
+  await expect(homeOf(page, 'Engineering (ENG)')).toBeVisible();
   await expect(back(page)).toBeHidden();
   await expect(search(page)).toHaveAttribute('placeholder', 'Search the library');
   await check(page, 'library');
@@ -43,6 +53,9 @@ test('folders open all the way down, and the breadcrumb goes back up', async ({ 
   expect(await folderNames(page)).toEqual(['Payouts']);
   await expect(docRows(page)).toHaveCount(2);
   expect(await titles(page)).toEqual(['KYC onboarding procedure', 'Savings rate sheet']);
+  // Payments' home page is filed further down, in Cross-border; its heading still opens it here.
+  expect(await groupNames(page)).toEqual(['Folders', 'Payments (PAY)']);
+  await expect(homeOf(page, 'Payments (PAY)')).toBeVisible();
   await expect(search(page)).toHaveAttribute('placeholder', 'Search Payments');
   await check(page, 'library-folder');
 
@@ -57,8 +70,10 @@ test('folders open all the way down, and the breadcrumb goes back up', async ({ 
   await expect(title(page)).toHaveText('Cross-border');
   await expect(back(page)).toHaveAttribute('aria-label', 'Back to Payouts');
   await expect(folders(page)).toHaveCount(0);
-  await expect(docRows(page)).toHaveCount(1);
-  expect(await titles(page)).toEqual(['Transfer limits policy']);
+  // Its only page is Payments' home page: the heading, with no rows and no number.
+  await expect(docRows(page)).toHaveCount(0);
+  await expect(homes(page)).toHaveCount(1);
+  await expect(homeOf(page, 'Payments (PAY)')).not.toContainText(/\d/);
   await check(page, 'library-nested');
 
   await back(page).click();
@@ -74,7 +89,7 @@ test('folders open all the way down, and the breadcrumb goes back up', async ({ 
 test('a link opens its folder, and back and forward step through folders from the top', async ({ open }) => {
   const page = await open('employee', '/library/cross-border');
   await expect(title(page)).toHaveText('Cross-border');
-  await expect(docRows(page)).toHaveText([/Transfer limits policy/]);
+  await expect(homeOf(page, 'Payments (PAY)')).toBeVisible();
   await back(page).click();
   await expect(title(page)).toHaveText('Payouts');
   const scrolled = () => page.evaluate(() => Math.max(document.querySelector('#app').scrollTop, (document.querySelector('.mainpanel') || {}).scrollTop || 0, window.scrollY));
@@ -130,7 +145,8 @@ test('when the folders cannot load, the pages still do, and Try again brings the
   await page.evaluate(() => window.BRAIN.go('/library'));
   await expect(page.getByRole('alert')).toContainText("Couldn't load the folders");
   await expect(page.getByRole('alert')).toContainText('Something went wrong on our side.');
-  await expect(docRows(page)).toHaveCount(2);
+  await expect(docRows(page)).toHaveCount(1);
+  await expect(homes(page)).toHaveCount(1);
   await check(page, 'library-folders-error');
   await page.unrouteAll({ behavior: 'ignoreErrors' });
   await page.getByRole('button', { name: 'Try again' }).click();
@@ -145,7 +161,8 @@ test('when the pages cannot load, the Library says so and retries', async ({ ope
   await check(page, 'library-error');
   await page.unrouteAll({ behavior: 'ignoreErrors' });
   await page.getByRole('button', { name: 'Try again' }).click();
-  await expect(docRows(page)).toHaveCount(2);
+  await expect(docRows(page)).toHaveCount(1);
+  await expect(homes(page)).toHaveCount(1);
 });
 
 /** The facets without Cards, as if Cards had no pages yet. */
@@ -214,6 +231,66 @@ test('a slow folder read that lands after a newer one does not bring back the ol
   expect(await folderNames(page)).toEqual(['Cards', 'Payments']);
 });
 
+/* ---------- container groups (library containers spec 2.2) ---------- */
+
+test("a space's heading opens its home page, at the root and inside a folder", async ({ open, check }) => {
+  const page = await open('employee', '/library');
+  const drawer = page.locator('#drawer');
+  await homeOf(page, 'Engineering (ENG)').click();
+  await expect(drawer.getByRole('heading', { name: 'Engineering handbook' })).toBeVisible();
+  await check(page, 'library-home-page');
+  await page.keyboard.press('Escape');
+
+  await folders(page).filter({ hasText: 'Cards' }).click();
+  await expect(title(page)).toHaveText('Cards');
+  await expect(docRows(page)).toHaveText([/Cards FAQ/]);
+  expect(await titles(page)).toEqual(['Cards FAQ']); // its home page is the heading, not a row
+  await homeOf(page, 'Cards (CARD)').focus();
+  await page.keyboard.press('Enter');
+  await expect(drawer.getByRole('heading', { name: 'Card replacement fees' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await homeOf(page, 'Cards (CARD)').focus();
+  await page.keyboard.press('Space');
+  await expect(drawer.getByRole('heading', { name: 'Card replacement fees' })).toBeVisible();
+});
+
+test('the grid view groups the pages at the root under their space', async ({ open, check }) => {
+  const page = await open('employee', '/library');
+  await page.getByRole('button', { name: 'Grid view' }).click();
+  await expect(page.locator('#libbody .gfold')).toHaveCount(2);
+  await expect(docRows(page)).toHaveCount(1);
+  await expect(page.locator('#libbody button.lgrp.lcthome')).toHaveAccessibleName('Open Engineering (ENG) home page');
+  expect(await titles(page)).toEqual(['Release checklist']);
+  await check(page, 'library-grid-root');
+});
+
+/** Every page's container as if its home page were not one the person could open. */
+async function withoutHomePages(p) {
+  await p.route(/\/v1\/documents\?/, async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    const items = body.items.map((d) => ({ ...d, container: { ...d.container, home_document_id: null } }));
+    await route.fulfill({ response, json: { ...body, items } });
+  });
+}
+
+test('a space whose home page the person cannot open has a plain heading, and every page is a row', async ({ open, check }) => {
+  const page = await open('employee', '/library/cards', { before: withoutHomePages });
+  await expect(docRows(page)).toHaveCount(2);
+  expect(await titles(page)).toEqual(['Card replacement fees', 'Cards FAQ']);
+  await expect(homes(page)).toHaveCount(0);
+  expect(await groupNames(page)).toEqual(['Cards (CARD)']);
+  await check(page, 'library-plain-heading');
+});
+
+test('a search is one flat list, with a home page as an ordinary row', async ({ open }) => {
+  const page = await open('employee', '/library');
+  await search(page).fill('handbook');
+  await expect(docRows(page)).toHaveText([/Engineering handbook/]);
+  await expect(homes(page)).toHaveCount(0);
+  await expect(page.locator('#libbody .ds-cap')).toHaveCount(0);
+});
+
 /* ---------- searching and filtering ---------- */
 
 test('a search inside a folder covers the folders under it and nothing beside it', async ({ open, check }) => {
@@ -280,7 +357,7 @@ test("a document's details, its domain as folders, and its location as a filter"
   await expect(drawer.getByRole('heading', { name: 'KYC onboarding procedure' })).toBeVisible();
   await expect(drawer.getByRole('link', { name: /Open in Confluence/ })).toHaveAttribute('target', '_blank');
   await drawer.getByRole('button', { name: 'Details and lineage' }).click(); // everyone reads the details
-  await expect(page.locator('#modal')).toContainText('Admins and compliance see which answers cited this document.'); // the lineage is theirs
+  await expect(page.locator('#modal')).toContainText('Admins, compliance officers and developers see which answers cited this document.'); // the lineage is theirs
   await expect(page.locator('#modal').getByRole('button', { name: 'Share more widely' })).toBeVisible(); // asking for wider sharing lives with the details
   await page.locator('#modal [data-close-modal]').click();
   await expect(drawer.locator('.svcrumb a')).toHaveText(['Payments']);
@@ -357,7 +434,7 @@ test('on a phone a document is a sheet over the page, and closing it gives the p
 
 test("a page's Domain breadcrumb opens any folder on its path", async ({ open }) => {
   const page = await open('employee', '/library/cross-border');
-  await docRows(page).filter({ hasText: 'Transfer limits policy' }).click();
+  await homeOf(page, 'Payments (PAY)').click();
   const drawer = page.locator('#drawer');
   await expect(drawer.locator('.svcrumb a')).toHaveText(['Payments', 'Payouts', 'Cross-border']);
   await drawer.locator('.svcrumb').getByRole('link', { name: 'Payouts' }).click();
@@ -388,7 +465,7 @@ test("a document's label problems say what to fix, and other documents show none
   await check(page, 'document-label-problems');
 
   await page.locator('[data-close-drawer]').first().click();
-  await docRows(page).filter({ hasText: 'Card replacement fees' }).click();
+  await homeOf(page, 'Cards (CARD)').click();
   await expect(drawer.getByRole('heading', { name: 'Card replacement fees' })).toBeVisible();
   await expect(drawer.getByRole('note')).toHaveCount(0);
 });
