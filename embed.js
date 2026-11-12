@@ -54,6 +54,7 @@
     sources: 'Sources',
     /** @type {Record<string, string>} */
     stages: {
+      thinking: 'Thinking',
       searching: 'Searching our help content',
       reading: 'Reading',
       writing: 'Writing an answer',
@@ -320,11 +321,22 @@
       }
       // A rule asked about one's own account: answered, then pointed to support for the rest.
       if (reply.account_note) parts.push(`<p class="note">${esc(COPY.account_note)}</p>`, contactLink(settings));
+    } else if (reply.kind === 'chat') {
+      // A conversational reply (a greeting, thanks, a question about the assistant): no sources.
+      parts.push(`<p>${sentencesText(reply)}</p>`);
+    } else if (reply.kind === 'no_answer' && sentencesText(reply)) {
+      // The server words it from the question's topic; replies stored before keep the copy.
+      parts.push(`<p>${sentencesText(reply)}</p>`, contactLink(settings));
     } else {
       parts.push(`<p>${esc(REPLY_TEXT[reply.kind] || COPY.no_answer)}</p>`, contactLink(settings));
     }
     if (message.turnId) parts.push(feedbackView(message, index));
     return `<div class="msg bot" data-kind="${esc(reply.kind)}">${parts.join('')}</div>`;
+  }
+
+  /** A reply's uncited sentences, escaped, as one paragraph's text. @param {any} reply */
+  function sentencesText(reply) {
+    return (reply.sentences || []).map((/** @type {any} */ s) => esc(String(s.text || ''))).join(' ').trim();
   }
 
   /** @param {any} message @param {number} index */
@@ -372,7 +384,7 @@
     const greeting = settings.greeting ? messageView({ role: 'greeting', text: settings.greeting }, settings, -1) : '';
     const status = state.busy
       ? `<div class="msg bot status" role="status"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>${esc(
-          COPY.stages[state.stage || 'searching'] || COPY.stages.searching,
+          COPY.stages[state.stage || 'thinking'] || COPY.stages.thinking,
         )}</div>`
       : '';
     const privacy = safeUrl(settings.privacy_url);
@@ -583,7 +595,7 @@ footer a{color:var(--ink-2);text-decoration:none;display:inline-block;min-height
         if (m.role === 'user') asked = i;
       });
       state.busy = true;
-      state.stage = 'searching';
+      state.stage = 'thinking';
       state.pending = text;
       render();
       try {

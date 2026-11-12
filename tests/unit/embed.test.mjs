@@ -163,6 +163,28 @@ describe('the views', () => {
     });
   }
 
+  it('render a chat reply as plain text, with no sources and no contact route', () => {
+    const reply = { kind: 'chat', sentences: [{ text: "Hello. What can I explain?", citations: [] }], sources: [] };
+    const html = messageView({ role: 'bot', reply, turnId: 't1', vote: null }, SETTINGS, 0);
+    assert.match(html, /data-kind="chat"/);
+    assert.ok(html.includes('Hello. What can I explain?'), html);
+    assert.doesNotMatch(html, /class="sources"|class="contact"/);
+    assert.match(html, /aria-label="Helpful"/);
+  });
+
+  it("render the server's no-answer sentence, escaped, with the contact route", () => {
+    const reply = { kind: 'no_answer', sentences: [{ text: "I couldn't find anything on <b>fees</b> in our help pages.", citations: [] }], sources: [] };
+    const html = messageView({ role: 'bot', reply }, SETTINGS, 0);
+    assert.ok(html.includes('I couldn&#39;t find anything on &#60;b&#62;fees&#60;/b&#62; in our help pages.'), html);
+    assert.ok(!html.includes(COPY.no_answer.replace(/'/g, '&#39;')), html);
+    assert.match(html, /<a class="contact"/);
+  });
+
+  it('show the thinking stage before any other', () => {
+    const html = panelView(SETTINGS, { messages: [], busy: true, stage: null, started: true, error: null, disabled: false });
+    assert.match(html, /Thinking/);
+  });
+
   it('render a rule asked about oneself with the support note under the answer', () => {
     const html = messageView({ role: 'bot', reply: { ...ANSWERED, account_note: true } }, SETTINGS, 0);
     assert.ok(html.indexOf('$5,000') < html.indexOf('For anything about your own account'));

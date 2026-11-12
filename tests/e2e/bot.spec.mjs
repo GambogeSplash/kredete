@@ -124,6 +124,17 @@ test('an account question is redirected to support', async ({ open, check, seed 
   await checkWidget(page, check, 'bot-account-question');
 });
 
+test('a greeting gets a conversational reply with no sources and no contact route', async ({ open, check, seed }) => {
+  const page = await open(null, demo(seed));
+  await openPanel(page);
+  const reply = await ask(page, 'Hey broth');
+  await expect(reply).toHaveAttribute('data-kind', 'chat');
+  await expect(reply).not.toBeEmpty();
+  await expect(reply.getByRole('link', { name: 'Contact support' })).toHaveCount(0);
+  await expect(reply.locator('.sources')).toHaveCount(0);
+  await checkWidget(page, check, 'bot-chat');
+});
+
 test('questions about pages that are not Public, or that nothing covers, get no answer', async ({ open, check, seed }) => {
   const page = await open(null, demo(seed));
   await openPanel(page);
@@ -132,7 +143,7 @@ test('questions about pages that are not Public, or that nothing covers, get no 
   await expect(internal).not.toContainText('dollars');
   const uncovered = await ask(page, seed.bot_questions.not_covered);
   await expect(uncovered).toHaveAttribute('data-kind', 'no_answer');
-  await expect(uncovered).toContainText("I couldn't find that in our help content.");
+  await expect(uncovered).toContainText("I couldn't find anything on bicycle parking near reception in our help pages.");
   await expect(uncovered.getByRole('link', { name: 'Contact support' })).toBeVisible();
   await checkWidget(page, check, 'bot-no-answer');
 });
