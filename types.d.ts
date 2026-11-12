@@ -1431,7 +1431,7 @@ export interface components {
          * AnswerKind
          * @enum {string}
          */
-        AnswerKind: "answered" | "low_confidence" | "conflict" | "not_found";
+        AnswerKind: "answered" | "low_confidence" | "conflict" | "not_found" | "chat";
         /** AnswerOut */
         AnswerOut: {
             /** Access Limited */
@@ -1441,6 +1441,11 @@ export interface components {
             conflict: components["schemas"]["Conflict"] | null;
             /** Follow Ups */
             follow_ups: string[];
+            /**
+             * Gap Logged
+             * @default false
+             */
+            gap_logged: boolean;
             kind: components["schemas"]["AnswerKind"];
             /** Low Confidence Reason */
             low_confidence_reason: string | null;

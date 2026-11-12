@@ -24,7 +24,7 @@
 
   /** @typedef {import('./types').components['schemas']} Schemas */
   /** @typedef {{ event: 'turn.started', data: { turn_id: string } }} TurnStartedEvent */
-  /** @typedef {{ event: 'status', data: { stage: 'searching' | 'reading' | 'writing', searched_documents: number } }} StatusEvent */
+  /** @typedef {{ event: 'status', data: { stage: 'thinking' | 'searching' | 'reading' | 'writing' | 'checking', searched_documents: number } }} StatusEvent */
   /** @typedef {{ event: 'answer.delta', data: { text: string } }} AnswerDeltaEvent */
   /** @typedef {{ event: 'turn.completed', data: Schemas['AnswerOut'] }} TurnCompletedEvent */
   /** @typedef {{ event: 'error', data: { code: string, message: string, retryable: boolean } }} StreamErrorEvent */

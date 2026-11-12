@@ -47,12 +47,12 @@ test.describe('each answer kind', () => {
       await expect(answer.getByRole('button', { name: 'Report to owner' })).toBeVisible();
     },
     not_found: async (answer) => {
-      await expect(answer.locator('.ans')).toHaveText('I could not find a good source for that.');
-      await expect(answer.locator('.notice.none')).toContainText('logged');
+      await expect(answer.locator('.ans')).toHaveText("I couldn't find anything on bicycle parking near reception in the sources you can see.");
+      await expect(answer.locator('.notice.none')).toHaveText('Your question was logged so the owners can see the gap.');
       await expect(answer.locator('.notice.access')).toHaveCount(0);
     },
     access_limited: async (answer) => {
-      await expect(answer.locator('.ans')).toHaveText('I could not find a good source for that.');
+      await expect(answer.locator('.ans')).toHaveText("I couldn't find anything on paging the on-call responder in the sources you can see.");
       await expect(answer.locator('.notice.access')).toHaveText('Some content may not be visible to you.');
     },
   };
@@ -76,7 +76,7 @@ test('streaming shows progress, and Stop cancels without saving an answer', asyn
   });
   await page.getByRole('textbox', { name: 'Ask a question' }).fill(seed.questions.answered.question);
   await page.keyboard.press('Enter');
-  await expect(page.locator('.thk-t')).toHaveText('Searching your sources');
+  await expect(page.locator('.thk-t')).toHaveText('Thinking');
   await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
   await check(page, 'answer-streaming', { loading: true });
   await page.getByRole('button', { name: 'Stop' }).click();
@@ -225,5 +225,5 @@ test('the sources panel shows the citations and sets what the next question read
   const body = (await sent).postDataJSON();
   expect(body.filters.exclude_document_ids).toEqual([seed.documents['pay-savings']]);
   await idle(page);
-  await expect(lastAnswer(page).locator('.ans')).toHaveText('I could not find a good source for that.');
+  await expect(lastAnswer(page).locator('.ans')).toHaveText("I couldn't find anything on Flexible Saver interest in the sources you can see.");
 });

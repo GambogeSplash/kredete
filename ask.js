@@ -154,7 +154,7 @@ async function ask(question) {
     askState().panel = null; // a new chat starts with the default panel, as in the prototype
     B.touchChat(created);
   }
-  const turn = { id: null, question: q, created_at: new Date().toISOString(), status: 'streaming', text: '', stage: 'searching', searched: 0, answer: null, error: null, feedback: null, reported: false };
+  const turn = { id: null, question: q, created_at: new Date().toISOString(), status: 'streaming', text: '', stage: 'thinking', searched: 0, answer: null, error: null, feedback: null, reported: false };
   conv.turns.push(turn);
   if (S().route.params.id === conv.id) appendTurn(turn);
   else {
@@ -186,7 +186,7 @@ async function regenerate(turn) {
   const index = conv.turns.indexOf(turn);
   if (index < 0) return;
   stop();
-  const next = { id: null, question: turn.question, created_at: new Date().toISOString(), status: 'streaming', text: '', stage: 'searching', searched: 0, answer: null, error: null, feedback: null, reported: false };
+  const next = { id: null, question: turn.question, created_at: new Date().toISOString(), status: 'streaming', text: '', stage: 'thinking', searched: 0, answer: null, error: null, feedback: null, reported: false };
   conv.turns[index] = next;
   const old = $(`#thread article[data-turn="${index}"]`);
   const fresh = turnEl(next, index);
@@ -486,7 +486,8 @@ function citeHtml(text, turn, index) {
 function stageText(turn) {
   if (turn.stage === 'reading') return turn.searched ? `Reading ${turn.searched} ${turn.searched === 1 ? 'document' : 'documents'}` : 'Reading your sources';
   if (turn.stage === 'writing') return 'Writing the answer';
-  return 'Searching your sources';
+  if (turn.stage === 'searching') return 'Searching your sources';
+  return 'Thinking';
 }
 function thinkingHtml(turn) {
   const sys = systems().length ? systems() : ['confluence'];
@@ -554,10 +555,19 @@ function fill(el, turn, index) {
   }
   const a = turn.answer;
   const access = a.access_limited ? '<div class="notice access"><span>Some content may not be visible to you.</span></div>' : '';
-  if (a.kind === 'not_found') {
-    const owner = a.not_found && a.not_found.suggested_owner;
-    ans.textContent = 'I could not find a good source for that.';
-    extra.innerHTML = `${access}<div class="notice none"><span>${owner ? `The likely owner is ${PERSON(owner.name, 16)}${owner.team ? ` (${esc(owner.team)})` : ''}. ` : ''}Your question was logged so the owners can see the gap.</span></div>${fbHtml(turn, false)}${followUps(a)}`;
+  if (a.kind === 'chat') {
+    ans.innerHTML = citeHtml(a.text, turn, index);
+    extra.innerHTML = `${fbHtml(turn, false)}${followUps(a)}`;
+  } else if (a.kind === 'not_found') {
+    // The server words a not-found answer, naming the likely owner (conversational spec 3.4).
+    // Answers stored before it have no text: they keep this copy and the owner line, and a
+    // gap was always logged for them.
+    const voiced = !!a.text;
+    const owner = !voiced && a.not_found && a.not_found.suggested_owner;
+    const logged = a.gap_logged || !voiced;
+    ans.textContent = a.text || 'I could not find a good source for that.';
+    const note = owner || logged ? `<div class="notice none"><span>${owner ? `The likely owner is ${PERSON(owner.name, 16)}${owner.team ? ` (${esc(owner.team)})` : ''}. ` : ''}${logged ? 'Your question was logged so the owners can see the gap.' : ''}</span></div>` : '';
+    extra.innerHTML = `${access}${note}${fbHtml(turn, false)}${followUps(a)}`;
   } else if (a.kind === 'conflict') {
     ans.innerHTML = citeHtml(a.text || (a.conflict && a.conflict.summary) || '', turn, index);
     extra.innerHTML = `${conflictHtml(turn, index)}${access}${fbHtml(turn, true)}${followUps(a)}`;
