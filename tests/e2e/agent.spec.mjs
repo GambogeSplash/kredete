@@ -276,11 +276,12 @@ test.describe('Products', () => {
     await page.getByRole('button', { name: /Add a product/ }).click();
     const dialog = page.getByRole('dialog', { name: 'Add a product' });
     await dialog.getByLabel('Name').fill('Docs site');
-    await dialog.getByLabel('Site it runs on').fill(`${new URL(page.url()).origin}/docs`);
+    // A fixed address, not this stack's own: the screenshot then needs no mask, whose edge a focus ring would cross.
+    await dialog.getByLabel('Site it runs on').fill('https://docs.example.com/help');
     await dialog.getByRole('button', { name: 'Create key' }).click();
     await expect(dialog.getByText('Use only the site, like https://help.kredete.com.')).toBeVisible();
-    // The site is this stack's own address, which differs between stacks.
-    await check(page, 'agent-add-product', { mask: ['.agname', '#apallowed_origins0'] });
+    await expect(dialog.getByLabel('Site it runs on')).toBeFocused();
+    await check(page, 'agent-add-product', { mask: ['.agname'] });
     await dialog.getByLabel('Site it runs on').fill(new URL(page.url()).origin);
     await dialog.getByRole('button', { name: 'Create key' }).click();
     const product = page.locator('#agpdetail');

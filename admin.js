@@ -193,11 +193,12 @@ const ACTIONS = [
   ['connection.warning_changed', 'Connection warning changed'],
 ];
 const actionName = (a) => (ACTIONS.find((x) => x[0] === a) || [a, a.replace(/[._]/g, ' ')])[1];
-const SIZES = [25, 50, 100];
+/* 12 rows plus the header and pager fill a laptop screen without scrolling. */
+const SIZES = [12, 25, 50, 100];
 const SIZE_KEY = 'broth-audit-page';
 /** The page size, remembered in this browser as a convenience. */
 function storedSize() {
-  try { const n = Number(localStorage.getItem(SIZE_KEY)); return SIZES.includes(n) ? n : 25; } catch (e) { return 25; }
+  try { const n = Number(localStorage.getItem(SIZE_KEY)); return SIZES.includes(n) ? n : SIZES[0]; } catch (e) { return SIZES[0]; }
 }
 /* The audit API is cursor based and returns no total: each page is kept in memory, in order, for the
    current filters and page size, so Previous never asks again. Cursors stay out of the address. */

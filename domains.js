@@ -126,7 +126,7 @@ function createModal() {
     <div class="hse ds-msg bad" id="dme" role="alert"></div><div class="actions"><button type="button" class="btn" data-close-modal>Cancel</button><span class="lsp"></span><button type="submit" class="btn primary" id="dmgo">Create</button></div></form>`);
   const name = $('#dmname'), slug = $('#dmslug'), err = $('#dme');
   let typed = false;
-  setTimeout(() => name.focus(), 80);
+  name.focus();
   const bad = (text, field) => { err.textContent = text; [name, slug].forEach((f) => f.removeAttribute('aria-invalid')); if (text && field) { field.setAttribute('aria-invalid', 'true'); field.focus(); } };
   name.oninput = () => { if (!typed) slug.value = slugify(name.value); };
   slug.oninput = () => { typed = slug.value !== ''; };

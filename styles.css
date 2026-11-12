@@ -1579,9 +1579,10 @@ html[data-mode=dark] #cmdk .box{background:var(--surface)}
 /* rows with no action: the value uses the full width */
 /* account rail: sticky to the visible panel, Sign out always in view */
 @media (min-width:901px){
+ /* The panel is 100vh - 16px tall with a 1px border top and bottom: 100vh - 18px inside. Anything taller scrolls. */
  .lset{align-items:start;min-height:0;background:linear-gradient(90deg,var(--fill-1) 200px,var(--surface) 200px)}
- .lset .lrail{position:sticky;top:0;align-self:start;height:calc(100vh - 16px);border-right:0;overflow:auto}
- .lset .lcont{border-left:1px solid var(--line);min-height:calc(100vh - 16px)}
+ .lset .lrail{position:sticky;top:0;align-self:start;height:calc(100vh - 18px);border-right:0;overflow:auto}
+ .lset .lcont{border-left:1px solid var(--line);min-height:calc(100vh - 18px)}
 }
 .lset .lrail{box-sizing:border-box}
 @media (min-width:901px){.lset .lrail{top:-24px}}

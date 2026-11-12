@@ -265,7 +265,8 @@ new MutationObserver(() => {
         el.dataset.open = '1';
         opener = document.activeElement;
         el.setAttribute('aria-hidden', 'false');
-        setTimeout(() => { const f = /** @type {HTMLElement | null} */ (el.querySelector(FOC)); (f || el).focus(); }, 60);
+        // The default focus waits for the content; it never takes focus from what the content, or the person, chose inside.
+        setTimeout(() => { if (el.contains(document.activeElement)) return; const f = /** @type {HTMLElement | null} */ (el.querySelector(FOC)); (f || el).focus(); }, 60);
       } else if (!on && el.dataset.open) {
         delete el.dataset.open;
         el.setAttribute('aria-hidden', 'true');

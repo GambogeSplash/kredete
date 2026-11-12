@@ -8,7 +8,8 @@ const REPO = '00000000-0000-4000-8000-00000000d0c2';
 const SECOND = '00000000-0000-4000-8000-00000000d0c3';
 const RUN = '00000000-0000-4000-8000-00000000d0c4';
 const DECLARATION = '00000000-0000-4000-8000-00000000d0c5';
-const AT = '2026-11-11T09:00:00Z';
+/** Ten minutes before the run: the page says how long ago, so a fixed date would change its words, and its wrap, day by day. */
+const AT = new Date(Date.now() - 10 * 60_000).toISOString();
 
 function docsConnection(over = {}) {
   return {
