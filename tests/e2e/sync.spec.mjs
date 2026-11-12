@@ -93,7 +93,7 @@ test('Sync now checks for changes, and says when it found none', async ({ open, 
   await expect(toast(page)).toHaveText(`${SITE} synced. No changes.`);
   await shoot(check, views, 'connectors-no-changes', async (p) => {
     await expect(status(p)).toHaveText('Synced just now · No changes');
-    await expect(card(p).locator('.cnsync .tag.ok')).toHaveText('Synced');
+    await expect(card(p).locator('.cnsync .tag')).toHaveCount(0); // a healthy read is muted text, not a tag
     await expect(syncNow(p)).toBeEnabled();
   });
   await closeOthers(views);
@@ -123,9 +123,10 @@ test('Sync now shows its progress, carries on after a reload, and says what it u
   });
   await closeOthers(views);
 
-  // A reload picks the same run up again and follows it to the end.
+  // A reload picks the same run up again and follows it to the end. The Confluence page has its
+  // own address, so the reload stays on it.
   await page.reload();
-  await openSource(page);
+  await expect(page).toHaveURL(/\/admin\/sources\/confluence$/);
   await expect(status(page)).toHaveText('Syncing 4 of 5 pages');
   await expect(syncNow(page)).toBeDisabled();
   await expect(toast(page)).toHaveText(`${SITE} synced. 5 pages updated.`, { timeout: 60_000 });
@@ -191,7 +192,7 @@ test('each space being read shows its own progress, and a changed default reads 
   // Changing a space's defaults reads it again, and its row follows that read.
   await fake(page, s, 'configure', { delay_ms: 5000 });
   await row(page, 'Payments (PAY)').getByRole('button', { name: 'Settings for Payments (PAY)' }).click();
-  const drawer = page.getByRole('dialog', { name: 'Settings for Payments (PAY)' });
+  const drawer = page.getByRole('dialog', { name: 'Space settings, Payments (PAY)' });
   await drawer.getByRole('button', { name: 'Default authority' }).click();
   await page.getByRole('option', { name: 'Draft' }).click();
   await drawer.getByRole('button', { name: 'Save' }).click();

@@ -72,6 +72,6 @@ test('after the first admin signs in the wizard is over: /setup lands on Sources
   test.setTimeout(150_000);
   const seeded = await seedState('confluence');
   const page = await open('admin', '/setup', { token: seeded.people.admin.refresh_tokens[0] });
-  await expect(page).toHaveURL(/\/admin\/connectors/);
+  await expect(page).toHaveURL(/\/admin\/sources$/);
   await expect(page.getByRole('heading', { name: 'Add the Confluence app' })).toHaveCount(0);
 });

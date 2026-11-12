@@ -304,7 +304,7 @@ test.describe('connectors', () => {
     const page = await open('admin', '/admin/sources');
     await openSource(page);
     await page.getByRole('button', { name: 'Settings for Engineering (ENG)' }).click();
-    const drawer = page.getByRole('dialog', { name: 'Settings for Engineering (ENG)' });
+    const drawer = page.getByRole('dialog', { name: 'Space settings, Engineering (ENG)' });
     await expect(drawer.getByRole('button', { name: 'Default domain' })).toHaveText('No domain');
     await drawer.getByRole('button', { name: 'Default domain' }).click();
     const options = page.locator('.ssel-menu .ssel-o');
@@ -342,7 +342,7 @@ test.describe('connectors', () => {
     });
     await openSource(page);
     await page.getByRole('button', { name: 'Settings for Payments (PAY)' }).click();
-    const drawer = page.getByRole('dialog', { name: 'Settings for Payments (PAY)' });
+    const drawer = page.getByRole('dialog', { name: 'Space settings, Payments (PAY)' });
     await expect(drawer.getByRole('button', { name: 'Default authority' })).toBeVisible();
     await check(page, 'space-settings');
     await drawer.getByRole('button', { name: 'Default authority' }).click();
@@ -364,7 +364,7 @@ test.describe('connectors', () => {
     });
     await openSource(page);
     await page.getByRole('button', { name: 'Settings for Cards (CARD)' }).click();
-    const drawer = page.getByRole('dialog', { name: 'Settings for Cards (CARD)' });
+    const drawer = page.getByRole('dialog', { name: 'Space settings, Cards (CARD)' });
     await drawer.getByRole('spinbutton', { name: 'Review interval in months' }).fill('0');
     await drawer.getByRole('button', { name: 'Save' }).click();
     await expect(drawer.getByRole('alert')).toHaveText('The review interval is a whole number of months, from 1 to 120');
@@ -554,14 +554,14 @@ test.describe('connectors', () => {
   test('a failed Confluence authorization says what to do', async ({ open, check }) => {
     const page = await open('admin', '/admin/sources?error=invalid_state');
     await expect(page.getByRole('alert')).toHaveText('The Confluence authorization expired or was started in another browser. Authorize again.');
-    await expect(page).toHaveURL(/\/admin\/connectors$/);
+    await expect(page).toHaveURL(/\/admin\/sources$/);
     await check(page, 'connectors-authorization-failed');
   });
 
   test('a finished Confluence authorization is confirmed', async ({ open, seed }) => {
     const page = await open('admin', `/admin/connectors?connected=${seed.connection_id}`);
     await expect(page.locator('#toast')).toContainText('Confluence is connected');
-    await expect(page).toHaveURL(/\/admin\/connectors$/);
+    await expect(page).toHaveURL(/\/admin\/sources$/);
   });
 });
 

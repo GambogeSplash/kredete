@@ -26,7 +26,7 @@
 /* the Broth radius scale on the Ask screens: 8 tags, 12 buttons and fields, 18 cards, 24 composer */
 #app.cxapp{--r-sm:8px;--r-md:12px;--r-lg:18px;--r-xl:24px;--r-2xl:28px}
 .lhome .dform{border-radius:28px}
-#app.cxapp .dsend{background:linear-gradient(180deg,#6b77dd,#5662cb)}
+#app.cxapp .dsend{background:linear-gradient(180deg,#5e6ad2,#5662cb)}
 #app.cxapp .dsend:hover{background:linear-gradient(180deg,#7580e3,var(--brand))}
 
 /* the panel on the home view: Broth's card, then the sources list */

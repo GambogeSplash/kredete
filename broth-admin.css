@@ -189,7 +189,7 @@ button.ds-card.add,button.ds-card.addom{font:inherit}
 /* the field focus ring */
 .lset .eminp:focus,.lset .eminp:focus-visible,.ds-pop .eminp:focus,.ds-pop .eminp:focus-visible,.modal.bt .eminp:focus,.modal.bt .eminp:focus-visible{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
 /* primary buttons: the prototype's gradient */
-.lset .btn.primary,.pg.gov .btn.primary,.ds-pop .btn.primary,.modal.bt .btn.primary{background:linear-gradient(180deg,#6b77dd,#5662cb)}
+.lset .btn.primary,.pg.gov .btn.primary,.ds-pop .btn.primary,.modal.bt .btn.primary{background:linear-gradient(180deg,#5e6ad2,#5662cb)}
 .lset .btn.primary:hover,.pg.gov .btn.primary:hover,.ds-pop .btn.primary:hover,.modal.bt .btn.primary:hover{background:linear-gradient(180deg,#7580e3,var(--brand))}
 .lrail-h{text-transform:none}
 .lset .lrail .tab.out:hover{color:var(--danger)}
@@ -361,7 +361,7 @@ html[data-mode=dark] .ds-scrim{background:rgba(255,255,255,.35)}
 
 /* ===== a connected source's own page ===== */
 .srcpage{max-width:none}
-.ds-head .srcback{display:inline-flex;align-items:center;gap:var(--s-1);margin-right:var(--s-3);color:var(--mute);text-decoration:none;border-bottom:0;font-size:var(--fs-sm);white-space:nowrap}
+.ds-head .srcback{display:inline-flex;align-items:center;min-height:24px;gap:var(--s-1);margin-right:var(--s-3);color:var(--mute);text-decoration:none;border-bottom:0;font-size:var(--fs-sm);white-space:nowrap}
 .ds-head .srcback:hover{color:var(--ink)}
 .ds-head .srcback:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
 .ds-head:has(.srcback){justify-content:flex-start;flex-wrap:wrap}

@@ -106,7 +106,7 @@ test.describe('docs repositories', () => {
   test('a returned install says so, and a refused one says why', async ({ open }) => {
     const page = await open('admin', `/admin/connectors?connected=${CONNECTION}`, { before: (p) => withDocs(p) });
     await expect(page.locator('#toast')).toContainText('The GitHub App is installed. Find the repositories next.');
-    await expect(page).toHaveURL(/\/admin\/connectors$/);
+    await expect(page).toHaveURL(/\/admin\/sources$/);
     await page.goto('/admin/connectors?error=wrong_account');
     await expect(page.getByRole('alert').first()).toHaveText('The app was installed on a different GitHub account than the one you connected. Install it on that account.');
   });
@@ -153,7 +153,7 @@ test.describe('docs repositories', () => {
   test("a repository's settings leave out what a repository derives", async ({ open }) => {
     const page = await open('admin', '/admin/connectors', { before: (p) => withDocs(p) });
     await (await openDocs(page)).getByRole('button', { name: 'Settings for kredete/docs' }).click();
-    const drawer = page.getByRole('dialog', { name: 'Settings for kredete/docs' });
+    const drawer = page.getByRole('dialog', { name: 'Repository settings, kredete/docs' });
     await expect(drawer.getByRole('heading', { name: 'Repository settings' })).toBeVisible();
     await expect(drawer.getByRole('button', { name: 'Default authority' })).toHaveCount(0);
     await expect(drawer.getByRole('button', { name: 'Default sensitivity' })).toHaveCount(0);

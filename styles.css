@@ -710,7 +710,7 @@ h1,h2,h3,.wm,.stat .n,.kt,.si-q{font-family:var(--font);letter-spacing:-.012em}
 .top{width:244px;background:var(--shell);padding:10px var(--s-2);overflow:hidden}
 .brand{display:flex;align-items:center;gap:2px;padding:2px var(--s-1) 10px 6px}
 .wsw{display:flex;align-items:center;gap:var(--s-2);min-width:0}
-.wsav{width:20px;height:20px;border-radius:var(--r-xs);background:var(--brand);color:var(--surface);font:600 11px/20px var(--font);text-align:center;flex:none}
+.wsav{width:20px;height:20px;border-radius:var(--r-xs);background:var(--brand);color:#fff;font:600 11px/20px var(--font);text-align:center;flex:none}
 .wm{font:500 13px var(--font);color:var(--ink);margin:0}
 .brand .lib{width:28px;height:28px;color:var(--mute)}
 .brand .lib:hover{background:var(--fill-3)}
@@ -1092,7 +1092,7 @@ button.astat:hover{background:var(--fill-1);border-color:var(--line-strong)}
 
 /* ---- dark mode: tuned invert, pictures and brand colours kept true ---- */
 html[data-mode=dark]{filter:invert(.93) hue-rotate(180deg);background:var(--surface);color-scheme:dark}
-html[data-mode=dark] :is(img,video,canvas,.stile,.wsav,.avimg,.lav,.kav,.adot,.dsend,.btn.primary,.btn.blue,.lbadge,.obsw,.lvs i,.cmp-tick){filter:invert(1) hue-rotate(180deg)}
+html[data-mode=dark] :is(img,video,canvas,.stile,.avimg,.lav,.kav,.adot,.dsend,.btn.primary,.btn.blue,.lbadge,.obsw,.lvs i,.cmp-tick){filter:invert(1) hue-rotate(180deg)}
 html[data-mode=dark]{--e1:0 1px 2px rgba(255,255,255,.12);--e2:0 8px 16px -4px rgba(255,255,255,.2);--e3:0 16px 40px -8px rgba(255,255,255,.35)}
 html[data-mode=dark] .scrim{background:rgba(255,255,255,.4)}
 html[data-mode=dark] .modal-wrap{background:rgba(255,255,255,.55)}
@@ -1204,13 +1204,13 @@ html[data-mode=dark] :is(.fc-art,.fsvg,.fh-i){filter:invert(1) hue-rotate(180deg
 .lhome .dform{box-shadow:0 1px 2px rgba(0,0,0,.04),0 18px 44px -16px rgba(94,106,210,.35)}
 .lh-sug svg{transition:color var(--dur-fast)}.lh-sug:hover svg{color:var(--brand)}
 /* buttons with a little depth */
-.btn.primary,.btn.blue,.dsend{background:linear-gradient(180deg,#6b77dd,#5662cb);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(60,70,160,.35)}
+.btn.primary,.btn.blue,.dsend{background:linear-gradient(180deg,#5e6ad2,#5662cb);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(60,70,160,.35)}
 .btn.primary:hover,.btn.blue:hover,.dsend:hover{background:linear-gradient(180deg,#7580e3,var(--brand));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 16px -6px rgba(94,106,210,.6)}
 /* Library: each app group wears its own tint */
 /* Connectors: connected cards glow in their app colour */
 /* Activity: the next step and the unread dot have presence */
 .actl .actr:has(#actgo){background:linear-gradient(90deg,var(--brand-soft),var(--surface) 70%)}
-.atab .lbadge{background:linear-gradient(180deg,#6b77dd,#5662cb);color:var(--surface)}
+.atab .lbadge{background:linear-gradient(180deg,#5e6ad2,#5662cb);color:var(--surface)}
 /* Account: a ring around your photo */
 .acid .avimg,.acid img{box-shadow:0 0 0 3px var(--surface),0 0 0 5px rgba(94,106,210,.45),0 10px 24px -8px rgba(94,106,210,.5);border-radius:50%}
 /* Support agent: readiness fills with colour */
