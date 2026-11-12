@@ -936,7 +936,7 @@ body[data-sf=bot] #crumb{display:none}
 .actr[data-n]{cursor:pointer}.actr[data-n]:hover{background:var(--fill-1)}
 .actic{display:inline-flex;color:var(--mute-2);flex:none;width:18px;justify-content:center}
 .actt{flex:1;min-width:0;display:grid}.actt b{font-weight:500;font-size:var(--fs-md)}.actt small{color:var(--mute);font-size:var(--fs-xs)}
-.actb{display:inline-flex;align-items:center;gap:var(--s-3);flex:none;color:var(--mute-3)}
+.actb{display:inline-flex;align-items:center;gap:var(--s-3);flex:none;color:var(--mute)}
 .actn{margin:0;padding:var(--s-5) var(--s-4);color:var(--mute)}
 @media (max-width:640px){.actr{flex-wrap:wrap}.actb{width:100%}}
 
@@ -1205,7 +1205,7 @@ html[data-mode=dark] :is(.fc-art,.fsvg,.fh-i){filter:invert(1) hue-rotate(180deg
 .lh-sug svg{transition:color var(--dur-fast)}.lh-sug:hover svg{color:var(--brand)}
 /* buttons with a little depth */
 .btn.primary,.btn.blue,.dsend{background:linear-gradient(180deg,#5e6ad2,#5662cb);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(60,70,160,.35)}
-.btn.primary:hover,.btn.blue:hover,.dsend:hover{background:linear-gradient(180deg,#7580e3,var(--brand));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 16px -6px rgba(94,106,210,.6)}
+.btn.primary:hover,.btn.blue:hover,.dsend:hover{background:linear-gradient(180deg,#5662cb,var(--brand-strong));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 16px -6px rgba(94,106,210,.6)}
 /* Library: each app group wears its own tint */
 /* Connectors: connected cards glow in their app colour */
 /* Activity: the next step and the unread dot have presence */
@@ -1679,7 +1679,7 @@ pre.code{background:var(--fill-1);color:var(--ink-2);border:1px solid var(--line
 .pm-ap{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);padding:var(--s-3) var(--s-2) var(--s-1);font-size:var(--fs-sm);color:var(--ink-2)}
 .pm-ap .seg{height:30px}.pm-ap .segb{width:auto;height:28px;padding:0 var(--s-3);font-size:var(--fs-xs);color:var(--mute)}
 .pm-ap .segb.on{background:var(--fill-3);color:var(--ink)}
-.pm-i.danger,.pm-i.danger svg{color:var(--danger)}.pm-i.danger:hover{background:var(--danger-soft)}.pm-i.danger:hover,.pm-i.danger:hover svg{color:var(--danger-strong)}
+.pm-i.danger,.pm-i.danger svg{color:var(--danger-strong)}.pm-i.danger:hover{background:var(--danger-soft)}.pm-i.danger:hover,.pm-i.danger:hover svg{color:var(--danger-strong)}
 .pm-i{min-height:36px}
 .pmenu{width:304px}
 .pm-card:focus-visible{box-shadow:none}

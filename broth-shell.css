@@ -66,7 +66,7 @@
 .pm-who .pm-ch{margin-left:auto;flex:none;color:var(--mute);display:grid;place-items:center;transition:transform var(--dur-fast),color var(--dur-fast)}
 .pm-who:hover .pm-ch,.pm-who:focus-visible .pm-ch{color:var(--ink);transform:translateX(2px)}
 html[data-mode=dark] :is(.ssel-menu,.pmenu,.cmenu,.fmenu,.hiapop,.drawer,.modal,#cmdk .box,.oa-card){box-shadow:var(--e3)}
-.pm-i.danger:hover,.pm-i.danger:hover svg{color:var(--danger)}
+.pm-i.danger:hover,.pm-i.danger:hover svg{color:var(--danger-strong)}
 
 /* palette chat rows carry the Broth face, the same 18 px tile as a document's source logo */
 .kface{display:block;width:18px;height:18px;border-radius:5px;border:1px solid var(--line);box-sizing:border-box;object-fit:cover;background:var(--fill-1);flex:none}

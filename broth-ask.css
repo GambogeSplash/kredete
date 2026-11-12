@@ -27,7 +27,7 @@
 #app.cxapp{--r-sm:8px;--r-md:12px;--r-lg:18px;--r-xl:24px;--r-2xl:28px}
 .lhome .dform{border-radius:28px}
 #app.cxapp .dsend{background:linear-gradient(180deg,#5e6ad2,#5662cb)}
-#app.cxapp .dsend:hover{background:linear-gradient(180deg,#7580e3,var(--brand))}
+#app.cxapp .dsend:hover{background:linear-gradient(180deg,#5662cb,var(--brand-strong))}
 
 /* the panel on the home view: Broth's card, then the sources list */
 .cxside{position:relative}
@@ -64,14 +64,12 @@ html[data-mode=dark] .cxav{filter:invert(1) hue-rotate(180deg)}
 
 @media (max-width:900px){.lhome .dform{border-radius:18px}}
 
-/* conversation: a sent message is our purple, dimmed and translucent, with a soft stroke */
-#app .umsg{background:rgba(94,106,210,.58)!important;border:1px solid rgba(150,160,245,.5);color:#fff!important;box-shadow:0 8px 22px -14px rgba(94,106,210,.7)}
-#app .umsg em{display:block;margin-top:2px;font-style:normal;font-size:var(--fs-xs,12px);color:rgba(255,255,255,.72)!important}
+/* conversation: a sent message is our purple with a soft stroke; solid, so white text on it reads in both themes */
+#app .umsg{background:#5e6ad2!important;border:1px solid rgba(150,160,245,.5);color:#fff!important;box-shadow:0 8px 22px -14px rgba(94,106,210,.7)}
+#app .umsg em{display:block;margin-top:2px;font-style:normal;font-size:var(--fs-xs,12px);color:#fff!important}
 #app .umsg.editing{border-color:var(--line)}
 .cxcomp .dform{border-radius:28px}
 @media (max-width:900px){.cxcomp .dform{border-radius:22px}}
-html[data-mode=dark] #app .umsg{filter:invert(1) hue-rotate(180deg)}
-html[data-mode=dark] #app .umsg.editing{filter:none}
 
 /* a retry link in a notice reads as the prototype's plain link, never underlined */
 .cxapp .notice .link,.cxapp .banner .link{text-decoration:none;color:var(--brand)}

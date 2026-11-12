@@ -98,7 +98,7 @@ button.adlogo.busy{animation:logopulse 1s ease-in-out infinite}
 .si-alt .link{color:var(--brand);font-weight:450;letter-spacing:normal;padding:0 2px}
 .si-alt .link::after{content:none}
 .si-alt .link:hover{color:var(--brand-strong)}
-.pvmock .pvc{color:var(--mute-3)}
+.pvmock .pvc{color:var(--mute)}
 .si-in .prov.si-btn{height:44px}
 @media (max-width:900px){.si.v2:has(.si-r.pict) .si-l{padding:28px 20px 40px}}
 .obq{margin-top:var(--s-2)}
@@ -147,3 +147,7 @@ a.prov[aria-disabled=true]{pointer-events:none}
 .si[data-nofade] .si-in.in{animation:none}
 .pvmock.pvw.pvfl{align-items:stretch}
 .si-in .obq{margin-top:var(--s-2)}
+
+/* dark: the brand is too deep to read on the near-black page, so its links take a lighter tint */
+html[data-mode=dark] .si-alt .link{color:#8a93e6}
+html[data-mode=dark] .si-alt .link:hover{color:#a7aef0}

@@ -11,7 +11,7 @@
 .dvcols .dmn{gap:var(--s-3)}
 .addvi{display:grid;place-items:center;flex:none;background:var(--fill-1);color:var(--ink)}
 .dvact{display:flex;gap:var(--s-2);justify-content:flex-end}
-.adok{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#1f8f4e}
+.adok{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#1a7f45}
 .adok i{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:adpulse 1.8s ease-in-out infinite}
 @keyframes adpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
 .lcont .btn:focus-visible,.lcont .ssel-btn:focus-visible,.lcont .eminp:focus-visible{outline:2px solid var(--ring,var(--brand));outline-offset:2px}
