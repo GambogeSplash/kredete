@@ -377,6 +377,8 @@ a.btn.si-btn{text-decoration:none}
 }
 .cnfmore{margin-top:var(--s-2)}
 .cnfnone,.cnfe{margin:var(--s-2) 0 0;font-size:var(--fs-sm)}
+.cnfhid{display:flex;align-items:center;gap:var(--s-1);margin:var(--s-2) 0 0;font-size:var(--fs-sm)}
+.cnfhid svg{flex:none}
 .cnfsk{min-height:40px}
 .cnsrun{display:block;margin-top:2px;font-size:var(--fs-xs);line-height:1.6;color:var(--mute)}
 .cnsrun:empty{display:none}

@@ -34,8 +34,8 @@ function page() {
   const inner = `<div class="ds-head"><h1 class="lcont-t">Sharing requests</h1></div>
     <div class="ixchips govtabs" role="tablist" aria-label="Status">${STATUSES.map(([k, l]) => `<button type="button" class="ixchip ${g.status === k ? 'on' : ''}" role="tab" aria-selected="${g.status === k}" data-st="${k}">${l}</button>`).join('')}</div>
     <div class="adreq govlist" id="govlist"></div><div class="chmore" id="govmore"></div>`;
-  // Admins and compliance see the same left menu as the Admin screens; everyone else the plain page.
-  const shell = B.hasRole('admin', 'compliance');
+  // Whoever can open the Admin area sees the same left menu as its screens; everyone else the plain page.
+  const shell = B.opens('admin');
   $('#app').innerHTML = shell ? `<div class="lset gov">${window.ADMIN.railHtml('governance')}<div class="lcont">${inner}</div></div>` : `<div class="pg gov">${inner}</div>`;
   if (shell) window.ADMIN.wireRail($('.lrail'));
   $$('[data-st]').forEach((b) => { b.onclick = () => { g.status = b.dataset.st; page(); load(true); }; });

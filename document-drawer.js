@@ -127,27 +127,30 @@ function shareModal(d) {
 
 const ACTIONS = { 'answer.served': 'Cited in an answer', 'promotion.requested': 'Wider sharing requested', 'promotion.approved': 'Sharing approved', 'promotion.rejected': 'Sharing rejected', 'promotion.revoked': 'Sharing revoked', 'promotion.needs_review': 'Sharing needs review' };
 /** "Details and lineage", for everyone, as in the prototype: the document's tags and facts, then the
- *  answers that cited it (admins and compliance read those; the audit is theirs). */
+ *  answers that cited it and its sharing history. With `audit.read` the rows come from the audit
+ *  search; with `lineage.read` alone from the anonymous lineage (developer role spec 3.4). Either way
+ *  a row says when, what and through which channel, never who. */
 async function detailsModal(d) {
   const scope = SCOPE[d.scope];
-  const lineage = B.hasRole('admin', 'compliance');
+  const audit = B.can('audit.read');
+  const lineage = audit || B.can('lineage.read');
   const tags = (d.authority === 'approved' && !authorityTag(d) ? chip('Approved', 'ok') : authorityTag(d)) + (d.system ? chip(srcName(d)) : '') + (d.domain && d.domain.name ? chip(d.domain.name, 'blue') : '');
   const rows = `${d.owner && d.owner.name ? `<dt>Owner</dt><dd>${PERSON(d.owner.name, 20)}${d.owner.title ? `, ${esc(d.owner.title)}` : ''}</dd>` : ''}${d.last_verified_at ? `<dt>Last verified</dt><dd>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at, true))}</dd>` : ''}${d.sensitivity ? `<dt>Sensitivity</dt><dd>${esc(B.clearanceName(d.sensitivity))}</dd>` : ''}${scope ? `<dt>Access</dt><dd>${esc(scope[0])}</dd><dt>External use</dt><dd>${d.scope === 'public' ? 'Approved' : 'Not approved'}</dd>` : ''}`;
   B.openModal(`<div class="modal lineage" role="dialog" aria-label="Details and lineage"><div class="bar"><span>${esc(docTitle(d))}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
     ${tags ? `<div class="sv-tags">${tags}</div>` : ''}
     ${rows ? `<dl class="kv">${rows}</dl>` : ''}
-    <h4 class="dlh">Lineage: answers that cited this</h4><div id="lin">${lineage ? B.loadingBlock('Loading lineage', 3, 'actr') : '<p class="amute">Admins and compliance see which answers cited this document.</p>'}</div>
+    <h4 class="dlh">Lineage: answers that cited this</h4><div id="lin">${lineage ? B.loadingBlock('Loading lineage', 3, 'actr') : '<p class="amute">Admins, compliance officers and developers see which answers cited this document.</p>'}</div>
     <div class="actions">${d.url ? `<a class="btn primary" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${srcMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span>${ICON('ext', 14)}</a>` : ''}${d.scope && d.scope !== 'public' ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}</div></div></div>`);
   const share = $('#dshare');
   if (share) share.onclick = () => shareModal(d);
   if (!lineage) return;
   try {
-    const page = await B.api.get('/admin/audit', { document_id: d.id, limit: 50 });
+    const page = audit ? await B.api.get('/admin/audit', { document_id: d.id, limit: 50 }) : await B.api.get(`/documents/${d.id}/lineage`, { limit: 50 });
     const box = $('#lin');
     if (!box) return;
     const events = B.rows(page);
     box.innerHTML = events.length
-      ? `<div class="actl">${events.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' \u00b7 ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' \u00b7 ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? '<p class="amute linmore">Showing the 50 most recent. See all in Admin, Audit.</p>' : ''}`
+      ? `<div class="actl">${events.map((e) => `<div class="actr"><span class="actic">${ICON(e.action === 'answer.served' ? 'chat' : 'shield', 16)}</span><span class="actt"><b>${esc(ACTIONS[e.action] || e.action)}</b><small>${B.when(e.ts, B.dayLabel(e.ts, true))}${e.channel ? ' \u00b7 ' + esc(e.channel) : ''}${e.outcome && e.outcome !== 'ok' ? ' \u00b7 ' + esc(e.outcome.replace(/_/g, ' ')) : ''}</small></span></div>`).join('')}</div>${page.next_cursor ? `<p class="amute linmore">Showing the 50 most recent.${audit ? ' See all in Admin, Audit.' : ''}</p>` : ''}`
       : emptyFrame('chat', 'Nothing yet', 'Answers that cite this document appear here.');
   } catch (error) {
     const box = $('#lin');

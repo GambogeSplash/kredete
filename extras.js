@@ -99,8 +99,11 @@ const frow = (label, value, action) => `<div class="frow"><div class="frl"><b>${
 window.SURFACES.account = (params) => {
   const me = B.S.me;
   const tab = params.tab === 'sessions' ? 'sessions' : 'profile';
-  const adminLinks = B.hasRole('admin', 'compliance')
-    ? `<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administrator settings</div>${[['Sources', '/admin/sources'], ['People and access', '/admin/people'], ['Sharing requests', '/governance'], ['Domains', '/admin/domains'], ['Audit log', '/admin/audit']].map(([l, to]) => `<button type="button" class="tab" data-at="${to}" aria-current="false">${l}</button>`).join('')}`
+  // The Admin links this person can open, in the Admin rail's order (capabilities.js).
+  const tabs = window.CAPS.adminTabs(me);
+  const links = [['Sources', '/admin/sources', 'connectors'], ['People and access', '/admin/people', 'people'], ['Sharing requests', '/governance', ''], ['Domains', '/admin/domains', 'domains'], ['Audit log', '/admin/audit', 'audit']].filter(([, , tab]) => (tab ? tabs.includes(tab) : tabs.length > 0));
+  const adminLinks = tabs.length
+    ? `<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administrator settings</div>${links.map(([l, to]) => `<button type="button" class="tab" data-at="${to}" aria-current="false">${l}</button>`).join('')}`
     : '';
   $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><div class="lrail-h">Account settings</div><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button>${adminLinks}<div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><div class="ds-head lcont-head"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div class="ds-act" id="acact"></div></div><div id="acpane"></div></div></div>`;
   $$('[data-at]').forEach((b) => { b.onclick = () => B.go(b.dataset.at); });

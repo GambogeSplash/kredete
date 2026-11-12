@@ -4,6 +4,8 @@ type ApiModule = typeof import('./api.js');
 declare global {
   /** The network module (api.js). */
   var API: ReturnType<ApiModule['createApi']>;
+  /** What the signed-in person may do and see (capabilities.js). */
+  var CAPS: typeof import('./capabilities.js');
   /** How sync runs read in the UI (sync.js). */
   var SYNC: typeof import('./sync.js');
   /** How domains nest, for every list of domains (domain-tree.js). */

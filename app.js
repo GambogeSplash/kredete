@@ -150,12 +150,14 @@ document.addEventListener('input', (e) => {
   if (slot && slot.textContent) slot.textContent = '';
 });
 
-/* ---------- roles ---------- */
-const roles = () => (S.me ? arr(S.me.roles) : []);
-const hasRole = (...wanted) => wanted.some((r) => roles().includes(r));
-const isAdmin = () => hasRole('admin');
+/* ---------- capabilities: what the person may do (capabilities.js) ---------- */
+/** @param {string} capability */
+const can = (capability) => window.CAPS.can(S.me, capability);
+/** @param {string} surface */
+const opens = (surface) => window.CAPS.opens(S.me, surface);
 const sandbox = () => S.mode === 'sandbox';
-const setupPending = () => isAdmin() && sandbox() && S.setupDone === false;
+const setsUp = () => can('sandbox.manage') && sandbox();
+const setupPending = () => setsUp() && S.setupDone === false;
 
 /* ---------- drawer and modal ---------- */
 /**
@@ -286,8 +288,8 @@ const ROUTES = [
   { re: /^\/sources$/, surface: 'connectors' },
   { re: /^\/governance$/, surface: 'governance' },
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
-  { re: /^\/admin(?:\/(workspace|connectors|sources|people|domains|audit)(?:\/(confluence|docs-repositories|google-drive))?)?$/, surface: 'admin', keys: ['tab', 'source'], allow: () => hasRole('admin', 'compliance') },
-  { re: /^\/support-agent(?:\/([0-9a-f-]{36})(?:\/(overview|knowledge|experience|products))?)?$/i, surface: 'bot', keys: ['bot', 'page'], allow: () => hasRole('admin') },
+  { re: /^\/admin(?:\/(workspace|connectors|sources|people|domains|audit)(?:\/(confluence|docs-repositories|google-drive))?)?$/, surface: 'admin', keys: ['tab', 'source'], allow: () => opens('admin') },
+  { re: /^\/support-agent(?:\/([0-9a-f-]{36})(?:\/(overview|knowledge|experience|products))?)?$/i, surface: 'bot', keys: ['bot', 'page'], allow: () => opens('bot') },
   { re: /^\/help(?:\/([a-z0-9-]+))?$/, surface: 'docs', keys: ['slug'] },
   { re: /^\/setup$/, surface: 'setup' },
   { re: /^\/signin$/, surface: 'signin' },
@@ -401,7 +403,7 @@ function route() {
   if (/^\/(?:account\/)?inbox$/.test(path)) { go('/governance', { replace: true }); return; }
   const found = match(path);
   if (!found || (found.allow && !found.allow())) { go('/', { replace: true }); return; }
-  if (found.surface === 'setup' && S.phase === 'app' && !(isAdmin() && sandbox())) { go('/', { replace: true }); return; }
+  if (found.surface === 'setup' && S.phase === 'app' && !setsUp()) { go('/', { replace: true }); return; }
   pageGhost(found.surface + '|' + path);
   // `from` is the surface shown before this one, so a surface can tell arriving from moving within it.
   S.route = { surface: found.surface, params: found.params, path, from: lastSurface };
@@ -464,7 +466,7 @@ async function boot() {
     S.bootError = error; S.phase = 'error'; route(); return;
   }
   S.phase = 'app';
-  if (isAdmin() && sandbox()) await refreshSetupProgress();
+  if (setsUp()) await refreshSetupProgress();
   loadFacets();
   loadChats(true);
   if (window.GOVBADGE) window.GOVBADGE.refresh();
@@ -488,7 +490,7 @@ async function loadFacets() {
 
 /** Admin, sandbox: whether a Confluence connection is serving (spec 4.1 "Finish setup"). */
 async function refreshSetupProgress() {
-  if (!isAdmin() || !sandbox()) { S.setupDone = null; return null; }
+  if (!setsUp()) { S.setupDone = null; return null; }
   const before = S.setupDone;
   try {
     const progress = await window.SETUP.progress();
@@ -878,7 +880,7 @@ window.BRAIN = {
   get S() { return S; },
   api: API, esc, toast, haptic, problem, isAbort, busy, ICON: window.ICON,
   go, route, boot, signOut, armPress, loadMe, loadFacets, readFacets, refreshSetupProgress, clearServerState,
-  hasRole, isAdmin, sandbox, setupPending,
+  can, opens, sandbox, setupPending,
   openDrawer, closeDrawer, drawerDocked, WIDE, openModal, closeModal, exitFx, leaveFx,
   loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, trashFx, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,
   systemName, srcIcon, containerName, isPersonalSpace, SYSTEMS, ROLE_NAMES, CLEARANCES, clearanceName,

@@ -302,7 +302,7 @@ function feedHtml() {
   const sys = systems();
   if (!S().facets) return '<p class="lh-feed" id="lhfeed"><i class="pvsk" style="width:160px;display:inline-block"></i></p>';
   if (!sys.length) {
-    return `<div class="lh-feed lh-feed-empty" id="lhfeed">${empty('stack', 'Nothing is connected yet', B.isAdmin() ? '' : 'Your admin connects sources.', B.isAdmin() ? '<button type="button" class="btn sm" data-go="/admin/connectors">Connect a source</button>' : '')}</div>`;
+    return `<div class="lh-feed lh-feed-empty" id="lhfeed">${empty('stack', 'Nothing is connected yet', B.can('sources.manage') ? '' : 'Your admin connects sources.', B.can('sources.manage') ? '<button type="button" class="btn sm" data-go="/admin/connectors">Connect a source</button>' : '')}</div>`;
   }
   return `<p class="lh-feed" id="lhfeed">${sys.map((k) => B.srcIcon(k, 14)).join('')}<span>Reading from ${sys.length} connected ${sys.length === 1 ? 'app' : 'apps'}</span></p>`;
 }

@@ -2,8 +2,9 @@
  *
  * Every article here is written for people using Broth: a summary, short explained steps, an optional tip and
  * "if this does not work", one action button, and related articles. docs.js lists them first in each topic, then
- * adds whatever GET /v1/docs returns. `go` is [button label, real route, role needed]; a null route means the
- * screen does not exist in this app, so no button shows. "docs:topic" opens that topic's first article.
+ * adds whatever GET /v1/docs returns. `go` is [button label, real route, what it needs]; a null route means the
+ * screen does not exist in this app, so no button shows. What it needs is '' for everyone, else any of a
+ * comma-separated list of capabilities and `owner` (owning a domain); capabilities.js mayFollow decides. "docs:topic" opens that topic's first article.
  * No em dashes, no emoji. Keep one article per line group so a diff reads as an edit to one article.
  */
 (() => {
@@ -96,7 +97,7 @@ window.HELP = {
         ["Sign in and approve", "You are sent to the provider to approve read access, then returned to Broth."]],
       tip: "Notion lets you choose which pages to share, so start with a small set.",
       fix: "If the sign-in fails, check you are an admin and that your provider account has access to the content you want to share.",
-      rel: ["what-broth-reads-from-each-source", "sync-a-source"], go: ["Open Sources", "/admin/sources", "admin"] },
+      rel: ["what-broth-reads-from-each-source", "sync-a-source"], go: ["Open Sources", "/admin/sources", "sources.manage"] },
     { slug: "why-an-answer-is-out-of-date", topic: "sources", title: "Why an answer is out of date", sum: "Broth reads what was in the source at its last sync, so a change made minutes ago may not be there yet.",
       steps: [["Check the sync time", "Open the card, then Sources, and look at the time under each one."],
         ["Ask the owner to verify", "Open the document in the Library to see who owns it, and ask them to check it. They confirm or update it at the source."],
@@ -113,7 +114,7 @@ window.HELP = {
       steps: [["Open Sources", "Under Admin settings."],
         ["Choose Sync now", "It shows a spinner and updates the sync time when done."],
         ["Check the result", "Changed documents show up in Activity, and anything out of date is flagged to its owner."]],
-      rel: ["why-an-answer-is-out-of-date", "connect-a-source"], go: ["Open Sources", "/admin/sources", "admin"] },
+      rel: ["why-an-answer-is-out-of-date", "connect-a-source"], go: ["Open Sources", "/admin/sources", "sources.manage"] },
     { slug: "browse-the-library", topic: "sources", title: "Browse the Library", sum: "Everything Broth can read, organised the way your teams keep it.",
       steps: [["Open Library", "Choose the book icon in the rail."],
         ["Switch the view", "Folders are domains, and inside each, pages are grouped by the space or repository they come from. List shows a table per group. Grid shows folders and pages as cards."],
@@ -128,7 +129,7 @@ window.HELP = {
         ["Follow it up", "Open the document in the Library to see who owns it, and check back with them. They fix it at the source."]],
       tip: "You do not need to find the owner. Broth routes it to the right person.",
       fix: "If nothing happens, open the document in the Library and contact its owner directly.",
-      rel: ["keep-documents-verified"], go: ["Open Governance", "/governance", "admin,compliance,domain_owner"] },
+      rel: ["keep-documents-verified"], go: ["Open Governance", "/governance", "sharing.decide_any,audit.read,owner"] },
     { slug: "work-through-your-inbox", hidden: true, topic: "owners", title: "Work through your Inbox", sum: "The Inbox holds what needs a person: conflicts, gaps, stale documents and requests.",
       steps: [["Open Inbox", "The badge on the rail icon counts what is open."],
         ["Filter by type", "Requests, Conflicts, Gaps, Stale or Feedback."],
@@ -160,7 +161,7 @@ window.HELP = {
         ["Pick a role", "Employee, Content owner, or Admin. People who sign in from a verified domain join as the role you set for it."],
         ["Resend or cancel", "Pending invites have Resend and Cancel on their row."]],
       tip: "Give Admin sparingly. Content owner is usually what a team lead needs.",
-      rel: ["add-and-verify-a-domain", "set-policies"], go: ["Open People and access", "/admin/people", "admin"] },
+      rel: ["add-and-verify-a-domain", "set-policies"], go: ["Open People and access", "/admin/people", "people.manage"] },
     { slug: "set-policies", topic: "admin", title: "Set policies", sum: "Policies apply to everyone straight away.",
       steps: [["Open Policies", "Admin settings, then Policies."],
         ["Turn on what you need", "Verified-only answers, conflict visibility, approval before reporting, approval before public sharing, declining financial advice, hiding personal data."],
@@ -173,7 +174,7 @@ window.HELP = {
         ["Read a row", "Timestamp, event, actor, resource and outcome."],
         ["Export", "Export CSV sends the filtered rows to your compliance team."]],
       tip: "The log shows that a question was asked and which sources were used, not the answer the person read.",
-      rel: ["who-can-see-my-questions", "set-policies"], go: ["Open Audit log", "/admin/audit", "admin,compliance"] },
+      rel: ["who-can-see-my-questions", "set-policies"], go: ["Open Audit log", "/admin/audit", "audit.read"] },
     { slug: "add-and-verify-a-domain", topic: "admin", title: "Add and verify a domain", sum: "Verified domains decide who can sign in and which role they get.",
       steps: [["Open Domains", "Admin settings, then Domains."],
         ["Choose Add a domain", "Enter your company domain, like company.com. Personal email domains are not allowed."],
@@ -181,13 +182,13 @@ window.HELP = {
         ["Verify", "DNS can take up to an hour. Choose Try again if it is not found yet."],
         ["Set the default role", "Open the domain to choose what new people join as."]],
       fix: "If it will not verify, check the TXT record was added to the exact domain, without extra spaces.",
-      rel: ["invite-people-and-set-roles", "read-the-audit-log"], go: ["Open Domains", "/admin/domains", "admin"] },
+      rel: ["invite-people-and-set-roles", "read-the-audit-log"], go: ["Open Domains", "/admin/domains", "domains.manage"] },
     { slug: "remove-someone", topic: "admin", title: "Remove someone", sum: "Removing a person ends their access straight away.",
       steps: [["Open People and access", "Find the person in the table."],
         ["Choose Remove", "You are asked to confirm, since it cannot be undone from here."],
         ["Check the audit log", "The change is recorded with your name."]],
       tip: "Removing a domain also stops new sign-ins from it. Existing people are listed first so nobody is locked out by surprise.",
-      rel: ["invite-people-and-set-roles", "read-the-audit-log"], go: ["Open People and access", "/admin/people", "admin"] },
+      rel: ["invite-people-and-set-roles", "read-the-audit-log"], go: ["Open People and access", "/admin/people", "people.manage"] },
     { slug: "who-can-see-my-questions", topic: "trust", title: "Who can see my questions", sum: "Your chats are yours. Admins see that something was asked, not what you read.",
       steps: [["Your chats are private", "Only you can open them."],
         ["Admins see an audit entry", "It records that a question was asked and which sources were used."],

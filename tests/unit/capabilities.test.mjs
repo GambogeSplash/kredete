@@ -10,7 +10,6 @@ const require = createRequire(import.meta.url);
 function caps() {
   try { return require('../../capabilities.js'); } catch { return {}; }
 }
-const TODO = { todo: 'capabilities.js lands in DRW1.1' };
 
 const ALL = ['sources.manage', 'docs_repos.connect', 'sync_runs.read', 'bots.manage', 'people.manage', 'domains.manage', 'sharing.decide_any', 'labels.review_any', 'audit.read', 'lineage.read', 'sandbox.manage'];
 const ME = {
@@ -21,7 +20,7 @@ const ME = {
   employee: { roles: [], capabilities: [], owned_domain_ids: [] },
 };
 
-describe('can', TODO, () => {
+describe('can', () => {
   it('grants nothing without a session', () => {
     for (const capability of ALL) assert.equal(caps().can(null, capability), false);
   });
@@ -39,7 +38,7 @@ describe('can', TODO, () => {
   });
 });
 
-describe('the Admin area and Support agent', TODO, () => {
+describe('the Admin area and Support agent', () => {
   const tabs = {
     admin: ['workspace', 'people', 'connectors', 'domains', 'audit'],
     compliance: ['audit'],
@@ -58,7 +57,7 @@ describe('the Admin area and Support agent', TODO, () => {
   });
 });
 
-describe('what a person may do with a source', TODO, () => {
+describe('what a person may do with a source', () => {
   it('lets a developer act on docs repositories only', () => {
     assert.equal(caps().manages(ME.developer, 'github_docs'), true);
     assert.equal(caps().manages(ME.developer, 'confluence'), false);
@@ -73,13 +72,13 @@ describe('what a person may do with a source', TODO, () => {
   });
 });
 
-describe('a sync run hidden count', TODO, () => {
+describe('a sync run hidden count', () => {
   it('says nothing when nothing is hidden', () => assert.equal(caps().hiddenNote(0), ''));
   it('names one page', () => assert.equal(caps().hiddenNote(1), "1 page you can't open"));
   it('names several pages', () => assert.equal(caps().hiddenNote(12), "12 pages you can't open"));
 });
 
-describe('a help article button', TODO, () => {
+describe('a help article button', () => {
   it('follows to an owner-only screen when the person owns a domain', () => {
     assert.equal(caps().mayFollow(ME.owner, 'owner'), true);
     assert.equal(caps().mayFollow(ME.employee, 'owner'), false);

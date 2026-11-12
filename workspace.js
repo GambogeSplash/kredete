@@ -90,5 +90,5 @@ function editWorkspace(el) {
   new MutationObserver((_, obs) => { if (!$('#modal').classList.contains('on')) { obs.disconnect(); if (!kept) window.BROTH_LOGO.restore(before); } }).observe($('#modal'), { attributes: true, attributeFilter: ['class'] });
 }
 
-window.ADMIN.tabs.workspace = { label: 'Workspace', roles: ['admin'], render };
+window.ADMIN.tabs.workspace = { label: 'Workspace', render };
 })();

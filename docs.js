@@ -46,7 +46,7 @@ const DOCS = {
   docsProblems: 'connecting-docs-repositories#problems',
   docsPrivateKey: 'connecting-docs-repositories#private-key',
 };
-const AUDIENCE_NAME = { askers: 'Asking', authors: 'Writing pages', admins: 'Admin', compliance: 'Compliance' };
+const AUDIENCE_NAME = { askers: 'Asking', authors: 'Writing pages', admins: 'Admin', compliance: 'Compliance', developers: 'Developers' };
 /* The six topic cards and the how-to articles written for them (help-content.js). The service's own articles
    (GET /v1/docs) are listed after them in the topic they belong to. */
 const HELP = window.HELP || { topics: [], articles: [] };
@@ -318,8 +318,7 @@ function helpRow(slug, updated) {
 function localHtml(a) {
   const rel = (a.rel || []).map((r) => LOCAL_BY_SLUG[r]).filter(Boolean);
   const to = a.go && a.go[1] === 'docs:trust' ? `/help/${itemsOf(topicOf('trust'))[0].slug}` : a.go && a.go[1];
-  const roles = a.go && a.go[2] ? a.go[2].split(',') : [];
-  const go = to && (!roles.length || B.hasRole(...roles)) && !standalone() ? `<a class="btn primary dcgo" href="${esc(to)}" data-link>${esc(a.go[0])}</a>` : '';
+  const go = to && window.CAPS.mayFollow(B.S.me, (a.go && a.go[2]) || '') && !standalone() ? `<a class="btn primary dcgo" href="${esc(to)}" data-link>${esc(a.go[0])}</a>` : '';
   return `<h1>${esc(a.title)}</h1><p class="dcsum">${esc(a.sum)}</p>
   <ol class="dcsteps">${a.steps.map((x) => `<li><b>${esc(x[0])}</b><span>${esc(x[1])}</span></li>`).join('')}</ol>
   ${a.tip ? `<div class="dctip"><i>${ICON('bulb', 16)}</i><div><b>Tip</b><p>${esc(a.tip)}</p></div></div>` : ''}

@@ -188,5 +188,5 @@ async function editModal(domain) {
   }, (error) => { $('#dme').textContent = message(error); });
 }
 
-window.ADMIN.tabs.domains = { label: 'Domains', roles: ['admin'], render };
+window.ADMIN.tabs.domains = { label: 'Domains', render };
 })();

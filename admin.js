@@ -1,8 +1,9 @@
 /* admin.js: the Admin area (sandbox spec 4.3, plan C7 and C8) and its Audit tab.
  *
- * A settings-style page with a left rail. Admins see Connectors, People, Domains and Audit;
- * compliance sees Audit only (the router also refuses the others by URL). Tabs register
- * in window.ADMIN.tabs: connectors.js, people.js and domains.js add theirs.
+ * A settings-style page with a left rail. Each person sees the tabs their capabilities open
+ * (capabilities.js says which): admins every tab, compliance Audit, developers Sources (the
+ * router also refuses the others by URL). Tabs register in window.ADMIN.tabs:
+ * connectors.js, people.js, domains.js and workspace.js add theirs.
  */
 (() => {
 'use strict';
@@ -13,10 +14,9 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 
-/** @type {Record<string, { label: string, hint?: string, roles: string[], render: (el: HTMLElement, params?: any) => void }>} */
+/** @type {Record<string, { label: string, hint?: string, render: (el: HTMLElement, params?: any) => void }>} */
 const tabs = {};
-const ORDER = ['workspace', 'people', 'connectors', 'domains', 'audit'];
-const allowed = () => ORDER.filter((k) => tabs[k] && B.hasRole(...tabs[k].roles));
+const allowed = () => window.CAPS.adminTabs(B.S.me).filter((k) => tabs[k]);
 
 window.SURFACES.admin = (params) => {
   const mine = allowed();
@@ -193,10 +193,10 @@ document.addEventListener('brain:setupchange', () => {
   if (B.S.route && B.S.route.surface === 'admin') rail(B.S.route.params.tab);
 });
 
-/* ---------- people names, for admins (audit actors, promotion requesters, owners) ---------- */
+/* ---------- people names, for whoever manages people (audit actors, promotion requesters, owners) ---------- */
 async function names() {
   const c = B.S.cache;
-  if (!B.isAdmin()) return {};
+  if (!B.can('people.manage')) return {};
   if (!c.names) {
     try {
       const page = await B.api.get('/admin/users', { limit: 200 });
@@ -355,7 +355,7 @@ function toTop() {
   const r = t.getBoundingClientRect();
   if (r.top < 0) t.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 }
-tabs.audit = { label: 'Audit log', roles: ['admin', 'compliance'], render: audit };
+tabs.audit = { label: 'Audit log', render: audit };
 
 window.ADMIN = { tabs, names, setTitle, hint, actions, pop, closePop, life, railHtml, wireRail, domainTile, hydrateTiles };
 })();

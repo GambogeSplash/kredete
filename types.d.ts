@@ -930,6 +930,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/documents/{document_id}/lineage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lineage
+         * @description When and through which channel the page was cited, and its sharing history, newest
+         *     first.
+         */
+        get: operations["lineage_v1_documents__document_id__lineage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/documents/{document_id}/promotions": {
         parameters: {
             query?: never;
@@ -1566,6 +1587,11 @@ export interface components {
             starters?: string[];
         };
         /**
+         * Capability
+         * @enum {string}
+         */
+        Capability: "sources.manage" | "docs_repos.connect" | "sync_runs.read" | "bots.manage" | "people.manage" | "domains.manage" | "sharing.decide_any" | "labels.review_any" | "audit.read" | "lineage.read" | "sandbox.manage";
+        /**
          * ChangeType
          * @enum {string}
          */
@@ -2127,6 +2153,20 @@ export interface components {
              */
             status: "open" | "accepted" | "revoked";
         };
+        /** LineageEventOut */
+        LineageEventOut: {
+            /** Action */
+            action: string;
+            /** Channel */
+            channel: string;
+            /** Outcome */
+            outcome: string;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+        };
         /** LinkIn */
         LinkIn: {
             /**
@@ -2153,6 +2193,8 @@ export interface components {
         };
         /** Me */
         Me: {
+            /** Capabilities */
+            capabilities: components["schemas"]["Capability"][];
             /**
              * Clearance
              * @enum {string}
@@ -2288,6 +2330,13 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** Page[LineageEventOut] */
+        Page_LineageEventOut_: {
+            /** Items */
+            items: components["schemas"]["LineageEventOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** Page[PolicyOut] */
         Page_PolicyOut_: {
             /** Items */
@@ -2306,20 +2355,6 @@ export interface components {
         Page_SessionOut_: {
             /** Items */
             items: components["schemas"]["SessionOut"][];
-            /** Next Cursor */
-            next_cursor?: string | null;
-        };
-        /** Page[SyncRunFailureOut] */
-        Page_SyncRunFailureOut_: {
-            /** Items */
-            items: components["schemas"]["SyncRunFailureOut"][];
-            /** Next Cursor */
-            next_cursor?: string | null;
-        };
-        /** Page[SyncRunNoticeOut] */
-        Page_SyncRunNoticeOut_: {
-            /** Items */
-            items: components["schemas"]["SyncRunNoticeOut"][];
             /** Next Cursor */
             next_cursor?: string | null;
         };
@@ -2479,6 +2514,24 @@ export interface components {
         RolesUpdate: {
             /** Roles */
             roles: components["schemas"]["RoleGrantIn"][];
+        };
+        /** RunPages[SyncRunFailureOut] */
+        RunPages_SyncRunFailureOut_: {
+            /** Hidden */
+            hidden: number;
+            /** Items */
+            items: components["schemas"]["SyncRunFailureOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** RunPages[SyncRunNoticeOut] */
+        RunPages_SyncRunNoticeOut_: {
+            /** Hidden */
+            hidden: number;
+            /** Items */
+            items: components["schemas"]["SyncRunNoticeOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
         };
         /**
          * Scope
@@ -3972,7 +4025,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Page_SyncRunFailureOut_"];
+                    "application/json": components["schemas"]["RunPages_SyncRunFailureOut_"];
                 };
             };
             /** @description Validation Error */
@@ -4006,7 +4059,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Page_SyncRunNoticeOut_"];
+                    "application/json": components["schemas"]["RunPages_SyncRunNoticeOut_"];
                 };
             };
             /** @description Validation Error */
@@ -4563,6 +4616,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lineage_v1_documents__document_id__lineage_get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_LineageEventOut_"];
                 };
             };
             /** @description Validation Error */

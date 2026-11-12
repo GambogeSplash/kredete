@@ -347,5 +347,5 @@ function drawLinks() {
   });
 }
 
-window.ADMIN.tabs.people = { label: 'People and access', roles: ['admin'], render };
+window.ADMIN.tabs.people = { label: 'People and access', render };
 })();

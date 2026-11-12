@@ -282,7 +282,7 @@ function draw() {
   else if (!folders.length && tree) {
     after = here
       ? emptyFrame('folder', 'Nothing here yet', `Pages filed in ${esc(here.name)} appear here.`)
-      : emptyFrame('library', 'Nothing here yet', B.isAdmin() ? 'Connect a source in Admin, Connectors.' : 'Documents you can open appear here once your admin connects a source.');
+      : emptyFrame('library', 'Nothing here yet', B.can('sources.manage') ? 'Connect a source in Admin, Connectors.' : 'Documents you can open appear here once your admin connects a source.');
   }
   // Folders still loading hold their place as rows (a grid shows none), inside the one table.
   const lead = skeletonFolders && !grid ? skeletonTr(3) : '';
@@ -376,7 +376,7 @@ const READ_APPS = [
   { value: 'sharepoint', name: 'SharePoint', logo: 'sharepoint', unit: '', soon: true },
 ];
 function connectorsPage() {
-  if (B.hasRole('admin')) { B.go('/admin/sources'); return; }
+  if (B.can('sources.manage')) { B.go('/admin/sources'); return; }
   const draw = () => {
     const live = (S().facets && S().facets.systems) || [];
     const card = (app) => {
