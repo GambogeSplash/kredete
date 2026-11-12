@@ -120,7 +120,7 @@ function previewFor(key) {
   const item = st.index && st.index.find((x) => x.slug === slug);
   const full = st.articles[slug] && !st.articles[slug].error ? st.articles[slug] : null;
   const topic = topicOf(topicIdOf(slug));
-  const title = local ? local.title : (item && item.title) || (full && full.title) || SERVICE_TITLE[slug] || 'Help center';
+  const title = local ? local.title : (item && item.title) || (full && full.title) || SERVICE_TITLE[slug] || 'Docs';
   const sum = local ? local.sum : (item && item.summary) || (full && full.summary) || '';
   const steps = local ? local.steps.slice(0, 3).map((x) => x[0]) : ((full && full.sections) || []).filter((x) => x.level === 2).slice(0, 3).map((x) => x.title);
   return { slug, target, topic, title, sum, steps };
@@ -137,7 +137,7 @@ function openCard(a) {
   const p = previewFor(a.dataset.doc);
   if (!p) return;
   closeCard();
-  const html = `<div class="hc-top">${p.topic ? ICON(p.topic.icon, 16) : ICON('book', 16)}<span>${esc(p.topic ? p.topic.title : 'Help center')}</span></div><b class="hc-t">${esc(p.title)}</b>${p.sum ? `<p class="hc-s">${esc(p.sum)}</p>` : ''}${p.steps.length ? `<ol class="hc-st">${p.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}<a class="btn sm hc-go" href="/help/${esc(p.target)}" data-link>Read the article${ICON('chevr', 14)}</a>`;
+  const html = `<div class="hc-top">${p.topic ? ICON(p.topic.icon, 16) : ICON('book', 16)}<span>${esc(p.topic ? p.topic.title : 'Docs')}</span></div><b class="hc-t">${esc(p.title)}</b>${p.sum ? `<p class="hc-s">${esc(p.sum)}</p>` : ''}${p.steps.length ? `<ol class="hc-st">${p.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}<a class="btn sm hc-go" href="/help/${esc(p.target)}" data-link>Read the article${ICON('chevr', 14)}</a>`;
   const card = B.hoverCard.open(a, html, { cls: 'hcard', width: 320 });
   card.id = 'dchc';
   card.setAttribute('role', 'region');
@@ -175,7 +175,7 @@ document.addEventListener('click', (e) => { if (e.target instanceof Element && e
 function frame(inner) {
   if (!standalone()) return inner;
   const back = B.S.phase === 'setup' ? ['/setup', 'Back to setup'] : ['/signin', 'Back to sign in'];
-  return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/help" data-link><span class="pvk" aria-hidden="true">K</span><b>Broth</b><span>Help center</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
+  return `<div class="dcsolo"><header class="dctop"><a class="dcbrand" href="/help" data-link><span class="pvk" aria-hidden="true">K</span><b>Broth</b><span>Docs</span></a><span class="lsp"></span><a class="btn sm" href="${back[0]}" data-link>${back[1]}</a></header><div class="dcsolo-b">${inner}</div></div>`;
 }
 function paint(inner) {
   const app = $('#app');
@@ -187,16 +187,16 @@ function setTitle(title) {
   if (cur) cur.textContent = title;
   const mb = $('#mbtitle');
   if (mb) mb.textContent = title;
-  document.title = title === 'Help center' ? 'Help center - Broth' : `${title} - Broth help center`;
+  document.title = title === 'Docs' ? 'Docs - Broth' : `${title} - Broth docs`;
 }
 
 /* ---------- contents ---------- */
 async function contents() {
   const s = state();
-  setTitle('Help center');
+  setTitle('Docs');
   const ask = !standalone() && window.ASK ? '<button type="button" class="btn primary" id="dcask">Ask Broth</button>' : '';
   const mail = SUPPORT_EMAIL ? `<a class="btn" href="mailto:${esc(SUPPORT_EMAIL)}">Email support</a>` : '';
-  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Help center</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the help center" aria-label="Search the help center" value="${esc(query)}" autocomplete="off"></div></div><div class="dcbody" id="dcgrid"></div>${ask || mail ? `<div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth${mail ? ', or write to a person' : ''}.</p></div><div class="dcbtns">${ask}${mail}</div></div>` : ''}</div>`);
+  paint(`<div class="pg dc dcpg"><div class="dchero"><h1>Docs</h1><div class="dcsearch"><span>${ICON('search', 16)}</span><input id="dcq" type="search" placeholder="Search the docs" aria-label="Search the docs" value="${esc(query)}" autocomplete="off"></div></div><div class="dcbody" id="dcgrid"></div>${ask || mail ? `<div class="dcsupport"><div><b>Still stuck?</b><p>Ask Broth about Broth${mail ? ', or write to a person' : ''}.</p></div><div class="dcbtns">${ask}${mail}</div></div>` : ''}</div>`);
   const input = $('#dcq');
   input.oninput = (e) => { query = e.target.value; if (query.trim()) loadBodies(); drawCards(); };
   input.onkeydown = (e) => {
@@ -277,7 +277,7 @@ async function article(slug) {
   if (local) { drawLocal(local); return; }
   const cached = s.articles[slug];
   if (cached && !cached.error) { drawArticle(cached); return; }
-  setTitle('Help center');
+  setTitle('Docs');
   if (keepNav(slug)) {
     $('.dcdoc').innerHTML = `<div class="dcload">${B.loadingBlock('Loading the article', 6, 'dcskl')}</div>`;
     const toc = $('.dctoc'); if (toc) toc.remove();
@@ -290,9 +290,9 @@ async function article(slug) {
   if (B.S.route.surface !== 'docs' || B.S.route.params.slug !== slug) return;
   if (result.error) drawFailure(slug, result.error); else drawArticle(result);
 }
-const backLink = () => `<a class="dcback" href="/help" data-link data-back>${ICON('chevr', 14)}<span>Help center</span></a>`;
+const backLink = () => `<a class="dcback" href="/help" data-link data-back>${ICON('chevr', 14)}<span>Docs</span></a>`;
 function drawFailure(slug, error) {
-  setTitle('Help center');
+  setTitle('Docs');
   if (error.status === 404) {
     paint(`<div class="pg dc dcart">${backLink()}${framed('book', "This article doesn't exist", 'It may have moved. The contents list every article.', '<a class="btn sm" href="/help" data-link>See all help articles</a>')}</div>`);
     return;
@@ -449,7 +449,7 @@ function markCurrent() {
   });
 }
 let ticking = false;
-/** The Help center header (title and search) fades its shadow in once the page has scrolled. */
+/** The Docs header (title and search) fades its shadow in once the page has scrolled. */
 const heroScrolled = () => {
   const hero = $('.dchero');
   if (!hero) return;
@@ -467,7 +467,7 @@ $('#app').addEventListener('scroll', onScroll, { passive: true });
 window.addEventListener('scroll', onScroll, { passive: true });
 document.body.addEventListener('scroll', onScroll, { passive: true });
 
-/* "Help center" back link: the cards come back one after the other. */
+/* "Docs" back link: the cards come back one after the other. */
 document.addEventListener('click', (e) => { const b = e.target instanceof Element ? e.target.closest('a[data-back]') : null; if (b) fromRect = 'back'; });
 window.SURFACES.docs = (params) => { if (params.slug) article(params.slug); else contents(); };
 window.DOCS = { links: DOCS, link: docsLink };

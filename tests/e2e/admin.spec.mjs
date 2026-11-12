@@ -30,11 +30,11 @@ test.describe('surfaces follow roles', () => {
     await expect(surfaces.getByRole('button', { name: 'Library' })).toBeVisible();
     await expect(surfaces.getByRole('button', { name: 'Governance' })).toBeVisible();
     await expect(surfaces.getByRole('button', { name: 'Admin' })).toHaveCount(0);
+    await expect(surfaces.getByRole('button', { name: 'Support agent' })).toHaveCount(0);
     if (phone(page)) await page.getByRole('button', { name: 'Close menu' }).click();
     const menu = await profileMenu(page);
     await expect(menu.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
     await expect(menu.getByRole('menuitem', { name: /admin/i })).toHaveCount(0);
-    await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
     await check(page, 'menu-employee', { mask: ['.lh-t'], chats: true });
     // Settings holds only their own account: no Administration group, not even an empty one.
     await menu.getByRole('menuitem', { name: 'Settings' }).click();
@@ -52,7 +52,7 @@ test.describe('surfaces follow roles', () => {
     const page = await open('compliance', '/admin/people');
     await expect(page).toHaveURL(/\/admin\/audit$/);
     const rail = page.getByRole('navigation', { name: 'Settings' });
-    const items = railItems(page, ['Profile', 'Sessions', 'Sharing requests', 'Audit log']);
+    const items = railItems(page, ['Profile', 'Sessions', 'Audit log']);
     await expect(rail.getByRole('button')).toHaveText(items);
     await page.getByRole('button', { name: 'Filter' }).click();
     await page.getByRole('button', { name: 'Action' }).click();
@@ -62,8 +62,10 @@ test.describe('surfaces follow roles', () => {
     await expect(page.locator('#audt .aud-r:not(.aud-h)')).toHaveCount(3);
     await expect(page.locator('#audt .audact')).toHaveText(Array(3).fill('Sharing requested'));
     await check(page, 'audit-compliance');
+    const places = await nav(page);
+    await expect(places.getByRole('button', { name: 'Support agent' })).toHaveCount(0);
+    if (phone(page)) await page.getByRole('button', { name: 'Close menu' }).click();
     const menu = await profileMenu(page);
-    await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
     // Their own Profile shows the same rail: only the admin screens their role allows.
     await menu.getByRole('menuitem', { name: 'Settings' }).click();
     await expect(page).toHaveURL(/\/account$/);
@@ -75,34 +77,34 @@ test.describe('surfaces follow roles', () => {
   });
 
   test('a developer has Sources and the Support agent, and no other admin screen', async ({ open }) => {
-    // Developer role spec 3.5; developer.spec.mjs walks through each screen.
+    // Developer role spec 3.5; developer.spec.mjs walks through each screen. Support agent is a rail place.
     const page = await open('developer', '/');
-    const menu = await profileMenu(page);
-    await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(1);
-    await page.keyboard.press('Escape');
+    const surfaces = await nav(page);
+    await surfaces.getByRole('button', { name: 'Support agent' }).click();
+    await expect(page).toHaveURL(/\/support-agent$/);
     for (const path of ['/admin', '/admin/people', '/admin/domains', '/admin/audit']) {
       await page.evaluate((p) => window.BRAIN.go(p), path);
       await expect(page).toHaveURL(/\/admin\/sources$/);
     }
-    await page.evaluate(() => window.BRAIN.go('/support-agent'));
-    await expect(page).toHaveURL(/\/support-agent$/);
   });
 
   test('an admin has every admin screen, under one Settings with one rail', async ({ open }) => {
     const page = await open('admin', '/admin');
     await expect(page).toHaveURL(/\/admin\/workspace$/);
-    const items = railItems(page, ['Profile', 'Sessions', 'Workspace', 'People and access', 'Sources', 'Sharing requests', 'Domains', 'Audit log']);
+    const items = railItems(page, ['Profile', 'Sessions', 'Workspace', 'People and access', 'Sources', 'Domains', 'Audit log']);
     const rail = page.getByRole('navigation', { name: 'Settings' });
     // The same rail on every settings page, however it was reached; only the current item moves.
-    for (const [path, current] of [['/account', 'Profile'], ['/account/sessions', 'Sessions'], ['/admin/people', 'People and access'], ['/admin/sources', 'Sources'], ['/governance', 'Sharing requests'], ['/admin/audit', 'Audit log']]) {
+    for (const [path, current] of [['/account', 'Profile'], ['/account/sessions', 'Sessions'], ['/admin/people', 'People and access'], ['/admin/sources', 'Sources'], ['/admin/audit', 'Audit log']]) {
       await page.evaluate((p) => window.BRAIN.go(p), path);
       await expect(rail.getByRole('button')).toHaveText(items);
       await expect(rail.locator('[aria-current="page"]')).toHaveText(current);
-      if (!phone(page) && path !== '/governance') await expect(page.locator('#crumb')).toContainText(`Settings›${current}`);
+      if (!phone(page)) await expect(page.locator('#crumb')).toContainText(`Settings›${current}`);
     }
     const menu = await profileMenu(page);
     await expect(menu.getByRole('menuitem', { name: 'Settings' })).toHaveCount(1);
     await expect(menu.getByRole('menuitem', { name: /admin/i })).toHaveCount(0);
+    // The profile menu keeps to the account: Support agent and Docs are places on the rail.
+    await expect(menu.locator('.pm-i')).toHaveText(['Settings', 'Sign out']);
   });
 
   test('compliance cannot open Domains by its address', async ({ open }) => {
@@ -595,6 +597,9 @@ test.describe('connectors', () => {
 test.describe('governance', () => {
   test('an approver can decide on a request', async ({ open, check }) => {
     const page = await open('admin', '/governance');
+    // Governance is a place of its own: no Settings rail, even for an admin.
+    await expect(page.getByRole('heading', { level: 1, name: 'Governance' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Settings' })).toHaveCount(0);
     const request = page.locator('.govr').filter({ hasText: 'Engineering handbook' });
     await expect(request.locator('.adrqm')).toContainText('Eve Mensah');
     await expect(request.getByRole('button', { name: 'Approve' })).toBeVisible();

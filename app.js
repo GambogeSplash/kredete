@@ -736,7 +736,8 @@ function renderSurfaces() {
   h += navItem('data-go="/bookmarks"', 'bookmark', 'Bookmarks', r.surface === 'bookmarks');
   const gw = window.GOVBADGE ? window.GOVBADGE.count() : 0;
   h += navItem(`data-go="/governance"${gw ? ` data-badge="${gw > 9 ? '9+' : gw}" data-waiting="${gw}"` : ''}`, 'shield', 'Governance', r.surface === 'governance', gw ? `<span class="lbadge">${gw > 9 ? '9+' : gw}</span>` : '');
-  h += navItem('data-go="/help"', 'book', 'Help center', r.surface === 'docs');
+  if (opens('bot')) h += navItem('data-go="/support-agent"', 'headset', 'Support agent', r.surface === 'bot');
+  h += navItem('data-go="/help"', 'book', 'Docs', r.surface === 'docs');
   $('#surfaces').innerHTML = `<div class="snav">${h}</div><div class="srec" id="srec" role="list" aria-label="Chats"></div>`;
   // The chats shell belongs to the chat pages; the icon rail (rail.js) stands in for the places list.
   document.body.classList.toggle('nochats', r.surface !== 'ask' && r.surface !== 'chats');
@@ -803,7 +804,7 @@ function newChat() {
 }
 
 /* ---------- breadcrumb and mobile title ---------- */
-const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Sources'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Help center'], account: ['Settings', ''], admin: ['Settings', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
+const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Sources'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Docs'], account: ['Settings', ''], admin: ['Settings', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
   // A settings page is named by its item in the Settings rail, so the crumb and the rail always agree.
@@ -819,7 +820,7 @@ function setCrumb() {
 function mbTitle() {
   const t = $('#mbtitle');
   if (!t) return;
-  const names = { library: 'Library', connectors: 'Sources', governance: 'Governance', docs: 'Help center', account: 'Settings', chats: 'Chats', bookmarks: 'Bookmarks', admin: 'Settings', bot: 'Support agent', setup: 'Finish setup' };
+  const names = { library: 'Library', connectors: 'Sources', governance: 'Governance', docs: 'Docs', account: 'Settings', chats: 'Chats', bookmarks: 'Bookmarks', admin: 'Settings', bot: 'Support agent', setup: 'Finish setup' };
   t.textContent = S.route.title || names[S.route.surface] || (S.route.params.id && S.conv ? chatTitle(S.conv) : 'New chat');
 }
 

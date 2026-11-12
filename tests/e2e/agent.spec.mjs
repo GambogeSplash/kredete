@@ -26,6 +26,24 @@ async function openSeeded(open, page = 'overview') {
 }
 
 test.describe('the bot list', () => {
+  test('Support agent is a place of its own, and the list needs no sub-menu', async ({ open }) => {
+    const page = await open('admin', '/');
+    const places = phone(page) ? (await page.getByRole('button', { name: 'Open menu' }).click(), page.locator('#surfaces')) : page.locator('#rail');
+    await places.getByRole('button', { name: 'Support agent' }).click();
+    await expect(page).toHaveURL(/\/support-agent$/);
+    await expect(page.getByRole('link', { name: new RegExp(SEEDED) })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Support agent' })).toHaveCount(0);
+    // A bot's pages keep their sub-menu, and the place stays current on them.
+    await page.getByRole('link', { name: new RegExp(SEEDED) }).click();
+    await expect(page.getByRole('navigation', { name: 'Support agent' })).toContainText(SEEDED);
+    if (!phone(page)) await expect(places.getByRole('button', { name: 'Support agent' })).toHaveAttribute('aria-current', 'page');
+    // The profile menu keeps to the account: it no longer repeats Support agent or Docs.
+    if (!phone(page)) {
+      await page.getByRole('button', { name: 'Account', exact: true }).click();
+      await expect(page.getByRole('menu').locator('.pm-i')).toHaveText(['Settings', 'Sign out']);
+    }
+  });
+
   test('lists every bot with its sources, products and status', async ({ open, check }) => {
     // Other views add bots to the shared stack; the snapshot shows the seeded one alone.
     const page = await open('admin', '/support-agent', { before: (p) => p.route(/\/v1\/admin\/bots$/, async (route) => {

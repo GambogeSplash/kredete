@@ -16,7 +16,7 @@ test('Admin shows a developer Sources only, and the other admin screens send the
   const page = await open('developer', '/admin/people');
   await expect(page).toHaveURL(/\/admin\/sources$/);
   const rail = page.getByRole('navigation', { name: 'Settings' });
-  await expect(rail.getByRole('button')).toHaveText(railItems(page, ['Profile', 'Sessions', 'Sources', 'Sharing requests']));
+  await expect(rail.getByRole('button')).toHaveText(railItems(page, ['Profile', 'Sessions', 'Sources']));
   // No credentials, and only docs repositories can be added.
   await expect(page.locator('[data-src="creds"]')).toHaveCount(0);
   await expect(page.locator('#cnaddcard')).toContainText('Docs repositories');
@@ -41,13 +41,10 @@ test('a developer reads Confluence but cannot change it, and lists only spaces t
   await check(page, 'developer-confluence');
 });
 
-test('a developer opens Support agent from the menu and creates a bot with its sources', async ({ open, check }, info) => {
+test('a developer opens Support agent from the rail and creates a bot with its sources', async ({ open, check }, info) => {
   const page = await open('developer', '/');
   if (phone(page)) await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Account', exact: true }).click();
-  const menu = page.getByRole('menu');
-  await expect(menu.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
-  await menu.getByRole('menuitem', { name: 'Support agent' }).click();
+  await page.locator(phone(page) ? '#surfaces' : '#rail').getByRole('button', { name: 'Support agent' }).click();
   await expect(page).toHaveURL(/\/support-agent/);
   await page.getByRole('button', { name: 'New bot' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'New bot' });

@@ -297,8 +297,6 @@ function profileMenu(a) {
   const item = (k, l, ic) => `<button type="button" class="pm-i" role="menuitem" data-pm="${k}" ${here(k) ? 'aria-current="page"' : ''}>${ICON(ic, 18)}<span>${l}</span></button>`;
   let h = `<div class="pm-head"><button type="button" class="pm-who" role="menuitem" data-pm="account">${AVATAR(me.name, 'avimg', 40)}<span><b>${esc(me.name)}</b><small>${esc(me.email)}</small><em>${esc(me.team || '')}</em></span><i class="pm-ch">${ICON('chevr', 16)}</i></button></div>`;
   h += '<div class="pm-s"></div>' + item('account', 'Settings', 'gear');
-  if (B.opens('bot')) h += item('bot', 'Support agent', 'headset');
-  h += item('docs', 'Help center', 'book');
   h += `<div class="pm-s"></div><button type="button" class="pm-i danger" role="menuitem" data-pm="out">${ICON('logout', 18)}<span>Sign out</span></button>`;
   const el = document.createElement('div');
   el.className = 'pmenu'; el.setAttribute('role', 'menu'); el.setAttribute('aria-label', 'Profile');
@@ -322,7 +320,7 @@ function profileMenu(a) {
       if (k === 'out') { B.haptic('light'); B.armPress(b, 'Confirm sign out', () => { closeMenu(false); B.signOut(); }); return; }
       closeMenu(false);
       B.haptic('light');
-      B.go({ bot: '/support-agent', docs: '/help' }[k] || '/account');
+      B.go('/account');
       window.scrollTo(0, 0);
     };
   });

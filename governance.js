@@ -31,13 +31,11 @@ const who = (id, names) => (id === B.S.me.id ? 'you' : names[id] || 'a colleague
 
 function page() {
   const g = state();
-  const inner = `<div class="ds-head"><h1 class="lcont-t">Sharing requests</h1></div>
+  const inner = `<div class="ds-head"><h1 class="lcont-t">Governance</h1></div>
     <div class="ixchips govtabs" role="tablist" aria-label="Status">${STATUSES.map(([k, l]) => `<button type="button" class="ixchip ${g.status === k ? 'on' : ''}" role="tab" aria-selected="${g.status === k}" data-st="${k}">${l}</button>`).join('')}</div>
     <div class="adreq govlist" id="govlist"></div><div class="chmore" id="govmore"></div>`;
-  // Whoever can open the Admin area sees the same Settings rail as the other settings pages; everyone else the plain page.
-  const shell = B.opens('admin');
-  $('#app').innerHTML = shell ? `<div class="lset gov">${window.SETTINGS.rail('governance')}<div class="lcont">${inner}</div></div>` : `<div class="pg gov">${inner}</div>`;
-  if (shell) window.SETTINGS.wire($('.lrail'));
+  // A place of its own on the rail, the same page for everyone: never inside Settings.
+  $('#app').innerHTML = `<div class="pg gov">${inner}</div>`;
   $$('[data-st]').forEach((b) => { b.onclick = () => { g.status = b.dataset.st; page(); load(true); }; });
   g.rise = true;
   if (!g.loaded || g.error) load(true); else draw();

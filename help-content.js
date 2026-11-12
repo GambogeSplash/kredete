@@ -1,4 +1,4 @@
-/* help-content.js: the Help center's own how-to articles, shown beside the articles the service serves.
+/* help-content.js: the Docs' own how-to articles, shown beside the articles the service serves.
  *
  * Every article here is written for people using Broth: a summary, short explained steps, an optional tip and
  * "if this does not work", one action button, and related articles. docs.js lists them first in each topic, then
@@ -34,12 +34,14 @@ window.HELP = {
         ["It stays in its lane", "It declines personal financial advice and will not make things up when no source fits."]],
       tip: "Treat a \"Recommended\" tag as a pointer, not a ruling. The owner has the final say.",
       rel: ["who-can-see-my-questions", "report-a-conflict-to-the-owner"], go: ["Read about privacy", "docs:trust", ""] },
-    { slug: "find-your-way-around", topic: "start", title: "Find your way around", sum: "Five places, all one click from the rail on the left.",
+    { slug: "find-your-way-around", topic: "start", title: "Find your way around", sum: "Every place is one click from the rail on the left.",
       steps: [["New chat and Search", "Start a conversation, or press the search shortcut to jump to any chat or document."],
         ["Library", "Browse everything Broth can read, by source and folder."],
         ["Governance", "Sharing requests waiting for a decision. If you can decide them, the badge on the rail icon counts the ones waiting on you."],
         ["Bookmarks", "Answers you kept, with a warning if a source changed since."],
-        ["Your account", "Bottom of the rail: settings, the support agent and this help center."]],
+        ["Support agent", "Admins and developers build and publish the support bot for your website here."],
+        ["Docs", "These how-to articles, and the reference for every part of Broth."],
+        ["Your account", "Bottom of the rail: your settings, and the admin pages your role opens."]],
       tip: "The chat history panel only appears on chat pages, so other pages get the full width.",
       rel: ["read-the-broth-card", "use-the-search-palette"] },
     { slug: "read-the-broth-card", topic: "start", title: "Read the Broth card", sum: "The card beside your chat shows what Broth did, which sources it used and what it remembers.",
@@ -150,11 +152,11 @@ window.HELP = {
       tip: "Access levels are General, Internal, Confidential and Restricted. Yours comes from your work account.",
       rel: ["how-access-levels-work", "approve-a-sharing-request"] },
     { slug: "approve-a-sharing-request", topic: "owners", title: "Approve a sharing request", sum: "Owners and admins decide when a document is shared more widely.",
-      steps: [["Open the request", "It appears in Governance under Sharing requests. The badge on the rail icon counts the ones waiting on you."],
+      steps: [["Open the request", "It appears in Governance. The badge on the rail icon counts the ones waiting on you."],
         ["Read what is asked", "You see the document, the scope (internal or public), who asked and why."],
         ["Approve or reject", "You cannot approve your own request. A rejected request tells the person why."],
         ["Revoke later if the plan changes", "Approved items can be withdrawn from the same page."]],
-      rel: ["set-policies"], go: ["Open Sharing requests", "/governance", ""] },
+      rel: ["set-policies"], go: ["Open Governance", "/governance", ""] },
     { slug: "invite-people-and-set-roles", topic: "admin", title: "Invite people and set roles", sum: "Roles decide who can verify content, own a domain or change settings.",
       steps: [["Open People and access", "Account menu, Settings, then People and access."],
         ["Invite people", "Enter work email addresses, separated by commas. They show as Pending until they join."],

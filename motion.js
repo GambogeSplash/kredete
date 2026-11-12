@@ -75,7 +75,7 @@ document.addEventListener('mouseout',e=>{ if(RM) return; const t=e.target.closes
 document.addEventListener('pointermove',e=>{ if(RM) return; const p=e.target.closest&&e.target.closest('.phone'); if(!p||e.pointerType==='touch') return; const r=p.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5; p.style.transform=`perspective(900px) rotateY(${x*7}deg) rotateX(${-y*5}deg)`; });
 document.addEventListener('pointerout',e=>{ const p=e.target.closest&&e.target.closest('.phone'); if(p&&!p.contains(e.relatedTarget)&&!RM) animate(p,{transform:'perspective(900px) rotateY(0deg) rotateX(0deg)'},{type:'spring',stiffness:200,damping:18}); });
 
-/* ---------- hover cards: one shared card for citations and the Help center links ---------- */
+/* ---------- hover cards: one shared card for citations and the Docs links ---------- */
 /** hoverCard(anchor, html, opts) floats `html` in a card beside `anchor`, above or below so it stays on screen.
  *  opts: {cls, width}. The card enters with a spring and leaves with the shared exit animation. */
 let pop=null;

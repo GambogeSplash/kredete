@@ -1,7 +1,6 @@
 /* settings-rail.js: the one left rail of Settings (unified settings spec).
  *
- * Every settings page (Profile, Sessions, the admin tabs, and Sharing requests inside the shell)
- * draws this same rail, so what a person sees never depends on how they got there. The Account
+ * Every settings page (Profile, Sessions and the admin tabs) draws this same rail, so what a person sees never depends on how they got there. The Account
  * group is everyone's; the Administration group shows the admin tabs the person's capabilities open.
  */
 (() => {
@@ -14,7 +13,7 @@ const href = (k) => (k === 'connectors' ? '/admin/sources' : '/admin/' + k);
 
 /**
  * The rail's HTML.
- * @param {string} current 'profile', 'sessions', an admin tab key, or 'governance'
+ * @param {string} current 'profile', 'sessions' or an admin tab key
  */
 function settingsRail(current) {
   const item = (to, label, key) => `<button type="button" class="tab" data-go="${to}" aria-current="${key === current ? 'page' : 'false'}">${label}</button>`;
@@ -25,9 +24,10 @@ function settingsRail(current) {
     const { tabs, allowed } = window.ADMIN;
     const mine = allowed();
     const tab = (k) => item(href(k), tabs[k].label, k);
-    // Workspace, People, Sources, then Sharing requests, Domains and Audit log, in the prototype's order.
+    // Workspace, People, Sources, then Domains and Audit log. Sharing requests live in Governance,
+    // a place of its own on the icon rail (workspace places spec).
     const late = ['domains', 'audit'];
-    admin = `<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administration</div>${mine.filter((k) => !late.includes(k)).map(tab).join('')}${item('/governance', 'Sharing requests', 'governance')}${mine.filter((k) => late.includes(k)).map(tab).join('')}`;
+    admin = `<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administration</div>${mine.filter((k) => !late.includes(k)).map(tab).join('')}${mine.filter((k) => late.includes(k)).map(tab).join('')}`;
   }
   return `<nav class="lrail" aria-label="Settings">${account}${admin}<div class="lrail-f"><button type="button" class="tab out" data-out>Sign out</button></div></nav>`;
 }
