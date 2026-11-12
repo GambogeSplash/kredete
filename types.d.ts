@@ -1394,7 +1394,7 @@ export interface components {
         /** ArticleOut */
         ArticleOut: {
             /** Audiences */
-            audiences: ("askers" | "authors" | "admins" | "compliance")[];
+            audiences: ("askers" | "authors" | "admins" | "compliance" | "developers")[];
             /**
              * Html
              * @description Rendered by the server; safe to insert as it is.
@@ -1414,7 +1414,7 @@ export interface components {
         /** ArticleSummaryOut */
         ArticleSummaryOut: {
             /** Audiences */
-            audiences: ("askers" | "authors" | "admins" | "compliance")[];
+            audiences: ("askers" | "authors" | "admins" | "compliance" | "developers")[];
             /** Order */
             order: number;
             /** Sections */

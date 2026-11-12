@@ -33,7 +33,6 @@ const DOCS = {
   indexerAccount: 'setting-up-spaces#indexer-account',
   indexerGroup: 'setting-up-spaces#indexer-group',
   spaceSettings: 'setting-up-spaces#space-settings',
-  domains: 'setting-up-spaces#domains',
   indexerGroupMissing: 'setting-up-spaces#warn-indexer-group-missing',
   indexerGroupMembers: 'setting-up-spaces#warn-indexer-group-members',
   findLabelProblems: 'fixing-label-problems#find-pages',
@@ -45,6 +44,10 @@ const DOCS = {
   docsDeclaration: 'connecting-docs-repositories#public-declaration',
   docsProblems: 'connecting-docs-repositories#problems',
   docsPrivateKey: 'connecting-docs-repositories#private-key',
+  conceptRoles: 'how-broth-is-organised#roles',
+  conceptAccess: 'how-broth-is-organised#access',
+  conceptSharing: 'how-broth-is-organised#sharing',
+  conceptDomains: 'how-broth-is-organised#domains',
 };
 const AUDIENCE_NAME = { askers: 'Asking', authors: 'Writing pages', admins: 'Admin', compliance: 'Compliance', developers: 'Developers' };
 /* The six topic cards and the how-to articles written for them (help-content.js). The service's own articles
@@ -56,6 +59,7 @@ const LOCAL = HELP.articles.filter((a) => !a.hidden);
 const LOCAL_BY_SLUG = Object.fromEntries(LOCAL.map((a) => [a.slug, a]));
 /** Where each article the service serves is listed; one it does not know goes to the first topic that shares its audience. */
 const TOPIC_OF = {
+  'how-broth-is-organised': 'start',
   'asking-broth': 'ask',
   'labelling-pages': 'owners',
   'fixing-label-problems': 'owners',
@@ -73,11 +77,14 @@ function topicIdOf(slug) {
   const t = item && TOPICS.find((x) => item.audiences.some((a) => x.audiences.includes(a)));
   return t ? t.id : null;
 }
-/** The articles of a topic, in reading order: how-to articles first, then the service's. */
+/** Service articles that open their topic, ahead of its how-to articles: the article that defines Broth's
+ *  terms is the first thing the Help center offers (concepts article spec 7). */
+const LEADS = new Set(['how-broth-is-organised']);
+/** The articles of a topic, in reading order: a leading article, the how-to articles, then the rest of the service's. */
 function itemsOf(t) {
   const local = LOCAL.filter((a) => a.topic === t.id).map((a) => ({ slug: a.slug, title: a.title }));
   const remote = (state().index || []).filter((a) => !LOCAL_BY_SLUG[a.slug] && topicIdOf(a.slug) === t.id).map((a) => ({ slug: a.slug, title: a.title }));
-  return local.concat(remote);
+  return remote.filter((a) => LEADS.has(a.slug)).concat(local, remote.filter((a) => !LEADS.has(a.slug)));
 }
 /** Where people write to a person. Left empty until Broth has an address for it, then the button shows. */
 const SUPPORT_EMAIL = '';
@@ -110,7 +117,7 @@ function docsLink(name, text, newTab) {
 
 /* ---------- the preview card on a "How this works" button ---------- */
 /** What the card shows, from what is already in the page: no request is made on hover. */
-const SERVICE_TITLE = { 'labelling-pages': 'Labelling pages', 'setting-up-spaces': 'Setting up spaces', 'fixing-label-problems': 'Fixing label problems', 'support-bots': 'Support bots', 'connecting-docs-repositories': 'Connecting docs repositories' };
+const SERVICE_TITLE = { 'how-broth-is-organised': 'How Broth is organised', 'labelling-pages': 'Labelling pages', 'setting-up-spaces': 'Setting up spaces', 'fixing-label-problems': 'Fixing label problems', 'support-bots': 'Support bots', 'connecting-docs-repositories': 'Connecting docs repositories' };
 function previewFor(key) {
   const target = DOCS[key];
   if (!target) return null;

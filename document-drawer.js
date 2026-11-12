@@ -21,7 +21,7 @@ const KIND_NAME = { confluence_page: 'Page', page: 'Page', blogpost: 'Post', gdo
 const kindName = (k) => KIND_NAME[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ') : 'Document');
 const DOMAIN_COL = ['#5e6ad2', '#16a34a', '#f97316', '#0ea5a4', '#d946a8', '#3b82f6', '#e2a600'];
 const domainCol = (slug) => DOMAIN_COL[[...String(slug)].reduce((a, c) => a + c.charCodeAt(0), 0) % DOMAIN_COL.length];
-const SCOPE = { public: ['Public', 'ok'], internal: ['Everyone at Broth', 'blue'], granular: ['Limited access', ''] };
+const SCOPE = { public: ['Public', 'ok'], internal: ['Every employee', 'blue'], granular: ['Limited access', ''] };
 function authorityTag(d) {
   if (!d.authority) return '';
   if (d.authority === 'approved') {
@@ -113,7 +113,7 @@ function labelProblems(d) {
 
 function shareModal(d) {
   const options = [];
-  if (d.scope === 'granular') options.push(['internal', 'Everyone at Broth', 'Every employee can find it and get answers from it.']);
+  if (d.scope === 'granular') options.push(['internal', 'Every employee', 'Everyone at Kredete can find it and get answers from it.']);
   options.push(['public', 'Public', 'Customers can see it through the support agent. Only for content that is safe to publish.']);
   B.openModal(`<div class="modal" role="dialog" aria-label="Share more widely"><div class="bar"><span>Share more widely</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body"><h2>${esc(docTitle(d))}</h2><p class="sub">An owner or admin approves the request. Until then, nothing changes.</p>
     <div class="obopts promopts" role="radiogroup" aria-label="Who can see it">${options.map(([k, l, t], i) => `<button type="button" class="obopt ${i ? '' : 'on'}" role="radio" aria-checked="${!i}" data-scope="${k}"><b>${l}</b><small>${t}</small></button>`).join('')}</div>
@@ -144,6 +144,7 @@ async function detailsModal(d) {
   B.openModal(`<div class="modal lineage" role="dialog" aria-label="Details and lineage"><div class="bar"><span>${esc(docTitle(d))}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
     ${tags ? `<div class="sv-tags">${tags}</div>` : ''}
     ${rows ? `<dl class="kv">${rows}</dl>` : ''}
+    ${scope || d.sensitivity ? `<p class="cndoc">${window.DOCS.link('conceptAccess', 'Who can read a page')}</p>` : ''}
     <h4 class="dlh">Lineage: answers that cited this</h4><div id="lin">${lineage ? B.loadingBlock('Loading lineage', 3, 'actr') : '<p class="amute">Admins, compliance officers and developers see which answers cited this document.</p>'}</div>
     <div class="actions">${d.url ? `<a class="btn primary" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${openMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span>${ICON('ext', 14)}</a>` : ''}${d.scope && d.scope !== 'public' ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}</div></div></div>`);
   const share = $('#dshare');
