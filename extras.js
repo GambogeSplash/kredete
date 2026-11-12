@@ -99,15 +99,8 @@ const frow = (label, value, action) => `<div class="frow"><div class="frl"><b>${
 window.SURFACES.account = (params) => {
   const me = B.S.me;
   const tab = params.tab === 'sessions' ? 'sessions' : 'profile';
-  // The Admin links this person can open, in the Admin rail's order (capabilities.js).
-  const tabs = window.CAPS.adminTabs(me);
-  const links = [['Sources', '/admin/sources', 'connectors'], ['People and access', '/admin/people', 'people'], ['Sharing requests', '/governance', ''], ['Domains', '/admin/domains', 'domains'], ['Audit log', '/admin/audit', 'audit']].filter(([, , tab]) => (tab ? tabs.includes(tab) : tabs.length > 0));
-  const adminLinks = tabs.length
-    ? `<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administrator settings</div>${links.map(([l, to]) => `<button type="button" class="tab" data-at="${to}" aria-current="false">${l}</button>`).join('')}`
-    : '';
-  $('#app').innerHTML = `<div class="lset"><nav class="lrail" aria-label="Account"><div class="lrail-h">Account settings</div><button type="button" class="tab" data-at="/account" aria-current="${tab === 'profile' ? 'page' : 'false'}">Profile</button><button type="button" class="tab" data-at="/account/sessions" aria-current="${tab === 'sessions' ? 'page' : 'false'}">Sessions</button>${adminLinks}<div class="lrail-f"><button type="button" class="tab out" id="aout">Sign out</button></div></nav><div class="lcont"><div class="ds-head lcont-head"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div class="ds-act" id="acact"></div></div><div id="acpane"></div></div></div>`;
-  $$('[data-at]').forEach((b) => { b.onclick = () => B.go(b.dataset.at); });
-  $('#aout').onclick = () => B.armPress($('#aout'), 'Confirm sign out', () => B.signOut());
+  $('#app').innerHTML = `<div class="lset">${window.SETTINGS.rail(tab)}<div class="lcont"><div class="ds-head lcont-head"><h1 class="lcont-t">${tab === 'profile' ? 'Profile' : 'Sessions'}</h1><div class="ds-act" id="acact"></div></div><div id="acpane"></div></div></div>`;
+  window.SETTINGS.wire($('.lrail'));
   if (tab === 'profile') profile(me);
   else sessions();
 };
@@ -198,10 +191,13 @@ async function sessions() {
   try {
     list = B.rows(await B.api.get('/me/sessions'));
   } catch (error) {
+    if (!el.isConnected) return;
     el.innerHTML = B.errorBlock(error, 'sesretry');
     $('#sesretry').onclick = sessions;
     return;
   }
+  // The person may have left Sessions while the list loaded: this pane is no longer on the page.
+  if (!el.isConnected) return;
   const others = list.filter((s) => !s.current);
   const row = (s) => `<div class="ds-tr dvcols" data-id="${s.id}" role="row"><span class="dmn"><span class="addvi dvic">${deviceIcon(s.user_agent)}</span><span class="ltb"><b>${esc(device(s.user_agent))}${s.current ? '<span class="tag blue dvme">This device</span>' : ''}</b></span></span><span class="amute dvm">${B.when(s.created_at, B.fmtDate(s.created_at))}</span><span class="amute dvm">${s.current ? '<span class="adok"><i></i>Now</span>' : B.when(s.last_used_at, B.ago(s.last_used_at))}</span><span class="dvact">${s.current ? '' : `<button type="button" class="btn sm" data-so="${s.id}">Sign out</button>`}</span></div>`;
   el.innerHTML = `

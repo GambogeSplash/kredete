@@ -4,6 +4,8 @@
 import { expect, test } from './fixtures.mjs';
 
 const phone = (page) => page.viewportSize().width < 900;
+/** The Settings rail's items; a phone leaves Sign out to the profile menu. */
+const railItems = (page, items) => (phone(page) ? items : [...items, 'Sign out']);
 /** The places: the menu on a phone, the icon rail on a desktop (the sidebar's list of places is hidden there). */
 async function nav(page) {
   if (phone(page)) {
@@ -30,9 +32,16 @@ test.describe('surfaces follow roles', () => {
     await expect(surfaces.getByRole('button', { name: 'Admin' })).toHaveCount(0);
     if (phone(page)) await page.getByRole('button', { name: 'Close menu' }).click();
     const menu = await profileMenu(page);
-    await expect(menu.getByRole('menuitem', { name: 'Account settings' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: /admin/i })).toHaveCount(0);
     await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
     await check(page, 'menu-employee', { mask: ['.lh-t'], chats: true });
+    // Settings holds only their own account: no Administration group, not even an empty one.
+    await menu.getByRole('menuitem', { name: 'Settings' }).click();
+    await expect(page).toHaveURL(/\/account$/);
+    const rail = page.getByRole('navigation', { name: 'Settings' });
+    await expect(rail.getByRole('button')).toHaveText(railItems(page, ['Profile', 'Sessions']));
+    await expect(rail).not.toContainText('Administration');
     for (const path of ['/admin', '/admin/people', '/support-agent', '/setup']) {
       await page.evaluate((p) => window.BRAIN.go(p), path);
       await expect(page).toHaveURL(/\/$/);
@@ -42,8 +51,9 @@ test.describe('surfaces follow roles', () => {
   test('compliance sees Audit only: no other admin screen and no Support agent', async ({ open, check }) => {
     const page = await open('compliance', '/admin/people');
     await expect(page).toHaveURL(/\/admin\/audit$/);
-    const rail = page.getByRole('navigation', { name: 'Admin' });
-    await expect(rail.getByRole('button')).toHaveText(['Profile', 'Sessions', 'Sharing requests', 'Audit log', 'Sign out']);
+    const rail = page.getByRole('navigation', { name: 'Settings' });
+    const items = railItems(page, ['Profile', 'Sessions', 'Sharing requests', 'Audit log']);
+    await expect(rail.getByRole('button')).toHaveText(items);
     await page.getByRole('button', { name: 'Filter' }).click();
     await page.getByRole('button', { name: 'Action' }).click();
     await page.getByRole('option', { name: 'Sharing requested' }).click();
@@ -54,6 +64,10 @@ test.describe('surfaces follow roles', () => {
     await check(page, 'audit-compliance');
     const menu = await profileMenu(page);
     await expect(menu.getByRole('menuitem', { name: 'Support agent' })).toHaveCount(0);
+    // Their own Profile shows the same rail: only the admin screens their role allows.
+    await menu.getByRole('menuitem', { name: 'Settings' }).click();
+    await expect(page).toHaveURL(/\/account$/);
+    await expect(rail.getByRole('button')).toHaveText(items);
     // The bot admin API is admin only, and so are its screens (bot admin spec 4.1).
     await page.keyboard.press('Escape');
     await page.evaluate(() => window.BRAIN.go('/support-agent'));
@@ -74,10 +88,21 @@ test.describe('surfaces follow roles', () => {
     }
   });
 
-  test('an admin has every admin screen', async ({ open }) => {
+  test('an admin has every admin screen, under one Settings with one rail', async ({ open }) => {
     const page = await open('admin', '/admin');
     await expect(page).toHaveURL(/\/admin\/workspace$/);
-    await expect(page.getByRole('navigation', { name: 'Admin' }).getByRole('button')).toHaveText(['Profile', 'Sessions', 'Workspace', 'People and access', 'Sources', 'Sharing requests', 'Domains', 'Audit log', 'Sign out']);
+    const items = railItems(page, ['Profile', 'Sessions', 'Workspace', 'People and access', 'Sources', 'Sharing requests', 'Domains', 'Audit log']);
+    const rail = page.getByRole('navigation', { name: 'Settings' });
+    // The same rail on every settings page, however it was reached; only the current item moves.
+    for (const [path, current] of [['/account', 'Profile'], ['/account/sessions', 'Sessions'], ['/admin/people', 'People and access'], ['/admin/sources', 'Sources'], ['/governance', 'Sharing requests'], ['/admin/audit', 'Audit log']]) {
+      await page.evaluate((p) => window.BRAIN.go(p), path);
+      await expect(rail.getByRole('button')).toHaveText(items);
+      await expect(rail.locator('[aria-current="page"]')).toHaveText(current);
+      if (!phone(page) && path !== '/governance') await expect(page.locator('#crumb')).toContainText(`Settings›${current}`);
+    }
+    const menu = await profileMenu(page);
+    await expect(menu.getByRole('menuitem', { name: 'Settings' })).toHaveCount(1);
+    await expect(menu.getByRole('menuitem', { name: /admin/i })).toHaveCount(0);
   });
 
   test('compliance cannot open Domains by its address', async ({ open }) => {

@@ -1,9 +1,9 @@
 /* admin.js: the Admin area (sandbox spec 4.3, plan C7 and C8) and its Audit tab.
  *
- * A settings-style page with a left rail. Each person sees the tabs their capabilities open
- * (capabilities.js says which): admins every tab, compliance Audit, developers Sources (the
- * router also refuses the others by URL). Tabs register in window.ADMIN.tabs:
- * connectors.js, people.js, domains.js and workspace.js add theirs.
+ * A settings-style page with the Settings rail (settings-rail.js). Each person sees the tabs
+ * their capabilities open (capabilities.js says which): admins every tab, compliance Audit,
+ * developers Sources (the router also refuses the others by URL). Tabs register in
+ * window.ADMIN.tabs: connectors.js, people.js, domains.js and workspace.js add theirs.
  */
 (() => {
 'use strict';
@@ -26,8 +26,8 @@ window.SURFACES.admin = (params) => {
   if (location.pathname.startsWith('/admin/connectors')) history.replaceState(history.state, '', location.pathname.replace('/admin/connectors', '/admin/sources') + location.search + location.hash);
   if (!tab || !mine.includes(tab)) { B.go('/admin/' + (mine[0] || ''), { replace: true }); return; }
   closePop();
-  $('#app').innerHTML = `<div class="lset">${railHtml(tab)}<div class="lcont"><div class="ds-head"><h1 class="lcont-t">${tabs[tab].label}</h1><div class="ds-act" id="adact"></div></div><div id="adpane"></div></div></div>`;
-  wireRail($('.lrail'));
+  $('#app').innerHTML = `<div class="lset">${window.SETTINGS.rail(tab)}<div class="lcont"><div class="ds-head"><h1 class="lcont-t">${tabs[tab].label}</h1><div class="ds-act" id="adact"></div></div><div id="adpane"></div></div></div>`;
+  window.SETTINGS.wire($('.lrail'));
   tabs[tab].render($('#adpane'), params);
 };
 
@@ -157,41 +157,6 @@ function pop(anchor, html, label, opts) {
   if (first) first.focus({ preventScroll: true });
   return el;
 }
-
-/**
- * The tab rail, with Finish setup while setup is pending.
- * @param {string} tab
- */
-function rail(tab) {
-  const nav = $('.lrail');
-  if (!nav) return;
-  nav.outerHTML = railHtml(tab);
-  wireRail($('.lrail'));
-}
-/**
- * The left menu, as in the prototype: Account settings, then Administrator settings, and Sign out
- * at the foot. Sharing requests is the Governance screen; it sits in the same group.
- * @param {string} current a tab key, or 'governance'
- */
-function railHtml(current) {
-  const item = (href, label, on) => `<button type="button" class="tab" data-go="${href}" aria-current="${on ? 'page' : 'false'}">${label}</button>`;
-  const admin = allowed().filter((k) => k !== 'audit' && k !== 'domains').map((k) => item(k === 'connectors' ? '/admin/sources' : '/admin/' + k, tabs[k].label, k === current));
-  const after = ['domains', 'audit'].filter((k) => allowed().includes(k)).map((k) => item(k === 'connectors' ? '/admin/sources' : '/admin/' + k, tabs[k].label, k === current));
-  const sharing = item('/governance', 'Sharing requests', current === 'governance');
-  // Workspace, People, Sources, then Sharing requests, Domains and Audit log, in the prototype's order.
-  return `<nav class="lrail" aria-label="Admin"><div class="lrail-h">Account settings</div>${item('/account', 'Profile', false)}${item('/account/sessions', 'Sessions', false)}<div class="lrail-sep" role="separator"></div><div class="lrail-h">Administrator settings</div>${admin.join('')}${sharing}${after.join('')}<div class="lrail-f"><button type="button" class="tab out" data-out>Sign out</button></div></nav>`;
-}
-/** @param {HTMLElement | null} nav */
-function wireRail(nav) {
-  if (!nav) return;
-  $$('[data-go]', nav).forEach((b) => { b.onclick = () => B.go(b.dataset.go); });
-  const out = $('[data-out]', nav);
-  if (out) out.onclick = () => B.armPress(out, 'Confirm sign out', () => B.signOut());
-}
-// Setup can finish while an Admin tab is open (a space's first read ends): the rail follows.
-document.addEventListener('brain:setupchange', () => {
-  if (B.S.route && B.S.route.surface === 'admin') rail(B.S.route.params.tab);
-});
 
 /* ---------- people names, for whoever manages people (audit actors, promotion requesters, owners) ---------- */
 async function names() {
@@ -357,5 +322,5 @@ function toTop() {
 }
 tabs.audit = { label: 'Audit log', render: audit };
 
-window.ADMIN = { tabs, names, setTitle, hint, actions, pop, closePop, life, railHtml, wireRail, domainTile, hydrateTiles };
+window.ADMIN = { tabs, names, setTitle, hint, actions, pop, closePop, life, allowed, domainTile, hydrateTiles };
 })();

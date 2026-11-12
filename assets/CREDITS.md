@@ -22,3 +22,4 @@ Everything in svg/, png/ (except photos), gif/ and video/ was made for this prot
 assets/crew/holder2.png is Broth holding a board, cut from a ChatGPT image sheet generated from the Broth mascot.
 assets/auth/lines.svg is the faint curved lines on the sign-in picture, made for Broth.
 assets/help/*.jpg are Cash App help and support screens pulled from Mobbin, used only as placeholders on the Docs cards. Replace before any public release.
+assets/avatars/ (a1 to a14) are original flat illustrations drawn for Broth, generated from code.
