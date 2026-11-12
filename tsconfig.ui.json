@@ -8,5 +8,5 @@
     "noImplicitAny": false,
     "noImplicitThis": false
   },
-  "include": ["types.d.ts", "globals.d.ts", "api.js", "sync.js", "domain-tree.js", "library-browse.js", "app.js", "auth.js", "extras.js", "bookmarks.js", "broth-avatar.js", "setup.js", "ask.js", "document-drawer.js", "library.js", "governance.js", "admin.js", "connectors.js", "people.js", "domains.js", "docs.js", "agent.js", "agent-overview.js", "agent-knowledge.js", "agent-experience.js", "agent-products.js"]
+  "include": ["types.d.ts", "globals.d.ts", "api.js", "sync.js", "domain-tree.js", "library-browse.js", "app.js", "auth.js", "extras.js", "bookmarks.js", "broth-avatar.js", "setup.js", "ask.js", "document-drawer.js", "library.js", "governance.js", "admin.js", "settings-rail.js", "connectors.js", "people.js", "domains.js", "docs.js", "agent.js", "agent-overview.js", "agent-knowledge.js", "agent-experience.js", "agent-products.js"]
 }
