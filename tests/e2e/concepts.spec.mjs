@@ -22,6 +22,35 @@ test('the article is the first the Help center offers', async ({ open, check }) 
   await check(page, 'docs-concepts-roles');
 });
 
+test('a note above the topics points newcomers to the article until they close it or read it', async ({ open, check }) => {
+  const page = await open('employee', '/help');
+  const note = page.getByRole('complementary', { name: 'New to Broth' });
+  await expect(note).toBeVisible();
+  await page.mouse.move(0, 0);
+  await check(page, 'docs-intro');
+  // Searching shows results only; clearing the search brings the note back.
+  const search = page.getByRole('searchbox', { name: 'Search the docs' });
+  await search.fill('roles');
+  await expect(note).toHaveCount(0);
+  await search.fill('');
+  await expect(note).toBeVisible();
+  // Closed, it stays closed: on reload, and on the way back from an article.
+  await note.getByRole('button', { name: "Close and don't show again" }).click();
+  await expect(note).toHaveCount(0);
+  await expect(search).toBeFocused();
+  await page.reload();
+  await expect(page.locator('#dcgrid .dccard').first()).toBeVisible();
+  await expect(note).toHaveCount(0);
+  // A fresh browser that follows the note's link has read the article: the note retires.
+  await page.evaluate(() => localStorage.removeItem('broth-docs-intro-done'));
+  await page.reload();
+  await note.getByRole('link', { name: 'How Broth is organised' }).click();
+  await expect(page.getByRole('heading', { name: 'How Broth is organised', level: 1 })).toBeVisible();
+  await page.goBack();
+  await expect(page.locator('#dcgrid .dccard').first()).toBeVisible();
+  await expect(note).toHaveCount(0);
+});
+
 test('the People roles picker explains what roles allow', async ({ open }) => {
   const page = await open('admin', '/admin/people');
   await page.getByRole('button', { name: /^Edit / }).first().click();

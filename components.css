@@ -518,7 +518,8 @@ time{white-space:nowrap}
 .dcprose h4{font-size:var(--fs-lg);margin:var(--s-5) 0 var(--s-2)}
 .dcprose h2:focus,.dcprose h3:focus{outline:none}
 .dcprose strong{color:var(--ink);font-weight:var(--fw-semi)}
-.dcprose a{padding:4px 0;color:var(--brand-strong);text-decoration:underline;text-decoration-color:var(--brand-line);text-underline-offset:3px}
+/* At least 24 px to tap at any text size: the line box is about 1.2em, so smaller text (a table cell) gets more padding. */
+.dcprose a{padding:max(4px,calc(12.5px - .6em)) 0;color:var(--brand-strong);text-decoration:underline;text-decoration-color:var(--brand-line);text-underline-offset:3px}
 .dcprose a:hover{text-decoration-color:currentColor}
 .dcprose code{font-size:.86em;color:var(--ink);background:var(--fill-2);padding:1px 5px;overflow-wrap:anywhere}
 .dcprose pre{background:var(--fill-1);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s-3) var(--s-4);overflow:auto;margin:0 0 var(--s-4)}

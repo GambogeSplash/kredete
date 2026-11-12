@@ -86,6 +86,18 @@ function itemsOf(t) {
   const remote = (state().index || []).filter((a) => !LOCAL_BY_SLUG[a.slug] && topicIdOf(a.slug) === t.id).map((a) => ({ slug: a.slug, title: a.title }));
   return remote.filter((a) => LEADS.has(a.slug)).concat(local, remote.filter((a) => !LEADS.has(a.slug)));
 }
+/** The article the Help center points newcomers to, above the topics, until they close the note or read it
+ *  (concepts article: it should be found without opening a topic). Remembered in this browser only. */
+const INTRO = 'how-broth-is-organised';
+const INTRO_KEY = 'broth-docs-intro-done';
+const introDone = () => { try { return localStorage.getItem(INTRO_KEY) === '1'; } catch (e) { return false; } };
+const retireIntro = () => { try { localStorage.setItem(INTRO_KEY, '1'); } catch (e) { /* storage unavailable: it shows again next visit */ } };
+/** The note, only while the service lists the article, so its link always opens. */
+function introNote() {
+  const a = !introDone() && (state().index || []).find((x) => x.slug === INTRO);
+  if (!a) return '';
+  return `<aside class="dcintro" aria-label="New to Broth"><span class="dcintro-ic">${ICON('book', 18)}</span><div><b>New to Broth? Start with <a class="link" href="/help/${esc(a.slug)}" data-link>${esc(a.title)}</a>.</b>${a.summary ? `<p>${esc(a.summary)}</p>` : ''}</div><button type="button" class="xbtn2" id="dcintrox" aria-label="Close and don't show again">${ICON('x', 16)}</button></aside>`;
+}
 /** Where people write to a person. Left empty until Broth has an address for it, then the button shows. */
 const SUPPORT_EMAIL = '';
 let query = '';
@@ -263,7 +275,7 @@ function drawCards() {
     return;
   }
   const note = s.error ? failed(s.error, 'dcretry') : '';
-  grid.innerHTML = `<div class="dcgrid">${TOPICS.map((t) => {
+  grid.innerHTML = `${introNote()}<div class="dcgrid">${TOPICS.map((t) => {
     const list = itemsOf(t);
     const n = list.length;
     return `<a class="dccard" href="/help/${esc(list[0].slug)}" data-link data-topic="${t.id}"><span class="dcimg"><img src="/assets/help/${t.id}.jpg" alt="" loading="lazy" draggable="false"></span><b>${esc(t.title)}</b><p>${esc(t.blurb)}</p><small class="dccount">${n} ${n === 1 ? 'article' : 'articles'}</small></a>`;
@@ -273,6 +285,13 @@ function drawCards() {
   });
   const retry = $('#dcretry');
   if (retry) retry.onclick = async () => { s.error = null; drawCards(); await loadIndex(); drawCards(); };
+  const close = $('#dcintrox');
+  if (close) close.onclick = () => {
+    retireIntro();
+    const note = close.closest('.dcintro');
+    const gone = () => { note.remove(); $('#dcq').focus(); };
+    if (calm()) gone(); else note.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-out' }).onfinish = gone;
+  };
 }
 
 /* ---------- an article ---------- */
@@ -280,6 +299,7 @@ function drawCards() {
 const keepNav = (slug) => { const nav = $('.dcnav'); const id = topicIdOf(slug); return nav && id && nav.dataset.topic === id && $('.dclay .dcdoc') ? nav : null; };
 async function article(slug) {
   const s = state();
+  if (slug === INTRO) retireIntro(); // read once, the note has done its job
   const local = LOCAL_BY_SLUG[slug];
   if (local) { drawLocal(local); return; }
   const cached = s.articles[slug];
