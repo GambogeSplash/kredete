@@ -1,8 +1,10 @@
-/* library-browse.js: the Library's rules, with no DOM (nested domains spec 4.2).
+/* library-browse.js: the Library's rules, with no DOM (nested domains spec 4.2; library
+ * containers spec 2.2).
  *
  * The Library browses folders, which are domains, until someone searches or filters; then it is
  * a flat list, scoped to the folder they are in. Which of the two it is follows from its state
- * alone, and so does the documents query each needs.
+ * alone, and so does the documents query each needs. While browsing, the pages at a level sit
+ * under the container they come from: a space, a repository or a shared drive.
  *
  * Loaded as a classic script (window.LIBRARY_BROWSE) and as a CommonJS module by the unit tests.
  */
@@ -14,6 +16,15 @@
   'use strict';
 
   /** @typedef {import('./types').components['schemas']['Facets']} Facets */
+  /** @typedef {import('./types').components['schemas']['DocumentOut']} DocumentOut */
+  /** @typedef {import('./types').components['schemas']['ContainerRef']} ContainerRef */
+  /**
+   * The pages at one level that come from one container.
+   * @typedef {object} ContainerGroup
+   * @property {ContainerRef} container
+   * @property {DocumentOut['system']} system its source
+   * @property {DocumentOut[]} rows its pages here, without its home page
+   */
   /**
    * A folder: a domain the person can open at least one page under.
    * @typedef {object} Folder
@@ -86,5 +97,48 @@
     return query;
   }
 
-  return { folders, mode, request };
+  /**
+   * The container groups at a browsing level: one per container with a page here, its home page
+   * included, ordered by source as `systemOrder` lists them (sources it leaves out come after),
+   * then by container name. The home page never becomes a row: the group's heading opens it.
+   * Groups are rebuilt from every page loaded so far, so pages from "Show more" join theirs.
+   * @param {DocumentOut[]} items
+   * @param {string[]} systemOrder
+   * @returns {ContainerGroup[]}
+   */
+  function groups(items, systemOrder) {
+    /** @type {Map<string, ContainerGroup>} */
+    const found = new Map();
+    for (const item of items) {
+      let group = found.get(item.container.id);
+      if (!group) {
+        group = { container: item.container, system: item.system, rows: [] };
+        found.set(item.container.id, group);
+      }
+      if (item.id !== item.container.home_document_id) group.rows.push(item);
+    }
+    const rank = (/** @type {string} */ system) => {
+      const at = systemOrder.indexOf(system);
+      return at < 0 ? systemOrder.length : at;
+    };
+    return [...found.values()].sort(
+      (a, b) => rank(a.system) - rank(b.system) || a.container.name.localeCompare(b.container.name) || a.container.id.localeCompare(b.container.id),
+    );
+  }
+
+  /**
+   * A page's place inside its container: its path without the container's name, when the path
+   * is that name or starts with it and " / ". Otherwise the whole path, since a path comes from
+   * the page's ancestors in the source and need not start with its container's name.
+   * @param {string | null | undefined} path
+   * @param {string} name the container's name, as the API gives it
+   * @returns {string}
+   */
+  function withinContainer(path, name) {
+    if (!path || path === name) return '';
+    const lead = `${name} / `;
+    return name && path.startsWith(lead) ? path.slice(lead.length) : path;
+  }
+
+  return { folders, mode, request, groups, withinContainer };
 });

@@ -1718,6 +1718,21 @@ export interface components {
             /** Review Interval Months */
             review_interval_months?: number | null;
         };
+        /**
+         * ContainerRef
+         * @description The space, repository or shared drive a page comes from (library containers spec 3.2).
+         */
+        ContainerRef: {
+            /** Home Document Id */
+            home_document_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
         /** ConversationDetail */
         ConversationDetail: {
             /**
@@ -1871,6 +1886,7 @@ export interface components {
         /** DocumentOut */
         DocumentOut: {
             authority: components["schemas"]["Authority"];
+            container: components["schemas"]["ContainerRef"];
             domain: components["schemas"]["DomainRef"] | null;
             /**
              * Id
