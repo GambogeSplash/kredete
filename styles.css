@@ -1498,6 +1498,15 @@ html[data-mode=dark] #cmdk .box{background:var(--surface)}
 .modal:has(.body h2)>.bar>span{display:none}
 .modal:has(.body h2) .body{padding-top:var(--s-6)}
 .modal>.bar{min-height:44px;box-sizing:border-box}
+/* A desktop modal never outgrows the window: the card is capped at the backdrop's padded height and
+   its body scrolls, so the title bar and close button stay put however long the content runs
+   (a page's lineage, a long form, a short window). A modal without a .body scrolls as a whole.
+   Phones show modals as a bottom sheet capped in mobile.css. */
+@media (min-width:901px){
+  .modal-wrap .modal{max-height:100%;display:flex;flex-direction:column;overflow:auto}
+  .modal-wrap .modal>*{flex-shrink:0}
+  .modal-wrap .modal>.body{flex:0 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain}
+}
 
 /* connect overview */
 /* provider hand-off pages */

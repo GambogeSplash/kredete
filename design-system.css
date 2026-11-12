@@ -38,7 +38,7 @@ button.ds-tr{cursor:pointer;transition:background var(--dur-fast)}button.ds-tr:h
 
 .dmlab{margin:0 0 var(--s-2);font-size:var(--fs-xs);color:var(--mute)}
 /* design system: popover. Opens under the control that asked for it, never in the middle of the page. */
-.ds-pop{position:fixed;z-index:60;width:min(440px,calc(100vw - 24px));box-sizing:border-box;padding:var(--s-4);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:0 12px 32px rgba(0,0,0,.28);animation:dspop .14s var(--ease-out)}
+.ds-pop{position:fixed;z-index:60;width:min(440px,calc(100vw - 24px));box-sizing:border-box;padding:var(--s-4);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:0 12px 32px rgba(0,0,0,.28);overflow:auto;overscroll-behavior:contain;animation:dspop .14s var(--ease-out)}
 @keyframes dspop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.ds-pop{animation:none}}
 .ds-ic{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:var(--r-md);background:var(--fill-1);color:var(--ink)}

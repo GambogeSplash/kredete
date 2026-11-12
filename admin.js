@@ -116,12 +116,19 @@ function pop(anchor, html, label, opts) {
   el.setAttribute('aria-label', label);
   el.innerHTML = html;
   document.body.appendChild(el);
+  // It opens below its control, or above when it does not fit below and there is more room above,
+  // and never runs past the window: what does not fit scrolls inside it.
   const place = () => {
     const r = anchor.getBoundingClientRect();
-    el.style.top = (r.bottom + 8) + 'px';
+    const below = Math.max(0, innerHeight - r.bottom - 8 - 12);
+    const above = Math.max(0, r.top - 8 - 12);
+    el.style.maxHeight = '';
+    const up = el.offsetHeight > below && above > below;
+    el.style.top = up ? '' : (r.bottom + 8) + 'px';
+    el.style.bottom = up ? (innerHeight - r.top + 8) + 'px' : '';
+    el.style.maxHeight = (up ? above : below) + 'px';
     if (o.menu) el.style.left = Math.max(12, Math.min(r.left, innerWidth - el.offsetWidth - 12)) + 'px';
     else el.style.right = Math.max(12, innerWidth - r.right) + 'px';
-    el.style.maxHeight = Math.max(200, innerHeight - r.bottom - 20) + 'px';
   };
   place();
   anchor.setAttribute('aria-expanded', 'true');
