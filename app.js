@@ -687,12 +687,20 @@ function editTitle(el, conv, onDone) {
 }
 
 /** The chat actions menu: rename, pin, copy link, delete (with a confirming second press). */
-function chatMenu(anchor, conv, opts) {
+/**
+ * A small action menu under (or above) `anchor`. Items are `{ a, icon, label, danger? }`, or
+ * `'-'` for a separator. `pick(a)` runs after the menu closes; `keep(a, button)` returning true
+ * leaves it open (a press that only arms a confirmation).
+ * @param {HTMLElement} anchor
+ * @param {({ a: string, icon: string, label: string, danger?: boolean } | '-')[]} items
+ * @param {{ pick: (a: string) => any, keep?: (a: string, button: HTMLElement) => any }} o
+ */
+function popMenu(anchor, items, o) {
   document.querySelectorAll('.cmenu').forEach((m) => m.remove());
   const m = document.createElement('div');
   m.className = 'cmenu';
   m.setAttribute('role', 'menu');
-  m.innerHTML = `<button role="menuitem" data-a="ren">${ICON('compose', 15)}<span>Rename</span></button><button role="menuitem" data-a="pin">${ICON('pin', 15)}<span>${conv.pinned ? 'Unpin' : 'Pin to top'}</span></button><button role="menuitem" data-a="link">${ICON('link', 15)}<span>Copy link</span></button><div class="cm-sep"></div><button role="menuitem" class="cm-del" data-a="del">${ICON('x', 15)}<span>Delete chat</span></button>`;
+  m.innerHTML = items.map((i) => (i === '-' ? '<div class="cm-sep"></div>' : `<button role="menuitem"${i.danger ? ' class="cm-del"' : ''} data-a="${i.a}">${ICON(i.icon, 15)}<span>${esc(i.label)}</span></button>`)).join('');
   document.body.appendChild(m);
   const r = anchor.getBoundingClientRect();
   const w = m.offsetWidth;
@@ -700,26 +708,42 @@ function chatMenu(anchor, conv, opts) {
   const below = r.bottom + m.offsetHeight + 10 < innerHeight;
   m.style.top = (below ? r.bottom + 6 : r.top - m.offsetHeight - 6) + 'px';
   if (m.animate && !calm()) m.animate([{ opacity: 0, transform: 'translateY(' + (below ? -4 : 4) + 'px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 150, easing: 'cubic-bezier(.2,.8,.2,1)' });
-  const close = () => { leaveFx(m, { opacity: 0, transform: 'translateY(' + (below ? -4 : 4) + 'px) scale(.97)' }, 110); document.removeEventListener('mousedown', out, true); document.removeEventListener('keydown', key, true); };
+  anchor.setAttribute('aria-expanded', 'true');
+  const close = () => { anchor.setAttribute('aria-expanded', 'false'); leaveFx(m, { opacity: 0, transform: 'translateY(' + (below ? -4 : 4) + 'px) scale(.97)' }, 110); document.removeEventListener('mousedown', out, true); document.removeEventListener('keydown', key, true); };
   const out = (e) => { if (!m.contains(e.target)) close(); };
   const key = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); if (anchor.focus) anchor.focus(); } };
   document.addEventListener('mousedown', out, true);
   document.addEventListener('keydown', key, true);
   $('button', m).focus();
-  m.onclick = async (e) => {
+  m.onclick = (e) => {
     const b = /** @type {any} */ (e.target).closest('[data-a]');
     if (!b) return;
-    const a = b.dataset.a;
-    if (a === 'del') { if (armPress(b, 'Confirm delete', () => { /* falls through below */ })) return; }
+    if (o.keep && o.keep(b.dataset.a, b)) return;
     close();
-    const rowEl = anchor.closest('.surf,.chr,.lrow');
-    try {
-      if (a === 'ren') opts.rename();
-      else if (a === 'pin') await pinChat(conv.id, !conv.pinned);
-      else if (a === 'link') { try { await navigator.clipboard.writeText(location.origin + '/c/' + conv.id); } catch (err) { /* clipboard blocked */ } toast('Link copied'); }
-      else if (a === 'del') await deleteChat(conv.id, rowEl);
-    } catch (error) { toast(problem(error)); }
+    o.pick(b.dataset.a);
   };
+}
+
+function chatMenu(anchor, conv, opts) {
+  const items = [
+    { a: 'ren', icon: 'compose', label: 'Rename' },
+    { a: 'pin', icon: 'pin', label: conv.pinned ? 'Unpin' : 'Pin to top' },
+    { a: 'link', icon: 'link', label: 'Copy link' },
+    /** @type {'-'} */ ('-'),
+    { a: 'del', icon: 'x', label: 'Delete chat', danger: true },
+  ];
+  popMenu(anchor, items, {
+    keep: (a, b) => a === 'del' && armPress(b, 'Confirm delete', () => { /* falls through below */ }),
+    pick: async (a) => {
+      const rowEl = anchor.closest('.surf,.chr,.lrow');
+      try {
+        if (a === 'ren') opts.rename();
+        else if (a === 'pin') await pinChat(conv.id, !conv.pinned);
+        else if (a === 'link') { try { await navigator.clipboard.writeText(location.origin + '/c/' + conv.id); } catch (err) { /* clipboard blocked */ } toast('Link copied'); }
+        else if (a === 'del') await deleteChat(conv.id, rowEl);
+      } catch (error) { toast(problem(error)); }
+    },
+  });
 }
 
 /* ---------- sidebar ---------- */
@@ -885,7 +909,7 @@ window.BRAIN = {
   go, route, boot, signOut, armPress, loadMe, loadFacets, readFacets, refreshSetupProgress, clearServerState,
   can, opens, sandbox, setupPending,
   openDrawer, closeDrawer, drawerDocked, WIDE, openModal, closeModal, exitFx, leaveFx,
-  loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, trashFx, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,
+  loadChats, touchChat, forgetChat, replaceChat, renameChat, pinChat, deleteChat, chatMenu, popMenu, trashFx, editTitle, chatTitle, renderSurfaces, renderChatList, newChat,
   systemName, srcIcon, containerName, isPersonalSpace, SYSTEMS, ROLE_NAMES, CLEARANCES, clearanceName,
   fmtDate, fmtTime, ago, dayLabel, when, rows, cursorOf, arr, person, domain, bot,
   skeletonRows, loadingBlock, errorBlock, emptyBlock, CARET, setCrumb, mbTitle, guardLeaving, askToLeave,

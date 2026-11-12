@@ -111,3 +111,8 @@ html[data-mode=dark] .pcard .agpico{filter:none!important}
 /* (i) hints inside headings */
 .agcard-h h2 .hint,.agfs legend .hint,.agck h2 .hint{font-weight:400;vertical-align:middle}
 .agfs legend .dclink{float:right;font-size:var(--fs-sm);font-weight:400}
+
+/* a paused or archived bot (bot pause and archive spec 4.3) */
+.agstate{margin:0 0 var(--s-4)}
+.agstate:not(.warn){background:var(--fill-1);color:var(--mute)}
+.agstate b{font-weight:600}

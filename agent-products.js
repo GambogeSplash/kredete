@@ -29,12 +29,15 @@ A.pages.products = (el, ctx) => {
     const products = F.byStatus(/** @type {any[]} */ (bot.products));
     const current = products.find((p) => p.id === shown.get(bot.id)) || products[0] || null;
     if (current) shown.set(bot.id, current.id);
-    el.innerHTML = `<div class="pgrid agpgrid">${products.map((p) => `<button type="button" class="pcard${p.status === 'live' ? '' : ' off'}${current && p.id === current.id ? ' on' : ''}" data-pid="${p.id}" aria-pressed="${current && p.id === current.id}"><span class="pico agpico" style="--c:${esc(p.accent)}" aria-hidden="true">${window.ICON('chat', 18)}</span><span class="pcn"><b>${esc(p.name)}</b><small>${esc(p.allowed_origins[0] || '')}${p.allowed_origins.length > 1 ? ` +${p.allowed_origins.length - 1} more` : ''}</small></span>${p.status === 'live' ? '<span class="tag ok">Live</span>' : '<span class="tag">Revoked</span>'}</button>`).join('')}<button type="button" class="pcard padd" id="agpadd"><span class="pico plus" aria-hidden="true">+</span><span class="pcn"><b>Add a product</b><small>A key for another site</small></span></button></div>
+    el.innerHTML = `<div class="pgrid agpgrid">${products.map((p) => `<button type="button" class="pcard${p.status === 'live' ? '' : ' off'}${current && p.id === current.id ? ' on' : ''}" data-pid="${p.id}" aria-pressed="${current && p.id === current.id}"><span class="pico agpico" style="--c:${esc(p.accent)}" aria-hidden="true">${window.ICON('chat', 18)}</span><span class="pcn"><b>${esc(p.name)}</b><small>${esc(p.allowed_origins[0] || '')}${p.allowed_origins.length > 1 ? ` +${p.allowed_origins.length - 1} more` : ''}</small></span>${p.status === 'live' ? '<span class="tag ok">Live</span>' : '<span class="tag">Revoked</span>'}</button>`).join('')}${ctx.readOnly ? '' : '<button type="button" class="pcard padd" id="agpadd"><span class="pico plus" aria-hidden="true">+</span><span class="pcn"><b>Add a product</b><small>A key for another site</small></span></button>'}</div>
       <div id="agpdetail"></div>`;
     $$('[data-pid]', el).forEach((b) => { b.onclick = () => leave(() => { shown.set(bot.id, b.dataset.pid); draw(); }); });
-    $('#agpadd', el).onclick = () => leave(addProduct);
+    const add = $('#agpadd', el);
+    if (add) add.onclick = () => leave(addProduct);
     if (!current) {
-      $('#agpdetail', el).innerHTML = A.empty('No products yet', 'Add one for each site the bot should run on. Each gets its own snippet to paste there.', '', 'stack');
+      $('#agpdetail', el).innerHTML = ctx.readOnly
+        ? A.empty('No products', 'This bot was archived before it was put on a site.', '', 'stack')
+        : A.empty('No products yet', 'Add one for each site the bot should run on. Each gets its own snippet to paste there.', '', 'stack');
       B.guardLeaving(() => false);
       return;
     }
@@ -56,7 +59,7 @@ A.pages.products = (el, ctx) => {
     dirty = () => false;
     B.guardLeaving(() => false);
     $('#agpdetail', el).innerHTML = `<section class="ds-card agpd" aria-labelledby="agpdh"><div class="agcard-h"><h2 id="agpdh">${esc(p.name)}</h2><span class="tag">Revoked</span></div>
-      <p class="agpd-sub">Revoked ${B.fmtDate(p.revoked_at)}. Its key no longer works, and it can't be restored. Add a new product to put the bot back on these sites.</p>
+      <p class="agpd-sub">Revoked ${B.fmtDate(p.revoked_at)}. Its key no longer works, and it can't be restored.${ctx.readOnly ? '' : ' Add a new product to put the bot back on these sites.'}</p>
       <dl class="agkvs">${row('Sites', p.allowed_origins.map(esc).join('<br>'))}${row('Key', `<code class="agkey-v">${esc(F.maskKey(p.key))}</code>`)}</dl></section>`;
   }
   const row = (label, value) => `<div class="agkv"><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
@@ -155,7 +158,7 @@ A.pages.products = (el, ctx) => {
         stored(next);
         draw();
         B.toast('Saved. Sites show the change within 5 minutes.');
-      }, (error) => { if (!A.serverErrors(el, error, null)) bar.error(B.problem(error)); else bar.error('Check the fields marked above.'); });
+      }, (error) => { if (ctx.conflict(error)) return; if (!A.serverErrors(el, error, null)) bar.error(B.problem(error)); else bar.error('Check the fields marked above.'); });
     }
     function discard() {
       form = { name: p.name, sites: [...p.allowed_origins], accent: p.accent, side: p.side };
@@ -175,11 +178,11 @@ A.pages.products = (el, ctx) => {
     if (copy) copy.onclick = async () => { try { await navigator.clipboard.writeText(p.snippet); B.toast('Snippet copied'); } catch (e) { B.toast('Select the snippet and copy it'); } };
     $('#agreplace', el).onclick = async () => {
       if (!await A.confirmAction({ title: 'Replace this key?', text: 'The old key stops working right away. Sites using it need the new snippet.', action: 'Replace key' })) return;
-      await B.busy($('#agreplace', el), async () => { stored(await B.api.post(`/admin/products/${p.id}/replace-key`)); draw(); B.toast('Key replaced. Paste the new snippet on your sites.'); });
+      await B.busy($('#agreplace', el), async () => { stored(await B.api.post(`/admin/products/${p.id}/replace-key`)); draw(); B.toast('Key replaced. Paste the new snippet on your sites.'); }, (error) => ctx.conflict(error) || B.toast(B.problem(error)));
     };
     $('#agrevoke', el).onclick = async () => {
       if (!await A.confirmAction({ title: `Revoke ${p.name}?`, text: "This can't be undone. The bot disappears from these sites.", action: 'Revoke' })) return;
-      await B.busy($('#agrevoke', el), async () => { stored(await B.api.post(`/admin/products/${p.id}/revoke`)); draw(); B.toast(`${p.name} is revoked.`); });
+      await B.busy($('#agrevoke', el), async () => { stored(await B.api.post(`/admin/products/${p.id}/revoke`)); draw(); B.toast(`${p.name} is revoked.`); }, (error) => ctx.conflict(error) || B.toast(B.problem(error)));
     };
   }
 
@@ -217,7 +220,7 @@ A.pages.products = (el, ctx) => {
         shown.set(bot.id, product.id);
         draw();
         B.toast('Paste the snippet on your site.');
-      }, (error) => A.serverErrors(form, error, $('#ape')));
+      }, (error) => ctx.conflict(error) || A.serverErrors(form, error, $('#ape')));
     };
   }
 

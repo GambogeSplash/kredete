@@ -102,6 +102,7 @@ mark{background:#ffd9a3;border-radius:var(--r-xs);padding:0 var(--s-1)}
 .banner.info{background:var(--blue-w);color:#3d0a8c}
 .banner.bad{background:var(--red-w);color:var(--red)}
 .banner.good{background:var(--green-w);color:var(--green)}
+.banner.warn{background:var(--amber-w);color:var(--amber)}
 .qs{margin:var(--s-2) 0 0;padding-left:var(--s-5);color:var(--mute)}
 /* modal */
 .modal-wrap{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(22,22,15,.35);z-index:30;padding:var(--s-5)}

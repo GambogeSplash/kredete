@@ -33,18 +33,20 @@ A.pages.overview = (el, ctx) => {
   const answers = F.canAnswer(bot, containers, connections);
   const live = bot.products.some((p) => p.status === 'live');
   const head = el.parentElement.querySelector('.aghd .ds-act');
-  head.insertAdjacentHTML('afterbegin', sites ? `<span class="tag ok">Live on ${A.count(sites, 'site')}</span>` : '<span class="tag warn">Needs setup</span>');
+  head.insertAdjacentHTML('afterbegin', A.statusTag(bot));
+  const state = F.botState(bot);
   /** The real numbers, one tile each; they count up once when the page opens. */
   const stat = (n, label) => `<div class="astat"><b class="agn" data-to="${n}">${n.toLocaleString('en-US')}</b><span>${esc(label)}</span></div>`;
   const stats = `<div class="agstats">${stat(served.length, served.length === 1 ? 'Source' : 'Sources')}${stat(pages, pages === 1 ? 'Public page' : 'Public pages')}${stat(sites, sites === 1 ? 'Live site' : 'Live sites')}${stat(bot.daily_question_limit, 'Questions a day')}</div>`;
 
   const step = (done, title, text, page, action) => `<li class="agck-i${done ? ' done' : ''}"><span class="agck-m" aria-hidden="true">${done ? window.ICON('check', 12) : ''}</span><span class="agck-t"><b>${esc(title)}</b><small>${esc(text)}</small></span>${done ? '<span class="sr">Done</span>' : `<button type="button" class="btn sm" data-go="${page}">${esc(action)}</button>`}</li>`;
-  const checklist = answers && live ? '' : `<section class="ds-card agck" aria-labelledby="agckh"><h2 id="agckh">Getting it live</h2><ol>
+  // Setting up is for a live bot; a paused or archived one says why it is off in its banner.
+  const checklist = (answers && live) || state === 'paused' || state === 'archived' ? '' : `<section class="ds-card agck" aria-labelledby="agckh"><h2 id="agckh">Getting it live</h2><ol>
     ${step(answers, 'Choose what it answers from', answers ? `${A.count(pages, 'Public page')} in ${A.count(served.length, 'source')}.` : 'Pick sources with Public pages for the bot to answer from.', 'knowledge', 'Go to Knowledge')}
     ${step(live, 'Put it on a site', live ? `Live on ${A.count(sites, 'site')}.` : 'Add a product for each site, then paste its snippet there.', 'products', 'Go to Products')}
   </ol></section>`;
 
-  const card = (title, page, body) => `<section class="ds-card agcard" aria-labelledby="agc-${page}"><div class="agcard-h"><h2 id="agc-${page}">${title}</h2><button type="button" class="btn sm" data-go="${page}" aria-label="Edit ${title}">Edit</button></div>${body}</section>`;
+  const card = (title, page, body) => `<section class="ds-card agcard" aria-labelledby="agc-${page}"><div class="agcard-h"><h2 id="agc-${page}">${title}</h2>${ctx.readOnly ? '' : `<button type="button" class="btn sm" data-go="${page}" aria-label="Edit ${title}">Edit</button>`}</div>${body}</section>`;
   const row = (label, value) => `<div class="agkv"><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
   const muted = (text) => `<span class="amute">${esc(text)}</span>`;
   /** A link shown as people read it: no scheme, no trailing slash. */

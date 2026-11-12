@@ -92,11 +92,11 @@ test.describe('the bot list', () => {
 });
 
 /** A new bot of the test's own, opened on `page`; returns the page and its name. */
-async function newBot(open, info, page = 'overview') {
+async function newBot(open, info, page = 'overview', base = 'Bot') {
   const p = await open('admin', '/support-agent');
   await p.getByRole('button', { name: 'New bot' }).first().click();
   const dialog = p.getByRole('dialog', { name: 'New bot' });
-  const name = unique('Bot', info);
+  const name = unique(base, info);
   await dialog.getByLabel('Name').fill(name);
   await dialog.getByLabel('Contact link').fill('https://kredete.com/support');
   await dialog.getByLabel('Privacy link').fill('https://kredete.com/privacy');
@@ -279,7 +279,8 @@ test.describe('Products', () => {
     await dialog.getByLabel('Site it runs on').fill(`${new URL(page.url()).origin}/docs`);
     await dialog.getByRole('button', { name: 'Create key' }).click();
     await expect(dialog.getByText('Use only the site, like https://help.kredete.com.')).toBeVisible();
-    await check(page, 'agent-add-product', { mask: ['.agname'] });
+    // The site is this stack's own address, which differs between stacks.
+    await check(page, 'agent-add-product', { mask: ['.agname', '#apallowed_origins0'] });
     await dialog.getByLabel('Site it runs on').fill(new URL(page.url()).origin);
     await dialog.getByRole('button', { name: 'Create key' }).click();
     const product = page.locator('#agpdetail');
@@ -334,5 +335,102 @@ test.describe('Products', () => {
     await expect(saved.getByRole('button', { name: 'Green' })).toHaveAttribute('aria-pressed', 'true');
     await expect(saved.getByRole('button', { name: 'Left' })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('button', { name: /App/ })).toContainText('+1 more');
+  });
+});
+
+test.describe('Pause and archive', () => {
+  /** A new bot of the view's own, answering from Payments and live on this site. */
+  async function liveBot(open, info, base) {
+    const { page, name } = await newBot(open, info, 'knowledge', base);
+    await page.getByRole('checkbox', { name: /Payments \(PAY\)/ }).check();
+    await page.getByRole('region', { name: 'Unsaved changes' }).getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('region', { name: 'Unsaved changes' })).toBeHidden();
+    await page.getByRole('navigation', { name: 'Support agent' }).getByRole('button', { name: 'Products' }).click();
+    await page.getByRole('button', { name: /Add a product/ }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add a product' });
+    await dialog.getByLabel('Name').fill('Help site');
+    await dialog.getByLabel('Site it runs on').fill(new URL(page.url()).origin);
+    await dialog.getByRole('button', { name: 'Create key' }).click();
+    const demo = await page.locator('#agpdetail').getByRole('link', { name: 'Open the demo page' }).getAttribute('href');
+    return { page, name, demo };
+  }
+  /** Shows only `name` in the list, as other views add bots to the shared stack. */
+  const only = (name) => ({ before: (p) => p.route(/\/v1\/admin\/bots$/, async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({ response, json: { ...body, items: body.items.filter((b) => b.name === name) } });
+  }) });
+
+  test('pausing takes the bot off its site, keeps its key, and Resume puts it back', async ({ open, check }, info) => {
+    const { page, name, demo } = await liveBot(open, info, 'Paused');
+    const visitor = await open(null, demo);
+    await expect(visitor.getByRole('button', { name: 'Open help' })).toBeVisible();
+
+    await page.getByRole('navigation', { name: 'Support agent' }).getByRole('button', { name: 'Overview' }).click();
+    await page.getByRole('button', { name: 'Pause', exact: true }).click();
+    const sure = page.getByRole('alertdialog', { name: `Pause ${name}?` });
+    await expect(sure).toContainText('Its keys and settings are kept.');
+    await sure.getByRole('button', { name: 'Pause' }).click();
+    const banner = page.locator('.agstate');
+    await expect(banner).toContainText("It's off on every site.");
+    await expect(page.locator('.aghd .tag')).toHaveText('Paused');
+    await expect(page.getByRole('heading', { name: 'Getting it live' })).toHaveCount(0);
+    await check(page, 'agent-paused', { mask: ['.agname', '.agstate b'] });
+
+    // The same snippet shows nothing while paused, and the bot can still be edited.
+    const paused = await open(null, demo);
+    await expect(paused.locator('#kredete-help')).toHaveCount(0);
+    await page.getByRole('navigation', { name: 'Support agent' }).getByRole('button', { name: 'Experience' }).click();
+    await expect(page.locator('.agstate')).toBeVisible();
+    await expect(page.getByLabel('Greeting')).toBeEditable();
+
+    const list = await open('admin', '/support-agent', only(name));
+    await expect(list.getByRole('link', { name: new RegExp(name) })).toContainText('Paused');
+
+    await page.getByRole('button', { name: 'Resume' }).click();
+    await expect(page.locator('.agstate')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+    const back = await open(null, demo);
+    await expect(back.getByRole('button', { name: 'Open help' })).toBeVisible();
+  });
+
+  test('archiving revokes every key, makes the bot read only, and moves it under Archived', async ({ open, check }, info) => {
+    const { page, name, demo } = await liveBot(open, info, 'Archived');
+    await page.getByRole('button', { name: `More actions for ${name}` }).click();
+    await page.getByRole('menuitem', { name: 'Archive bot…' }).click();
+    const sure = page.getByRole('alertdialog', { name: `Archive ${name}?` });
+    await expect(sure).toContainText("This can't be undone.");
+    await sure.getByRole('button', { name: 'Archive' }).click();
+
+    await expect(page.locator('.agstate')).toContainText('Read only. Its keys were revoked.');
+    await expect(page.getByRole('button', { name: 'Pause', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: `More actions for ${name}` })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Add a product/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Help site/ })).toContainText('Revoked');
+    await expect(page.locator('#agpdetail')).not.toContainText('Add a new product');
+    const gone = await open(null, demo);
+    await expect(gone.locator('#kredete-help')).toHaveCount(0);
+
+    const tabs = page.getByRole('navigation', { name: 'Support agent' });
+    await tabs.getByRole('button', { name: 'Knowledge' }).click();
+    await expect(page.getByRole('checkbox', { name: /Payments \(PAY\)/ })).toBeDisabled();
+    await tabs.getByRole('button', { name: 'Experience' }).click();
+    await expect(page.getByLabel('Greeting')).toBeDisabled();
+    await tabs.getByRole('button', { name: 'Overview' }).click();
+    await expect(page.getByRole('button', { name: /^Edit / })).toHaveCount(0);
+    await check(page, 'agent-archived', { mask: ['.agname', '.agstate b', '.aghd .tag'] });
+
+    const list = await open('admin', '/support-agent', only(name));
+    await expect(list.getByRole('link', { name: new RegExp(name) })).toHaveCount(0);
+    await expect(list.getByText('No active bots')).toBeVisible();
+    await list.getByRole('button', { name: 'Archived (1)' }).click();
+    const row = list.getByRole('link', { name: new RegExp(name) });
+    await expect(row).toContainText('Archived');
+    await expect(row).toContainText('0 of 1 live');
+    await expect(list.getByRole('button', { name: 'New bot' })).toHaveCount(0);
+    await list.mouse.move(0, 0); // the toggle's new label moves the docs button under the pointer
+    await check(list, 'agent-bots-archived', { mask: ['.agrow .tag'] });
+    await list.getByRole('button', { name: 'Active bots (0)' }).click();
+    await expect(list.getByText('No active bots')).toBeVisible();
   });
 });

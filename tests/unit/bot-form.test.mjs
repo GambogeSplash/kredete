@@ -70,9 +70,32 @@ describe('changes', () => {
 describe('status', () => {
   const product = (status, origins) => ({ status, allowed_origins: origins });
   it('counts distinct sites over live products only', () => {
-    const bot = { products: [product('live', ['https://a.com', 'https://b.com']), product('live', ['https://b.com']), product('revoked', ['https://c.com'])] };
+    const bot = { status: 'live', products: [product('live', ['https://a.com', 'https://b.com']), product('live', ['https://b.com']), product('revoked', ['https://c.com'])] };
     assert.equal(F.liveSites(bot), 2);
-    assert.equal(F.liveSites({ products: [product('revoked', ['https://c.com'])] }), 0);
+    assert.equal(F.liveSites({ status: 'live', products: [product('revoked', ['https://c.com'])] }), 0);
+  });
+  it('counts no live sites for a paused or archived bot, whose products answer no one', () => {
+    const products = [product('live', ['https://a.com'])];
+    assert.equal(F.liveSites({ status: 'paused', products }), 0);
+    assert.equal(F.liveSites({ status: 'archived', products: [product('revoked', ['https://a.com'])] }), 0);
+  });
+  it('reads one state per bot, the bot\'s own status before its products', () => {
+    const live = product('live', ['https://a.com']);
+    const gone = product('revoked', ['https://b.com']);
+    const cases = [
+      ['live', [live, gone], 'live'],
+      ['live', [live], 'live'],
+      ['live', [gone], 'setup'],
+      ['live', [], 'setup'],
+      ['paused', [live], 'paused'],
+      ['paused', [gone], 'paused'],
+      ['paused', [], 'paused'],
+      ['archived', [gone], 'archived'],
+      ['archived', [], 'archived'],
+    ];
+    for (const [status, products, want] of cases) {
+      assert.equal(F.botState({ status, products }), want, `${status} with ${products.map((p) => p.status).join('+') || 'no'} products`);
+    }
   });
   it('is ready to answer when a chosen source has a Public page', () => {
     const connections = [{ id: 'k1', status: 'healthy' }, { id: 'k2', status: 'disconnected' }];

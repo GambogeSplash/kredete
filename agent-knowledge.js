@@ -45,7 +45,7 @@ A.pages.knowledge = (el, ctx) => {
       : c.public_documents
         ? `<span class="agksn">${A.count(c.public_documents, 'Public page')}</span>`
         : '<span class="tag warn">No Public pages</span>';
-    return `<div class="ds-tr agks${used ? '' : ' off'}"><label class="agksl" for="${id}"><input type="checkbox" id="${id}" data-source="${c.id}" ${picked.has(c.id) ? 'checked' : ''}><span class="agksp">${B.srcIcon(conn.system, 18)}<span>${esc(name)}</span></span></label><span class="agksc">${note}</span><span class="agkso">${used ? `<button type="button" class="btn sm" data-open="${c.id}" aria-label="Open ${esc(name)} in the Library">Open in Library</button>` : ''}</span></div>`;
+    return `<div class="ds-tr agks${used ? '' : ' off'}"><label class="agksl" for="${id}"><input type="checkbox" id="${id}" data-source="${c.id}" ${picked.has(c.id) ? 'checked' : ''}${ctx.readOnly ? ' disabled' : ''}><span class="agksp">${B.srcIcon(conn.system, 18)}<span>${esc(name)}</span></span></label><span class="agksc">${note}</span><span class="agkso">${used ? `<button type="button" class="btn sm" data-open="${c.id}" aria-label="Open ${esc(name)} in the Library">Open in Library</button>` : ''}</span></div>`;
   }
 
   function draw() {
@@ -80,7 +80,7 @@ A.pages.knowledge = (el, ctx) => {
       ctx.saved(bot);
       draw();
       B.toast('Saved. The bot answers from these sources from its next question.');
-    }, (error) => bar.error(B.problem(error)));
+    }, (error) => ctx.conflict(error) || bar.error(B.problem(error)));
   }
   function discard() { picked = new Set(bot.sources); draw(); }
 

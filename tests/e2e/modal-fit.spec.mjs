@@ -29,14 +29,23 @@ async function fits(page, dialog) {
   expect(l.y + l.height).toBeLessThanOrEqual(vh + 0.5);
 }
 
+/**
+ * The lineage dialog once its rows are in: arriving later, they push the last control down, so a
+ * dialog measured while it still shows its loading block reads as fitting when it may not.
+ */
+async function loaded(page) {
+  const dialog = page.getByRole('dialog', { name: 'Details and lineage' });
+  await expect(dialog.locator('#lin .skwrap')).toHaveCount(0);
+  await expect(dialog.locator('#lin')).not.toBeEmpty();
+  return dialog;
+}
+
 test("a developer's lineage dialog fits a short window", async ({ open }) => {
   const page = await open('developer', '/library/payments');
   await page.locator('#libbody .lcthome').filter({ hasText: 'Payments (PAY)' }).first().click();
   await page.locator('#drawer').getByRole('button', { name: 'Details and lineage' }).click();
   await page.setViewportSize(SHORT);
-  const dialog = page.getByRole('dialog', { name: 'Details and lineage' });
-  await expect(dialog.locator('#lin .skel, #lin [aria-busy]')).toHaveCount(0);
-  await fits(page, dialog);
+  await fits(page, await loaded(page));
 });
 
 test("an admin's lineage dialog, from the audit log, fits a short window", async ({ open }) => {
@@ -44,7 +53,7 @@ test("an admin's lineage dialog, from the audit log, fits a short window", async
   await page.locator('#libbody .lcthome').filter({ hasText: 'Payments (PAY)' }).first().click();
   await page.locator('#drawer').getByRole('button', { name: 'Details and lineage' }).click();
   await page.setViewportSize(SHORT);
-  await fits(page, page.getByRole('dialog', { name: 'Details and lineage' }));
+  await fits(page, await loaded(page));
 });
 
 test('New bot fits a short window', async ({ open }) => {

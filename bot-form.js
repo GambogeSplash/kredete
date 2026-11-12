@@ -164,8 +164,24 @@
    */
   const byStatus = (products) => [...products].sort((a, b) => (a.status === b.status ? 0 : a.status === 'live' ? -1 : 1));
 
-  /** Distinct sites the bot is live on. @param {{ products: { status: string, allowed_origins: string[] }[] }} bot */
-  const liveSites = (bot) => new Set(liveProducts(bot).flatMap((p) => p.allowed_origins)).size;
+  /**
+   * Distinct sites the bot is live on: none while it is paused or archived, whatever its
+   * products say (bot pause and archive spec 3.6).
+   * @param {{ status: string, products: { status: string, allowed_origins: string[] }[] }} bot
+   */
+  const liveSites = (bot) => (bot.status === 'live' ? new Set(liveProducts(bot).flatMap((p) => p.allowed_origins)).size : 0);
+
+  /**
+   * The one state every screen shows for a bot (bot pause and archive spec 4.1): its own
+   * status first, then, for a live bot, whether any product puts it on a site.
+   * @param {{ status: string, products: { status: string }[] }} bot
+   * @returns {'archived' | 'paused' | 'live' | 'setup'}
+   */
+  const botState = (bot) => {
+    if (bot.status === 'archived') return 'archived';
+    if (bot.status === 'paused') return 'paused';
+    return bot.products.some((p) => p.status === 'live') ? 'live' : 'setup';
+  };
 
   /**
    * Whether Broth serves a container's pages at all: included, and its connection not
@@ -221,5 +237,5 @@
     return { client: origin(src[1]), api: origin(api[1]) };
   }
 
-  return { LENGTHS, MAX_STARTERS, MAX_SITES, normalizeOrigin, fieldError, changes, liveProducts, byStatus, liveSites, serves, served, publicPages, canAnswer, whiteContrast, maskKey, snippetOrigins };
+  return { LENGTHS, MAX_STARTERS, MAX_SITES, normalizeOrigin, fieldError, changes, liveProducts, byStatus, liveSites, botState, serves, served, publicPages, canAnswer, whiteContrast, maskKey, snippetOrigins };
 });

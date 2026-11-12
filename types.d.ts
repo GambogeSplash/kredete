@@ -133,6 +133,46 @@ export interface paths {
         patch: operations["patch_bot_v1_admin_bots__bot_id__patch"];
         trace?: never;
     };
+    "/v1/admin/bots/{bot_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive Bot
+         * @description Revokes every product and makes the bot read only. It can't be undone.
+         */
+        post: operations["archive_bot_v1_admin_bots__bot_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bots/{bot_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pause Bot
+         * @description Takes the bot off every site; its keys and settings are kept for resume.
+         */
+        post: operations["pause_bot_v1_admin_bots__bot_id__pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bots/{bot_id}/products": {
         parameters: {
             query?: never;
@@ -144,6 +184,23 @@ export interface paths {
         put?: never;
         /** Create Product */
         post: operations["create_product_v1_admin_bots__bot_id__products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bots/{bot_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume Bot */
+        post: operations["resume_bot_v1_admin_bots__bot_id__resume_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1511,6 +1568,8 @@ export interface components {
         };
         /** BotOut */
         BotOut: {
+            /** Archived At */
+            archived_at: string | null;
             /** Contact Label */
             contact_label: string;
             /** Contact Url */
@@ -1533,6 +1592,8 @@ export interface components {
             name: string;
             /** Notice */
             notice: string;
+            /** Paused At */
+            paused_at: string | null;
             /** Privacy Url */
             privacy_url: string;
             /** Products */
@@ -1541,6 +1602,7 @@ export interface components {
             sources: string[];
             /** Starters */
             starters: string[];
+            status: components["schemas"]["BotStatus"];
             /**
              * Updated At
              * Format: date-time
@@ -1586,6 +1648,13 @@ export interface components {
             /** Starters */
             starters?: string[];
         };
+        /**
+         * BotStatus
+         * @description A bot's own state (bot pause and archive spec 2): paused keeps its keys, archived
+         *     revokes them for good.
+         * @enum {string}
+         */
+        BotStatus: "live" | "paused" | "archived";
         /**
          * Capability
          * @enum {string}
@@ -3085,6 +3154,68 @@ export interface operations {
             };
         };
     };
+    archive_bot_v1_admin_bots__bot_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BotOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pause_bot_v1_admin_bots__bot_id__pause_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BotOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_product_v1_admin_bots__bot_id__products_post: {
         parameters: {
             query?: never;
@@ -3107,6 +3238,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_bot_v1_admin_bots__bot_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BotOut"];
                 };
             };
             /** @description Validation Error */
