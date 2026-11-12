@@ -2,6 +2,7 @@
 // following roles; plan C7, C8). Changes stay on people no other scenario reads: Finn (no
 // Confluence account) and Sam's unlinked Confluence account.
 import { expect, test } from './fixtures.mjs';
+import { BASE } from './stack.mjs';
 
 const phone = (page) => page.viewportSize().width < 900;
 /** The Settings rail's items; a phone leaves Sign out to the profile menu. */
@@ -750,18 +751,22 @@ test('the audit log filters by action', async ({ open, check }) => {
   await check(page, 'audit');
 });
 
-test('the audit log leaves served answers out until Answers is shown', async ({ open, seed }) => {
+test('the audit log leaves served answers out until Answers is shown', async ({ open, seed, request }) => {
   // A staff answer, then a support bot answer (the bot is the public channel).
   const asker = await open('employee', '/');
   await asker.getByRole('textbox', { name: 'Ask a question' }).fill(seed.questions.answered.question);
   await asker.keyboard.press('Enter');
   await expect(asker.locator('#thread article .ans .cite')).toHaveCount(1, { timeout: 20_000 });
   await asker.close();
-  const widget = await open(null, `/embed-demo.html?key=${encodeURIComponent(seed.bot_key)}&api=${encodeURIComponent(seed.bot_api)}`);
-  await widget.getByRole('button', { name: 'Open help' }).click();
-  await widget.getByRole('button', { name: seed.bot_questions.answered }).click();
-  await expect(widget.locator('.msg.bot[data-kind="answered"]')).toBeVisible({ timeout: 20_000 });
-  await widget.close();
+  // The bot's answer is asked the way the widget asks it (bot.spec.mjs drives the widget itself).
+  const bot = `${seed.bot_api.replace(/\/+$/, '')}/v1/bot`;
+  const headers = { Authorization: `Bearer ${seed.bot_key}`, Origin: new URL(BASE).origin };
+  const started = await request.post(`${bot}/conversations`, { headers });
+  expect(started.ok()).toBe(true);
+  const { conversation_id: id, visitor_token: visitor } = await started.json();
+  const turn = await request.post(`${bot}/conversations/${id}/turns`, { headers: { ...headers, 'Broth-Visitor': visitor }, data: { question: seed.bot_questions.answered }, timeout: 30_000 });
+  expect(turn.ok()).toBe(true);
+  expect(await turn.text()).toContain('answered');
 
   const page = await open('admin', '/admin/audit');
   const events = page.locator('#audt .audact');
