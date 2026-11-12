@@ -105,39 +105,48 @@ app.addEventListener('click',e=>{ const n=e.target.closest('svg.graph .n'); if(n
 app.addEventListener('mouseover',e=>{ const n=e.target.closest('svg.graph .n'); if(!n) return; const id=n.dataset.n; const near=new Set([id]); $$('svg.graph line[data-e]').forEach(l=>{ const [a,b]=l.dataset.e.split('-'); if(a===id)near.add(b); if(b===id)near.add(a); animate(l,{opacity:(a===id||b===id)?1:.15},{duration:.2}); }); $$('svg.graph .n').forEach(x=>animate(x,{opacity:near.has(x.dataset.n)?1:.25},{duration:.2})); });
 app.addEventListener('mouseout',e=>{ const n=e.target.closest('svg.graph .n'); if(!n||n.contains(e.relatedTarget)) return; $$('svg.graph .n,svg.graph line').forEach(x=>animate(x,{opacity:1},{duration:.2})); });
 
-/* ---------- search palette: asking, chats and Library documents (no page list) ---------- */
+/* ---------- search palette: asking, people and Library documents; recent chats before typing (split search spec 3.2).
+   Chat search lives in the chat list (chat-search.js). People and documents load in parallel and each group fails on its own. ---------- */
 const esc=B.esc;
-let libCache=null; let found={q:'',conversations:[],documents:[],lib:null}; let timer=0, seq=0, libSeq=0;
+let libCache=null; let found={q:'',people:null,documents:null,failed:{},lib:null}; let timer=0, seq=0, libSeq=0;
+const personRow=p=>({ic:window.AVATAR(p.name,'lav',20),t:p.name,s:[p.title,p.team].filter(Boolean).join(' \u00b7 ')||p.email,f:()=>B.go('/people/'+p.id)});
+const failedRow=what=>({ic:B.ICON('refresh',16),t:"Couldn't load "+what,s:'Retry',f:()=>search(),stay:true});
 const docRow=d=>({ic:B.srcIcon(d.system,18),t:d.title,s:d.path||B.systemName(d.system),f:()=>window.DOCUMENTS.openDocument(d.id)});
 const build=()=>{ const raw=$('#kq').value.trim(); const g=[];
   if(raw) g.push(['Ask',[{ic:B.ICON('arrow',16),t:'Ask Broth: '+raw,ask:true,f:()=>window.ASK&&window.ASK.askFresh(raw)}]]);
-  const chats=(raw?(found.q===raw?found.conversations:[]):B.S.chats.items).slice(0,raw?6:4).map(c=>({ic:'<img class="kface" src="/assets/brand/mascot-head.png" alt="" aria-hidden="true" width="18" height="18" draggable="false">',t:B.chatTitle(c),f:()=>B.go('/c/'+c.id)}));
-  if(chats.length) g.push([raw?'Chats':'Recent chats',chats]);
-  const docs=(raw?(found.q===raw?found.documents:[]):(found.lib||[])).slice(0,raw?6:8).map(docRow);
-  if(docs.length) g.push(['Library',docs]);
+  if(!raw){ const chats=B.S.chats.items.slice(0,4).map(c=>({ic:'<img class="kface" src="/assets/brand/mascot-head.png" alt="" aria-hidden="true" width="18" height="18" draggable="false">',t:B.chatTitle(c),f:()=>B.go('/c/'+c.id)}));
+    if(chats.length) g.push(['Recent chats',chats]); }
+  const here=found.q===raw;
+  if(raw&&here&&found.failed.people) g.push(['People',[failedRow('people')]]);
+  else { const people=(raw&&here?found.people||[]:[]).slice(0,5).map(personRow); if(people.length) g.push(['People',people]); }
+  if(raw&&here&&found.failed.documents) g.push(['Library',[failedRow('documents')]]);
+  else { const docs=(raw?(here?found.documents||[]:[]):(found.lib||[])).slice(0,raw?6:8).map(docRow); if(docs.length) g.push(['Library',docs]); }
   return g; };
 // "Nothing found" shows above the Ask row once a search has come back empty, or before typing when there is nothing to list
-const nothing=()=>{ const raw=$('#kq').value.trim(); const g=build(); const rows=g.filter(x=>x[0]!=='Ask').reduce((n,x)=>n+x[1].length,0); if(rows) return false; return raw?found.q===raw:found.lib!==null; };
-const search=()=>{ const raw=$('#kq').value.trim(); clearTimeout(timer); draw(); if(!raw||!B.S.me) return;
-  timer=setTimeout(async()=>{ const mine=++seq; let r={conversations:[],documents:[]}; try{ r=await B.api.get('/search',{q:raw}); }catch(e){ /* the palette still offers pages and asking */ } if(mine!==seq) return; found={q:raw,conversations:B.arr(r&&r.conversations),documents:B.arr(r&&r.documents)}; draw(); },180); };
-const k=document.createElement('div'); k.id='cmdk'; k.innerHTML='<div class="box" role="dialog" aria-modal="true" aria-label="Search"><div class="kin">'+B.ICON('search',16)+'<input id="kq" placeholder="Search or ask" aria-label="Search" autocomplete="off"><button type="button" class="kx" id="kx" aria-label="Close search">'+B.ICON('x',16)+'</button></div><div id="kl" role="listbox"></div><div class="kfoot"><span><kbd>↑</kbd><kbd>↓</kbd> Move</span><span><kbd>↵</kbd> Open</span><span><kbd>esc</kbd> Close</span></div></div>'; document.body.appendChild(k);
+const nothing=()=>{ const raw=$('#kq').value.trim(); const g=build(); const rows=g.filter(x=>x[0]!=='Ask').reduce((n,x)=>n+x[1].length,0); if(rows) return false; return raw?found.q===raw&&found.people!==null&&found.documents!==null:found.lib!==null; };
+const search=()=>{ const raw=$('#kq').value.trim().slice(0,200); clearTimeout(timer); draw(); if(!raw||!B.S.me) return;
+  timer=setTimeout(()=>{ const mine=++seq; found={q:raw,people:null,documents:null,failed:{},lib:found.lib};
+    const land=(key,load)=>load.then(r=>{ if(mine!==seq) return; found[key]=r; draw(); },()=>{ if(mine!==seq) return; found[key]=[]; found.failed[key]=true; draw(); });
+    land('people',B.api.get('/people',{q:raw,limit:5}).then(r=>B.arr(r&&r.items)));
+    land('documents',B.api.get('/search',{q:raw}).then(r=>B.arr(r&&r.documents))); },180); };
+const k=document.createElement('div'); k.id='cmdk'; k.innerHTML='<div class="box" role="dialog" aria-modal="true" aria-label="Search"><div class="kin">'+B.ICON('search',16)+'<input id="kq" placeholder="Search people, documents\u2026" aria-label="Search people and documents, or ask" autocomplete="off"><button type="button" class="kx" id="kx" aria-label="Close search">'+B.ICON('x',16)+'</button></div><div id="kl" role="listbox"></div><div class="kfoot"><span><kbd>↑</kbd><kbd>↓</kbd> Move</span><span><kbd>↵</kbd> Open</span><span><kbd>esc</kbd> Close</span></div></div>'; document.body.appendChild(k);
 let sel=0, list=[];
 const draw=()=>{ const g=build(); list=g.flatMap(x=>x[1]); sel=Math.min(sel,Math.max(0,list.length-1)); let n=0;
   const empty=nothing()?'<div class="ds-empty kempty"><span class="ds-empty-ic">'+B.ICON('search',20)+'</span><b>Nothing found</b></div>':'';
   $('#kl').innerHTML=(list.length||empty)?empty+g.map(([h,items])=>`<div class="kg"><div class="kh">${h}</div>${items.map(i=>{ const idx=n++; return `<div class="kr ${i.ask?'kask':''}" role="option" aria-selected="${idx===sel}" data-n="${idx}"><span class="ki">${i.ic}</span><span class="kt">${esc(i.t)}</span>${i.s?`<small>${esc(i.s)}</small>`:''}</div>`; }).join('')}</div>`).join(''):'';
   $$('#kl .kr').forEach(li=>{ li.onclick=()=>run(+li.dataset.n); li.onmousemove=()=>{ if(sel===+li.dataset.n) return; sel=+li.dataset.n; $$('#kl .kr').forEach((x,i)=>x.setAttribute('aria-selected',i===sel)); }; }); };
 const loadLib=async()=>{ const mine=++libSeq; let items=null; try{ items=B.rows(await B.api.get('/documents',{limit:8})); }catch(e){ /* the palette still offers asking and chats */ } if(mine!==libSeq) return; libCache=items||libCache||[]; if(found.q===''&&k.classList.contains('on')){ found.lib=libCache; draw(); } };
-const open=()=>{ if(!B.S.me) return; if(kx){ kx.cancel(); kx=null; k.classList.remove('on'); void k.offsetWidth; } found={q:'',conversations:[],documents:[],lib:libCache}; loadLib(); k._op=document.activeElement; k.classList.add('on'); $('#kq').value=''; sel=0; draw(); $('#kq').focus(); if(!RM){ animate($('.box',k),{opacity:[0,1],scale:[.96,1],y:[-8,0]},{duration:.18,ease:[.2,.8,.2,1]}); animate(k,{opacity:[0,1]},{duration:.14}); } };
+const open=()=>{ if(!B.S.me) return; if(kx){ kx.cancel(); kx=null; k.classList.remove('on'); void k.offsetWidth; } found={q:'',people:null,documents:null,failed:{},lib:libCache}; loadLib(); k._op=document.activeElement; k.classList.add('on'); $('#kq').value=''; sel=0; draw(); $('#kq').focus(); if(!RM){ animate($('.box',k),{opacity:[0,1],scale:[.96,1],y:[-8,0]},{duration:.18,ease:[.2,.8,.2,1]}); animate(k,{opacity:[0,1]},{duration:.14}); } };
 let kx=null;
 const kdone=()=>{ k.classList.remove('on'); k.getAnimations().forEach(a=>a.cancel()); const bx=$('.box',k); if(bx) bx.getAnimations().forEach(a=>a.cancel()); };
 const close=()=>{ if(!k.classList.contains('on')||kx) return; const o=k._op; if(o&&o!==document.body&&document.contains(o)&&o.focus) o.focus({preventScroll:true});
   const bx=$('.box',k); if(RM||!B.exitFx||!bx){ kdone(); return; }
   const c1=B.exitFx(bx,{opacity:0,transform:'translateY(-8px) scale(.96)'},120), c2=B.exitFx(k,{opacity:0},120,'ease-in'); const mine={cancel(){ c1.cancel(); c2.cancel(); }}; kx=mine;
   Promise.all([c1.done,c2.done]).then(()=>{ if(kx!==mine) return; kx=null; kdone(); }); };
-const run=n=>{ const i=list[n]; if(!i) return; const typed=$('#kq').value.trim(); $('#kq').dataset.last=typed; close(); i.f(); };
+const run=n=>{ const i=list[n]; if(!i) return; if(i.stay){ i.f(); return; } const typed=$('#kq').value.trim(); $('#kq').dataset.last=typed; close(); i.f(); };
 $('#kq').oninput=()=>{sel=0;search();}; $('#kx').onclick=close;
 $('#kq').onkeydown=e=>{ if(e.key==='Tab'){ e.preventDefault(); return; } if(e.key==='ArrowDown'){sel=Math.min(list.length-1,sel+1);e.preventDefault();} else if(e.key==='ArrowUp'){sel=Math.max(0,sel-1);e.preventDefault();} else if(e.key==='Enter'){ e.preventDefault(); run(sel); return;} else if(e.key==='Escape'){close();return;} else return; $$('#kl .kr').forEach((x,n)=>x.setAttribute('aria-selected',n===sel)); const a=$('#kl .kr[aria-selected=true]'); if(a) a.scrollIntoView({block:'nearest'}); };
 k.addEventListener('click',e=>{ if(e.target===k) close(); });
-document.addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); k.classList.contains('on')?close():open(); } else if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){ e.preventDefault(); open(); } });
+document.addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); k.classList.contains('on')?close():open(); } else if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){ e.preventDefault(); if(!(window.CHATSEARCH&&window.CHATSEARCH.focus())) open(); } });
 const kb=document.createElement('button'); kb.className='kbtn'; kb.innerHTML='Jump to<kbd>⌘K</kbd>'; kb.onclick=open; $('.top-right').prepend(kb);
 })();
