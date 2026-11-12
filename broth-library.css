@@ -8,6 +8,8 @@
 .libt .ltb b{font-weight:500;font-size:var(--fs-md);line-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .libt .ltb small{font-size:var(--fs-xs);line-height:16px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .libt .lt1{display:flex;align-items:center;gap:var(--s-2);min-width:0}
+/* a tag beside a title stays on one line; the title gives way with an ellipsis */
+.libt .lt1 .tag{flex:none;white-space:nowrap}
 .libt .dmn svg,.libt .dmn img{flex:none}.libt .lfic{display:inline-flex;flex:none}
 .libt .lfic{color:var(--dc)}
 .libt .llab{display:inline-flex;align-items:center;gap:var(--s-2);color:var(--ink);font-size:var(--fs-sm);min-width:0}.libt .llab i{width:8px;height:8px;border-radius:50%;flex:none}
@@ -113,3 +115,18 @@ html[data-mode=dark] :is(.fmenu,.drawer){box-shadow:var(--e3)}
 .modal.lineage .sv-tags{flex-wrap:wrap}
 .modal.lineage .kv dd{min-width:0;overflow-wrap:anywhere}
 @media (max-width:560px){#drawer .sv-act #ddet .dl{display:none}}
+
+/* a container's heading opens its home page: the whole caption row, or the whole bar over its
+   cards, is one button, with a chevron at its end (library containers spec 2.2) */
+.libt .ds-cap{cursor:default}
+.lcthome{display:flex;align-items:center;gap:var(--s-3);min-width:0;border:0;padding:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:background var(--dur-fast)}
+.lcthome b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lcthome .lhchev{display:inline-flex;margin-left:auto;padding-left:var(--s-2);color:var(--mute)}
+.libt .ds-cap .lcthome{flex:1;align-self:stretch}
+.libt .ds-cap:has(.lcthome):hover{background:var(--fill-2)}
+.libt .ds-cap .lcthome:focus-visible{outline:none}
+.libt .ds-cap:has(.lcthome:focus-visible){outline:2px solid var(--brand);outline-offset:-2px}
+.lgrp.lcthome{width:100%;padding:0 var(--s-4)}
+.lgrp.lcthome:hover{filter:brightness(.97)}
+.lgrp.lcthome:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+html[data-mode=dark] .lgrp.lcthome:hover{filter:brightness(1.12)}

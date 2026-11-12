@@ -1,7 +1,9 @@
 /* library.js: the Library (sandbox spec 4.3, plan C6; nested domains spec 4.2).
  *
  * Folders are domains. Browsing, the Library shows the folder's sub-folders and then its own
- * pages; at the root, the top-level folders and then the pages with no domain. Searching or
+ * pages; at the root, the top-level folders and then the pages with no domain. At every level
+ * those pages sit under the container they come from (a space, a repository or a shared drive),
+ * and a container's heading opens its home page (library containers spec 2). Searching or
  * filtering turns it into the flat list of results, scoped to the folder it is in.
  * library-browse.js decides which, and the documents query each needs; domain-tree.js builds
  * the folders from /v1/facets, which the Library reads again each time it opens. The folder is
@@ -38,33 +40,47 @@ const { authorityTag, domainCol, domainLabel, kindName, KIND_ICON, emptyFrame, e
 const openDocument = (id) => window.DOCUMENTS.openDocument(id);
 /** Where the document sits in its source (readable names), else the source and domain. */
 const subline = (d) => esc(d.path || [B.systemName(d.system), d.domain && d.domain.name].filter(Boolean).join(' · '));
+/** Under its container's heading: where it sits inside that container, or nothing. */
+const sublineIn = (d) => esc(LB.withinContainer(d.path, d.container.name));
+const small = (sub) => (sub ? `<small>${sub}</small>` : '');
 const pages = (n) => `${n} ${n === 1 ? 'page' : 'pages'}`;
 
 /* The list view is a table: one header row, then a clickable row per folder or page, on the same
    columns (.libcols in broth-library.css). Folders come first. */
 const THEAD = '<div class="ds-tr ds-th libcols" role="row"><span role="columnheader">Name</span><span role="columnheader">Domain</span><span role="columnheader">Type</span><span role="columnheader">Owner</span><span role="columnheader">Updated</span><span aria-hidden="true"></span></div>';
 const table = (inner, cap) => `<div class="ds-table libt" role="table" aria-label="Library">${cap || ''}${THEAD}${inner}</div>`;
-/** A source's (or the folders') heading: a caption row over its table, a bar over its cards. */
-const capRow = (icon, name, n) => `<div class="ds-tr ds-cap" role="row"><span class="dmn" role="cell">${icon}<b>${esc(name)}</b><span class="lcount">${n}</span></span></div>`;
-const grp = (icon, name, n, key) => `<div class="lgrp lgapp" data-app="${esc(key)}"><span class="lst">${icon}</span><b>${esc(name)}</b><span class="lcount">${n}</span></div>`;
-/** The pages by source, in the order the facets list the sources, then as they come. */
-function bySystem(items) {
+/** A container's (or the folders') heading: a caption row over its table, a bar over its cards.
+ *  With no rows under it, no number. With a home page, the heading is a button that opens it. */
+const count = (n) => (n ? `<span class="lcount">${n}</span>` : '');
+const homeAttrs = (name, home) => `type="button" data-open="${esc(home)}" aria-label="Open ${esc(name)} home page"`;
+const chev = `<span class="lhchev" aria-hidden="true">${ICON('chevr', 14)}</span>`;
+const capRow = (icon, name, n, home) => `<div class="ds-tr ds-cap" role="row"><span class="dmn" role="cell">${home ? `<button class="lcthome" ${homeAttrs(name, home)}>${icon}<b>${esc(name)}</b>${count(n)}${chev}</button>` : `${icon}<b>${esc(name)}</b>${count(n)}`}</span></div>`;
+const grp = (icon, name, n, key, home) => (home
+  ? `<button class="lgrp lgapp lcthome" data-app="${esc(key)}" ${homeAttrs(name, home)}><span class="lst">${icon}</span><b>${esc(name)}</b>${count(n)}${chev}</button>`
+  : `<div class="lgrp lgapp" data-app="${esc(key)}"><span class="lst">${icon}</span><b>${esc(name)}</b>${count(n)}</div>`);
+/** The container groups at this level, in the order the facets list the sources. */
+function containerGroups(items, grid) {
   const order = ((S().facets && S().facets.systems) || []).map((x) => x.value);
-  const groups = new Map();
-  items.forEach((d) => { if (!groups.has(d.system)) groups.set(d.system, []); groups.get(d.system).push(d); });
-  return [...groups.entries()].sort((a, b) => (order.indexOf(a[0]) + 1 || 99) - (order.indexOf(b[0]) + 1 || 99));
+  return LB.groups(items, order).map(({ container, system, rows }) => {
+    const icon = B.srcIcon(system, grid ? 16 : 20);
+    const name = B.containerName(container.name);
+    const home = container.home_document_id;
+    if (grid) return grp(icon, name, rows.length, system, home) + (rows.length ? `<div class="ggrid">${rows.map((d) => card(d, sublineIn(d))).join('')}</div>` : '');
+    // A heading with nothing under it stands alone, without the column header.
+    return rows.length ? table(rows.map((d) => row(d, sublineIn(d))).join(''), capRow(icon, name, rows.length, home)) : `<div class="ds-table libt" role="table" aria-label="${esc(name)}">${capRow(icon, name, 0, home)}</div>`;
+  });
 }
 const TINT = { confluence: '#eef3ff', gdrive: '#eef8f2' };
 /** A document row. While browsing, every page shown is filed in the folder itself (or, at the
  *  root, in no domain), so its domain label would only repeat the heading. */
-function row(d) {
+function row(d, sub = subline(d)) {
   // The domain label is the cell itself, as in the prototype (its width is the column's).
   const label = domainLabel(d).replace('<span class="llab"', '<span role="cell" class="llab"') || '<span role="cell"></span>';
   const owner = d.owner ? `<span class="lown" role="cell" title="${esc(d.owner.name)}">${AVATAR(d.owner.name, 'lav', 22)}<span class="sr">${esc(d.owner.name)}</span></span>` : '<span class="lown amute" role="cell">None</span>';
-  return `<div class="ds-tr lift libcols" data-open="${d.id}" role="row" tabindex="0"><span class="dmn" role="cell">${B.srcIcon(d.system, 22)}<span class="ltb"><span class="lt1"><b>${esc(d.title)}</b>${authorityTag(d)}</span><small>${subline(d)}</small></span></span>${label}<span class="amute lty" role="cell">${ICON(KIND_ICON[d.kind] || 'doc', 14)}${esc(kindName(d.kind))}</span>${owner}<span class="amute" role="cell">${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span><span class="amute lcv" aria-hidden="true">${ICON('chevr', 14)}</span></div>`;
+  return `<div class="ds-tr lift libcols" data-open="${d.id}" role="row" tabindex="0"><span class="dmn" role="cell">${B.srcIcon(d.system, 22)}<span class="ltb"><span class="lt1"><b>${esc(d.title)}</b>${authorityTag(d)}</span>${small(sub)}</span></span>${label}<span class="amute lty" role="cell">${ICON(KIND_ICON[d.kind] || 'doc', 14)}${esc(kindName(d.kind))}</span>${owner}<span class="amute" role="cell">${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span><span class="amute lcv" aria-hidden="true">${ICON('chevr', 14)}</span></div>`;
 }
-function card(d) {
-  return `<button type="button" class="gcard" data-open="${d.id}"><span class="gc-p" style="background:${TINT[d.system] || '#f4f4f5'}"><span class="gc-l"><i></i><i></i><i></i></span>${B.srcIcon(d.system, 30)}<span class="gc-k">${esc(kindName(d.kind))}</span></span><span class="gc-t">${esc(d.title)}</span><small>${subline(d)}</small><span class="gc-f">${d.owner ? AVATAR(d.owner.name, 'lav', 20) : ''}<span>${esc(d.domain ? d.domain.name : d.owner ? d.owner.name : '')}</span><span class="lsp"></span><span>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span></span></button>`;
+function card(d, sub = subline(d)) {
+  return `<button type="button" class="gcard" data-open="${d.id}"><span class="gc-p" style="background:${TINT[d.system] || '#f4f4f5'}"><span class="gc-l"><i></i><i></i><i></i></span>${B.srcIcon(d.system, 30)}<span class="gc-k">${esc(kindName(d.kind))}</span></span><span class="gc-t">${esc(d.title)}</span>${small(sub)}<span class="gc-f">${d.owner ? AVATAR(d.owner.name, 'lav', 20) : ''}<span>${esc(d.domain ? d.domain.name : d.owner ? d.owner.name : '')}</span><span class="lsp"></span><span>${B.when(d.last_verified_at, B.fmtDate(d.last_verified_at))}</span></span></button>`;
 }
 /** The folder drawing from the prototype: a back, a front and a lighter stripe, in the folder's colour. */
 const fsvg = (c, px) => `<svg class="fsvg" width="${px}" height="${px}" viewBox="0 0 28 28" aria-hidden="true"><path d="M3 9a3 3 0 0 1 3-3h4.2a2 2 0 0 1 1.5.7l1.3 1.5H22a3 3 0 0 1 3 3v1H3V9z" fill="${c}" opacity=".55"/><rect x="3" y="11" width="22" height="12" rx="3" fill="${c}"/><rect x="3" y="11" width="22" height="3" rx="1.5" fill="#fff" opacity=".22"/></svg>`;
@@ -261,7 +277,7 @@ function draw() {
   let after = '';
   if (!L.loaded && L.error) after = errorFrame(L.error, 'libretry');
   else if (!L.loaded) after = '';
-  else if (L.items.length) docHtml = L.items.map(grid ? card : row).join('');
+  else if (L.items.length) docHtml = L.items.map((d) => (grid ? card(d) : row(d))).join('');
   else if (!browsing) after = emptyFrame('search', 'Nothing matches', L.system || L.path || L.source || L.problems ? 'Try other words or clear a filter.' : 'Try a different word.');
   else if (!folders.length && tree) {
     after = here
@@ -270,27 +286,21 @@ function draw() {
   }
   // Folders still loading hold their place as rows (a grid shows none), inside the one table.
   const lead = skeletonFolders && !grid ? skeletonTr(3) : '';
-  // At the top of the Library the pages sit under their source, as the prototype groups them;
-  // the folders (domains span sources) get their own group first. Inside a folder, or with a
-  // source filter, it is one flat list.
-  const grouped = !here && !L.folder && !L.system && !L.source && !L.path && L.items.length > 0;
+  // Browsing, at the root and in every folder, the pages sit under the container they come from;
+  // the folders (domains span containers) get their own group first. Searching or filtering, it is
+  // one flat list.
+  const grouped = browsing && (L.items.length > 0 || folders.length > 0);
   // Pages still loading: their rows are held in place under the folders, so nothing moves when they land.
   const pending = !L.loaded && !L.error && folders.length > 0;
   const pendingRows = pending ? (grid ? Array.from({ length: 3 }, () => '<span class="gcard skcard" aria-hidden="true"><span class="gc-p"></span><i class="pvsk" style="width:70%"></i><i class="pvsk" style="width:45%"></i></span>').join('') : skeletonTr(3)) : '';
   let main;
-  if (pending && !here && !L.folder) {
+  if (pending) {
     main = grid ? grp(ICON('folder', 16), 'Folders', folders.length, 'folders') + `<div class="ggrid">${folderHtml}</div><div class="ggrid">${pendingRows}</div>` : table(folderHtml, capRow(ICON('folder', 20), 'Folders', folders.length)) + `<div role="status"><span class="sr">Loading the library</span>${table(pendingRows)}</div>`;
-  } else if (pending) {
-    main = grid ? `<div class="ggrid">${folderHtml}${pendingRows}</div>` : table(folderHtml + pendingRows);
   } else if (grouped) {
     const parts = [];
     if (lead) parts.push(table(lead));
     if (folders.length) parts.push(grid ? grp(ICON('folder', 16), 'Folders', folders.length, 'folders') + `<div class="ggrid">${folderHtml}</div>` : table(folderHtml, capRow(ICON('folder', 20), 'Folders', folders.length)));
-    bySystem(L.items).forEach(([sys, items]) => {
-      const icon = B.srcIcon(sys, grid ? 16 : 20);
-      const name = B.systemName(sys);
-      parts.push(grid ? grp(icon, name, items.length, sys) + `<div class="ggrid">${items.map(card).join('')}</div>` : table(items.map(row).join(''), capRow(icon, name, items.length)));
-    });
+    parts.push(...containerGroups(L.items, grid));
     main = parts.join('');
   } else {
     const rows = lead + folderHtml + docHtml;
