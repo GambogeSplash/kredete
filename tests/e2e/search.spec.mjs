@@ -1,6 +1,6 @@
 // Split search (split search spec 5.3): the chat list's own search, the palette's people, and a
-// person's page. The chat search runs as Finn, whom no other scenario uses, so the chat it asks
-// for is the only one he has. Serial: the later steps read that chat.
+// person's page. The chat search runs as Gina, a person only this spec signs in as, so the chat
+// it asks for is the only one she has. Serial: the later steps read that chat.
 import { expect, test } from './fixtures.mjs';
 
 test.describe.configure({ mode: 'serial' });
@@ -21,8 +21,11 @@ async function ask(page, question) {
 }
 
 test('the chat list finds a chat by what Broth answered and opens it at that answer', async ({ open, check, seed }) => {
-  const page = await open('newcomer', '/');
+  const page = await open('searcher', '/');
   await ask(page, seed.questions.answered.question);
+  // Search from a fresh home page, so the results are what the chat list shows on its own.
+  await page.goto('/');
+  await expect(page.getByRole('textbox', { name: 'Ask a question' })).toBeVisible();
 
   await menu(page);
   // A word only in Broth's answer, never in the question or the title.
@@ -86,7 +89,8 @@ test('a person page shows what they own; activity only to audit readers', async 
   const audit = await open('compliance', `/people/${dami}`);
   await expect(audit.getByRole('heading', { name: 'Activity' })).toBeVisible();
   await expect(audit.locator('#psaudt .aud-r:not(.aud-h)').first()).toBeVisible();
-  await audit.getByRole('combobox', { name: 'Action' }).selectOption('session.created');
+  await audit.locator('#psfilt .ssel-btn').first().click();
+  await audit.locator('.ssel-menu .ssel-o', { hasText: /^Signed in$/ }).click();
   await expect(audit).toHaveURL(/\?action=session\.created$/);
   await expect(audit.locator('#psaudt')).not.toContainText('Answer served');
   await check(audit, 'person-compliance', { mask: ['#psaudt'] });

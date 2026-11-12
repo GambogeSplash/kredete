@@ -66,8 +66,9 @@ function row(e, names) {
   return `<div class="aud-r${names === null ? ' noactor' : ''}" role="row"><span class="amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="audw"><i class="audi">${window.ICON(categoryIcon(e.category), 14)}</i><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span>${who}<span>${target(e)}</span><span><span class="tag ${outcomeTone(e.outcome)}">${esc(outcomeName(e.outcome))}</span></span></div>`;
 }
 
-window.AUDIT_ROWS = { CATEGORIES, ACTIONS, actionName, outcomeName, head, row, day };
 /** A date filter (YYYY-MM-DD, in the viewer's time zone) as the audit API's `from` or `to`: the start of that day, or its end. */
 const day = (d, end) => (d ? new Date(d + (end ? 'T23:59:59.999' : 'T00:00:00')).toISOString() : null);
+
+window.AUDIT_ROWS = { CATEGORIES, ACTIONS, actionName, outcomeName, head, row, day };
 
 })();

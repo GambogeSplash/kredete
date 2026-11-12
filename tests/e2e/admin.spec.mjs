@@ -623,7 +623,7 @@ test.describe('people', () => {
 
   test('the people list', async ({ open, check }) => {
     const page = await open('admin', '/admin/people');
-    await expect(page.locator('[data-user]')).toHaveCount(6);
+    await expect(page.locator('[data-user]')).toHaveCount(7);
     await check(page, 'people');
     await page.getByRole('searchbox', { name: 'Search people' }).fill('chidi');
     await expect(page.locator('[data-user]')).toHaveCount(1);

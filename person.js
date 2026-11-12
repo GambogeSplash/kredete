@@ -103,7 +103,7 @@ function actionOptions(chosen) {
 }
 function filterBar() {
   const f = filters();
-  return `<form class="psfilt" id="psfilt"><select id="psaction" aria-label="Action"><option value="">Any action</option>${actionOptions(f.action)}</select><input type="date" id="psfrom" class="eminp" aria-label="From" value="${esc(f.from)}"><input type="date" id="psto" class="eminp" aria-label="To" value="${esc(f.to)}"></form>`;
+  return `<form class="psfilt" id="psfilt"><select id="psaction" aria-label="Action"><option value="">Any action</option>${actionOptions(f.action)}</select><label class="psdate"><span>From</span><input type="date" id="psfrom" class="eminp" value="${esc(f.from)}"></label><label class="psdate"><span>To</span><input type="date" id="psto" class="eminp" value="${esc(f.to)}"></label></form>`;
 }
 function wireFilters() {
   const change = () => {

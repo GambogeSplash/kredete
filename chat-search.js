@@ -115,6 +115,7 @@ document.addEventListener('input', (e) => {
   const t = /** @type {HTMLInputElement} */ (e.target);
   if (t && t.id === 'sbq') typed(t.value);
 });
+// Capture phase: Esc in the box clears the search before the phone menu's own Esc closes the menu.
 document.addEventListener('keydown', (e) => {
   const t = /** @type {HTMLInputElement} */ (e.target);
   if (!t || t.id !== 'sbq') return;
@@ -123,7 +124,7 @@ document.addEventListener('keydown', (e) => {
     const first = $('#srec [data-hit]');
     if (first) { e.preventDefault(); first.focus(); }
   }
-});
+}, true);
 document.addEventListener('click', (e) => {
   const x = /** @type {Element} */ (e.target).closest && /** @type {Element} */ (e.target).closest('#sbclear');
   if (!x) return;

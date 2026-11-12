@@ -43,7 +43,7 @@ function pill(){ const c=$('#surfaces'); if(!c) return; const old=$('.snav-pill'
   const p=document.createElement('span'); p.className='snav-pill'; c.prepend(p); const cr=c.getBoundingClientRect(), br=cur.getBoundingClientRect(); const to={top:br.top-cr.top+c.scrollTop,height:br.height}; p.style.top=to.top+'px'; p.style.height=to.height+'px';
   if(lastP&&!RM&&Math.abs(lastP.top-to.top)>1) animate(p,{top:[lastP.top+'px',to.top+'px'],height:[lastP.height+'px',to.height+'px']},{type:'spring',stiffness:420,damping:34}); lastP=to; }
 const isMine=n=>n.nodeType!==1||(n.classList&&(n.classList.contains('snav-pill')||n.classList.contains('ind-pill')||n.classList.contains('ind-line')));
-const sn=$('#surfaces'); if(sn){ let busy=false; new MutationObserver(ms=>{ if(busy) return; if(ms.every(m=>[...m.addedNodes,...m.removedNodes].every(isMine))) return; busy=true; requestAnimationFrame(()=>{ pill(); busy=false; }); }).observe(sn,{childList:true}); pill(); }
+const sn=$('#surfaces'); if(sn){ let busy=false; new MutationObserver(ms=>{ if(busy) return; if(ms.every(m=>[...m.addedNodes,...m.removedNodes].every(isMine))) return; busy=true; requestAnimationFrame(()=>{ pill(); busy=false; }); }).observe(sn,{childList:true,subtree:true}); pill(); } // subtree: the chat list redraws inside #srec (paging, chat search)
 
 /* 6. the observer */
 new MutationObserver(ms=>{ const added=[]; ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType===1) added.push(n); }));
