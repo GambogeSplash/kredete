@@ -1612,6 +1612,8 @@ export interface components {
             heading_path: string[];
             /** Last Verified At */
             last_verified_at: string | null;
+            /** @default source */
+            link_target: components["schemas"]["LinkTarget"];
             /** N */
             n: number;
             owner: components["schemas"]["Owner"] | null;
@@ -1925,6 +1927,7 @@ export interface components {
             label_warnings: string[];
             /** Last Verified At */
             last_verified_at: string | null;
+            link_target: components["schemas"]["LinkTarget"];
             owner: components["schemas"]["OwnerRef"] | null;
             /** Path */
             path: string | null;
@@ -2175,6 +2178,12 @@ export interface components {
              */
             user_id: string;
         };
+        /**
+         * LinkTarget
+         * @description What a document's `url` opens (docs site link spec 2.1).
+         * @enum {string}
+         */
+        LinkTarget: "source" | "docs_site";
         /** LinkedAccountOut */
         LinkedAccountOut: {
             /** Account Id */
