@@ -72,7 +72,16 @@ test("a developer sees a page's lineage without anyone's name", async ({ open, c
   await asker.close();
   const lineage = [];
   const page = await open('developer', '/library/payments', {
-    before: (p) => p.on('request', (r) => { if (/\/v1\/(documents\/[^/]+\/lineage|admin\/audit)/.test(r.url())) lineage.push(new URL(r.url()).pathname); }),
+    before: async (p) => {
+      p.on('request', (r) => { if (/\/v1\/(documents\/[^/]+\/lineage|admin\/audit)/.test(r.url())) lineage.push(new URL(r.url()).pathname); });
+      // Every view's answers cite this page, so the list grows through a run: the snapshot
+      // shows the newest row alone, the one this test just made.
+      await p.route(/\/v1\/documents\/[^/]+\/lineage/, async (route) => {
+        const response = await route.fetch();
+        const body = await response.json();
+        await route.fulfill({ response, json: { ...body, items: body.items.slice(0, 1), next_cursor: null } });
+      });
+    },
   });
   await page.locator('#libbody .lcthome').filter({ hasText: 'Payments (PAY)' }).first().click();
   const drawer = page.locator('#drawer');
