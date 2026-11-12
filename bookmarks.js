@@ -52,7 +52,7 @@ function page() {
   $('#app').innerHTML = `<div class="pg ixpg"><div class="ds-head"><h1>Bookmarks</h1>${list.length ? '<span class="amute">Kept on this device only</span>' : ''}</div>
    ${list.length ? `<div class="ds-table libt" role="table" aria-label="Bookmarks"><div class="ds-tr ds-th svcols" role="row"><span>Question</span><span class="svsrc">Sources</span><span class="svw">Saved</span><span></span></div>${rows}</div>` : `<div class="ds-empty"><span class="ds-empty-ic">${ICON('bookmark', 22)}</span><b>No bookmarks yet</b><p>Bookmark an answer in chat and it is kept here, on this device only.</p><button type="button" class="btn" id="bkask">Ask Broth</button></div>`}</div>`;
   const ask = $('#bkask');
-  if (ask) ask.onclick = () => B.go('/');
+  if (ask) ask.onclick = () => B.newChat();
   /** @type {any[]} */ ([...document.querySelectorAll('.svcols[data-id]')]).forEach((row) => {
     const open = () => { if (row.dataset.c) B.go('/c/' + row.dataset.c); };
     row.onclick = (e) => { if (!e.target.closest('.svx')) open(); };

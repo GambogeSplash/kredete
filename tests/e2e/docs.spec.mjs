@@ -125,3 +125,23 @@ test("a page's label problems link to what they mean", async ({ open }) => {
   await expect(page.locator('#drawer')).toHaveAttribute('aria-hidden', 'true');
   await expect(page.locator('#label-problems')).toBeInViewport();
 });
+
+test('Still stuck? Ask Broth opens a new, empty chat and sends nothing on its own', async ({ open }) => {
+  const page = await open('employee', '/');
+  const thread = page.locator('#thread article');
+  const composer = page.getByRole('textbox', { name: 'Ask a question' });
+  // A chat is open first, so the button has to leave it rather than add to it.
+  await composer.fill('What is our refund policy?');
+  await page.keyboard.press('Enter');
+  await expect(thread).toHaveCount(1);
+  await expect(page).toHaveURL(/\/c\//);
+  const mobile = (page.viewportSize() || { width: 1440 }).width < 900;
+  if (mobile) await page.getByRole('button', { name: 'Open menu' }).click();
+  await page.locator(mobile ? '#surfaces' : '#rail').getByRole('button', { name: 'Docs' }).click();
+  await page.getByRole('button', { name: 'Ask Broth' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(composer).toBeVisible();
+  await expect(composer).toHaveValue('');
+  await page.waitForTimeout(800); // longer than any delayed send would wait
+  await expect(thread).toHaveCount(0);
+});
