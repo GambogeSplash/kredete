@@ -418,8 +418,20 @@ function renderConversation(conv) {
   putDraft(draft);
   renderPanel();
   const chat = $('#chat');
-  if (chat) chat.scrollTop = chat.scrollHeight;
+  if (chat && !showLinkedTurn()) chat.scrollTop = chat.scrollHeight;
   if (active && conv.turns.includes(active.turn)) showStop(true);
+}
+/** A link to one turn (/c/<id>#turn-<turn id>, from chat search) scrolls to it and marks it
+ *  once. The hash is then dropped, so a later redraw shows the latest turn as usual. */
+function showLinkedTurn() {
+  if (!location.hash.startsWith('#turn-')) return false;
+  const el = document.getElementById(location.hash.slice(1));
+  if (!el) return false;
+  history.replaceState(history.state, '', location.pathname + location.search);
+  el.scrollIntoView({ block: 'center' });
+  el.classList.add('linked');
+  setTimeout(() => el.classList.remove('linked'), 2000);
+  return true;
 }
 function skeletonTurn() {
   return '<article aria-hidden="true" class="sktturn"><div class="umsg skumsg"><i class="pvsk" style="width:180px"></i></div><div class="ans"><i class="pvsk" style="width:88%"></i><i class="pvsk" style="width:64%"></i></div></article>';
@@ -496,6 +508,7 @@ function thinkingHtml(turn) {
 function turnEl(turn, index) {
   const el = document.createElement('article');
   el.dataset.turn = String(index);
+  if (turn.id) el.id = 'turn-' + turn.id;
   const conv = S().conv;
   const prev = conv.turns[index - 1];
   const dayKey = (iso) => new Date(iso).toDateString();

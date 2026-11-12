@@ -880,6 +880,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/conversations/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Conversations
+         * @description The caller's own chats whose title, questions or answers match `q`: title matches first, then the best-matching message, then the latest. One item per chat.
+         */
+        get: operations["search_conversations_v1_conversations_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/conversations/{conversation_id}": {
         parameters: {
             query?: never;
@@ -1089,6 +1109,43 @@ export interface paths {
         post?: never;
         /** Delete Session */
         delete: operations["delete_session_v1_me_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List People
+         * @description Active people, by name. `q` matches name, email or team.
+         */
+        get: operations["list_people_v1_people_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/people/{person_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Person */
+        get: operations["get_person_v1_people__person_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1869,6 +1926,29 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ConversationHit */
+        ConversationHit: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            match: components["schemas"]["MatchOut"] | null;
+            /** Pinned */
+            pinned: boolean;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** ConversationIn */
         ConversationIn: {
             /** Title */
@@ -2284,6 +2364,21 @@ export interface components {
             /** User Name */
             user_name: string;
         };
+        /** MatchOut */
+        MatchOut: {
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "question" | "answer";
+            /** Snippet */
+            snippet: string;
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id: string;
+        };
         /** Me */
         Me: {
             /** Capabilities */
@@ -2332,6 +2427,35 @@ export interface components {
         NotFound: {
             suggested_owner: components["schemas"]["SuggestedOwner"] | null;
         };
+        /** OwnedDomain */
+        OwnedDomain: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+        };
+        /** OwnedPage */
+        OwnedPage: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /** OwnedPages */
+        OwnedPages: {
+            /** Items */
+            items: components["schemas"]["OwnedPage"][];
+            /** Total */
+            total: number;
+        };
         /** Owner */
         Owner: {
             /** Name */
@@ -2345,6 +2469,14 @@ export interface components {
             name: string;
             /** Title */
             title: string | null;
+        };
+        /** Owns */
+        Owns: {
+            /** Domains */
+            domains: components["schemas"]["OwnedDomain"][];
+            pages: components["schemas"]["OwnedPages"];
+            /** Spaces */
+            spaces: components["schemas"]["ContainerRef"][];
         };
         /** Page[AdminUser] */
         Page_AdminUser_: {
@@ -2385,6 +2517,13 @@ export interface components {
         Page_ContainerOut_: {
             /** Items */
             items: components["schemas"]["ContainerOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** Page[ConversationHit] */
+        Page_ConversationHit_: {
+            /** Items */
+            items: components["schemas"]["ConversationHit"][];
             /** Next Cursor */
             next_cursor?: string | null;
         };
@@ -2430,6 +2569,13 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** Page[PersonOut] */
+        Page_PersonOut_: {
+            /** Items */
+            items: components["schemas"]["PersonOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** Page[PolicyOut] */
         Page_PolicyOut_: {
             /** Items */
@@ -2450,6 +2596,50 @@ export interface components {
             items: components["schemas"]["SessionOut"][];
             /** Next Cursor */
             next_cursor?: string | null;
+        };
+        /** PersonDetail */
+        PersonDetail: {
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            manager: components["schemas"]["PersonRef"] | null;
+            /** Name */
+            name: string;
+            owns: components["schemas"]["Owns"];
+            /** Team */
+            team: string | null;
+            /** Title */
+            title: string | null;
+        };
+        /** PersonOut */
+        PersonOut: {
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Team */
+            team: string | null;
+            /** Title */
+            title: string | null;
+        };
+        /** PersonRef */
+        PersonRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** PolicyOut */
         PolicyOut: {
@@ -2633,8 +2823,6 @@ export interface components {
         Scope: "public" | "internal" | "granular";
         /** SearchOut */
         SearchOut: {
-            /** Conversations */
-            conversations: components["schemas"]["ConversationOut"][];
             /** Documents */
             documents: components["schemas"]["DocumentOut"][];
         };
@@ -4557,6 +4745,39 @@ export interface operations {
             };
         };
     };
+    search_conversations_v1_conversations_search_get: {
+        parameters: {
+            query: {
+                q: string;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ConversationHit_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_conversation_v1_conversations__conversation_id__get: {
         parameters: {
             query?: never;
@@ -4995,6 +5216,70 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_people_v1_people_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PersonOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_person_v1_people__person_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonDetail"];
+                };
             };
             /** @description Validation Error */
             422: {

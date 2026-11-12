@@ -31,10 +31,18 @@
  body:not(.noauth) .mainpanel{margin:8px 8px 8px calc(58px + 236px);border-radius:0 var(--r-lg) var(--r-lg) 0}
  body:not(.noauth).sbc .mainpanel{margin-left:58px;border-radius:var(--r-lg)}
  body:not(.noauth).sbc .top{transform:translateX(calc(-100% - 58px));border-radius:var(--r-lg)}
- .sbsearch{display:flex;align-items:center;gap:var(--s-3);width:auto;align-self:stretch;height:36px;margin:4px 8px var(--s-3);padding:0 12px;border:1px solid var(--line);border-radius:var(--r-full);background:var(--fill-1);color:var(--mute);font:inherit;font-size:var(--fs-md);cursor:pointer;text-align:left}
- .sbsearch span{flex:1}
- .sbsearch kbd{font:500 11px var(--font);color:var(--mute);opacity:.8}
- .sbsearch:hover{color:var(--ink)}
+ /* the chats' own search (chat-search.js) */
+ .sbsearch{display:flex;align-items:center;gap:var(--s-3);width:auto;align-self:stretch;height:36px;margin:4px 8px var(--s-3);padding:0 6px 0 12px;border:1px solid var(--line);border-radius:var(--r-full);background:var(--fill-1);color:var(--mute);font-size:var(--fs-md);cursor:text;transition:border-color .15s,box-shadow .15s}
+ .sbsearch svg{flex:none}
+ .sbsearch input{flex:1;min-width:0;height:100%;padding:0;border:0;background:none;color:var(--ink);font:inherit;outline:none}
+ .sbsearch input::placeholder{color:var(--mute)}
+ .sbsearch input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+ .sbsearch:focus-within{border-color:var(--brand-line);box-shadow:0 0 0 3px var(--brand-soft);color:var(--ink)}
+ .sbclear{display:none;place-items:center;width:24px;height:24px;flex:none;padding:0;border:0;border-radius:var(--r-full);background:none;color:var(--mute);cursor:pointer}
+ .sbclear:hover{background:var(--fill-3);color:var(--ink)}
+ .sbsearch.typed .sbclear{display:grid}
+ #surfaces .surf.chat.hit{flex-direction:column;align-items:stretch;justify-content:center;gap:2px;min-height:30px;height:auto;padding:6px var(--s-3)}
+ #surfaces .surf.chat.hit .chn{flex:none}
  body.noauth .sbsearch{display:none}
  .top .sgl{background:transparent;padding-left:12px}
  /* pages other than chats use the full width next to the rail */
@@ -79,3 +87,11 @@ html[data-mode=dark] :is(.ssel-menu,.pmenu,.cmenu,.fmenu,.hiapop,.drawer,.modal,
 .bootsplash .lm{place-items:center;min-height:0;transform:scale(1.8)}
 .bootsplash .lm svg.lmw{margin:0 auto;animation:bootpulse 1.6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.bootsplash .lm svg.lmw{animation:none}}
+
+/* chat search results: the snippet under a chat's title, and the turn a result opens at (split search spec 3.1) */
+.chs{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:var(--fs-xs);line-height:1.45;color:var(--mute);text-align:left;white-space:normal}
+.surf.chat .chs b,.chs b{font-weight:600;color:var(--mute-2)}
+.chs mark{padding:0;border-radius:2px;background:var(--brand-soft);color:var(--ink);font-weight:600}
+#thread article.linked{animation:turnlinked 2s ease-out}
+@keyframes turnlinked{0%,35%{background:var(--brand-soft);box-shadow:0 0 0 8px var(--brand-soft)}100%{background:transparent;box-shadow:0 0 0 8px transparent}}
+@media (prefers-reduced-motion:reduce){#thread article.linked{animation:none;outline:2px solid var(--brand-line);outline-offset:6px}}

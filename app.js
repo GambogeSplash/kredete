@@ -771,7 +771,10 @@ function renderSurfaces() {
   renderChatList();
   const rec = $('#srec');
   if (window.BROTH_RAIL) window.BROTH_RAIL();
-  rec.onscroll = () => { if (rec.scrollTop + rec.clientHeight > rec.scrollHeight - 120) loadChats(false); };
+  rec.onscroll = () => {
+    if (rec.scrollTop + rec.clientHeight <= rec.scrollHeight - 120) return;
+    if (window.CHATSEARCH && window.CHATSEARCH.active()) window.CHATSEARCH.more(); else loadChats(false);
+  };
 }
 function chatGroup(c) {
   if (c.pinned) return 'Pinned';
@@ -787,6 +790,7 @@ const GROUPS = ['Pinned', 'Today', 'Yesterday', 'Previous 7 days', 'Earlier'];
 function renderChatList() {
   const rec = $('#srec');
   if (!rec) return;
+  if (window.CHATSEARCH && window.CHATSEARCH.active()) { window.CHATSEARCH.render(rec); return; }
   const c = S.chats;
   const current = S.route.surface === 'ask' ? S.route.params.id : null;
   const top = rec.scrollTop; // the API lists pinned chats first, so pages only add below
