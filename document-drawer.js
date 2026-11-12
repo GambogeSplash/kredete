@@ -39,9 +39,14 @@ const domainCrumbs = (d) => B.arr(d.domain.path).map((c) => `<a href="/library/$
 /** What the source is called, and its mark; a read without a source says "Source" with a neutral mark. */
 /** One short name per source for the footer button: the product people know, not the connector's own name. */
 const FOOT_NAME = { confluence: 'Confluence', gdrive: 'Google Drive', github_docs: 'GitHub', notion: 'Notion' };
-const openLabel = (d) => (d.system ? `Open in ${FOOT_NAME[d.system] || B.systemName(d.system)}` : 'Open in source');
+/** The open button names where its link goes, as the API states it (docs site link spec 4.1): a
+ *  published docs page opens on its docs site, anything else in its source. */
+const toDocsSite = (d) => d.link_target === 'docs_site';
+const openLabel = (d) => (toDocsSite(d) ? 'Open docs site' : d.system ? `Open in ${FOOT_NAME[d.system] || B.systemName(d.system)}` : 'Open in source');
 const srcName = (d) => (d.system ? B.systemName(d.system) : '') || 'Source';
 const srcMark = (d, px) => (d.system ? B.srcIcon(d.system, px) : `<span class="srcn" style="width:${px}px;height:${px}px">${ICON('stack', Math.round(px * 0.7))}</span>`);
+/** The open button's mark: the web for a docs site, else the source's own mark. */
+const openMark = (d, px) => (toDocsSite(d) ? ICON('globe', px) : srcMark(d, px));
 /** A chip only when it has words. */
 const chip = (text, cls) => (String(text || '').trim() ? `<span class="tag ${cls || ''}">${esc(text)}</span>` : '');
 const docTitle = (d) => (d.title && String(d.title).trim()) || 'Untitled document';
@@ -92,7 +97,7 @@ async function openDocument(id, opts) {
       ${owner}
       ${kv ? `<dl class="kv svkv">${kv}</dl>` : ''}
     </div>
-    <div class="sv-act">${d.url ? `<a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${srcMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span>${ICON('ext', 14)}</a>` : `<button type="button" class="btn primary" id="dopen" disabled>${srcMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span></button>`}<button type="button" class="btn" id="ddet" aria-label="Details and lineage">Details<span class="dl"> and lineage</span></button></div></div>`;
+    <div class="sv-act">${d.url ? `<a class="btn primary" id="dopen" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${openMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span>${ICON('ext', 14)}</a>` : `<button type="button" class="btn primary" id="dopen" disabled>${openMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span></button>`}<button type="button" class="btn" id="ddet" aria-label="Details and lineage"><span>Details<span class="dl"> and lineage</span></span></button></div></div>`;
   $('[data-close-drawer]', drawer).onclick = B.closeDrawer;
   const where = $('#dlocation');
   if (where) where.onclick = () => { B.closeDrawer(); window.LIBRARY.showLocation(d.path); };
@@ -140,7 +145,7 @@ async function detailsModal(d) {
     ${tags ? `<div class="sv-tags">${tags}</div>` : ''}
     ${rows ? `<dl class="kv">${rows}</dl>` : ''}
     <h4 class="dlh">Lineage: answers that cited this</h4><div id="lin">${lineage ? B.loadingBlock('Loading lineage', 3, 'actr') : '<p class="amute">Admins, compliance officers and developers see which answers cited this document.</p>'}</div>
-    <div class="actions">${d.url ? `<a class="btn primary" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${srcMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span>${ICON('ext', 14)}</a>` : ''}${d.scope && d.scope !== 'public' ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}</div></div></div>`);
+    <div class="actions">${d.url ? `<a class="btn primary" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${openMark(d, 16)}<span class="lbl">${esc(openLabel(d))}</span>${ICON('ext', 14)}</a>` : ''}${d.scope && d.scope !== 'public' ? '<button type="button" class="btn" id="dshare">Share more widely</button>' : ''}</div></div></div>`);
   const share = $('#dshare');
   if (share) share.onclick = () => shareModal(d);
   if (!lineage) return;

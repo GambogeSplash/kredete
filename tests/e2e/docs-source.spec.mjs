@@ -235,3 +235,92 @@ test.describe('governance of docs repositories', () => {
     expect(decided).toEqual(['approve']);
   });
 });
+
+/* Including a repository needs a hosted docs site (docs site link spec 3.3 and 4.2). The API's
+   refusal is answered here; broth-service's tests cover when it refuses. */
+test.describe('including a docs repository', () => {
+  const NO_SITE = 'Include needs a broth.docs.yaml that names the docs site. broth.docs.yaml is not valid: the file is missing.';
+
+  test('a repository without a docs site stays excluded and says why', async ({ open }) => {
+    const sent = [];
+    const page = await open('admin', '/admin/connectors', {
+      before: async (p) => {
+        await withDocs(p, { repos: [repo(REPO, 'kredete/handbook', { included: false })] });
+        await p.route(`**/v1/admin/containers/${REPO}`, (route) => {
+          if (route.request().method() !== 'PATCH') return route.fallback();
+          sent.push(route.request().postDataJSON());
+          return route.fulfill({
+            status: 409,
+            contentType: 'application/problem+json',
+            json: { type: 'about:blank', title: 'Invalid state', status: 409, code: 'invalid_state', detail: NO_SITE },
+          });
+        });
+      },
+    });
+    const include = (await openDocs(page)).getByRole('checkbox', { name: 'Include kredete/handbook' });
+    await include.click();
+    await expect(page.locator('#toast')).toContainText(NO_SITE);
+    await expect(include).not.toBeChecked();
+    expect(sent.map((body) => body.included)).toEqual([true]);
+  });
+});
+
+/* A docs page's open button names the docs site it opens (docs site link spec 4.1). Two seed
+   pages are answered here as a docs repository's operation and as one of its problems. */
+test.describe('opening a docs page', () => {
+  const SITE_URL = 'https://proteensheykh.github.io/broth-docs-fixture/bankinglive/api/card-issuance/card-renewal';
+  const FILE_URL = 'https://github.com/Proteensheykh/broth-docs-fixture/blob/main/openapi/banking-live.yaml';
+  const AS = {
+    'Cards FAQ': { system: 'github_docs', kind: 'api_operation', url: SITE_URL, link_target: 'docs_site' },
+    'Card replacement fees': { system: 'github_docs', kind: 'docs_problem', url: FILE_URL, link_target: 'source' },
+  };
+  const asDocs = (p) => p.route('**/v1/documents/*', async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({ response, json: { ...body, ...(AS[body.title] || {}) } });
+  });
+  const docRows = (page) => page.locator('#libbody [data-open]');
+  /** The open button's box, and whether its words fit without being cut off. */
+  const measure = (button) => button.evaluate((el) => {
+    const label = /** @type {HTMLElement} */ (el.querySelector('.lbl'));
+    return { width: el.getBoundingClientRect().width, natural: label.scrollWidth, fits: label.scrollWidth <= label.clientWidth };
+  });
+
+  test('a docs page opens its docs site, and a page Broth could not publish opens its file on GitHub', async ({ open, check }) => {
+    const page = await open('employee', '/library/cards', { before: asDocs });
+    const drawer = page.locator('#drawer');
+    const button = drawer.locator('#dopen');
+
+    await docRows(page).filter({ hasText: 'Cards FAQ' }).click();
+    await expect(button).toHaveText('Open docs site');
+    await expect(button).toHaveAttribute('href', SITE_URL);
+    await expect(button.locator('svg[data-i="globe"]')).toHaveCount(1);
+    await expect(button.locator('.srclogo')).toHaveCount(0);
+    await expect(drawer.locator('.sv-sys .srclogo-github')).toHaveCount(1); // the header still says where it is read from
+    const site = await measure(button);
+    await check(page, 'document-docs-site');
+
+    await drawer.locator('#ddet').click();
+    const details = page.getByRole('dialog', { name: 'Details and lineage' });
+    const detailsOpen = details.locator('.actions a.btn.primary');
+    await expect(detailsOpen).toHaveText('Open docs site');
+    await expect(detailsOpen).toHaveAttribute('href', SITE_URL);
+    await expect(detailsOpen.locator('svg[data-i="globe"]')).toHaveCount(1);
+    await details.getByRole('button', { name: 'Close' }).click();
+
+    await page.locator('[data-close-drawer]').first().click();
+    await page.locator('#libbody').getByRole('button', { name: 'Open Cards (CARD) home page' }).click(); // the space's home page heads its group
+    await expect(drawer.getByRole('heading', { name: 'Card replacement fees' })).toBeVisible();
+    await expect(button).toHaveText('Open in GitHub');
+    await expect(button).toHaveAttribute('href', FILE_URL);
+    await expect(button.locator('.srclogo-github')).toHaveCount(1);
+    await expect(button.locator('svg[data-i="globe"]')).toHaveCount(0);
+    const github = await measure(button);
+
+    // Same box as before, and the new words fit in it as the old ones did.
+    expect(site.width).toBe(github.width);
+    expect(site.fits).toBe(true);
+    expect(github.fits).toBe(true);
+    expect(site.natural).toBeLessThanOrEqual(github.natural);
+  });
+});

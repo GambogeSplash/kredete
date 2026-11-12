@@ -552,7 +552,7 @@ async function patchSpace(id, change, undo) {
     if (change.included !== undefined) { B.loadFacets(); B.refreshSetupProgress().then(() => B.renderSurfaces()); }
   } catch (error) {
     undo();
-    B.toast(B.problem(error));
+    B.toast((error && error.detail) || B.problem(error)); // why it was refused, such as a repository without a docs site
   }
 }
 
