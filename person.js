@@ -118,12 +118,11 @@ async function loadActivity(first) {
   if (!first && (!act.next || act.loading)) return;
   const mine = ++act.seq;
   const f = filters();
-  const day = (d, end) => (d ? new Date(d + (end ? 'T23:59:59.999' : 'T00:00:00')).toISOString() : null);
   if (first) { act.items = []; act.next = null; }
   act.loading = true; act.failed = null;
   drawActivity();
   try {
-    const got = await B.api.get('/admin/audit', { actor: act.id, action: f.action || null, from: day(f.from, false), to: day(f.to, true), limit: PAGE, cursor: first ? null : act.next });
+    const got = await B.api.get('/admin/audit', { actor: act.id, action: f.action || null, from: window.AUDIT_ROWS.day(f.from, false), to: window.AUDIT_ROWS.day(f.to, true), limit: PAGE, cursor: first ? null : act.next });
     if (mine !== act.seq) return;
     act.items = act.items.concat(B.rows(got));
     act.next = B.cursorOf(got);

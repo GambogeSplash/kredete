@@ -172,8 +172,18 @@ async function names() {
   const c = B.S.cache;
   if (!c.names) {
     try {
-      const page = B.can('people.manage') ? await B.api.get('/admin/users', { limit: 200 }) : await B.api.get('/people', { limit: 100 });
-      c.names = Object.fromEntries(B.rows(page).map((u) => [u.id, u.name]));
+      const path = B.can('people.manage') ? '/admin/users' : '/people';
+      const found = {};
+      const active = {};
+      let cursor = null;
+      for (let i = 0; i < 20; i += 1) { // up to 4,000 people; past that, an actor shows their id
+        const page = await B.api.get(path, { limit: 200, cursor });
+        B.rows(page).forEach((u) => { found[u.id] = u.name; if (u.status !== 'suspended') active[u.id] = true; });
+        cursor = B.cursorOf(page);
+        if (!cursor) break;
+      }
+      c.names = found;
+      c.activePeople = active; // who has a page to link to (suspended people have none)
     } catch (error) { c.names = {}; }
   }
   return c.names;
@@ -183,7 +193,7 @@ async function names() {
 /* Every action has one category on the server (it sends each event's); the filter lists the actions of
    the categories shown. Answers are one event per reply, so the list leaves them out unless asked.
    The actions and their names live in audit-rows.js, shared with a person's activity. */
-const { CATEGORIES, ACTIONS, actionName, outcomeName } = window.AUDIT_ROWS;
+const { CATEGORIES, ACTIONS, actionName, outcomeName, day } = window.AUDIT_ROWS;
 const DEFAULT_CATS = CATEGORIES.map(([k]) => k).filter((k) => k !== 'answers');
 const sameCats = (x, y) => x.length === y.length && x.every((k) => y.includes(k));
 /* 12 rows plus the header and pager fill a laptop screen without scrolling. */
@@ -252,7 +262,6 @@ async function load(idx) {
   if (table && a.loaded) table.style.minHeight = table.offsetHeight + 'px'; // rows never jump while the next page loads
   a.loading = true; a.error = null; a.page = idx; a.loaded = false;
   draw();
-  const day = (d, end) => (d ? new Date(d + (end ? 'T23:59:59.999' : 'T00:00:00')).toISOString() : null);
   try {
     const [page] = await Promise.all([B.api.get('/admin/audit', { category: a.cats, action: a.action || null, from: day(a.from, false), to: day(a.to, true), limit: a.size, cursor }), names()]);
     if (mine !== a.seq) return;

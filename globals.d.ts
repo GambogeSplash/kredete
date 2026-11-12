@@ -23,7 +23,7 @@ declare global {
   var BROTH_LOGO: { mount: (root: ParentNode, opts?: { domain?: () => string; toast?: (m: string) => void }) => void; LOGO_LOOKUP: boolean } | undefined;
   var BROTH_RAIL: (() => void) | undefined;
   /** The chat list's own search (chat-search.js). */
-  var CHATSEARCH: { active: () => boolean; render: (rec: HTMLElement) => void; more: () => void; focus: () => boolean; marked: (snippet: string) => string };
+  var CHATSEARCH: { active: () => boolean; render: (rec: HTMLElement) => void; more: () => void; focus: () => boolean; hitLine: (hit: any) => string; target: (hit: any) => string };
   var GOVBADGE: { count: () => number; refresh: () => Promise<void> } | undefined;
   var __govBadgeChanged: boolean | undefined;
   var BOOKMARKS: { has: (turn: any) => boolean; toggle: (turn: any) => boolean } | undefined;

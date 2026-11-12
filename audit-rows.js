@@ -43,12 +43,14 @@ function target(e) {
   return '';
 }
 
-/** Who did it: their name linking to their page when known, else the start of their id. */
+/** Who did it: their name when known, else the start of their id; a link to their page while
+ *  they are active (a suspended person has no page). */
 function actor(id, names) {
   if (!id) return '<span class="amute">System</span>';
   const n = (names || {})[id];
-  const label = n ? `${window.AVATAR(n, 'lav', 18)} ${esc(n)}` : `<span class="mono" title="${esc(id)}">${esc(id.slice(0, 8))}</span>`;
-  return `<a class="audwho-l" href="/people/${esc(id)}" data-link>${label}</a>`;
+  const label = n ? `${window.AVATAR(n, 'lav', 18)} ${esc(n)}` : `<span class="amute mono" title="${esc(id)}">${esc(id.slice(0, 8))}</span>`;
+  const active = (window.BRAIN.S.cache.activePeople || {})[id];
+  return active ? `<a class="audwho-l" href="/people/${esc(id)}" data-link>${label}</a>` : label;
 }
 
 /** The header row. Without `withActor` the Actor column is left out (one person's activity). */
@@ -64,5 +66,8 @@ function row(e, names) {
   return `<div class="aud-r${names === null ? ' noactor' : ''}" role="row"><span class="amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="audw"><i class="audi">${window.ICON(categoryIcon(e.category), 14)}</i><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span>${who}<span>${target(e)}</span><span><span class="tag ${outcomeTone(e.outcome)}">${esc(outcomeName(e.outcome))}</span></span></div>`;
 }
 
-window.AUDIT_ROWS = { CATEGORIES, ACTIONS, actionName, outcomeName, head, row };
+window.AUDIT_ROWS = { CATEGORIES, ACTIONS, actionName, outcomeName, head, row, day };
+/** A date filter (YYYY-MM-DD, in the viewer's time zone) as the audit API's `from` or `to`: the start of that day, or its end. */
+const day = (d, end) => (d ? new Date(d + (end ? 'T23:59:59.999' : 'T00:00:00')).toISOString() : null);
+
 })();

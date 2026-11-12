@@ -58,6 +58,12 @@ test('the palette finds people and documents, not chats', async ({ open, check }
   await expect(palette.getByText('Nothing found')).toBeVisible();
   await expect(palette.locator('.kh')).toHaveText(['Ask']);
 
+  // Text that matches a person and a document lists each in its own group.
+  await page.locator('#kq').fill('an');
+  await expect(palette.locator('.kh')).toHaveText(['Ask', 'People', 'Library']);
+  await expect(palette.locator('.kg').nth(1)).toContainText('Kofi Asante');
+  await expect(palette.locator('.kg').nth(2)).toContainText('Transfer limits policy');
+
   await page.locator('#kq').fill('dami');
   await expect(palette.locator('.kh')).toHaveText(['Ask', 'People']);
   await expect(palette.locator('.kr').nth(1)).toContainText('Dami Bello');
@@ -95,4 +101,23 @@ test('audit actors link to their page, and an unknown person is not found', asyn
 
   const missing = await open('employee', '/people/00000000-0000-7000-8000-000000000000');
   await expect(missing.getByText('Person not found')).toBeVisible();
+});
+
+test('held-out variant 5: a person named like a document shows in People and the document in Library', async ({ open }) => {
+  // No seeded person shares a document's title, so the directory answers with one who does.
+  const page = await open('employee', '/', {
+    before: (p) => p.route(/\/v1\/people\?/, (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ items: [{ id: '00000000-0000-7000-8000-0000000000aa', name: 'Release Checklist', title: null, team: 'Platform', email: 'release.checklist@kredete.com' }], next_cursor: null }),
+    })),
+  });
+  await page.keyboard.press('Control+k');
+  const palette = page.getByRole('dialog', { name: 'Search' });
+  await page.locator('#kq').fill('release checklist');
+  await expect(palette.locator('.kh')).toHaveText(['Ask', 'People', 'Library']);
+  await expect(palette.locator('.kg').nth(1).locator('.kr')).toHaveCount(1);
+  await expect(palette.locator('.kg').nth(1)).toContainText('Release Checklist');
+  await expect(palette.locator('.kg').nth(1)).toContainText('Platform');
+  await expect(palette.locator('.kg').nth(2)).toContainText('Release checklist');
 });

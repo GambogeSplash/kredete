@@ -27,6 +27,8 @@ function marked(snippet) {
 
 /** The chat that opens for a hit: at the matching turn when a message matched. */
 const target = (hit) => '/c/' + hit.id + (hit.match ? '#turn-' + hit.match.turn_id : '');
+/** The line under a hit's title: who said the matching words, and the words marked. Empty for a title match. */
+const hitLine = (hit) => (hit.match ? `<span class="chs"><b>${hit.match.field === 'question' ? 'You' : 'Broth'}:</b> ${marked(hit.match.snippet)}</span>` : '');
 
 function active() { return st.q !== ''; }
 
@@ -84,11 +86,7 @@ function render(rec) {
     rec.innerHTML = `<div class="sempty" role="status">No chats match “${B.esc(st.q)}”</div>`;
     return;
   }
-  const row = (x) => {
-    const who = x.match ? (x.match.field === 'question' ? 'You' : 'Broth') : '';
-    const line = x.match ? `<span class="chs"><b>${who}:</b> ${marked(x.match.snippet)}</span>` : '';
-    return `<button type="button" class="surf chat hit" data-hit="${x.id}" title="${B.esc(B.chatTitle(x))}" aria-current="${current === x.id ? 'page' : 'false'}"><span class="chn">${B.esc(B.chatTitle(x))}</span>${line}</button>`;
-  };
+  const row = (x) => `<button type="button" class="surf chat hit" data-hit="${B.esc(x.id)}" title="${B.esc(B.chatTitle(x))}" aria-current="${current === x.id ? 'page' : 'false'}"><span class="chn">${B.esc(B.chatTitle(x))}</span>${hitLine(x)}</button>`;
   let h = `<div class="sgl" role="status">${st.items.length}${st.next ? '+' : ''} ${st.items.length === 1 ? 'chat' : 'chats'}</div>` + st.items.map(row).join('');
   if (st.loading) h += B.skeletonRows(2, 'surf chat skchat');
   else if (st.error) h += `<div class="sempty">Couldn't search chats. <button type="button" class="link" id="csmore">Retry</button></div>`;
@@ -134,5 +132,5 @@ document.addEventListener('click', (e) => {
   reset();
 });
 
-window.CHATSEARCH = { active, render, more, focus, marked };
+window.CHATSEARCH = { active, render, more, focus, hitLine, target };
 })();
