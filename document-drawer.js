@@ -17,7 +17,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = B.esc;
 const KIND_ICON = { confluence_page: 'doc', page: 'doc', blogpost: 'doc', gdoc: 'doc', sheet: 'analytics', slides: 'panel' };
-const KIND_NAME = { confluence_page: 'Page', page: 'Page', blogpost: 'Post', gdoc: 'Doc', sheet: 'Sheet', slides: 'Slides', pdf: 'PDF' };
+const KIND_NAME = { confluence_page: 'Page', page: 'Page', blogpost: 'Post', gdoc: 'Doc', sheet: 'Sheet', slides: 'Slides', pdf: 'PDF', api_operation: 'API operation' };
 const kindName = (k) => KIND_NAME[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ') : 'Document');
 const DOMAIN_COL = ['#5e6ad2', '#16a34a', '#f97316', '#0ea5a4', '#d946a8', '#3b82f6', '#e2a600'];
 const domainCol = (slug) => DOMAIN_COL[[...String(slug)].reduce((a, c) => a + c.charCodeAt(0), 0) % DOMAIN_COL.length];
