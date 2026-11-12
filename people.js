@@ -187,7 +187,7 @@ async function editModal(user) {
   const granted = new Set(user.roles.filter((r) => r.role === 'domain_owner').map((r) => r.domain_id));
   B.openModal(`<div class="modal bt ppmodal" role="dialog" aria-label="Edit ${esc(user.name)}"><div class="bar"><span>${esc(user.name)}</span><button type="button" class="link" data-close-modal>Close</button></div><div class="body">
     <div class="ppwho pphero">${AVATAR(user.name, 'lav', 40)}<span><b>${esc(user.name)}</b><small>${esc(user.email)}</small></span></div>
-    <fieldset class="ppfs"><legend class="hsl">Roles</legend>${INVITABLE.map(([k, l]) => `<label class="ppck"><input type="checkbox" data-role="${k}" ${has(k) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</fieldset>
+    <fieldset class="ppfs"><legend class="hsl">Roles${window.DOCS.link('conceptRoles', 'What roles allow')}</legend>${INVITABLE.map(([k, l]) => `<label class="ppck"><input type="checkbox" data-role="${k}" ${has(k) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</fieldset>
     <fieldset class="ppfs ppdoms"><legend class="hsl">Domain owner of</legend>${doms.length ? T.options(tree).map(({ item: d, depth }) => `<label class="ppck ppdom" style="--depth:${depth}"><input type="checkbox" data-domain="${d.id}"><span>${esc(d.name)}<small class="ppthru" hidden></small></span></label>`).join('') : '<p class="amute">No domains yet.</p>'}</fieldset>
     <label class="hsl" for="ppclear">Clearance</label><select id="ppclear" aria-label="Clearance">${B.CLEARANCES.map(([k, l]) => `<option value="${k}" ${user.clearance === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <div class="hse" id="ppe" role="alert"></div>
@@ -266,7 +266,7 @@ function inviteModal() {
   const anchor = $('#ppinvite');
   if (anchor && anchor.getAttribute('aria-expanded') === 'true') { window.ADMIN.closePop(); return; }
   const p = window.ADMIN.pop(anchor, `<form id="invf" class="dmbody" novalidate><div><label class="dmlab" for="invemail">Google account</label><input id="invemail" class="eminp" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com" aria-describedby="inve"><div class="hse ds-msg bad" id="inve" role="alert"></div><p class="ds-msg">They sign in at ${esc(origin)} with this account. No email is sent: share the address yourself.</p></div>
-    <fieldset class="ppfs"><legend class="dmlab">Roles</legend>${INVITABLE.map(([k, l]) => `<label class="ppck"><input type="checkbox" data-irole="${k}"><span>${l}</span></label>`).join('')}<p class="ds-msg">Everyone can ask and use the library. Make someone a domain owner after they sign in.</p></fieldset>
+    <fieldset class="ppfs"><legend class="dmlab">Roles${window.DOCS.link('conceptRoles', 'What roles allow')}</legend>${INVITABLE.map(([k, l]) => `<label class="ppck"><input type="checkbox" data-irole="${k}"><span>${l}</span></label>`).join('')}<p class="ds-msg">Everyone can ask and use the library. Make someone a domain owner after they sign in.</p></fieldset>
     <div><label class="dmlab" for="invclear">Clearance</label><select id="invclear" aria-label="Clearance">${B.CLEARANCES.map(([k, l]) => `<option value="${k}" ${k === 'internal' ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     <div class="actions"><button type="button" class="btn" id="invcancel">Cancel</button><span class="lsp"></span><button type="submit" class="btn primary" id="invgo">Invite</button></div></form>`, 'Invite people');
   const field = $('#invemail', p), err = $('#inve', p);

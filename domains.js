@@ -46,7 +46,7 @@ function render(el) {
   s.rise = true;
   const view = s.view || 'list';
   const toggle = (k, icon, label) => `<button type="button" class="segb ${view === k ? 'on' : ''}" data-view="${k}" aria-pressed="${view === k}" aria-label="${label}">${ICON(icon, 15)}</button>`;
-  window.ADMIN.actions(`${window.DOCS.link('domains').replace('class="dclink"', 'class="dclink btn sm"')}<div class="seg" role="group" aria-label="View">${toggle('list', 'rows', 'List view')}${toggle('grid', 'grid', 'Grid view')}</div><button type="button" class="btn sm primary" id="dmnew" aria-haspopup="dialog">New domain</button>`);
+  window.ADMIN.actions(`${window.DOCS.link('conceptDomains').replace('class="dclink"', 'class="dclink btn sm"')}<div class="seg" role="group" aria-label="View">${toggle('list', 'rows', 'List view')}${toggle('grid', 'grid', 'Grid view')}</div><button type="button" class="btn sm primary" id="dmnew" aria-haspopup="dialog">New domain</button>`);
   el.innerHTML = '<div id="dmlist"></div>';
   $('#dmnew').onclick = () => createModal();
   $$('[data-view]').forEach((b) => { b.onclick = () => { s.view = b.dataset.view; render(el); }; });

@@ -17,7 +17,7 @@ const esc = B.esc;
 
 const STATUSES = [['', 'All'], ['pending', 'Pending'], ['needs_review', 'Needs review'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['revoked', 'Revoked']];
 const STATUS_TAG = { pending: ['Pending', 'warn'], needs_review: ['Needs review', 'warn'], approved: ['Approved', 'ok'], rejected: ['Rejected', ''], revoked: ['Revoked', ''] };
-const SCOPE = { internal: 'Everyone at Broth', public: 'Public' };
+const SCOPE = { internal: 'Every employee', public: 'Public' };
 const OPEN = ['pending', 'needs_review'];
 
 function state() {
@@ -31,7 +31,7 @@ const who = (id, names) => (id === B.S.me.id ? 'you' : names[id] || 'a colleague
 
 function page() {
   const g = state();
-  const inner = `<div class="ds-head"><h1 class="lcont-t">Governance</h1></div>
+  const inner = `<div class="ds-head"><h1 class="lcont-t">Governance</h1><span class="lsp"></span><div class="ds-act">${window.DOCS.link('conceptSharing')}</div></div>
     <div class="ixchips govtabs" role="tablist" aria-label="Status">${STATUSES.map(([k, l]) => `<button type="button" class="ixchip ${g.status === k ? 'on' : ''}" role="tab" aria-selected="${g.status === k}" data-st="${k}">${l}</button>`).join('')}</div>
     <div class="adreq govlist" id="govlist"></div><div class="chmore" id="govmore"></div>`;
   // A place of its own on the rail, the same page for everyone: never inside Settings.
