@@ -1,4 +1,4 @@
-/* Avatars, from the Broth prototype: a library of nine pictures, a default picked from the person's email,
+/* Avatars: a library of fourteen pictures (the Broth avatar style, ids a1 to a14), a default picked from the person's email,
  * and a picker (library, upload, or back to the default). The real app has no avatar endpoint, so the choice
  * is kept in this browser only (localStorage `broth-avatar:<user id>`). */
 (() => {
@@ -9,7 +9,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = B.esc;
 const KEY = (id) => 'broth-avatar:' + id;
 
-const LIB = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ id: 'a' + n, src: '/assets/avatars/a' + n + '.png' }));
+const LIB = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map((n) => ({ id: 'a' + n, src: '/assets/avatars/a' + n + '.png?v=2' }));
 const srcOf = (av) => {
   if (!av) return '';
   if (av.kind === 'photo') return av.data || '';
