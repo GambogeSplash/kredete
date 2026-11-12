@@ -749,3 +749,42 @@ test('the audit log filters by action', async ({ open, check }) => {
   await expect(page.locator('#audt .audact')).toHaveText('Connection created');
   await check(page, 'audit');
 });
+
+test('the audit log leaves served answers out until Answers is shown', async ({ open, seed }) => {
+  // A staff answer, then a support bot answer (the bot is the public channel).
+  const asker = await open('employee', '/');
+  await asker.getByRole('textbox', { name: 'Ask a question' }).fill(seed.questions.answered.question);
+  await asker.keyboard.press('Enter');
+  await expect(asker.locator('#thread article .ans .cite')).toHaveCount(1, { timeout: 20_000 });
+  await asker.close();
+  const widget = await open(null, `/embed-demo.html?key=${encodeURIComponent(seed.bot_key)}&api=${encodeURIComponent(seed.bot_api)}`);
+  await widget.getByRole('button', { name: 'Open help' }).click();
+  await widget.getByRole('button', { name: seed.bot_questions.answered }).click();
+  await expect(widget.locator('.msg.bot[data-kind="answered"]')).toBeVisible({ timeout: 20_000 });
+  await widget.close();
+
+  const page = await open('admin', '/admin/audit');
+  const events = page.locator('#audt .audact');
+  await expect(events.first()).toBeVisible();
+  // Both answers are newer than everything else, yet the default list shows the other events.
+  await expect(events.filter({ hasText: 'Answer served' })).toHaveCount(0);
+  const show = async (categories, expected) => {
+    await page.getByRole('button', { name: /^Filter/ }).click();
+    const form = page.getByRole('dialog', { name: 'Filter the audit log' });
+    for (const name of ['Access', 'Sources', 'Bots', 'Sign-ins', 'Settings', 'Answers']) {
+      await form.getByRole('checkbox', { name, exact: true }).setChecked(categories.includes(name));
+    }
+    await form.getByRole('button', { name: 'Show results' }).click();
+    await expect(events.first()).toBeVisible();
+    for (const text of await events.allTextContents()) expect(text).toMatch(expected);
+  };
+  await show(['Answers'], /^Answer served$/);
+  const rows = page.locator('#audt .aud-r:not(.aud-h)');
+  await expect(rows.filter({ hasText: '· public' }).first()).toBeVisible();
+  await expect(rows.filter({ hasNotText: '· public' }).first()).toBeVisible();
+  // Bot events read as words, not as the stored action.
+  await show(['Bots'], /^(Bot|Product) [a-z ]+$/);
+  // Unticking Bots keeps the rest of the default view.
+  await show(['Access', 'Sources', 'Sign-ins', 'Settings'], /^(?!Answer served$|Bot |Product )/);
+  await expect(page.getByRole('button', { name: /^Filter/ })).toContainText('1');
+});

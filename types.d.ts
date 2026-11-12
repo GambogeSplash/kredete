@@ -1507,12 +1507,22 @@ export interface components {
             /** Question */
             question: string;
         };
+        /**
+         * AuditCategory
+         * @description What an audit action is about, so a reader can ask for one kind of event and not another.
+         *
+         *     Answers are one event per reply, so they outnumber every other category; the admin audit
+         *     list leaves them out unless asked.
+         * @enum {string}
+         */
+        AuditCategory: "answers" | "access" | "sources" | "bots" | "sign_ins" | "settings";
         /** AuditOut */
         AuditOut: {
             /** Action */
             action: string;
             /** Actor */
             actor: string | null;
+            category?: components["schemas"]["AuditCategory"] | null;
             /** Channel */
             channel: string;
             /** Details */
@@ -3011,6 +3021,7 @@ export interface operations {
                 policy?: string | null;
                 action?: string | null;
                 bot_id?: string | null;
+                category?: components["schemas"]["AuditCategory"][] | null;
                 cursor?: string | null;
                 limit?: number;
             };

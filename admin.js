@@ -179,20 +179,33 @@ async function names() {
 }
 
 /* ---------- Audit ---------- */
+/* Every action has one category on the server (it sends each event's); the filter lists the actions of
+   the categories shown. Answers are one event per reply, so the list leaves them out unless asked. */
+const CATEGORIES = [['access', 'Access'], ['sources', 'Sources'], ['bots', 'Bots'], ['sign_ins', 'Sign-ins'], ['settings', 'Settings'], ['answers', 'Answers']];
+const DEFAULT_CATS = CATEGORIES.map(([k]) => k).filter((k) => k !== 'answers');
 const ACTIONS = [
-  ['answer.served', 'Answer served'],
-  ['promotion.requested', 'Sharing requested'], ['promotion.approved', 'Sharing approved'], ['promotion.rejected', 'Sharing rejected'], ['promotion.revoked', 'Sharing revoked'], ['promotion.needs_review', 'Sharing needs review'],
-  ['role.granted', 'Role granted'], ['role.revoked', 'Role removed'], ['clearance.changed', 'Clearance changed'],
-  ['invitation.created', 'Invitation created'], ['invitation.revoked', 'Invitation revoked'], ['invitation.accepted', 'Invitation accepted'],
-  ['user.suspended', 'Person suspended'], ['user.reactivated', 'Person reactivated'],
-  ['account.linked', 'Account linked'], ['account.unlinked', 'Account unlinked'],
-  ['connection.created', 'Connection created'], ['connection.disconnected', 'Connection removed'], ['container.changed', 'Space changed'],
-  ['credential.changed', 'Credentials changed'], ['setup.claimed', 'Setup claimed'],
-  ['session.created', 'Signed in'], ['session.revoked', 'Signed out'],
-  ['alias.declared', 'All-staff group declared'], ['alias.removed', 'All-staff group removed'], ['domain.changed', 'Domain changed'],
-  ['connection.warning_changed', 'Connection warning changed'],
+  ['access', 'role.granted', 'Role granted'], ['access', 'role.revoked', 'Role removed'], ['access', 'clearance.changed', 'Clearance changed'],
+  ['access', 'invitation.created', 'Invitation created'], ['access', 'invitation.revoked', 'Invitation revoked'], ['access', 'invitation.accepted', 'Invitation accepted'],
+  ['access', 'user.suspended', 'Person suspended'], ['access', 'user.reactivated', 'Person reactivated'],
+  ['access', 'alias.declared', 'All-staff group declared'], ['access', 'alias.removed', 'All-staff group removed'],
+  ['sources', 'connection.created', 'Connection created'], ['sources', 'connection.disconnected', 'Connection removed'], ['sources', 'connection.warning_changed', 'Connection warning changed'],
+  ['sources', 'connection.github_install_started', 'GitHub install started'], ['sources', 'connection.github_installed', 'GitHub installed'],
+  ['sources', 'container.changed', 'Space changed'],
+  ['sources', 'container.public_declaration.requested', 'Public space requested'], ['sources', 'container.public_declaration.approved', 'Public space approved'],
+  ['sources', 'container.public_declaration.rejected', 'Public space rejected'], ['sources', 'container.public_declaration.revoked', 'Public space revoked'],
+  ['sources', 'promotion.requested', 'Sharing requested'], ['sources', 'promotion.approved', 'Sharing approved'], ['sources', 'promotion.rejected', 'Sharing rejected'],
+  ['sources', 'promotion.revoked', 'Sharing revoked'], ['sources', 'promotion.needs_review', 'Sharing needs review'],
+  ['bots', 'bot.created', 'Bot created'], ['bots', 'bot.updated', 'Bot updated'], ['bots', 'bot.sources_changed', 'Bot sources changed'],
+  ['bots', 'bot.paused', 'Bot paused'], ['bots', 'bot.resumed', 'Bot resumed'], ['bots', 'bot.archived', 'Bot archived'],
+  ['bots', 'bot_product.created', 'Product created'], ['bots', 'bot_product.updated', 'Product updated'],
+  ['bots', 'bot_product.key_replaced', 'Product key replaced'], ['bots', 'bot_product.revoked', 'Product revoked'],
+  ['sign_ins', 'session.created', 'Signed in'], ['sign_ins', 'session.revoked', 'Signed out'],
+  ['sign_ins', 'account.linked', 'Account linked'], ['sign_ins', 'account.unlinked', 'Account unlinked'],
+  ['settings', 'domain.changed', 'Domain changed'], ['settings', 'credential.changed', 'Credentials changed'], ['settings', 'setup.claimed', 'Setup claimed'],
+  ['answers', 'answer.served', 'Answer served'],
 ];
-const actionName = (a) => (ACTIONS.find((x) => x[0] === a) || [a, a.replace(/[._]/g, ' ')])[1];
+const actionName = (a) => (ACTIONS.find((x) => x[1] === a) || [null, a, a.replace(/[._]/g, ' ')])[2];
+const sameCats = (x, y) => x.length === y.length && x.every((k) => y.includes(k));
 /* 12 rows plus the header and pager fill a laptop screen without scrolling. */
 const SIZES = [12, 25, 50, 100];
 const SIZE_KEY = 'broth-audit-page';
@@ -204,22 +217,37 @@ function storedSize() {
    current filters and page size, so Previous never asks again. Cursors stay out of the address. */
 function auditState() {
   const c = B.S.cache;
-  if (!c.audit) c.audit = { action: '', from: '', to: '', size: storedSize(), pages: [], page: 0, items: [], next: null, loaded: false, loading: false, error: null, seq: 0, animate: false };
+  if (!c.audit) c.audit = { cats: DEFAULT_CATS.slice(), action: '', from: '', to: '', size: storedSize(), pages: [], page: 0, items: [], next: null, loaded: false, loading: false, error: null, seq: 0, animate: false };
   return c.audit;
 }
 function audit(el) {
   const a = auditState();
-  const count = (a.action ? 1 : 0) + (a.from ? 1 : 0) + (a.to ? 1 : 0);
+  const count = (sameCats(a.cats, DEFAULT_CATS) ? 0 : 1) + (a.action ? 1 : 0) + (a.from ? 1 : 0) + (a.to ? 1 : 0);
   const btn = actions(`<button type="button" class="btn sm" id="audfb" aria-haspopup="dialog">Filter${count ? `<em class="fcount">${count}</em>` : ''}</button><button type="button" class="btn sm" id="audexp">Export CSV</button>`).firstElementChild;
   $('#audexp').onclick = exportCsv;
   el.innerHTML = `<div class="audt" id="audt" role="table" aria-label="Audit log"></div><div id="audmore"></div>`;
   btn.onclick = () => {
     if (btn.getAttribute('aria-expanded') === 'true') { closePop(); return; }
-    const p = pop(btn, `<form class="dmbody" id="audff" novalidate><div><p class="dmlab">Action</p><select id="audact" aria-label="Action"><option value="">Any action</option>${ACTIONS.map(([k, l]) => `<option value="${k}" ${a.action === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="audf2"><div><p class="dmlab">From</p><input type="date" id="audfrom" class="eminp" aria-label="From" value="${esc(a.from)}"></div><div><p class="dmlab">To</p><input type="date" id="audto" class="eminp" aria-label="To" value="${esc(a.to)}"></div></div><div class="actions"><button type="button" class="btn" id="audclr">Clear</button><span class="lsp"></span><button type="submit" class="btn primary">Show results</button></div></form>`, 'Filter the audit log');
-    $('#audclr', p).onclick = () => { a.action = ''; a.from = ''; a.to = ''; closePop(); audit(el); restart(); };
+    const p = pop(btn, `<form class="dmbody" id="audff" novalidate><fieldset class="ppfs"><legend class="dmlab">Show</legend><div class="audcats">${CATEGORIES.map(([k, l]) => `<label class="ppck"><input type="checkbox" data-cat="${k}" ${a.cats.includes(k) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></fieldset><div><p class="dmlab">Action</p><select id="audact" aria-label="Action"></select></div><div class="audf2"><div><p class="dmlab">From</p><input type="date" id="audfrom" class="eminp" aria-label="From" value="${esc(a.from)}"></div><div><p class="dmlab">To</p><input type="date" id="audto" class="eminp" aria-label="To" value="${esc(a.to)}"></div></div><div class="actions"><button type="button" class="btn" id="audclr">Clear</button><span class="lsp"></span><button type="submit" class="btn primary" id="audgo">Show results</button></div></form>`, 'Filter the audit log');
+    const boxes = [.../** @type {NodeListOf<HTMLInputElement>} */ (p.querySelectorAll('[data-cat]'))];
+    const picked = () => boxes.filter((c) => c.checked).map((c) => String(c.dataset.cat));
+    /* The Action list holds only the actions of the ticked categories; an action whose category is unticked goes back to Any action. */
+    const actionsFor = (cats, keep) => {
+      const sel = $('#audact', p);
+      sel.innerHTML = '<option value="">Any action</option>' + CATEGORIES.filter(([k]) => cats.includes(k)).map(([k, l]) => `<optgroup label="${l}">${ACTIONS.filter((x) => x[0] === k).map(([, v, n]) => `<option value="${v}">${n}</option>`).join('')}</optgroup>`).join('');
+      sel.value = ACTIONS.some((x) => x[1] === keep && cats.includes(x[0])) ? keep : '';
+      const go = $('#audgo', p);
+      go.disabled = !cats.length;
+      go.toggleAttribute('aria-disabled', !cats.length);
+    };
+    actionsFor(a.cats, a.action);
+    boxes.forEach((c) => { c.onchange = () => actionsFor(picked(), $('#audact', p).value); });
+    $('#audclr', p).onclick = () => { a.cats = DEFAULT_CATS.slice(); a.action = ''; a.from = ''; a.to = ''; closePop(); audit(el); restart(); };
     $('#audff', p).onsubmit = (e) => {
       e.preventDefault();
-      a.action = $('#audact', p).value; a.from = $('#audfrom', p).value; a.to = $('#audto', p).value;
+      const cats = picked();
+      if (!cats.length) return; // nothing could match
+      a.cats = cats; a.action = $('#audact', p).value; a.from = $('#audfrom', p).value; a.to = $('#audto', p).value;
       closePop();
       audit(el);
       restart();
@@ -246,7 +274,7 @@ async function load(idx) {
   draw();
   const day = (d, end) => (d ? new Date(d + (end ? 'T23:59:59.999' : 'T00:00:00')).toISOString() : null);
   try {
-    const [page] = await Promise.all([B.api.get('/admin/audit', { action: a.action || null, from: day(a.from, false), to: day(a.to, true), limit: a.size, cursor }), names()]);
+    const [page] = await Promise.all([B.api.get('/admin/audit', { category: a.cats, action: a.action || null, from: day(a.from, false), to: day(a.to, true), limit: a.size, cursor }), names()]);
     if (mine !== a.seq) return;
     a.pages[idx] = { items: B.rows(page), next: B.cursorOf(page) };
     a.items = a.pages[idx].items; a.next = a.pages[idx].next;
@@ -285,8 +313,8 @@ function target(e) {
   if (e.target_type) return esc(e.target_type.replace(/_/g, ' '));
   return '';
 }
-const ICONS = { answer: 'chat', promotion: 'globe', role: 'user', clearance: 'user', invitation: 'user', user: 'lock', account: 'link', connection: 'plug', container: 'folder', credential: 'lock', setup: 'settings', session: 'lock', alias: 'hash', domain: 'hash' };
-const actionIcon = (a) => ICONS[String(a).split('.')[0]] || 'doc';
+const ICONS = { answers: 'chat', access: 'user', sources: 'plug', bots: 'bot', sign_ins: 'lock', settings: 'settings' };
+const categoryIcon = (c) => ICONS[c] || 'doc';
 const outcomeTone = (o) => (o === 'ok' || o === 'answered' ? 'ok' : /denied|refused|failed|error|blocked|rejected/.test(String(o)) ? 'bad' : '');
 function draw() {
   const a = auditState();
@@ -308,7 +336,7 @@ function draw() {
   t.classList.toggle('isempty', empty);
   // Nothing to show replaces the table, its header and the pager with one framed card.
   if (empty) { t.innerHTML = '<div class="ds-empty"><b>No events match</b><p>Try a different action or dates.</p></div>'; more.innerHTML = ''; return; }
-  t.innerHTML = head + a.items.map((e) => `<div class="aud-r" role="row"><span class="amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="audw"><i class="audi">${ICON(actionIcon(e.action), 14)}</i><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="audwho">${actor(e.actor)}</span><span>${target(e)}</span><span><span class="tag ${outcomeTone(e.outcome)}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('');
+  t.innerHTML = head + a.items.map((e) => `<div class="aud-r" role="row"><span class="amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="audw"><i class="audi">${ICON(categoryIcon(e.category), 14)}</i><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="audwho">${actor(e.actor)}</span><span>${target(e)}</span><span><span class="tag ${outcomeTone(e.outcome)}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('');
   const from = a.page * a.size + 1;
   const hasNext = !!a.next;
   more.innerHTML = `<div class="pager" role="navigation" aria-label="Audit log pages"><div class="pgsize"><label for="audsize">Rows per page</label><select id="audsize" aria-label="Rows per page">${SIZES.map((n) => `<option value="${n}" ${n === a.size ? 'selected' : ''}>${n}</option>`).join('')}</select></div><span class="pgrange" aria-live="polite">${from} to ${from + a.items.length - 1}</span><span class="pgn">Page ${a.page + 1}</span><span class="lsp"></span><div class="pgbtns"><button type="button" class="btn sm" id="audprev" ${a.page === 0 ? 'disabled aria-disabled="true"' : ''}>Previous</button><button type="button" class="btn sm" id="audnext" ${hasNext ? '' : 'disabled aria-disabled="true"'}>Next</button></div></div>`;

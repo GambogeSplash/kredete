@@ -30,7 +30,7 @@
   /** @typedef {{ event: 'error', data: { code: string, message: string, retryable: boolean } }} StreamErrorEvent */
   /** @typedef {TurnStartedEvent | StatusEvent | AnswerDeltaEvent | TurnCompletedEvent | StreamErrorEvent} StreamEvent */
   /** @typedef {TurnCompletedEvent | StreamErrorEvent} StreamResult */
-  /** @typedef {Record<string, string | number | boolean | null | undefined>} Query */
+  /** A list value repeats its key, as `category=a&category=b`. @typedef {Record<string, string | number | boolean | null | undefined | string[]>} Query */
   /**
    * @typedef {object} RequestOptions
    * @property {boolean} [auth] false for routes that need no access token (setup status, claim)
@@ -250,7 +250,9 @@
     function url(path, query) {
       const params = new URLSearchParams();
       for (const [key, value] of Object.entries(query || {})) {
-        if (value !== undefined && value !== null && value !== '') params.append(key, String(value));
+        for (const one of Array.isArray(value) ? value : [value]) {
+          if (one !== undefined && one !== null && one !== '') params.append(key, String(one));
+        }
       }
       const search = params.toString();
       return `${base}${path}${search ? `?${search}` : ''}`;
