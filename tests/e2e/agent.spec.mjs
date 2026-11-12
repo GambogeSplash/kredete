@@ -423,14 +423,31 @@ test.describe('Pause and archive', () => {
     const list = await open('admin', '/support-agent', only(name));
     await expect(list.getByRole('link', { name: new RegExp(name) })).toHaveCount(0);
     await expect(list.getByText('No active bots')).toBeVisible();
-    await list.getByRole('button', { name: 'Archived (1)' }).click();
+    // Archived bots are a page of their own, which says what it lists and leads back.
+    await list.getByRole('link', { name: 'Archived (1)' }).click();
+    await expect(list).toHaveURL(/\/support-agent\/archived$/);
+    await expect(list.getByRole('heading', { name: 'Archived bots' })).toBeVisible();
     const row = list.getByRole('link', { name: new RegExp(name) });
     await expect(row).toContainText('Archived');
     await expect(row).toContainText('0 of 1 live');
     await expect(list.getByRole('button', { name: 'New bot' })).toHaveCount(0);
-    await list.mouse.move(0, 0); // the toggle's new label moves the docs button under the pointer
     await check(list, 'agent-bots-archived', { mask: ['.agrow .tag'] });
-    await list.getByRole('button', { name: 'Active bots (0)' }).click();
+    await list.getByRole('link', { name: 'All bots' }).click();
+    await expect(list).toHaveURL(/\/support-agent$/);
     await expect(list.getByText('No active bots')).toBeVisible();
+    // The browser's Back steps between them too.
+    await list.goBack();
+    await expect(list.getByRole('heading', { name: 'Archived bots' })).toBeVisible();
+    await list.goBack();
+    await expect(list.getByRole('heading', { name: 'Support agent' })).toBeVisible();
+  });
+
+  test('with nothing archived, the archived page says so and leads back', async ({ open }) => {
+    const page = await open('admin', '/support-agent/archived', only('No bot has this name'));
+    await expect(page.getByRole('heading', { name: 'Archived bots' })).toBeVisible();
+    await expect(page.getByText('No archived bots')).toBeVisible();
+    await page.locator('.ds-empty').getByRole('link', { name: 'All bots' }).click();
+    await expect(page).toHaveURL(/\/support-agent$/);
+    await expect(page.getByRole('link', { name: /Archived \(/ })).toHaveCount(0);
   });
 });

@@ -30,14 +30,16 @@ const DOCS = { list: 'botSources', knowledge: 'botSources', products: 'botSnippe
 const empty = (title, text, action = '', icon = 'inbox') => `<div class="ds-empty" role="status"><span class="ds-empty-ic" aria-hidden="true">${window.ICON(icon, 20)}</span><b>${esc(title)}</b>${text ? `<p>${text}</p>` : ''}${action}</div>`;
 /** A framed error with retry. */
 const failed = (error, retryId) => empty(B.problem(error), error && error.status === 0 ? 'Check your connection.' : 'The rest of Broth still works.', `<button type="button" class="btn sm" id="${retryId}">Try again</button>`, 'refresh').replace('role="status"', 'role="alert"');
-/** The page title row: title, (i) hint, then the page's own controls. */
-const head = (title, key, actions = '') => `<div class="ds-head aghd"><h1 class="lcont-t">${esc(title)}</h1><span class="lsp"></span><div class="ds-act">${DOCS[key] ? window.DOCS.link(DOCS[key]).replace('class="dclink"', 'class="dclink btn sm"') : ''}${actions}</div></div>`;
+/** The page title row: a way back when the page has one, the title, (i) hint, then the page's own controls. */
+const head = (title, key, actions = '', back = '') => `<div class="ds-head aghd">${back}<h1 class="lcont-t">${esc(title)}</h1><span class="lsp"></span><div class="ds-act">${DOCS[key] ? window.DOCS.link(DOCS[key]).replace('class="dclink"', 'class="dclink btn sm"') : ''}${actions}</div></div>`;
+/** "‹ All bots", before a page title, as a source's page has "‹ Sources" (admin.js). */
+const backToBots = () => `<a class="srcback" href="/support-agent" data-link>${window.ICON('chevl', 14)}<span>All bots</span></a>`;
 /** @type {Record<string, (el: HTMLElement, ctx: any) => void>} */
 const pages = {};
 
 function state() {
   const c = B.S.cache;
-  if (!c.agent) c.agent = { bots: [], containers: [], connections: [], loaded: false, error: null, archived: false };
+  if (!c.agent) c.agent = { bots: [], containers: [], connections: [], loaded: false, error: null };
   return c.agent;
 }
 
@@ -73,7 +75,7 @@ function render(params) {
     if (r) r.onclick = () => { s.error = null; render(params); load(params); };
     return;
   }
-  if (!params.bot) { list(app); B.setCrumb(); B.mbTitle(); return; }
+  if (!params.bot) { list(app, params.view === 'archived'); B.setCrumb(); B.mbTitle(); return; }
   const bot = s.bots.find((b) => b.id === params.bot);
   if (!bot) {
     B.S.route.title = '';
@@ -211,33 +213,36 @@ function statusTag(bot) {
   }
 }
 
-function list(app) {
+/**
+ * The bots: the active ones at /support-agent, the archived ones on a page of their own at
+ * /support-agent/archived, so its title says what it lists and Back returns from it.
+ */
+function list(app, showArchived) {
   const s = state();
-  B.S.route.title = '';
+  // The crumb reads "Support agent > Archived bots" there, as it does for a bot's pages.
+  B.S.route.title = showArchived ? 'Archived bots' : '';
   const archived = s.bots.filter((b) => b.status === 'archived');
   const active = s.bots.filter((b) => b.status !== 'archived');
-  const showArchived = s.archived && archived.length > 0;
   const shown = showArchived ? archived : active;
   const rows = shown.map((bot) => {
     const live = bot.products.filter((p) => p.status === 'live').length;
     return `<a class="ds-tr agrow" href="/support-agent/${bot.id}/overview" data-link><span class="dmn"><span class="ds-ic" aria-hidden="true">${window.ICON('chat', 16)}</span><b>${esc(bot.name)}</b></span><span class="dtm">${count(bot.sources.length, 'source')}</span><span class="dtm">${live} of ${bot.products.length} live</span><span>${statusTag(bot)}</span></a>`;
   }).join('');
-  const toggle = archived.length
-    ? `<button type="button" class="btn sm" id="agarch" aria-pressed="${showArchived}">${showArchived ? `Active bots (${active.length})` : `Archived (${archived.length})`}</button>`
-    : '';
-  const create = showArchived ? '' : '<button type="button" class="btn primary sm" id="agnew">New bot</button>';
-  const none = !s.bots.length
-    ? empty('No bots yet', 'Create one, choose the sources it answers from, then put it on a site.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>', 'chat')
-    : empty('No active bots', 'Archived bots are under Archived, above.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>', 'chat');
+  const actions = showArchived
+    ? ''
+    : `${archived.length ? `<a class="btn sm" id="agarch" href="/support-agent/archived" data-link>Archived (${archived.length})</a>` : ''}<button type="button" class="btn primary sm" id="agnew">New bot</button>`;
+  const none = showArchived
+    ? empty('No archived bots', 'A bot you archive shows here, read only.', '<a class="btn sm" href="/support-agent" data-link>All bots</a>', 'inbox')
+    : !s.bots.length
+      ? empty('No bots yet', 'Create one, choose the sources it answers from, then put it on a site.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>', 'chat')
+      : empty('No active bots', 'Archived bots are under Archived, above.', '<button type="button" class="btn primary sm" id="agnew2">New bot</button>', 'chat');
   // The list has no sub-menu: the rail's Support agent item is its way in (spec 2026-11-12).
-  app.innerHTML = `<div class="lcont agwide">${head('Support agent', 'list', `${toggle}${create}`)}
+  app.innerHTML = `<div class="lcont agwide">${head(showArchived ? 'Archived bots' : 'Support agent', 'list', actions, showArchived ? backToBots() : '')}
     ${shown.length
       ? `<div class="ds-table agbots" style="--cols:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 170px" aria-label="${showArchived ? 'Archived bots' : 'Bots'}"><div class="ds-tr ds-th"><span>Bot</span><span>Sources</span><span>Products</span><span>Status</span></div>${rows}</div>`
       : none}
   </div>`;
   pillAt = null;
-  const arch = $('#agarch');
-  if (arch) arch.onclick = () => { s.archived = !showArchived; list(app); $('#agarch').focus(); };
   const create1 = $('#agnew');
   if (create1) create1.onclick = newBot;
   const again = $('#agnew2');

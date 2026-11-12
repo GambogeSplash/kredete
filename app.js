@@ -289,7 +289,7 @@ const ROUTES = [
   { re: /^\/governance$/, surface: 'governance' },
   { re: /^\/account(?:\/(sessions))?$/, surface: 'account', keys: ['tab'] },
   { re: /^\/admin(?:\/(workspace|connectors|sources|people|domains|audit)(?:\/(confluence|docs-repositories|google-drive))?)?$/, surface: 'admin', keys: ['tab', 'source'], allow: () => opens('admin') },
-  { re: /^\/support-agent(?:\/([0-9a-f-]{36})(?:\/(overview|knowledge|experience|products))?)?$/i, surface: 'bot', keys: ['bot', 'page'], allow: () => opens('bot') },
+  { re: /^\/support-agent(?:\/(archived)|\/([0-9a-f-]{36})(?:\/(overview|knowledge|experience|products))?)?$/i, surface: 'bot', keys: ['view', 'bot', 'page'], allow: () => opens('bot') },
   { re: /^\/help(?:\/([a-z0-9-]+))?$/, surface: 'docs', keys: ['slug'] },
   { re: /^\/setup$/, surface: 'setup' },
   { re: /^\/signin$/, surface: 'signin' },
