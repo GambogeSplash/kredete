@@ -284,6 +284,7 @@ const ROUTES = [
   { re: /^\/c\/([0-9a-f-]{36})$/i, surface: 'ask', keys: ['id'] },
   { re: /^\/chats$/, surface: 'chats' },
   { re: /^\/bookmarks$/, surface: 'bookmarks' },
+  { re: /^\/people\/([0-9a-f-]{36})$/i, surface: 'person', keys: ['id'] },
   { re: /^\/library(?:\/([a-z0-9-]+))?$/, surface: 'library', keys: ['domain'] },
   { re: /^\/sources$/, surface: 'connectors' },
   { re: /^\/governance$/, surface: 'governance' },
@@ -832,12 +833,12 @@ function newChat() {
 }
 
 /* ---------- breadcrumb and mobile title ---------- */
-const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Sources'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Docs'], account: ['Settings', ''], admin: ['Settings', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'] };
+const CRUMB = { ask: ['Workspace', 'New chat'], chats: ['Workspace', 'Chats'], bookmarks: ['Workspace', 'Bookmarks'], library: ['Workspace', 'Library'], connectors: ['Workspace', 'Sources'], governance: ['Workspace', 'Governance'], docs: ['Workspace', 'Docs'], account: ['Settings', ''], admin: ['Settings', ''], setup: ['Admin', 'Finish setup'], bot: ['Workspace', 'Support agent'], person: ['Workspace', 'Person'] };
 function setCrumb() {
   const c = CRUMB[S.route.surface] || ['Workspace', ''];
   // A settings page is named by its item in the Settings rail, so the crumb and the rail always agree.
   const setting = ['account', 'admin'].includes(S.route.surface) && $('.lrail [aria-current="page"]');
-  const label = setting ? setting.textContent : S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : c[1];
+  const label = setting ? setting.textContent : S.route.surface === 'ask' && S.conv && S.route.params.id ? chatTitle(S.conv) : S.route.surface === 'person' && S.route.title ? S.route.title : c[1];
   // A bot's pages add its name (bot admin spec 4.1), once the Support agent has loaded it.
   const parts = S.route.surface === 'bot' && S.route.title ? [c[0], label, S.route.title] : [c[0], label];
   $('#crumb').innerHTML = `${parts.slice(0, -1).map((p) => `<span>${esc(p)}</span><i>›</i>`).join('')}<span class="cur">${esc(parts[parts.length - 1])}</span><span class="lsp"></span><button type="button" class="lib" id="ccopy" aria-label="Copy link">${ICON('link', 16)}</button>`;

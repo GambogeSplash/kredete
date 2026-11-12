@@ -35,6 +35,8 @@ declare global {
   /** The document drawer, and how a document reads in lists (document-drawer.js). */
   var DOCUMENTS: any;
   var ADMIN: any;
+  /** How audit events read in every list of them (audit-rows.js). */
+  var AUDIT_ROWS: any;
   var SETTINGS: { rail: (current: string) => string, wire: (nav: HTMLElement | null) => void };
   var GOV: any;
   var DOCS: Record<string, any>;

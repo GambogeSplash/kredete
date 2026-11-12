@@ -165,13 +165,14 @@ function pop(anchor, html, label, opts) {
   return el;
 }
 
-/* ---------- people names, for whoever manages people (audit actors, promotion requesters, owners) ---------- */
+/* ---------- people names (audit actors, promotion requesters, owners) ---------- */
+/** Names by user id. Whoever manages people reads every account; anyone else reads the
+ *  directory, which lists active people only, so a suspended actor shows their id. */
 async function names() {
   const c = B.S.cache;
-  if (!B.can('people.manage')) return {};
   if (!c.names) {
     try {
-      const page = await B.api.get('/admin/users', { limit: 200 });
+      const page = B.can('people.manage') ? await B.api.get('/admin/users', { limit: 200 }) : await B.api.get('/people', { limit: 100 });
       c.names = Object.fromEntries(B.rows(page).map((u) => [u.id, u.name]));
     } catch (error) { c.names = {}; }
   }
@@ -180,31 +181,10 @@ async function names() {
 
 /* ---------- Audit ---------- */
 /* Every action has one category on the server (it sends each event's); the filter lists the actions of
-   the categories shown. Answers are one event per reply, so the list leaves them out unless asked. */
-const CATEGORIES = [['access', 'Access'], ['sources', 'Sources'], ['bots', 'Bots'], ['sign_ins', 'Sign-ins'], ['settings', 'Settings'], ['answers', 'Answers']];
+   the categories shown. Answers are one event per reply, so the list leaves them out unless asked.
+   The actions and their names live in audit-rows.js, shared with a person's activity. */
+const { CATEGORIES, ACTIONS, actionName, outcomeName } = window.AUDIT_ROWS;
 const DEFAULT_CATS = CATEGORIES.map(([k]) => k).filter((k) => k !== 'answers');
-const ACTIONS = [
-  ['access', 'role.granted', 'Role granted'], ['access', 'role.revoked', 'Role removed'], ['access', 'clearance.changed', 'Clearance changed'],
-  ['access', 'invitation.created', 'Invitation created'], ['access', 'invitation.revoked', 'Invitation revoked'], ['access', 'invitation.accepted', 'Invitation accepted'],
-  ['access', 'user.suspended', 'Person suspended'], ['access', 'user.reactivated', 'Person reactivated'],
-  ['access', 'alias.declared', 'All-staff group declared'], ['access', 'alias.removed', 'All-staff group removed'],
-  ['sources', 'connection.created', 'Connection created'], ['sources', 'connection.disconnected', 'Connection removed'], ['sources', 'connection.warning_changed', 'Connection warning changed'],
-  ['sources', 'connection.github_install_started', 'GitHub install started'], ['sources', 'connection.github_installed', 'GitHub installed'],
-  ['sources', 'container.changed', 'Space changed'],
-  ['sources', 'container.public_declaration.requested', 'Public space requested'], ['sources', 'container.public_declaration.approved', 'Public space approved'],
-  ['sources', 'container.public_declaration.rejected', 'Public space rejected'], ['sources', 'container.public_declaration.revoked', 'Public space revoked'],
-  ['sources', 'promotion.requested', 'Sharing requested'], ['sources', 'promotion.approved', 'Sharing approved'], ['sources', 'promotion.rejected', 'Sharing rejected'],
-  ['sources', 'promotion.revoked', 'Sharing revoked'], ['sources', 'promotion.needs_review', 'Sharing needs review'],
-  ['bots', 'bot.created', 'Bot created'], ['bots', 'bot.updated', 'Bot updated'], ['bots', 'bot.sources_changed', 'Bot sources changed'],
-  ['bots', 'bot.paused', 'Bot paused'], ['bots', 'bot.resumed', 'Bot resumed'], ['bots', 'bot.archived', 'Bot archived'],
-  ['bots', 'bot_product.created', 'Product created'], ['bots', 'bot_product.updated', 'Product updated'],
-  ['bots', 'bot_product.key_replaced', 'Product key replaced'], ['bots', 'bot_product.revoked', 'Product revoked'],
-  ['sign_ins', 'session.created', 'Signed in'], ['sign_ins', 'session.revoked', 'Signed out'],
-  ['sign_ins', 'account.linked', 'Account linked'], ['sign_ins', 'account.unlinked', 'Account unlinked'],
-  ['settings', 'domain.changed', 'Domain changed'], ['settings', 'credential.changed', 'Credentials changed'], ['settings', 'setup.claimed', 'Setup claimed'],
-  ['answers', 'answer.served', 'Answer served'],
-];
-const actionName = (a) => (ACTIONS.find((x) => x[1] === a) || [null, a, a.replace(/[._]/g, ' ')])[2];
 const sameCats = (x, y) => x.length === y.length && x.every((k) => y.includes(k));
 /* 12 rows plus the header and pager fill a laptop screen without scrolling. */
 const SIZES = [12, 25, 50, 100];
@@ -293,7 +273,7 @@ function exportCsv() {
   if (!a.items.length) { B.toast('No events to export'); return; }
   const cell = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   const names = B.S.cache.names || {};
-  const lines = [['Timestamp', 'Event', 'Actor', 'Resource', 'Outcome'].map(cell).join(',')].concat(a.items.map((e) => [e.ts, actionName(e.action), e.actor ? names[e.actor] || e.actor : 'System', e.action === 'answer.served' ? `${B.arr(e.sources).length} sources` : String(e.target_type || '').replace(/_/g, ' '), String(e.outcome).replace(/_/g, ' ')].map(cell).join(',')));
+  const lines = [['Timestamp', 'Event', 'Actor', 'Resource', 'Outcome'].map(cell).join(',')].concat(a.items.map((e) => [e.ts, actionName(e.action), e.actor ? names[e.actor] || e.actor : 'System', e.action === 'answer.served' ? `${B.arr(e.sources).length} sources` : String(e.target_type || '').replace(/_/g, ' '), outcomeName(e.outcome)].map(cell).join(',')));
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], { type: 'text/csv' }));
   link.download = 'audit-log.csv';
@@ -303,24 +283,11 @@ function exportCsv() {
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
   B.toast(`Exported ${a.items.length} ${a.items.length === 1 ? 'event' : 'events'}`);
 }
-function actor(id) {
-  if (!id) return '<span class="amute">System</span>';
-  const n = (B.S.cache.names || {})[id];
-  return n ? `${AVATAR(n, 'lav', 18)} ${esc(n)}` : `<span class="amute mono" title="${esc(id)}">${esc(id.slice(0, 8))}</span>`;
-}
-function target(e) {
-  if (e.action === 'answer.served') { const n = B.arr(e.sources).length; return `${n} ${n === 1 ? 'source' : 'sources'}`; }
-  if (e.target_type) return esc(e.target_type.replace(/_/g, ' '));
-  return '';
-}
-const ICONS = { answers: 'chat', access: 'user', sources: 'plug', bots: 'bot', sign_ins: 'lock', settings: 'settings' };
-const categoryIcon = (c) => ICONS[c] || 'doc';
-const outcomeTone = (o) => (o === 'ok' || o === 'answered' ? 'ok' : /denied|refused|failed|error|blocked|rejected/.test(String(o)) ? 'bad' : '');
 function draw() {
   const a = auditState();
   const t = $('#audt'), more = $('#audmore');
   if (!t) return;
-  const head = '<div class="aud-r aud-h" role="row"><span role="columnheader">Timestamp</span><span role="columnheader">Event</span><span role="columnheader">Actor</span><span role="columnheader">Resource</span><span role="columnheader">Outcome</span></div>';
+  const head = window.AUDIT_ROWS.head(true);
   if (!a.loaded) {
     // An error is one framed card in place of the table and pager; loading keeps the table's shape.
     t.classList.toggle('isempty', !!a.error);
@@ -336,7 +303,8 @@ function draw() {
   t.classList.toggle('isempty', empty);
   // Nothing to show replaces the table, its header and the pager with one framed card.
   if (empty) { t.innerHTML = '<div class="ds-empty"><b>No events match</b><p>Try a different action or dates.</p></div>'; more.innerHTML = ''; return; }
-  t.innerHTML = head + a.items.map((e) => `<div class="aud-r" role="row"><span class="amute">${B.when(e.ts, B.dayLabel(e.ts, true))}</span><span class="audw"><i class="audi">${ICON(categoryIcon(e.category), 14)}</i><b class="audact">${esc(actionName(e.action))}</b>${e.channel && e.channel !== 'employee' ? `<small class="amute"> · ${esc(e.channel)}</small>` : ''}</span><span class="audwho">${actor(e.actor)}</span><span>${target(e)}</span><span><span class="tag ${outcomeTone(e.outcome)}">${esc(String(e.outcome).replace(/_/g, ' '))}</span></span></div>`).join('');
+  const known = B.S.cache.names || {};
+  t.innerHTML = head + a.items.map((e) => window.AUDIT_ROWS.row(e, known)).join('');
   const from = a.page * a.size + 1;
   const hasNext = !!a.next;
   more.innerHTML = `<div class="pager" role="navigation" aria-label="Audit log pages"><div class="pgsize"><label for="audsize">Rows per page</label><select id="audsize" aria-label="Rows per page">${SIZES.map((n) => `<option value="${n}" ${n === a.size ? 'selected' : ''}>${n}</option>`).join('')}</select></div><span class="pgrange" aria-live="polite">${from} to ${from + a.items.length - 1}</span><span class="pgn">Page ${a.page + 1}</span><span class="lsp"></span><div class="pgbtns"><button type="button" class="btn sm" id="audprev" ${a.page === 0 ? 'disabled aria-disabled="true"' : ''}>Previous</button><button type="button" class="btn sm" id="audnext" ${hasNext ? '' : 'disabled aria-disabled="true"'}>Next</button></div></div>`;
