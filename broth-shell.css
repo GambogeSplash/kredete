@@ -4,7 +4,7 @@
 .rltip{position:fixed;z-index:200;display:flex;align-items:center;gap:var(--s-2);transform:translate(-4px,-50%);opacity:0;pointer-events:none;white-space:nowrap;padding:6px 10px;border-radius:var(--r-md);background:var(--ink);color:var(--surface);font:500 12px/1.2 var(--font);box-shadow:0 6px 18px rgba(0,0,0,.25);transition:opacity .12s ease,transform .12s ease}
 .rltip.on{opacity:1;transform:translate(0,-50%)}
 .rltip kbd{font:inherit;opacity:.65}
-@media (max-width:900px){.rltip,.sbsearch{display:none}}
+@media (max-width:900px){.rltip{display:none}}
 @media (min-width:901px){
  body:not(.noauth) .rail{display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:58px;justify-items:center;position:fixed;left:0;top:0;bottom:0;width:58px;padding:9px 0 var(--s-4);background:transparent;z-index:6}
  .rl-grp{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;align-self:center}
@@ -31,19 +31,6 @@
  body:not(.noauth) .mainpanel{margin:8px 8px 8px calc(58px + 236px);border-radius:0 var(--r-lg) var(--r-lg) 0}
  body:not(.noauth).sbc .mainpanel{margin-left:58px;border-radius:var(--r-lg)}
  body:not(.noauth).sbc .top{transform:translateX(calc(-100% - 58px));border-radius:var(--r-lg)}
- /* the chats' own search (chat-search.js) */
- .sbsearch{display:flex;align-items:center;gap:var(--s-3);width:auto;align-self:stretch;height:36px;margin:4px 8px var(--s-3);padding:0 6px 0 12px;border:1px solid var(--line);border-radius:var(--r-full);background:var(--fill-1);color:var(--mute);font-size:var(--fs-md);cursor:text;transition:border-color .15s,box-shadow .15s}
- .sbsearch svg{flex:none}
- .sbsearch input{flex:1;min-width:0;height:100%;padding:0;border:0;background:none;color:var(--ink);font:inherit;outline:none}
- .sbsearch input::placeholder{color:var(--mute)}
- .sbsearch input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
- .sbsearch:focus-within{border-color:var(--brand-line);box-shadow:0 0 0 3px var(--brand-soft);color:var(--ink)}
- .sbclear{display:none;place-items:center;width:24px;height:24px;flex:none;padding:0;border:0;border-radius:var(--r-full);background:none;color:var(--mute);cursor:pointer}
- .sbclear:hover{background:var(--fill-3);color:var(--ink)}
- .sbsearch.typed .sbclear{display:grid}
- #surfaces .surf.chat.hit{flex-direction:column;align-items:stretch;justify-content:center;gap:2px;min-height:30px;height:auto;padding:6px var(--s-3)}
- #surfaces .surf.chat.hit .chn{flex:none}
- body.noauth .sbsearch{display:none}
  .top .sgl{background:transparent;padding-left:12px}
  /* pages other than chats use the full width next to the rail */
  body.nochats:not(.noauth) .top{display:none}
@@ -95,3 +82,19 @@ html[data-mode=dark] :is(.ssel-menu,.pmenu,.cmenu,.fmenu,.hiapop,.drawer,.modal,
 #thread article.linked{animation:turnlinked 2s ease-out}
 @keyframes turnlinked{0%,35%{background:var(--brand-soft);box-shadow:0 0 0 8px var(--brand-soft)}100%{background:transparent;box-shadow:0 0 0 8px transparent}}
 @media (prefers-reduced-motion:reduce){#thread article.linked{animation:none;outline:2px solid var(--brand-line);outline-offset:6px}}
+
+/* the chats' own search box (chat-search.js), on every width: the Chats page has its own, larger box */
+/* the chats' own search (chat-search.js) */
+.sbsearch{display:flex;align-items:center;gap:var(--s-3);width:auto;align-self:stretch;flex:none;height:36px;margin:4px 8px var(--s-3);padding:0 6px 0 12px;border:1px solid var(--line);border-radius:var(--r-full);background:var(--fill-1);color:var(--mute);font-size:var(--fs-md);cursor:text;transition:border-color .15s,box-shadow .15s}
+.sbsearch svg{flex:none}
+.sbsearch input{flex:1;min-width:0;height:100%;padding:0;border:0;background:none;color:var(--ink);font:inherit;outline:none}
+.sbsearch input::placeholder{color:var(--mute)}
+.sbsearch input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+.sbsearch:focus-within{border-color:var(--brand-line);box-shadow:0 0 0 3px var(--brand-soft);color:var(--ink)}
+.sbclear{display:none;place-items:center;width:24px;height:24px;flex:none;padding:0;border:0;border-radius:var(--r-full);background:none;color:var(--mute);cursor:pointer}
+.sbclear:hover{background:var(--fill-3);color:var(--ink)}
+.sbsearch.typed .sbclear{display:grid}
+body[data-sf="chats"] .sbsearch{display:none}
+body.noauth .sbsearch{display:none}
+#surfaces .surf.chat.hit{flex-direction:column;align-items:stretch;justify-content:center;gap:2px;min-height:30px;height:auto;padding:6px var(--s-3)}
+#surfaces .surf.chat.hit .chn{flex:none}
