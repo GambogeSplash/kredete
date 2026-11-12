@@ -75,7 +75,7 @@ function editWorkspace(el) {
     <p class="ds-msg">Saved on this device only.</p>
     <div class="actions"><button type="button" class="btn" id="wsc">Cancel</button><span class="lsp"></span><button type="submit" class="btn primary" id="wss">Save</button></div></form></div></div>`);
   window.BROTH_LOGO.mount($('#suf'), { toast: B.toast, maxBytes: 1048576 });
-  setTimeout(() => { const f = $('#suco'); if (f) f.focus(); }, 80);
+  $('#suco').focus();
   let kept = false;
   $('#wsc').onclick = () => { window.BROTH_LOGO.restore(before); B.closeModal(); };
   $('#suf').onsubmit = (e) => {
