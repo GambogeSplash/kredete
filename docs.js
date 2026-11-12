@@ -339,7 +339,7 @@ function drawArticle(a) {
   place(a.slug, `<article class="dcdoc"><h1>${esc(a.title)}</h1><div class="dctags">${tags}</div>${has ? `<details class="dcsecm"><summary>Sections</summary>${sectionList(a, 'dctocl')}</details>` : ''}<div class="dcprose">${a.html}</div>${helpRow(a.slug, false)}</article>`, has ? `<aside class="dctoc" aria-label="On this page"><div class="dctoch">On this page</div>${sectionList(a, 'dctocl')}</aside>` : '');
   const prose = $('.dcprose');
   // Links between articles navigate in the app; external ones already open a new tab.
-  $('a[href^="/help"]', prose).forEach((link) => {
+  $$('a[href^="/help"]', prose).forEach((link) => {
     link.onclick = (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return; e.preventDefault(); B.go(link.getAttribute('href')); };
   });
   $$('[data-sec]').forEach((link) => {
@@ -400,6 +400,19 @@ function reveal(anchor, record) {
   const target = anchor ? document.getElementById(anchor) : null;
   if (target && target.closest('.dcprose')) {
     target.scrollIntoView({ block: 'start' });
+    // Text reflows when the web fonts arrive, which can move the section away from the top: align
+    // it again then, unless the reader has scrolled meanwhile.
+    // The reader's own scrolling is told by their input: the reflow itself moves scrollTop.
+    if (document.fonts && document.fonts.status !== 'loaded') {
+      let moved = false;
+      const inputs = ['wheel', 'touchmove', 'keydown', 'pointerdown'];
+      const mark = () => { moved = true; };
+      inputs.forEach((type) => window.addEventListener(type, mark, { capture: true, passive: true }));
+      document.fonts.ready.then(() => {
+        inputs.forEach((type) => window.removeEventListener(type, mark, { capture: true }));
+        if (!moved && target.isConnected) target.scrollIntoView({ block: 'start' });
+      });
+    }
     if (record) history.replaceState(history.state, '', `#${anchor}`);
     target.setAttribute('tabindex', '-1');
     target.focus({ preventScroll: true });
