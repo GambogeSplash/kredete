@@ -798,6 +798,8 @@ function wireAnswerTab(root) {
     const open = () => {
       const turn = panelTurn();
       const c = turn && turn.answer.citations.find((x) => String(x.n) === row.dataset.n);
+      // A Broth Docs section is a page of the app's own Docs, not a document with a drawer.
+      if (c && window.CITATIONS.opensInApp(c)) { B.go(c.url); return; }
       window.DOCUMENTS.openDocument(row.dataset.doc, { citation: c });
     };
     row.onclick = open;

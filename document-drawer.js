@@ -38,7 +38,7 @@ const domainCrumbs = (d) => B.arr(d.domain.path).map((c) => `<a href="/library/$
 
 /** What the source is called, and its mark; a read without a source says "Source" with a neutral mark. */
 /** One short name per source for the footer button: the product people know, not the connector's own name. */
-const FOOT_NAME = { confluence: 'Confluence', gdrive: 'Google Drive', github_docs: 'GitHub', notion: 'Notion' };
+const FOOT_NAME = { confluence: 'Confluence', gdrive: 'Google Drive', github_docs: 'GitHub', broth_docs: 'Broth Docs', notion: 'Notion' };
 /** The open button names where its link goes, as the API states it (docs site link spec 4.1): a
  *  published docs page opens on its docs site, anything else in its source. */
 const toDocsSite = (d) => d.link_target === 'docs_site';

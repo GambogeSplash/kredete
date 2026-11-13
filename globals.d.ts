@@ -12,6 +12,7 @@ declare global {
   var DOMAIN_TREE: typeof import('./domain-tree.js');
   /** The Library's mode and documents query (library-browse.js). */
   var LIBRARY_BROWSE: typeof import('./library-browse.js');
+  var CITATIONS: typeof import('./citations.js');
   /** The bot admin's field rules, allowed sites and status (bot-form.js). */
   var BOT_FORM: typeof import('./bot-form.js');
   /** The shell (app.js). */

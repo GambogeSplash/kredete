@@ -1836,7 +1836,7 @@ export interface components {
          * ContainerKind
          * @enum {string}
          */
-        ContainerKind: "shared_drive" | "folder" | "space" | "repo";
+        ContainerKind: "shared_drive" | "folder" | "space" | "repo" | "built_in";
         /** ContainerOut */
         ContainerOut: {
             active_run: components["schemas"]["SyncRunOut"] | null;
@@ -2347,7 +2347,7 @@ export interface components {
          * @description What a document's `url` opens (docs site link spec 2.1).
          * @enum {string}
          */
-        LinkTarget: "source" | "docs_site";
+        LinkTarget: "source" | "docs_site" | "in_app_docs";
         /** LinkedAccountOut */
         LinkedAccountOut: {
             /** Account Id */
@@ -2887,7 +2887,7 @@ export interface components {
          * SourceSystem
          * @enum {string}
          */
-        SourceSystem: "gdrive" | "confluence" | "github_docs";
+        SourceSystem: "gdrive" | "confluence" | "github_docs" | "broth_docs";
         /** SourcesIn */
         SourcesIn: {
             /** Container Ids */

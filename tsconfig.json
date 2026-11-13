@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "types": []
   },
-  "include": ["types.d.ts", "globals.d.ts", "api.js", "capabilities.js", "sync.js", "embed.js", "bot-form.js", "domain-tree.js", "library-browse.js"]
+  "include": ["types.d.ts", "globals.d.ts", "api.js", "capabilities.js", "sync.js", "embed.js", "bot-form.js", "domain-tree.js", "library-browse.js", "citations.js"]
 }
