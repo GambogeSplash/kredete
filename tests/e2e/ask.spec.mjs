@@ -227,3 +227,22 @@ test('the sources panel shows the citations and sets what the next question read
   await idle(page);
   await expect(lastAnswer(page).locator('.ans')).toHaveText("I couldn't find anything on Flexible Saver interest in the sources you can see.");
 });
+
+test("a question about Broth cites Broth's Docs, and a citation opens its section here (broth docs spec 7)", async ({ open, check, seed }) => {
+  const page = await open('employee', '/');
+  await ask(page, seed.questions.broth_docs.question);
+  const answer = lastAnswer(page);
+  await expect(answer.locator('.ans .cite').first()).toBeVisible();
+  await answer.locator('.ans .cite').first().click();
+  const sources = phone(page) ? page.locator('#drawer') : page.locator('#rsrc');
+  const cited = sources.locator('.cxs').first();
+  // A section's title is its article's, then its own: "Labelling pages: The label format".
+  await expect(cited.locator('.cxs-h b')).toHaveText(/^[^:]+: .+/);
+  await expect(cited.locator('.cxs-f')).not.toContainText('·'); // no verified date or owner
+  await check(page, 'sources-broth-docs');
+  await cited.click();
+  // The service links /docs/<slug>#<section>; the app shows its Docs at /help (app.js aliases).
+  await expect(page).toHaveURL(/\/help\/[a-z0-9-]+(#[a-z0-9-]+)?$/);
+  const anchor = new URL(page.url()).hash.slice(1);
+  if (anchor) await expect(page.locator(`[id="${anchor}"]`)).toBeInViewport();
+});
